@@ -1,4 +1,4 @@
-# Copyright 2021-2024 Mike Nelson, Mike Verducci
+# Copyright 2021-2024 James Eshelman, Mike Nelson, Mike Verducci
 
 # This file is part of Time Matters Sidereal Astrology (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, 
@@ -29,10 +29,11 @@ month_abrev = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "O
 
 EPHE_PATH = r"C:\sweph\ephe"
 
-DLL_PATH = app_path(r"..\dll\swedll32.dll")
+# Originally...
+# DLL_PATH = app_path(r"..\dll\swedll32.dll")
+DLL_PATH = app_path(r"dll\swedll32.dll")
 
 HELP_PATH = app_path(r"..\help")
-
 
 d1 = os.path.expanduser(r"~\Documents")
 if  os.path.exists(d1): 

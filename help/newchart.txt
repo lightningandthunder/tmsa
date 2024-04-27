@@ -1,0 +1,24 @@
+NEW CHART PAGE
+
+This  page is mostly self explanatory. The default values for Latitude, Longitude,
+and Time Zone Correction are set for the USA. Just check the correct radio buttons for other parts of the world.
+
+
+Recent button: displays recently used location for one-click selection.
+
+Find button: attempt to get latitude and longitude from an online database, and time zone information for
+dates on or after 1/1/1970.
+
+Select button: allows you to specify the set of chart options to use for this chart.
+
+Temporary button: opens the Chart Options and allows the creation of a temporary options file for this chart.
+
+The Calculate button: validate the data entered on the page and either: 
+   (1) Calculate, display, and save a chart based on the data. 
+   (2) Displaying the first data entry error in red at the bottom of the page.
+   
+Clear button: clears the page so you can start over (helpful if you really mess up data entry, as I often do).
+
+Help button: displays this document. 
+
+Back button: returns to the opening screen.

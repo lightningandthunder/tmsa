@@ -8,7 +8,7 @@
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>. 
 
 from copy import deepcopy
-from datetime import datetime
+from datetime import datetime as dt
 import random
 from init import *
 from calc import Chart
@@ -25,7 +25,7 @@ from constants import DS, DQ
 class Ingresses(Frame): 
     def __init__(self):
         super().__init__()
-        now = datetime.utcnow()
+        now = dt.utcnow()
         chart = {}
         Label(self, "Search", .15, .05, .15, anchor = tk.W) 
         self.init = True

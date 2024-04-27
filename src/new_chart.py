@@ -1,4 +1,4 @@
-# Copyright 2021-2024 Mike Nelson, Mike Verducci
+# Copyright 2021-2024 James Eshelman, Mike Nelson, Mike Verducci
 
 # This file is part of Time Matters Sidereal Astrology (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, 
@@ -7,7 +7,7 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>. 
 
-from datetime import datetime
+from datetime import datetime as dt
 import json
 import os
 import random
@@ -123,7 +123,7 @@ class NewChart(Frame):
         if oldchart: 
             self.populate(oldchart)
         elif oldchart is not None:
-            now = datetime.utcnow()
+            now = dt.utcnow()
             self.fne.text = "Chart Of The Moment"
             self.ctype.text = "Event"
             self.datem.text = now.strftime("%m")

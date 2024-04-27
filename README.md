@@ -23,10 +23,10 @@ More info forthcoming.
 conda create -n whatever
 conda activate whatever
 conda config --env --set subdir win-32
-conda install python=3.10  # newest version that Conda can find
+conda install python=3.10  # newest 32-bit version that Conda can find
 pip install -r .\\etc\\requirements.txt
 
-pyinstaller --add-binary C:\sweph\dll\swedll32.dll:. src\tmsa.py
+python setup-win32.py bdist_msi
 ```
 
 ### Contributing

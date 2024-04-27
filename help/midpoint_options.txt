@@ -1,0 +1,5 @@
+MIDPOINT OPTIONS PAGE
+
+The page will be preloaded with the midpoints in use for the current option set, if any.
+Enter the desired orb in minutes for each type of midpoint. Leave the orb blank or enter 0 to omit a certain type. You may designate whether a 90 degree midpoin contact is considered direct (per J. Eshelman) or indirect (per R.Ebertin).
+The Clear button blanks out all orbs. The Back button returns to the Chart Options page without making any changes. The Save button saves your midpoint orbs to the current option set and returns to the option page.

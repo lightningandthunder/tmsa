@@ -1,4 +1,4 @@
-# Copyright 2021-2024 Mike Nelson, Mike Verducci
+# Copyright 2021-2024 James Eshelman, Mike Nelson, Mike Verducci
 
 # This file is part of Time Matters Sidereal Astrology (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, 
@@ -15,7 +15,7 @@ from locations import Locations
 from more_charts import MoreCharts
 from swe import *
 from widgets import *
-import datetime
+from datetime import datetime as dt
 import tkinter.filedialog as tkfiledialog
 import json
 import os
@@ -40,7 +40,7 @@ def toDMS(value):
 class Solunars(Frame):
     def __init__(self, base, filename):
         super().__init__()
-        now = datetime.utcnow()
+        now = dt.utcnow()
         chart = {}
         self.base = base
         self.filename = filename
