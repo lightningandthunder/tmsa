@@ -1,4 +1,4 @@
-# Copyright 2024 Mike Nelson, Mike Verducci
+# Copyright 2021-2024 Mike Nelson, Mike Verducci
 
 # This file is part of Time Matters Sidereal Astrology (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, 
@@ -14,27 +14,35 @@ from new_chart import NewChart
 from program_options import ProgramOptions
 from select_chart import SelectChart
 from widgets import *
+import webbrowser
+import os
+import shutil
+import json
+from constants import VERSION
 
-COPYRIGHT = """Time Matters Sidereal Astrology 0.4.9.2\n
-A freeware program for calculating geometrically accurate astrological charts
-in the Sidereal Zodiac, as rediscovered by Cyril Fagan and Donald Bradley.
-\u00a9 December 2021 by Mike Nelson (mikestar13 on Solunars).\n
+COPYRIGHT = f"""Time Matters Sidereal Astrology {VERSION}\n
+A freeware program for calculating geometrically \n
+accurate astrological charts in the Sidereal Zodiac, \n
+as rediscovered by Cyril Fagan and Donald Bradley.\n
+\u00a9 2021-2024 James A. Eshelman.
+Created by Mike Nelson (mikestar13)
+and developed further by Mike Verducci.\n
 Released under the GNU Affero General Public License"""
-LICENSE = "https://www.gnu.org/licenses/agpl-3.0.en.html\n"
-DEDEDICATION = "Dedicated to Jim Eshelman and all the good people at solunars."
-SOLUNARS = "https://www.solunars.com/"
-FURTHER = "For more information about Sidereal Astrology in the Western tradition, see:"
-POINTS = "https://www.solunars.com/viewtopic.php?f=8&t=2259"
+LICENSE = "www.gnu.org/licenses/agpl-3.0.en.html"
+DEDEDICATION = "Dedicated to our colleagues and collaborators at"
+SOLUNARS = "www.solunars.com"
+FURTHER = "For more information about Sidereal Astrology, see:"
+POINTS = "www.solunars.com/viewtopic.php?f=8&t=2259"
 
 
 class StartPage(Frame):
     def __init__(self):
         super().__init__()
         global startup
-        Label(self, COPYRIGHT, 0, 0, 1, .25)
-        Label(self, LICENSE, 0, .25, 1, .1, font = ulfont).bind("<Button-1>", lambda _: webbrowser.open_new(LICENSE))
+        Label(self, COPYRIGHT, 0, 0, 1, .30)
+        Label(self, LICENSE, 0, .30, 1, .05, font = ulfont).bind("<Button-1>", lambda _: webbrowser.open_new(LICENSE))
         Label(self, DEDEDICATION, 0, .35, 1)
-        Label(self, SOLUNARS, 0, .4, 1, font = ulfont).bind("<Button-1>", lambda _: webbrowser.open_new(SOLUNARS))
+        Label(self, SOLUNARS, 0, .40, 1, font = ulfont).bind("<Button-1>", lambda _: webbrowser.open_new(SOLUNARS))
         Label(self, FURTHER, 0,.45, 1)
         Label(self, POINTS, 0, .5, 1, font = ulfont).bind("<Button-1>", lambda _: webbrowser.open_new(POINTS))
         start = Button(self,"Chart Of The Moment", .2, .6, .2)

@@ -1,4 +1,4 @@
-# Copyright 2024 Mike Nelson, Mike Verducci
+# Copyright 2021-2024 Mike Nelson, Mike Verducci
 
 # This file is part of Time Matters Sidereal Astrology (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, 
@@ -7,10 +7,16 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>. 
 
+import random
 from init import *
 from locations import Locations
 from widgets import *
-
+import json
+import tkinter.colorchooser as tkcolorchooser
+from geopy import Nominatim
+import anglicize
+from constants import DS, DQ
+import us
 
 class ProgramOptions(Frame): 
     def __init__(self):
@@ -337,7 +343,6 @@ class ProgramOptions(Frame):
             self.status.error(f"Can't open 'locations.json'.")
                     
     def save_home(self): 
-        DS = u'\N{DEGREE SIGN}'
         try: lat = int(self.latd.text) + int(self.latm.text)/60 + int(self.lats.text or "0")/3600
         except Exception: return self.status.error("Latitude must be numeric.", self.latd)
         if lat<0 or lat > 89.99: return self.status.error(f"Latitude must be between 0{DS} and 89{DS}59'59{DQ}.", self.latd)

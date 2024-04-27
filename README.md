@@ -18,7 +18,16 @@ More info forthcoming.
 More info forthcoming.
 
 ### How to build this application
-More info forthcoming.
+##### For 32-bit Windows:
+```shell
+conda create -n whatever
+conda activate whatever
+conda config --env --set subdir win-32
+conda install python=3.10  # newest version that Conda can find
+pip install -r .\\etc\\requirements.txt
+
+pyinstaller --add-binary C:\sweph\dll\swedll32.dll:. src\tmsa.py
+```
 
 ### Contributing
 More info forthcoming.

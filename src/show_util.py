@@ -1,4 +1,4 @@
-# Copyright 2024 Mike Nelson, Mike Verducci
+# Copyright 2021-2024 Mike Nelson, Mike Verducci
 
 # This file is part of Time Matters Sidereal Astrology (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, 
@@ -7,6 +7,7 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>. 
 
+import math
 from init import *
 from widgets import *
 
@@ -220,7 +221,7 @@ def display(chart, planet, prefix, pa_only = False):
     pd = chart[planet] 
     index = planet_names.index(planet)
     pa = planet_abrev[index]
-    if pa_only: return prexfix + pa
+    if pa_only: return prefix + pa
     d = prefix + pa + " " + zod_min(pd[0]) 
     if index < 14:
         d += " " + fmt_dm(pd[-1] % 30)

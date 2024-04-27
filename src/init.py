@@ -1,4 +1,4 @@
-# Copyright 2024 Mike Nelson, Mike Verducci
+# Copyright 2021-2024 Mike Nelson, Mike Verducci
 
 # This file is part of Time Matters Sidereal Astrology (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, 
@@ -7,7 +7,12 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>. 
 
+import json
+import os
+import sys
+import winreg
 from libs import *
+import tkinter.messagebox as tkmessagebox
 
 startup = True 
  
@@ -26,10 +31,10 @@ EPHE_PATH = r"C:\sweph\ephe"
 
 DLL_PATH = app_path(r"..\dll\swedll32.dll")
 
-HELP_PATH = app_path("..\help")
+HELP_PATH = app_path(r"..\help")
 
 
-d1 = os.path.expanduser("~\Documents")
+d1 = os.path.expanduser(r"~\Documents")
 if  os.path.exists(d1): 
     d1 = os.path.expandvars(d1)
 else:
@@ -81,14 +86,14 @@ if not os.path.exists(LOCATIONS_FILE):
     
 RECENT_FILE = os.path.join(OPTION_PATH, "recent.json")
 
+COLOR_FILE = os.path.join(OPTION_PATH, "colors.json")
+
 if not os.path.exists(RECENT_FILE):
     try:
         with open(COLOR_FILE, "w") as datafile:
             json.dump([], datafile, indent = 4) 
     except Exception:
         pass  
-
-COLOR_FILE = os.path.join(OPTION_PATH, "colors.json")
 
 colors = {"bg_color": "black", "button_color": "blue", "text_color": "yellow", "error_color": "red"}
 default = True

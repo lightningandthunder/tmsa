@@ -1,4 +1,4 @@
-# Copyright 2024 Mike Nelson, Mike Verducci
+# Copyright 2021-2024 Mike Nelson, Mike Verducci
 
 # This file is part of Time Matters Sidereal Astrology (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, 
@@ -7,13 +7,22 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>. 
 
+from copy import deepcopy
+import random
 from init import *
 from calc import Chart
 from locations import Locations
 from more_charts import MoreCharts
 from swe import *
 from widgets import *
-
+import datetime
+import tkinter.filedialog as tkfiledialog
+import json
+import os
+from geopy import Nominatim
+import anglicize
+from constants import DS, DQ
+import us
 
 def toDMS(value):
     si = -1 if value < 0 else 1
@@ -28,7 +37,6 @@ def toDMS(value):
         if m == 60:
             d += 1
     return (d, m, s, si)
-        
 class Solunars(Frame):
     def __init__(self, base, filename):
         super().__init__()
@@ -256,9 +264,9 @@ class Solunars(Frame):
             with open(RECENT_FILE, "r") as datafile:
                 recs = json.load(datafile)
         except Exception:
-            status.error("Can't open 'recent.json' file.")
+            self.status.error("Can't open 'recent.json' file.")
         delay(MoreCharts,recs, self.more_finish, 0)  
-        
+
     def make_event(self): 
         self.event = "<"
         save = self.options.text

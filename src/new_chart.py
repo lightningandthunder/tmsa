@@ -1,4 +1,4 @@
-# Copyright 2024 Mike Nelson, Mike Verducci
+# Copyright 2021-2024 Mike Nelson, Mike Verducci
 
 # This file is part of Time Matters Sidereal Astrology (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, 
@@ -7,10 +7,22 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>. 
 
+from datetime import datetime
+import json
+import os
+import random
+
+import pytz
+from timezonefinder import TimezoneFinder
 from init import *
 from calc import Chart
 from locations import Locations
 from widgets import *
+from geopy import Nominatim
+import anglicize
+import us
+import tkinter.filedialog as tkfiledialog
+from constants import DS, DQ
 
 class NewChart(Frame):
     def __init__(self, oldchart = None):

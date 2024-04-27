@@ -1,4 +1,4 @@
-# Copyright 2024 Mike Nelson, Mike Verducci
+# Copyright 2021-2024 Mike Nelson, Mike Verducci
 
 # This file is part of Time Matters Sidereal Astrology (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, 
@@ -8,15 +8,20 @@
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>. 
 
 from init import *
+import tkinter as tk
+import tkinter.messagebox as tkmessagebox
+from tkinter.font import Font as tkFont
+import traceback
+from constants import VERSION
 
 main = tk.Tk()
 main.state("zoomed")
-main.title("TMSA 0.4.9.2 by Mike Nelson")
+main.title(f"TMSA {VERSION} by Mike Nelson and Mike Verducci")
 font = tkFont(family="Lucida Console", size=18, weight="normal")
 ulfont = tkFont(family="Lucida Console", size=18, weight="normal", underline = 1) 
 
 def on_exit():
-    if tkmessagebox.askyesno("Are you sure?", "Quit TMSA 0.4.9.2?"):
+    if tkmessagebox.askyesno("Are you sure?", f"Quit TMSA {VERSION}?"):
         main.destroy()
 
 main.protocol("WM_DELETE_WINDOW", on_exit)
