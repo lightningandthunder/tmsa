@@ -27,13 +27,13 @@ def app_path(path = None):
     
 month_abrev = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] 
 
-EPHE_PATH = r"C:\sweph\ephe"
+EPHE_PATH = "ephe"
 
 # Originally...
 # DLL_PATH = app_path(r"..\dll\swedll32.dll")
 DLL_PATH = app_path(r"dll\swedll32.dll")
 
-HELP_PATH = app_path(r"..\help")
+HELP_PATH = app_path("help")
 
 d1 = os.path.expanduser(r"~\Documents")
 if  os.path.exists(d1): 
