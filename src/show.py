@@ -1,6 +1,6 @@
 # Copyright 2021-2024 James Eshelman, Mike Nelson, Mike Verducci
 
-# This file is part of Time Matters Sidereal Astrology (TMSA).
+# This file is part of Time Matters: A Sidereal Astrology Toolkit (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, 
 # either version 3 of the License, or (at your option) any later version.
 # TMSA is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
@@ -475,7 +475,7 @@ class Report:
                             if j % 4 == 3 and j != len(empz) - 1:
                                 chartfile.write("\n"+ (" " * 9) + "| ")      
             chartfile.write("\n" + "-" * 72 + "\n")
-            chartfile.write(f"Created by TMSA {VERSION}  ({datetime.now().strftime('%d %b %Y')})")
+            chartfile.write(f"Created by Time Matters {VERSION}  ({datetime.now().strftime('%d %b %Y')})")
             self.filename = filename
         return
         

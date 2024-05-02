@@ -1,6 +1,6 @@
 # Copyright 2021-2024 James Eshelman, Mike Nelson, Mike Verducci
 
-# This file is part of Time Matters Sidereal Astrology (TMSA).
+# This file is part of Time Matters: A Sidereal Astrology Toolkit (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, 
 # either version 3 of the License, or (at your option) any later version.
 # TMSA is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
@@ -15,7 +15,7 @@ import json
 import tkinter.colorchooser as tkcolorchooser
 from geopy import Nominatim
 import anglicize
-from constants import DS, DQ
+from constants import DS, DQ, VERSION
 import us
 
 class ProgramOptions(Frame): 
@@ -217,7 +217,7 @@ class ProgramOptions(Frame):
         if self.findbtn.disabled: return 
         self.status.text = ""
         if not self.loc.text: return self.status.error("Location required.", self.loc)
-        geolocator = Nominatim(user_agent = f"TMSA 0.4 {random.randrange(0, 100000):05d}")  
+        geolocator = Nominatim(user_agent = f"Time Matters {VERSION} {random.randrange(0, 100000):05d}")  
         self.loc.text = normalize(self.loc.text)
         try: location = geolocator.geocode(self.loc.text)
         except Exception: return self.status.error(f"Unable to connect to location database.", self.latd)
@@ -370,7 +370,7 @@ class ProgramOptions(Frame):
         
         
     def restart(self):
-        self.status.text = "Restarting TMSA."
+        self.status.text = "Restarting Time Matters."
         if self.save():
             os.execl(sys.executable, sys.executable, *sys.argv) 
             main.destroy()

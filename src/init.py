@@ -1,6 +1,6 @@
 # Copyright 2021-2024 James Eshelman, Mike Nelson, Mike Verducci
 
-# This file is part of Time Matters Sidereal Astrology (TMSA).
+# This file is part of Time Matters: A Sidereal Astrology Toolkit (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, 
 # either version 3 of the License, or (at your option) any later version.
 # TMSA is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
@@ -50,7 +50,7 @@ for i in range(1000):
     except:
         d2 = None
 key.Close()
-if  d2:
+if d2:
     d2 = os.path.expandvars(d2)
     if os.path.exists(d2):
         docpath = d2
@@ -61,16 +61,16 @@ elif d1:
 else:
     docpath = "c:\\"
 
-CHART_PATH = os.path.join(docpath, r"tmsa\charts")
+CHART_PATH = os.path.join(docpath, "tmsa", "charts")
 os.makedirs(CHART_PATH, exist_ok=True) 
 
 TEMP_CHARTS = os.path.join(CHART_PATH, "temporary")
 
 
-ERROR_FILE = r"c:\\tmsa_errors\error.txt"
+ERROR_FILE = os.path.join(docpath, "tmsa_errors", "error.txt")
 os.makedirs(os.path.dirname(ERROR_FILE), exist_ok=True)
 
-OPTION_PATH = os.path.join(docpath, r"tmsa\options")
+OPTION_PATH = os.path.join(docpath, "tmsa", "options")
 os.makedirs(OPTION_PATH, exist_ok=True)
 
 STUDENT_FILE = os.path.join(OPTION_PATH, "student.json")

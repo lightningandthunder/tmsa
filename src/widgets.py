@@ -1,6 +1,6 @@
 # Copyright 2021-2024 James Eshelman, Mike Nelson, Mike Verducci
 
-# This file is part of Time Matters Sidereal Astrology (TMSA).
+# This file is part of Time Matters: A Sidereal Astrology Toolkit (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, 
 # either version 3 of the License, or (at your option) any later version.
 # TMSA is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
@@ -16,12 +16,13 @@ from constants import VERSION
 
 main = tk.Tk()
 main.state("zoomed")
-main.title(f"TMSA {VERSION} by Mike Nelson and Mike Verducci")
+main.title(f"Time Matters {VERSION}")
+main.iconbitmap(app_path('tmsa3.ico'))
 font = tkFont(family="Lucida Console", size=18, weight="normal")
 ulfont = tkFont(family="Lucida Console", size=18, weight="normal", underline = 1) 
 
 def on_exit():
-    if tkmessagebox.askyesno("Are you sure?", f"Quit TMSA {VERSION}?"):
+    if tkmessagebox.askyesno("Are you sure?", f"Quit Time Matters {VERSION}?"):
         main.destroy()
 
 main.protocol("WM_DELETE_WINDOW", on_exit)
