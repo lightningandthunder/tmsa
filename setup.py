@@ -2,20 +2,22 @@ from cx_Freeze import Executable, setup
 import os
 import sys
 import zipfile
+from src.constants import VERSION
 
-base = None
-version = "0.4.10a0"
-
-if sys.platform == "win32":
-    base = "Win32GUI"
+base = ""
+match sys.platform:
+    case "win32":
+        base = "Win32GUI"
+    case _:
+        raise RuntimeError(f"Unsupported architecture {sys.platform}")
 
 executable = Executable(
-        script=os.path.join('src', 'tmsa.py'),
+        script=os.path.join("src", "tmsa.py"),
         copyright="Copyright (C) 2024 James A. Eshelman",
         base=base,
         icon="tmsa3.ico",
-        shortcut_name="Time Matters",
-        shortcut_dir="DesktopFolder"
+        # shortcut_name="Time Matters",
+        # shortcut_dir="DesktopFolder"
     )
 
 # https://stackoverflow.com/questions/15734703/use-cx-freeze-to-create-an-msi-that-adds-a-shortcut-to-the-desktop/15736406#15736406
@@ -75,9 +77,7 @@ executable = Executable(
 # }
 
 options = {
-    "silent_level": 1,
     "build_exe": {
-        "silent_level": 1,
         "include_path": "src,public",
         "include_files": [
             (os.path.join("copy", "dll", "swedll32.dll"), os.path.join("dll", "swedll32.dll")),
@@ -121,15 +121,15 @@ options = {
 
 setup(
     name="Time Matters",
-    version=version,
+    version=VERSION,
     description="Time Matters",
     options=options,
     executables=[executable],
 )
 
 if sys.platform == "win32":
-    zipped_file_name = f"Time Matters-{version}.zip"
+    zipped_file_name = f"Time Matters-{VERSION}.zip"
     zipped_path = os.path.join("dist", zipped_file_name)
-    installer_path = os.path.join("dist", f"Time Matters-{version}-win32.msi")
+    installer_path = os.path.join("dist", f"Time Matters-{VERSION}-win32.msi")
     with zipfile.ZipFile(zipped_path, 'w') as zipf:
         zipf.write(installer_path, zipped_file_name)

@@ -1,12 +1,7 @@
-# Time Matters Sidereal Astrology
+# Time Matters
 ### Introduction
-TMSA is a desktop application originally developed by Mike Nelson in conjunction with the folks at [solunars.com](https://solunars.com).
-
-After contact with him was lost and not re-established over some 6 months, at his wishes, the management of Solunars took ownership
-over TMSA to ensure its continued development. At this point, I (Mike Verducci) volunteered to lead development on the project going forward.
-
-Unfortunately, much code that Mike N had written but not distributed was lost once he became unreachable.
-Aside from this, all we have are the prior releases of his source code and commentary on Solunars to base future development on.
+Time Matters (TM) is a desktop application formerly known as Time Matters Sidereal Astrology (TMSA).
+It was originally developed by Mike Nelson in conjunction with the folks at [solunars.com](https://solunars.com).
 
 ### Status
 Please see the [Trello board](https://trello.com/b/NpRZTYxh/tmsa-roadmap) to see the current state of development.
@@ -26,7 +21,7 @@ conda config --env --set subdir win-32
 conda install python=3.10  # newest 32-bit version that Conda can find
 pip install -r .\\etc\\requirements.txt
 
-python setup-win32.py bdist_msi
+python setup.py bdist_msi
 ```
 
 ### Contributing

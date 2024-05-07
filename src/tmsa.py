@@ -21,43 +21,46 @@ import shutil
 import json
 from constants import VERSION
 
-COPYRIGHT = f"""Time Matters Sidereal Astrology {VERSION}\n
+INTRO = f"""Time Matters {VERSION}\n
 A freeware program for calculating geometrically \n
 accurate astrological charts in the Sidereal Zodiac, \n
-as rediscovered by Cyril Fagan and Donald Bradley.\n
-\u00a9 2021-2024 James A. Eshelman.
+as rediscovered by Cyril Fagan and Donald Bradley.\n"""
+COPYRIGHT = f"""\u00a9 2021-2024 James A. Eshelman.
 Created by Mike Nelson (mikestar13)
 and developed further by Mike Verducci.\n
 Released under the GNU Affero General Public License"""
 LICENSE = "www.gnu.org/licenses/agpl-3.0.en.html"
-DEDEDICATION = "Dedicated to our colleagues and collaborators at"
+DEDICATION = "Dedicated to our colleagues and collaborators at"
 SOLUNARS = "www.solunars.com"
 FURTHER = "For more information about Sidereal Astrology, see:"
 POINTS = "www.solunars.com/viewtopic.php?f=8&t=2259"
 
+X_COORD = 0
+WIDTH = 1
 
 class StartPage(Frame):
     def __init__(self):
         super().__init__()
         global startup
-        Label(self, COPYRIGHT, 0, 0, 1, .30)
-        Label(self, LICENSE, 0, .30, 1, .05, font = ulfont).bind("<Button-1>", lambda _: webbrowser.open_new(LICENSE))
-        Label(self, DEDEDICATION, 0, .35, 1)
-        Label(self, SOLUNARS, 0, .40, 1, font = ulfont).bind("<Button-1>", lambda _: webbrowser.open_new(SOLUNARS))
-        Label(self, FURTHER, 0,.45, 1)
-        Label(self, POINTS, 0, .5, 1, font = ulfont).bind("<Button-1>", lambda _: webbrowser.open_new(POINTS))
-        start = Button(self,"Chart Of The Moment", .2, .6, .2)
+        Label(self, INTRO, X_COORD, 0.05, WIDTH, .20, font = ulfont).bind("<Button-1>", lambda _: webbrowser.open_new(LICENSE))
+        Label(self, DEDICATION, X_COORD, .25, WIDTH)
+        Label(self, SOLUNARS, X_COORD, .30, WIDTH, font = ulfont).bind("<Button-1>", lambda _: webbrowser.open_new(SOLUNARS))
+        Label(self, FURTHER, X_COORD, .35, WIDTH)
+        Label(self, POINTS, X_COORD, .4, WIDTH, font = ulfont).bind("<Button-1>", lambda _: webbrowser.open_new(POINTS))
+        Label(self, COPYRIGHT, X_COORD, .6, WIDTH, .30)
+        Label(self, LICENSE, X_COORD, .85, WIDTH, .05, font = ulfont).bind("<Button-1>", lambda _: webbrowser.open_new(LICENSE))
+        start = Button(self,"Chart for Now", .2, .5, .2)
         start.bind("<Button-1>", lambda _ : delay(NewChart, False))    
         start.focus()
-        Button(self,"New Chart", .4, .6, .2).bind("<Button-1>", lambda _ : delay(NewChart)) 
-        Button(self,"Select Chart", .6, .6, .2).bind("<Button-1>", lambda _ : delay(SelectChart))
-        Button(self, "Ingresses", .2, .65, .2).bind("<Button-1>", lambda _ : delay(Ingresses))
+        Button(self,"New Chart", .4, .5, .2).bind("<Button-1>", lambda _ : delay(NewChart)) 
+        Button(self,"Select Chart", .6, .5, .2).bind("<Button-1>", lambda _ : delay(SelectChart))
+        Button(self, "Ingresses", .2, .55, .2).bind("<Button-1>", lambda _ : delay(Ingresses))
         default = "Student Natal" if os.path.exists(STUDENT_FILE) else "Default Natal"
-        Button(self,"Chart Options", .4, .65, .2).bind("<Button-1>", lambda _ : delay(ChartOptions, default))
-        Button(self, "Predictive Options", .6 ,.65, .2).bind("<Button-1>", lambda _ : delay(NotImplemented))
-        Button(self, "Help", .2, .7, .2).bind("<Button-1>", lambda _ : delay(ShowHelp, HELP_PATH + r"\main.txt"))
-        Button(self, "Program Options", .4, .7, .2).bind("<Button-1>", lambda _ : delay(ProgramOptions)) 
-        Button(self, "Exit Program", .6, .7, .2).bind("<Button-1>", lambda _ : delay(main.destroy))
+        Button(self,"Chart Options", .4, .55, .2).bind("<Button-1>", lambda _ : delay(ChartOptions, default))
+        Button(self, "Predictive Options", .6 ,.55, .2).bind("<Button-1>", lambda _ : delay(NotImplemented))
+        Button(self, "Help", .2, .6, .2).bind("<Button-1>", lambda _ : delay(ShowHelp, HELP_PATH + r"\main.txt"))
+        Button(self, "Program Options", .4, .6, .2).bind("<Button-1>", lambda _ : delay(ProgramOptions)) 
+        Button(self, "Exit Program", .6, .6, .2).bind("<Button-1>", lambda _ : delay(main.destroy))
         if not startup: return   
         startup = False    
         try:
