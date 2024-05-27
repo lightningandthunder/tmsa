@@ -16,7 +16,7 @@ executable = Executable(
         script=os.path.join("src", "tmsa.py"),
         copyright="Copyright (C) 2024 James A. Eshelman",
         base=base,
-        icon="tmsa3.ico",
+        icon=os.path.join("src", "assets", "tmsa3.ico"),
         shortcut_name="Time Matters",
         shortcut_dir="DesktopFolder"
     )
@@ -83,7 +83,7 @@ options = {
         "include_files": [
             (os.path.join("copy", "dll", "swedll32.dll"), os.path.join("dll", "swedll32.dll")),
             (os.path.join("copy", "ephe"), "ephe"),
-            "tmsa3.ico",
+            (os.path.join("src", "assets"), "assets"),
             "help",
         ],
         "packages": [

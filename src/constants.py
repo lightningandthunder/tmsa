@@ -10,4 +10,4 @@
 DS =  u'\N{DEGREE SIGN}'
 DQ = '"'
 SQ = "'"
-VERSION = '0.4.11'
+VERSION = '0.4.13'

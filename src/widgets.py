@@ -13,13 +13,25 @@ import tkinter.messagebox as tkmessagebox
 from tkinter.font import Font as tkFont
 import traceback
 from constants import VERSION
+from PIL import ImageTk
 
 main = tk.Tk()
+main.minsize(800, 600)
 main.state("zoomed")
 main.title(f"Time Matters {VERSION}")
-main.iconbitmap(app_path('tmsa3.ico'))
-font = tkFont(family="Lucida Console", size=18, weight="normal")
+main.iconbitmap(app_path(os.path.join('assets', 'tmsa3.ico')))
+
+base_font = tkFont(family="Lucida Console", size=18, weight="normal")
+small_font = tkFont(family="Lucida Console", size=16, weight="normal")
+smallest_font = tkFont(family="Lucida Console", size=14, weight="normal")
 ulfont = tkFont(family="Lucida Console", size=18, weight="normal", underline = 1) 
+title_font = tkFont(family="Lucida Console", size=36, weight="bold") 
+
+# background = ImageTk.PhotoImage(file=app_path(os.path.join('assets', 'tmsa2.png')), size=1)
+# background_label = tk.Label(main, image=background)
+# background_label.place(x=0, y=0, relwidth=1,relheight=1) 
+
+# background_label.image = background
 
 def on_exit():
     if tkmessagebox.askyesno("Are you sure?", f"Quit Time Matters {VERSION}?"):
@@ -142,7 +154,7 @@ class PropertyMixin():
         self["state"] = tk.DISABLED if state else tk.NORMAL
         
 class Label(PropertyMixin, tk.Label):
-    def __init__(self, root, text, x, y, width = .25, height = .05, anchor = tk.CENTER, font = font):
+    def __init__(self, root, text, x, y, width = .25, height = .05, anchor = tk.CENTER, font = base_font):
         super().__init__(root, text = text, foreground = TXT_COLOR, background = BG_COLOR)
         self["font"] = font
         self.x = x
@@ -154,7 +166,7 @@ class Label(PropertyMixin, tk.Label):
         
          
 class Button(PropertyMixin, tk.Button):
-    def __init__(self, root, text, x, y, width = .25, height = .05, font = font):
+    def __init__(self, root, text, x, y, width = .25, height = .05, font = base_font):
         super().__init__(root, text = text, foreground = TXT_COLOR, background = BTN_COLOR)
         self["font"] = font
         self.x = x
@@ -168,8 +180,8 @@ class Button(PropertyMixin, tk.Button):
 class Entry(PropertyMixin, tk.Entry):
     def __init__(self, root, text, x, y, width, height = .05, focus = True):
         self._var = tk.StringVar(root)
-        super().__init__(root, textvariable = self._var, foreground = "black", background = "white", takefocus = focus, font = font)
-        self["font"] = font
+        super().__init__(root, textvariable = self._var, foreground = "black", background = "white", takefocus = focus, font = base_font)
+        self["font"] = base_font
         self._var.set(text)
         self.x = x
         self.y = y
@@ -187,7 +199,7 @@ class Entry(PropertyMixin, tk.Entry):
         self._var.set(value)
 
 class Checkbutton(PropertyMixin, tk.Checkbutton):
-    def __init__(self, root, text, x, y, width, height = .05, focus = True, font = font):
+    def __init__(self, root, text, x, y, width, height = .05, focus = True, font = base_font):
         self._var = tk.IntVar(root)
         super().__init__(root, text = text, variable = self._var,foreground =TXT_COLOR, background = BG_COLOR, selectcolor = BG_COLOR, takefocus = focus)
         self["font"] = font
@@ -237,7 +249,7 @@ class Radiogroup():
       
 
 class Radiobutton(tk.Radiobutton):
-    def __init__(self, root, group, value, text, x, y, width, height = .05, focus = True, font = font):
+    def __init__(self, root, group, value, text, x, y, width, height = .05, focus = True, font = base_font):
         self._var = group.var
         super().__init__(root, text = text, variable = self._var, foreground =TXT_COLOR, background = BG_COLOR,
             selectcolor = BG_COLOR, value = value, takefocus = focus)
