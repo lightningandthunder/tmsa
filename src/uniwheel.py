@@ -36,12 +36,7 @@ def get_class(value):
     return 'N'
 
 
-def write_row(writer: TextIOWrapper, row: list[str]):
-
-    pass
-
-
-class Report:
+class Uniwheel:
     def __init__(self, chart, temporary, options):
         rows = 65
         cols = 69
@@ -58,25 +53,25 @@ class Report:
             if not self.cclass:
                 self.cclass = get_class(chart['type'])
             chartfile.write('\n')
-            for i in range(cols):
-                arr[0][i] = '-'
-                arr[16][i] = '-'
-                if i <= 17 or i >= 51:
-                    arr[32][i] = '-'
-                arr[48][i] = '-'
-                arr[64][i] = '-'
-            for i in range(rows):
-                arr[i][0] = '|'
-                arr[i][17] = '|'
-                if i <= 16 or i >= 48:
-                    arr[i][34] = '|'
-                arr[i][51] = '|'
-                arr[i][68] = '|'
-            for i in range(0, rows, 16):
+            for planet_index in range(cols):
+                arr[0][planet_index] = '-'
+                arr[16][planet_index] = '-'
+                if planet_index <= 17 or planet_index >= 51:
+                    arr[32][planet_index] = '-'
+                arr[48][planet_index] = '-'
+                arr[64][planet_index] = '-'
+            for planet_index in range(rows):
+                arr[planet_index][0] = '|'
+                arr[planet_index][17] = '|'
+                if planet_index <= 16 or planet_index >= 48:
+                    arr[planet_index][34] = '|'
+                arr[planet_index][51] = '|'
+                arr[planet_index][68] = '|'
+            for planet_index in range(0, rows, 16):
                 for j in range(0, cols, 17):
-                    if i == 32 and j == 34:
+                    if planet_index == 32 and j == 34:
                         continue
-                    arr[i][j] = '+'
+                    arr[planet_index][j] = '+'
             cusps = chart['cusps']
             cusps = [zod_min(c) for c in cusps]
             arr[0][14:20] = cusps[11]
@@ -130,18 +125,20 @@ class Report:
             x = [1, 1, 18, 35, 52, 52, 52, 52, 35, 18, 1, 1]
             y = [33, 49, 49, 49, 49, 33, 17, 1, 1, 1, 1, 17]
             houses = [[] for i in range(12)]
-            for i in range(12):
-                houses[i] = self.sort_house(chart, i, options)
-                if i > 3 and i < 9:
-                    houses[i].reverse()
+            for planet_index in range(12):
+                houses[planet_index] = self.sort_house(
+                    chart, planet_index, options
+                )
+                if planet_index > 3 and planet_index < 9:
+                    houses[planet_index].reverse()
                 for j in range(15):
-                    if houses[i][j]:
-                        temp = houses[i][j]
+                    if houses[planet_index][j]:
+                        temp = houses[planet_index][j]
                         if len(temp) > 2:
-                            planet = houses[i][j][0]
-                            arr[y[i] + j][x[i] : x[i] + 16] = display(
-                                chart, planet
-                            )
+                            planet = houses[planet_index][j][0]
+                            arr[y[planet_index] + j][
+                                x[planet_index] : x[planet_index] + 16
+                            ] = display(chart, planet)
 
             for row in arr:
                 chartfile.write(' ')
@@ -159,56 +156,56 @@ class Report:
             plfg = []
             plang = {}
             dormant = True if 'I' in self.cclass else False
-            for i in range(3):
-                if major_limit[i] == 0:
-                    major_limit[i] = -3
-                if minor_limit[i] == 0:
-                    minor_limit[i] = -3
-            for pl in planet_names:
-                if pl == 'Eastpoint':
+            for planet_index in range(3):
+                if major_limit[planet_index] == 0:
+                    major_limit[planet_index] = -3
+                if minor_limit[planet_index] == 0:
+                    minor_limit[planet_index] = -3
+            for planet_name in planet_names:
+                if planet_name == 'Eastpoint':
                     break
-                if pl == 'Eris' and not options.get('use_Eris', 1):
+                if planet_name == 'Eris' and not options.get('use_Eris', 1):
                     continue
-                if pl == 'Sedna' and not options.get('use_Sedna', 0):
+                if planet_name == 'Sedna' and not options.get('use_Sedna', 0):
                     continue
-                if pl == 'True Node' and options.get('Node', 0) != 1:
+                if planet_name == 'True Node' and options.get('Node', 0) != 1:
                     continue
-                if pl == 'Mean Node' and options.get('Node', 0) != 2:
+                if planet_name == 'Mean Node' and options.get('Node', 0) != 2:
                     continue
-                pd = chart[pl]
-                i = planet_names.index(pl)
-                chartfile.write(left(planet_abrev[i], 3))
-                chartfile.write(zod_sec(pd[0]) + ' ')
-                chartfile.write(fmt_lat(pd[1], True) + ' ')
-                if abs(pd[2]) >= 1:
-                    chartfile.write(s_dm(pd[2]) + ' ')
+                planet_data = chart[planet_name]
+                planet_index = planet_names.index(planet_name)
+                chartfile.write(left(planet_abrev[planet_index], 3))
+                chartfile.write(zod_sec(planet_data[0]) + ' ')
+                chartfile.write(fmt_lat(planet_data[1], True) + ' ')
+                if abs(planet_data[2]) >= 1:
+                    chartfile.write(s_dm(planet_data[2]) + ' ')
                 else:
-                    chartfile.write(s_ms(pd[2]) + ' ')
-                chartfile.write(right(fmt_dm(pd[3], True), 7) + ' ')
-                chartfile.write(fmt_lat(pd[4], True) + ' ')
-                chartfile.write(right(fmt_dm(pd[5], True), 7) + ' ')
-                chartfile.write(s_dm(pd[6]) + ' ')
-                chartfile.write(right(fmt_dm(pd[7], True), 7) + ' ')
-                a1 = pd[7] % 90
+                    chartfile.write(s_ms(planet_data[2]) + ' ')
+                chartfile.write(right(fmt_dm(planet_data[3], True), 7) + ' ')
+                chartfile.write(fmt_lat(planet_data[4], True) + ' ')
+                chartfile.write(right(fmt_dm(planet_data[5], True), 7) + ' ')
+                chartfile.write(s_dm(planet_data[6]) + ' ')
+                chartfile.write(right(fmt_dm(planet_data[7], True), 7) + ' ')
+                a1 = planet_data[7] % 90
                 if ang['model'] == 1:
                     p1 = main_angularity_curve_2(a1)
                 else:
                     p1 = main_angularity_curve(a1)
-                a2 = abs(chart['cusps'][1] - pd[0])
+                a2 = abs(chart['cusps'][1] - planet_data[0])
                 if a2 > 180:
                     a2 = 360 - a2
                 if inrange(a2, 90, 3):
                     p2 = minor_angularity_curve(abs(a2 - 90))
                 else:
                     p2 = -2
-                a3 = abs(chart['cusps'][10] - pd[0])
+                a3 = abs(chart['cusps'][10] - planet_data[0])
                 if a3 > 180:
                     a3 = 360 - a3
                 if inrange(a3, 90, 3):
                     p3 = minor_angularity_curve(abs(a3 - 90))
                 else:
                     p3 = -2
-                a4 = abs(chart['ramc'] - pd[3])
+                a4 = abs(chart['ramc'] - planet_data[3])
                 if a4 > 180:
                     a4 = 360 - a4
                 if inrange(a4, 90, 3):
@@ -270,28 +267,28 @@ class Report:
                     dormant = False
                 elif a <= minor_limit[2]:
                     fb = 'F'
-                if fb == 'F' or (pl == 'Moon' and 'I' in self.cclass):
-                    plfg.append(pl)
-                px = round((p + 1) * 50)
+                if fb == 'F' or (planet_name == 'Moon' and 'I' in self.cclass):
+                    plfg.append(planet_name)
+                strength_percent = round((p + 1) * 50)
                 if fb == ' ':
                     if fbx == ' ':
-                        plang[planet_abrev[i]] = ' '
+                        plang[planet_abrev[planet_index]] = ' '
                     else:
-                        plang[planet_abrev[i]] = fbx
+                        plang[planet_abrev[planet_index]] = fbx
                 else:
-                    plang[planet_abrev[i]] = fb
+                    plang[planet_abrev[planet_index]] = fb
                 if fb == 'F':
                     if p == p1:
-                        if pd[7] >= 345 or pd[7] <= 15:
+                        if planet_data[7] >= 345 or planet_data[7] <= 15:
                             fb = 'A '
-                        if inrange(pd[7], 90, 15):
+                        if inrange(planet_data[7], 90, 15):
                             fb = 'I '
-                        if inrange(pd[7], 180, 15):
+                        if inrange(planet_data[7], 180, 15):
                             fb = 'D '
-                        if inrange(pd[7], 270, 15):
+                        if inrange(planet_data[7], 270, 15):
                             fb = 'M '
                     if p == p2:
-                        a = chart['cusps'][1] - pd[0]
+                        a = chart['cusps'][1] - planet_data[0]
                         if a < 0:
                             a += 360
                         if inrange(a, 90, 5):
@@ -299,7 +296,7 @@ class Report:
                         if inrange(a, 270, 5):
                             fb = 'N '
                     if p == p3:
-                        a = chart['cusps'][10] - pd[0]
+                        a = chart['cusps'][10] - planet_data[0]
                         if a < 0:
                             a += 360
                         if inrange(a, 90, 5):
@@ -307,7 +304,7 @@ class Report:
                         if inrange(a, 270, 5):
                             fb = 'E '
                     if p == p4:
-                        a = chart['ramc'] - pd[3]
+                        a = chart['ramc'] - planet_data[3]
                         if a < 0:
                             a += 360
                         if inrange(a, 90, 5):
@@ -318,7 +315,13 @@ class Report:
                     fb = ' b'
                 if fb == ' ':
                     fb = '  '
-                chartfile.write(f'{px:3d}% {fb}')
+
+                if inrange(planet_data[5], 270, minor_limit[2]):
+                    chartfile.write(f'     Vx')
+                elif inrange(planet_data[5], 90, minor_limit[2]):
+                    chartfile.write(f'     Av')
+                else:
+                    chartfile.write(f'{strength_percent:3d}% {fb}')
                 chartfile.write('\n')
             if dormant:
                 chartfile.write('-' * 72 + '\n')
@@ -327,13 +330,13 @@ class Report:
             ma = options.get('mundane_aspects', default_ma)
             asp = [[], [], [], []]
             asph = ['Class 1', 'Class 2', 'Class 3', 'Other Partile']
-            for i in range(14):
-                for j in range(i + 1, 14):
+            for planet_index in range(14):
+                for j in range(planet_index + 1, 14):
                     (easp, cle, orbe) = self.find_easpect(
-                        chart, i, j, ea, options, plfg, dormant
+                        chart, planet_index, j, ea, options, plfg, dormant
                     )
                     (masp, clm, orbm) = self.find_maspect(
-                        chart, i, j, ma, options, plfg, dormant
+                        chart, planet_index, j, ma, options, plfg, dormant
                     )
                     if easp and masp:
                         if orbm < orbe:
@@ -349,30 +352,37 @@ class Report:
                 del asph[3]
                 asp.append([])
                 asph.append('')
-            for i in range(2, -1, -1):
-                if len(asp[i]) == 0:
-                    del asp[i]
-                    del asph[i]
+            for planet_index in range(2, -1, -1):
+                if len(asp[planet_index]) == 0:
+                    del asp[planet_index]
+                    del asph[planet_index]
                     asp.append([])
                     asph.append('')
             if any(asph):
                 chartfile.write('-' * 72 + '\n')
-                for i in range(0, 3):
+                for planet_index in range(0, 3):
                     chartfile.write(
-                        center(f'{asph[i]} Aspects' if asph[i] else '', 24)
+                        center(
+                            f'{asph[planet_index]} Aspects'
+                            if asph[planet_index]
+                            else '',
+                            24,
+                        )
                     )
                 chartfile.write('\n')
-            for i in range(max(len(asp[0]), len(asp[1]), len(asp[2]))):
-                if i < len(asp[0]):
-                    chartfile.write(left(asp[0][i], 24))
+            for planet_index in range(
+                max(len(asp[0]), len(asp[1]), len(asp[2]))
+            ):
+                if planet_index < len(asp[0]):
+                    chartfile.write(left(asp[0][planet_index], 24))
                 else:
                     chartfile.write(' ' * 24)
-                if i < len(asp[1]):
-                    chartfile.write(center(asp[1][i], 24))
+                if planet_index < len(asp[1]):
+                    chartfile.write(center(asp[1][planet_index], 24))
                 else:
                     chartfile.write(' ' * 24)
-                if i < len(asp[2]):
-                    chartfile.write(right(asp[2][i], 24))
+                if planet_index < len(asp[2]):
+                    chartfile.write(right(asp[2][planet_index], 24))
                 else:
                     chartfile.write(' ' * 24)
                 chartfile.write('\n')
@@ -386,22 +396,22 @@ class Report:
             moonsi = sign_abrev[int(chart['Moon'][0] // 30)]
             sunsi = sign_abrev[int(chart['Sun'][0] // 30)]
             cclass = chart['class']
-            for i in range(14):
-                if i == 10 and not options.get('use_Eris', 1):
+            for planet_index in range(14):
+                if planet_index == 10 and not options.get('use_Eris', 1):
                     continue
-                if i == 11 and not options.get('use_Sedna', 0):
+                if planet_index == 11 and not options.get('use_Sedna', 0):
                     continue
-                if i == 12 and options.get('Node', 0) != 1:
+                if planet_index == 12 and options.get('Node', 0) != 1:
                     continue
-                if i == 13 and options.get('Node', 0) != 2:
+                if planet_index == 13 and options.get('Node', 0) != 2:
                     continue
-                pa = planet_abrev[i]
-                pn = planet_names[i]
-                pd = chart[pn]
+                pa = planet_abrev[planet_index]
+                pn = planet_names[planet_index]
+                planet_data = chart[pn]
                 if pa != 'Mo':
                     chartfile.write('\n')
                 chartfile.write(pa + ' ')
-                sign = sign_abrev[int(pd[0] // 30)]
+                sign = sign_abrev[int(planet_data[0] // 30)]
                 if sign in pos_sign[pa]:
                     x = '+'
                 elif sign in neg_sign[pa]:
@@ -450,7 +460,7 @@ class Report:
                         chartfile.write('\n' + (' ' * 9) + '| ')
                 plist = []
                 for j in range(14):
-                    if j == i:
+                    if j == planet_index:
                         continue
                     if j == 10 and not options.get('use_Eris', 1):
                         continue
@@ -470,11 +480,12 @@ class Report:
                 if len(plist) > 1 and (
                     options.get('show_aspects', 0) == 0 or pn in plfg
                 ):
+                    # ecliptic midpoints?
                     emp = []
                     for j in range(len(plist) - 1):
                         for k in range(j + 1, len(plist)):
                             mp = self.find_midpoint(
-                                [pa, pd[0]], plist, j, k, options
+                                [pa, planet_data[0]], plist, j, k, options
                             )
                             if mp:
                                 emp.append(mp)
@@ -490,20 +501,20 @@ class Report:
                                 chartfile.write('\n' + (' ' * 9) + '| ')
             sign = sign_abrev[int(chart['cusps'][1] // 30)]
             plist = []
-            for i in range(14):
-                if i == 10 and not options.get('use_Eris', 1):
+            for planet_index in range(14):
+                if planet_index == 10 and not options.get('use_Eris', 1):
                     continue
-                if i == 11 and not options.get('use_Sedna', 0):
+                if planet_index == 11 and not options.get('use_Sedna', 0):
                     continue
-                if i == 12 and options.get('Node', 0) != 1:
+                if planet_index == 12 and options.get('Node', 0) != 1:
                     continue
-                if i == 13 and options.get('Node', 0) != 2:
+                if planet_index == 13 and options.get('Node', 0) != 2:
                     continue
-                plna = planet_names[i]
+                plna = planet_names[planet_index]
                 plong = chart[plna][0]
                 plra = chart[plna][3]
                 plpvl = chart[plna][7]
-                plab = planet_abrev[i]
+                plab = planet_abrev[planet_index]
                 if options.get('show_aspects', 0) == 0 or plna in plfg:
                     plist.append([plab, plong, plra, plpvl])
             plist.append(['Mc', chart['cusps'][10]])

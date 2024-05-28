@@ -9,8 +9,8 @@
 
 from init import *
 from swe import *
-from show import Report
-from show2 import Report2
+from uniwheel import Uniwheel
+from biwheel import Biwheel
 from widgets import *
 from utils import to360
 
@@ -30,7 +30,7 @@ planet_names = [
     'Mean Node',
     'True Node',
 ]
-planet_index = [1, 0] + [i for i in range(2, 10)] + [146199, 100377, 10, 11]
+planet_indices = [1, 0] + [i for i in range(2, 10)] + [146199, 100377, 10, 11]
 
 
 class Chart:
@@ -47,7 +47,7 @@ class Chart:
             self.jd = calc_lat_to_lmt(self.jd, self.long)
         self.ayan = calc_ayan(self.jd)
         chart['ayan'] = self.ayan
-        self.oe = calc_oe(self.jd)
+        self.oe = calc_obliquity(self.jd)
         chart['oe'] = self.oe
         self.lat = chart['latitude']
         (cusps, angles) = calc_cusps(self.jd, self.lat, self.long)
@@ -66,27 +66,29 @@ class Chart:
                 self.ramc, self.lat, self.oe, to360(angles[2] + self.ayan), 0
             ),
         ]
-        for i in range(len(planet_index)):
-            pi = planet_index[i]
-            pn = planet_names[i]
-            data = calc_planet(self.jd, pi)
-            chart[pn] = data
+        for i in range(len(planet_indices)):
+            planet_index = planet_indices[i]
+            planet_name = planet_names[i]
+
+            data = calc_planet(self.jd, planet_index)
+            chart[planet_name] = data
+
             data = calc_azimuth(
                 self.jd,
                 self.long,
                 self.lat,
-                to360(chart[pn][0] + self.ayan),
-                chart[pn][1],
+                to360(chart[planet_name][0] + self.ayan),
+                chart[planet_name][1],
             )
-            chart[pn] += data
+            chart[planet_name] += data
             data = calc_house_pos(
                 self.ramc,
                 self.lat,
                 self.oe,
-                to360(chart[pn][0] + self.ayan),
-                chart[pn][1],
+                to360(chart[planet_name][0] + self.ayan),
+                chart[planet_name][1],
             )
-            chart[pn] += [data]
+            chart[planet_name] += [data]
         self.save_and_print(chart, temporary, burst)
 
     def save_and_print(self, chart, temporary, burst):
@@ -125,9 +127,9 @@ class Chart:
                 pass
         if chart.get('base_chart', None):
             self.precess(chart['base_chart'])
-            self.report = Report2(chart, temporary, options)
+            self.report = Biwheel(chart, temporary, options)
         else:
-            self.report = Report(chart, temporary, options)
+            self.report = Uniwheel(chart, temporary, options)
 
     def precess(self, chart):
         for planet_name in planet_names:

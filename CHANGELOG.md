@@ -1,8 +1,9 @@
 ### 0.5.0
 - Change strength calculation for minor angles
 - Add Blue for code formatting
+- Add calculations for Vertex/Antivertex contacts in azimuth
 
-### 0.4.12
+### 0.4.13
 - Move to semantic versioning (major.minor.patch format)
 - Add AGPL licenses as required by the Swiss Ephemeris
 - Add copyright information

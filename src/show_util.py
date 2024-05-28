@@ -156,8 +156,8 @@ def minor_angularity_curve(orb_degrees: float):
     return math.cos(math.radians(orb_degrees * 30))
 
 
-def inrange(value, center, tol):
-    return value >= center - tol and value <= center + tol
+def inrange(value: float, center: float, orb: float) -> bool:
+    return value >= center - orb and value <= center + orb
 
 
 def zod_min(value):

@@ -39,11 +39,10 @@ def get_class(value):
     return 'N'
 
 
-class Report2:
+class Biwheel:
     def __init__(self, chart, temporary, options):
         rows = 65
         cols = 69
-        deg_sym = '°'
         arr = [[' ' for i in range(cols)] for j in range(rows)]
         filename = make_chart_path(chart, temporary)
         filename = filename[0:-3] + 'txt'
@@ -125,51 +124,46 @@ class Report2:
             arr[29][18:51] = center('Sidereal Zodiac')
             arr[30][18:51] = center('Campanus Houses')
             arr[31][18:51] = center(chart['notes'] or '')
-            bchart = chart['base_chart']
+            radix = chart['base_chart']
             arr[33][18:51] = center('Radical (r) Chart')
             if chart['type'] not in ingresses:
                 if (
-                    'solar' not in bchart['type'].lower()
-                    and 'lunar' not in bchart['type'].lower()
+                    'solar' not in radix['type'].lower()
+                    and 'lunar' not in radix['type'].lower()
                 ):
-                    arr[34][18:51] = center(bchart['name'])
-                elif 'return' in bchart['type'].lower():
-                    parts = bchart['name'].split(';')
+                    arr[34][18:51] = center(radix['name'])
+                elif 'return' in radix['type'].lower():
+                    parts = radix['name'].split(';')
                     arr[34][18:51] = center(parts[0])
-            chtype = bchart['type']
+            chtype = radix['type']
             if chtype.endswith(' Single Wheel'):
                 chtype = chtype.replace(' Single Wheel', '')
             arr[35][18:51] = center(chtype)
             line = (
-                str(bchart['day'])
-                + ' '
-                + month_abrev[bchart['month'] - 1]
-                + ' '
+                str(radix['day']) + ' ' + month_abrev[radix['month'] - 1] + ' '
             )
             line += (
-                f"{bchart['year']} "
-                if bchart['year'] > 0
-                else f"{-bchart['year'] + 1} BCE "
+                f"{radix['year']} "
+                if radix['year'] > 0
+                else f"{-radix['year'] + 1} BCE "
             )
-            if not bchart['style']:
+            if not radix['style']:
                 line += 'OS '
-            line += fmt_hms(bchart['time']) + ' ' + bchart['zone']
+            line += fmt_hms(radix['time']) + ' ' + radix['zone']
             arr[36][18:51] = center(line)
-            arr[37][18:51] = center(bchart['location'])
+            arr[37][18:51] = center(radix['location'])
             arr[38][18:51] = center(
-                fmt_lat(bchart['latitude'])
-                + ' '
-                + fmt_long(bchart['longitude'])
+                fmt_lat(radix['latitude']) + ' ' + fmt_long(radix['longitude'])
             )
             arr[39][18:51] = center(
-                'UT ' + fmt_hms(bchart['time'] + bchart['correction'])
+                'UT ' + fmt_hms(radix['time'] + radix['correction'])
             )
-            arr[40][18:51] = center('RAMC ' + fmt_dms(bchart['ramc']))
-            arr[41][18:51] = center('OE ' + fmt_dms(bchart['oe']))
-            arr[42][18:51] = center('SVP ' + zod_sec(360 - bchart['ayan']))
+            arr[40][18:51] = center('RAMC ' + fmt_dms(radix['ramc']))
+            arr[41][18:51] = center('OE ' + fmt_dms(radix['oe']))
+            arr[42][18:51] = center('SVP ' + zod_sec(360 - radix['ayan']))
             arr[43][18:51] = center('Sidereal Zodiac')
             arr[44][18:51] = center('Campanus Houses')
-            arr[45][18:51] = center(bchart['notes'] or '')
+            arr[45][18:51] = center(radix['notes'] or '')
 
             x = [1, 1, 18, 35, 52, 52, 52, 52, 35, 18, 1, 1]
             y = [33, 49, 49, 49, 49, 33, 17, 1, 1, 1, 1, 17]
@@ -210,12 +204,14 @@ class Report2:
                     + '\n'
                 )
                 ex = ''
-                for pl in len(extras):
-                    if pl[-1] == 't':
-                        ex += display(chart, pl[0], 't', True) + ' '
+                for planet_name in len(extras):
+                    if planet_name[-1] == 't':
+                        ex += display(chart, planet_name[0], 't', True) + ' '
                     else:
                         ex += (
-                            display(chart['base_chart'], pl[0], 'r', True)
+                            display(
+                                chart['base_chart'], planet_name[0], 'r', True
+                            )
                             + ' '
                         )
                 chartfile.write(center(ex[0:-1], 72) + '\n')
@@ -226,60 +222,60 @@ class Report2:
             )
             chartfile.write(center('Transiting Planets', 72) + '\n')
             ang = options.get('angularity', {})
-            majlimit = ang.get('major_angles', [3.0, 7.0, 10.0])
-            minlimit = ang.get('minor_angles', [1.0, 2.0, 3.0])
+            major_limit = ang.get('major_angles', [3.0, 7.0, 10.0])
+            minor_limit = ang.get('minor_angles', [1.0, 2.0, 3.0])
             plfg = []
             plang = {}
             for i in range(3):
-                if majlimit[i] == 0:
-                    majlimit[i] = -3
-                if minlimit[i] == 0:
-                    minlimit[i] = -3
-            for pl in planet_names:
-                if pl == 'Eastpoint':
+                if major_limit[i] == 0:
+                    major_limit[i] = -3
+                if minor_limit[i] == 0:
+                    minor_limit[i] = -3
+            for planet_name in planet_names:
+                if planet_name == 'Eastpoint':
                     break
-                if pl == 'Eris' and not options.get('use_Eris', 1):
+                if planet_name == 'Eris' and not options.get('use_Eris', 1):
                     continue
-                if pl == 'Sedna' and not options.get('use_Sedna', 0):
+                if planet_name == 'Sedna' and not options.get('use_Sedna', 0):
                     continue
-                if pl == 'True Node' and options.get('Node', 0) != 1:
+                if planet_name == 'True Node' and options.get('Node', 0) != 1:
                     continue
-                if pl == 'Mean Node' and options.get('Node', 0) != 2:
+                if planet_name == 'Mean Node' and options.get('Node', 0) != 2:
                     continue
-                pd = chart[pl]
-                i = planet_names.index(pl)
+                planet_data = chart[planet_name]
+                i = planet_names.index(planet_name)
                 chartfile.write(left(planet_abrev[i], 3))
-                chartfile.write(zod_sec(pd[0]) + ' ')
-                chartfile.write(fmt_lat(pd[1], True) + ' ')
-                if abs(pd[2]) >= 1:
-                    chartfile.write(s_dm(pd[2]) + ' ')
+                chartfile.write(zod_sec(planet_data[0]) + ' ')
+                chartfile.write(fmt_lat(planet_data[1], True) + ' ')
+                if abs(planet_data[2]) >= 1:
+                    chartfile.write(s_dm(planet_data[2]) + ' ')
                 else:
-                    chartfile.write(s_ms(pd[2]) + ' ')
-                chartfile.write(right(fmt_dm(pd[3], True), 7) + ' ')
-                chartfile.write(fmt_lat(pd[4], True) + ' ')
-                chartfile.write(right(fmt_dm(pd[5], True), 7) + ' ')
-                chartfile.write(s_dm(pd[6]) + ' ')
-                chartfile.write(right(fmt_dm(pd[7], True), 7) + ' ')
-                a1 = pd[7] % 90
+                    chartfile.write(s_ms(planet_data[2]) + ' ')
+                chartfile.write(right(fmt_dm(planet_data[3], True), 7) + ' ')
+                chartfile.write(fmt_lat(planet_data[4], True) + ' ')
+                chartfile.write(right(fmt_dm(planet_data[5], True), 7) + ' ')
+                chartfile.write(s_dm(planet_data[6]) + ' ')
+                chartfile.write(right(fmt_dm(planet_data[7], True), 7) + ' ')
+                a1 = planet_data[7] % 90
                 if ang['model'] == 1:
                     p1 = main_angularity_curve_2(a1)
                 else:
                     p1 = main_angularity_curve(a1)
-                a2 = abs(chart['cusps'][1] - pd[0])
+                a2 = abs(chart['cusps'][1] - planet_data[0])
                 if a2 > 180:
                     a2 = 360 - a2
                 if inrange(a2, 90, 3):
                     p2 = minor_angularity_curve(abs(a2 - 90))
                 else:
                     p2 = -2
-                a3 = abs(chart['cusps'][10] - pd[0])
+                a3 = abs(chart['cusps'][10] - planet_data[0])
                 if a3 > 180:
                     a3 = 360 - a3
                 if inrange(a3, 90, 3):
                     p3 = minor_angularity_curve(abs(a3 - 90))
                 else:
                     p3 = -2
-                a4 = abs(chart['ramc'] - pd[3])
+                a4 = abs(chart['ramc'] - planet_data[3])
                 if a4 > 180:
                     a4 = 360 - a4
                 if inrange(a4, 90, 3):
@@ -290,11 +286,11 @@ class Report2:
                 fb = ' '
                 fbx = ' '
                 a = 90 - a1 if a1 > 45 else a1
-                if a <= majlimit[0]:
+                if a <= major_limit[0]:
                     fb = 'F'
-                elif a <= majlimit[1]:
+                elif a <= major_limit[1]:
                     fb = 'F'
-                elif a <= majlimit[2]:
+                elif a <= major_limit[2]:
                     fb = 'F'
                 if fb == ' ' and not ang.get('no_bg', False):
                     if ang['model'] == 0:
@@ -304,38 +300,40 @@ class Report2:
                             a = (60 - a1) / 2
                     else:
                         a = abs(a - 45)
-                    if a <= majlimit[0]:
+                    if a <= major_limit[0]:
                         fb = 'B'
-                    elif a <= majlimit[1]:
+                    elif a <= major_limit[1]:
                         fb = 'B'
-                    elif a <= majlimit[2]:
+                    elif a <= major_limit[2]:
                         fb = 'B'
                     if fb == 'B' and ang.get('no_bg', False):
                         fbx = 'B'
                         fb = ' '
                 a = abs(a2 - 90)
-                if a <= minlimit[0]:
+                if a <= minor_limit[0]:
                     fb = 'F'
-                elif a <= minlimit[1]:
+                elif a <= minor_limit[1]:
                     fb = 'F'
-                elif a <= minlimit[2]:
+                elif a <= minor_limit[2]:
                     fb = 'F'
                 a = abs(a3 - 90)
-                if a <= minlimit[0]:
+                if a <= minor_limit[0]:
                     fb = 'F'
-                elif a <= minlimit[1]:
+                elif a <= minor_limit[1]:
                     fb = 'F'
-                elif a <= minlimit[2]:
+                elif a <= minor_limit[2]:
                     fb = 'F'
                 a = abs(a4 - 90)
-                if a <= minlimit[0]:
+                if a <= minor_limit[0]:
                     fb = 'F'
-                elif a <= minlimit[1]:
+                elif a <= minor_limit[1]:
                     fb = 'F'
-                elif a <= minlimit[2]:
+                elif a <= minor_limit[2]:
                     fb = 'F'
-                if fb == 'F' or (pl == 'Moon' and self.cclass == 'SR'):
-                    plfg.append('t' + pl)
+                if fb == 'F' or (
+                    planet_name == 'Moon' and self.cclass == 'SR'
+                ):
+                    plfg.append('t' + planet_name)
                 px = round((p + 1) * 50)
                 if fb == ' ':
                     if fbx == ' ':
@@ -346,16 +344,16 @@ class Report2:
                     plang['t' + planet_abrev[i]] = fb
                 if fb == 'F':
                     if p == p1:
-                        if pd[7] >= 345 or pd[7] <= 15:
+                        if planet_data[7] >= 345 or planet_data[7] <= 15:
                             fb = 'A '
-                        if inrange(pd[7], 90, 15):
+                        if inrange(planet_data[7], 90, 15):
                             fb = 'I '
-                        if inrange(pd[7], 180, 15):
+                        if inrange(planet_data[7], 180, 15):
                             fb = 'D '
-                        if inrange(pd[7], 270, 15):
+                        if inrange(planet_data[7], 270, 15):
                             fb = 'M '
                     if p == p2:
-                        a = chart['cusps'][1] - pd[0]
+                        a = chart['cusps'][1] - planet_data[0]
                         if a < 0:
                             a += 360
                         if inrange(a, 90, 5):
@@ -363,7 +361,7 @@ class Report2:
                         if inrange(a, 270, 5):
                             fb = 'N '
                     if p == p3:
-                        a = chart['cusps'][10] - pd[0]
+                        a = chart['cusps'][10] - planet_data[0]
                         if a < 0:
                             a += 360
                         if inrange(a, 90, 5):
@@ -371,7 +369,7 @@ class Report2:
                         if inrange(a, 270, 5):
                             fb = 'E '
                     if p == p4:
-                        a = chart['ramc'] - pd[3]
+                        a = chart['ramc'] - planet_data[3]
                         if a < 0:
                             a += 360
                         if inrange(a, 90, 5):
@@ -382,56 +380,62 @@ class Report2:
                     fb = ' b'
                 if fb == ' ':
                     fb = '  '
-                chartfile.write(f'{px:3d}% {fb}')
+
+                if inrange(planet_data[5], 270, minor_limit[2]):
+                    chartfile.write(f'     Vx')
+                elif inrange(planet_data[5], 90, minor_limit[2]):
+                    chartfile.write(f'     Av')
+                else:
+                    chartfile.write(f'{px:3d}% {fb}')
                 chartfile.write('\n')
             plangt = deepcopy(plang)
             chartfile.write('-' * 72 + '\n')
             chartfile.write(center('Radical Planets', 72) + '\n')
-            for pl in planet_names:
-                if pl == 'Eastpoint':
+            for planet_name in planet_names:
+                if planet_name == 'Eastpoint':
                     break
-                if pl == 'Eris' and not options.get('use_Eris', 1):
+                if planet_name == 'Eris' and not options.get('use_Eris', 1):
                     continue
-                if pl == 'Sedna' and not options.get('use_Sedna', 0):
+                if planet_name == 'Sedna' and not options.get('use_Sedna', 0):
                     continue
-                if pl == 'True Node' and options.get('Node', 0) != 1:
+                if planet_name == 'True Node' and options.get('Node', 0) != 1:
                     continue
-                if pl == 'Mean Node' and options.get('Node', 0) != 2:
+                if planet_name == 'Mean Node' and options.get('Node', 0) != 2:
                     continue
-                pd = chart['base_chart'][pl]
-                i = planet_names.index(pl)
+                planet_data = chart['base_chart'][planet_name]
+                i = planet_names.index(planet_name)
                 chartfile.write(left(planet_abrev[i], 3))
-                chartfile.write(zod_sec(pd[0]) + ' ')
-                chartfile.write(fmt_lat(pd[1], True) + ' ')
-                if abs(pd[2]) >= 1:
-                    chartfile.write(s_dm(pd[2]) + ' ')
+                chartfile.write(zod_sec(planet_data[0]) + ' ')
+                chartfile.write(fmt_lat(planet_data[1], True) + ' ')
+                if abs(planet_data[2]) >= 1:
+                    chartfile.write(s_dm(planet_data[2]) + ' ')
                 else:
-                    chartfile.write(s_ms(pd[2]) + ' ')
-                chartfile.write(right(fmt_dm(pd[3], True), 7) + ' ')
-                chartfile.write(fmt_lat(pd[4], True) + ' ')
-                chartfile.write(right(fmt_dm(pd[5], True), 7) + ' ')
-                chartfile.write(s_dm(pd[6]) + ' ')
-                chartfile.write(right(fmt_dm(pd[7], True), 7) + ' ')
-                a1 = pd[7] % 90
+                    chartfile.write(s_ms(planet_data[2]) + ' ')
+                chartfile.write(right(fmt_dm(planet_data[3], True), 7) + ' ')
+                chartfile.write(fmt_lat(planet_data[4], True) + ' ')
+                chartfile.write(right(fmt_dm(planet_data[5], True), 7) + ' ')
+                chartfile.write(s_dm(planet_data[6]) + ' ')
+                chartfile.write(right(fmt_dm(planet_data[7], True), 7) + ' ')
+                a1 = planet_data[7] % 90
                 if ang['model'] == 1:
                     p1 = main_angularity_curve_2(a1)
                 else:
                     p1 = main_angularity_curve(a1)
-                a2 = abs(chart['cusps'][1] - pd[0])
+                a2 = abs(chart['cusps'][1] - planet_data[0])
                 if a2 > 180:
                     a2 = 360 - a2
                 if inrange(a2, 90, 3):
                     p2 = minor_angularity_curve(abs(a2 - 90))
                 else:
                     p2 = -2
-                a3 = abs(chart['cusps'][10] - pd[0])
+                a3 = abs(chart['cusps'][10] - planet_data[0])
                 if a3 > 180:
                     a3 = 360 - a3
                 if inrange(a3, 90, 3):
                     p3 = minor_angularity_curve(abs(a3 - 90))
                 else:
                     p3 = -2
-                a4 = abs(chart['ramc'] - pd[3])
+                a4 = abs(chart['ramc'] - planet_data[3])
                 if a4 > 180:
                     a4 = 360 - a4
                 if inrange(a4, 90, 3):
@@ -441,11 +445,11 @@ class Report2:
                 p = max(p1, p2, p3, p4)
                 fb = ' '
                 a = 90 - a1 if a1 > 45 else a1
-                if a <= majlimit[0]:
+                if a <= major_limit[0]:
                     fb = 'F'
-                elif a <= majlimit[1]:
+                elif a <= major_limit[1]:
                     fb = 'F'
-                elif a <= majlimit[2]:
+                elif a <= major_limit[2]:
                     fb = 'F'
                 if fb == ' ' and not ang.get('no_bg', False):
                     if ang['model'] == 0:
@@ -455,35 +459,35 @@ class Report2:
                             a = (60 - a1) / 2
                     else:
                         a = abs(a - 45)
-                    if a <= majlimit[0]:
+                    if a <= major_limit[0]:
                         fb = 'B'
-                    elif a <= majlimit[1]:
+                    elif a <= major_limit[1]:
                         fb = 'B'
-                    elif a <= majlimit[2]:
+                    elif a <= major_limit[2]:
                         fb = 'B'
                 a = abs(a2 - 90)
-                if a <= minlimit[0]:
+                if a <= minor_limit[0]:
                     fb = 'F'
-                elif a <= minlimit[1]:
+                elif a <= minor_limit[1]:
                     fb = 'F'
-                elif a <= minlimit[2]:
+                elif a <= minor_limit[2]:
                     fb = 'F'
                 a = abs(a3 - 90)
-                if a <= minlimit[0]:
+                if a <= minor_limit[0]:
                     fb = 'F'
-                elif a <= minlimit[1]:
+                elif a <= minor_limit[1]:
                     fb = 'F'
-                elif a <= minlimit[2]:
+                elif a <= minor_limit[2]:
                     fb = 'F'
                 a = abs(a4 - 90)
-                if a <= minlimit[0]:
+                if a <= minor_limit[0]:
                     fb = 'F'
-                elif a <= minlimit[1]:
+                elif a <= minor_limit[1]:
                     fb = 'F'
-                elif a <= minlimit[2]:
+                elif a <= minor_limit[2]:
                     fb = 'F'
                 if fb == 'F':
-                    plfg.append('r' + pl)
+                    plfg.append('r' + planet_name)
                 px = round((p + 1) * 50)
                 if fb == ' ':
                     if fbx == ' ':
@@ -494,16 +498,16 @@ class Report2:
                     plang['r' + planet_abrev[i]] = fb
                 if fb == 'F':
                     if p == p1:
-                        if pd[7] >= 345 or pd[7] <= 15:
+                        if planet_data[7] >= 345 or planet_data[7] <= 15:
                             fb = 'A '
-                        if inrange(pd[7], 90, 15):
+                        if inrange(planet_data[7], 90, 15):
                             fb = 'I '
-                        if inrange(pd[7], 180, 15):
+                        if inrange(planet_data[7], 180, 15):
                             fb = 'D '
-                        if inrange(pd[7], 270, 15):
+                        if inrange(planet_data[7], 270, 15):
                             fb = 'M '
                     if p == p2:
-                        a = chart['cusps'][1] - pd[0]
+                        a = chart['cusps'][1] - planet_data[0]
                         if a < 0:
                             a += 360
                         if inrange(a, 90, 5):
@@ -511,7 +515,7 @@ class Report2:
                         if inrange(a, 270, 5):
                             fb = 'N '
                     if p == p3:
-                        a = chart['cusps'][10] - pd[0]
+                        a = chart['cusps'][10] - planet_data[0]
                         if a < 0:
                             a += 360
                         if inrange(a, 90, 5):
@@ -519,7 +523,7 @@ class Report2:
                         if inrange(a, 270, 5):
                             fb = 'E '
                     if p == p4:
-                        a = chart['ramc'] - pd[3]
+                        a = chart['ramc'] - planet_data[3]
                         if a < 0:
                             a += 360
                         if inrange(a, 90, 5):
@@ -530,7 +534,13 @@ class Report2:
                     fb = ' b'
                 if fb == ' ':
                     fb = '  '
-                chartfile.write(f'{px:3d}% {fb}')
+
+                if inrange(planet_data[5], 270, minor_limit[2]):
+                    chartfile.write(f'     Vx')
+                elif inrange(planet_data[5], 90, minor_limit[2]):
+                    chartfile.write(f'     Av')
+                else:
+                    chartfile.write(f'{px:3d}% {fb}')
                 chartfile.write('\n')
             plangr = deepcopy(plang)
             chartfile.write('-' * 72 + '\n')
@@ -652,11 +662,11 @@ class Report2:
                 xpn = 't' + pn
                 pa = planet_abrev[i]
                 xpa = 't' + pa
-                pd = chart[pn]
+                planet_data = chart[pn]
                 if pa != 'Mo':
                     chartfile.write('\n')
                 chartfile.write(pa + ' ')
-                sign = sign_abrev[int(pd[0] // 30)]
+                sign = sign_abrev[int(planet_data[0] // 30)]
                 if sign in pos_sign[pa]:
                     x = '+'
                 elif sign in neg_sign[pa]:
@@ -701,11 +711,11 @@ class Report2:
                 xpn = 'r' + pn
                 pa = planet_abrev[i]
                 xpa = 'r' + pa
-                pd = chart['base_chart'][pn]
+                planet_data = chart['base_chart'][pn]
                 if pa != 'Mo':
                     chartfile.write('\n')
                 chartfile.write(pa + ' ')
-                sign = sign_abrev[int(pd[0] // 30)]
+                sign = sign_abrev[int(planet_data[0] // 30)]
                 if sign in pos_sign[pa]:
                     x = '+'
                 elif sign in neg_sign[pa]:
@@ -714,7 +724,6 @@ class Report2:
                     x = ' '
                 chartfile.write(f'{sign}{x} ')
                 chartfile.write(plang.get(pa, '') + ' |')
-                print(asp)
                 asplist = []
                 for j in range(3):
                     for entry in asp[j]:

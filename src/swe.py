@@ -116,22 +116,42 @@ def julday(year, month, day, hour, isgreg):
     return swe_julday(year, month, day, hour, isgreg)
 
 
-def calc_planet(ut, pl):
+def calc_planet(universal_time: float, planet: int):
+    """Calculates the position of a given planet.
+
+    Returns:
+        List[float]: [longitude, latitude, speed, right ascension, declination]"""
     err = create_string_buffer(256)
-    pos = (c_double * 6)()
-    swe_calc_ut(ut, pl, 64 * 1024 + 256, byref(pos), byref(err))
+    result_array = (c_double * 6)()
+    sidereal_positions_and_speed = 64 * 1024 + 256
+    swe_calc_ut(
+        universal_time,
+        planet,
+        sidereal_positions_and_speed,
+        byref(result_array),
+        byref(err),
+    )
     result = []
-    for i in range(len(pos)):
+    for i in range(len(result_array)):
         if i in [0, 1, 3]:
-            result.append(pos[i])
-    swe_calc_ut(ut, pl, 2048 + 256, byref(pos), byref(err))
-    for i in range(len(pos)):
+            result.append(result_array[i])
+
+    # The flag here indicates equatorial positions, and speed
+    equatorial_positions_and_speed = 2048 + 256
+    swe_calc_ut(
+        universal_time,
+        planet,
+        equatorial_positions_and_speed,
+        byref(result_array),
+        byref(err),
+    )
+    for i in range(len(result_array)):
         if i in [0, 1]:
-            result.append(pos[i])
+            result.append(result_array[i])
     return result
 
 
-def calc_oe(ut):
+def calc_obliquity(ut):
     err = create_string_buffer(256)
     pos = (c_double * 6)()
     swe_calc_ut(ut, -1, 0, byref(pos), byref(err))
@@ -164,17 +184,43 @@ def calc_cusps(ut, lat, long):
     return [cc, aa]
 
 
-def calc_house_pos(ramc, glat, oe, tlong, elat):
+def calc_house_pos(ramc, geo_latitude, obliquity, tlong, elat):
+    """Calculates the Campanus house position.
+
+    Returns:
+        float: Campanus house position 1-12"""
     err = create_string_buffer(256)
-    pos = (c_double * 2)(tlong, elat)
-    return swe_house_pos(ramc, glat, oe, ord('C'), pos, err) * 30 - 30
+    planet_ecliptic_pos = (c_double * 2)(tlong, elat)
+    campanus_house = ord('C')
+    return (
+        swe_house_pos(
+            ramc,
+            geo_latitude,
+            obliquity,
+            campanus_house,
+            planet_ecliptic_pos,
+            err,
+        )
+        * 30
+        - 30
+    )
 
 
-def calc_azimuth(ut, glong, glat, tlong, elat):
-    geo = (c_double * 3)(glong, glat, 0)
+def calc_azimuth(
+    universal_time: float,
+    geo_longitude: float,
+    geo_latitude: float,
+    tlong,
+    elat,
+):
+    """Calculates the azimuth and altitude of a given planet.
+
+    Returns:
+        List[float]: [azimuth, true altitude]"""
+    geo = (c_double * 3)(geo_longitude, geo_latitude, 0)
     pl = (c_double * 3)(tlong, elat, 0)
     az = (c_double * 3)()
-    swe_azalt(ut, 0, byref(geo), 0, 0, byref(pl), byref(az))
+    swe_azalt(universal_time, 0, byref(geo), 0, 0, byref(pl), byref(az))
     aa = []
     for i in range(len(az)):
         if i in [0, 1]:
