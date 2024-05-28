@@ -1,5 +1,6 @@
 ### 0.5.0
-
+- Change strength calculation for minor angles
+- Add Blue for code formatting
 
 ### 0.4.12
 - Move to semantic versioning (major.minor.patch format)
