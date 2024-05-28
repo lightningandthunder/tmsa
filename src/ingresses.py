@@ -289,13 +289,10 @@ class Ingresses(Frame):
         self.dated.text = d
         self.old.checked = not g
         hr = int(t)
-        print(hr, t)
         t = 60 * (t - hr)
         mi = int(t)
-        print(mi, t)
         t = 60 * (t - mi)
         se = round(t)
-        print(se)
         if se == 60:
             se = 0
             mi += 1

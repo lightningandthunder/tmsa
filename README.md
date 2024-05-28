@@ -25,4 +25,6 @@ python setup.py bdist_msi
 ```
 
 ### Contributing
-More info forthcoming.
+
+##### Formatting
+`blue src` (ensure you have `blue` installed first!)

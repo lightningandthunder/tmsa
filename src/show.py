@@ -12,6 +12,7 @@ import math
 import os
 from show_util import *
 from constants import VERSION
+from io import TextIOWrapper
 
 
 def display(chart, planet):
@@ -33,6 +34,11 @@ def get_class(value):
     if 'return' in value:
         return 'SR' if 'solar' in value else 'LR'
     return 'N'
+
+
+def write_row(writer: TextIOWrapper, row: list[str]):
+
+    pass
 
 
 class Report:
@@ -148,16 +154,16 @@ class Report:
                 'Pl Longitude   Lat   Speed    RA    Decl    Azi     Alt     PVL    Ang G\n'
             )
             ang = options.get('angularity', {})
-            majlimit = ang.get('major_angles', [3.0, 7.0, 10.0])
-            minlimit = ang.get('minor_angles', [1.0, 2.0, 3.0])
+            major_limit = ang.get('major_angles', [3.0, 7.0, 10.0])
+            minor_limit = ang.get('minor_angles', [1.0, 2.0, 3.0])
             plfg = []
             plang = {}
             dormant = True if 'I' in self.cclass else False
             for i in range(3):
-                if majlimit[i] == 0:
-                    majlimit[i] = -3
-                if minlimit[i] == 0:
-                    minlimit[i] = -3
+                if major_limit[i] == 0:
+                    major_limit[i] = -3
+                if minor_limit[i] == 0:
+                    minor_limit[i] = -3
             for pl in planet_names:
                 if pl == 'Eastpoint':
                     break
@@ -213,12 +219,12 @@ class Report:
                 fb = ' '
                 fbx = ' '
                 a = 90 - a1 if a1 > 45 else a1
-                if a <= majlimit[0]:
+                if a <= major_limit[0]:
                     fb = 'F'
                     dormant = False
-                elif a <= majlimit[1]:
+                elif a <= major_limit[1]:
                     fb = 'F'
-                elif a <= majlimit[2]:
+                elif a <= major_limit[2]:
                     fb = 'F'
                 if fb == ' ':
                     if ang['model'] == 0:
@@ -228,41 +234,41 @@ class Report:
                             a = (60 - a1) / 2
                     else:
                         a = abs(a - 45)
-                    if a <= majlimit[0]:
+                    if a <= major_limit[0]:
                         fb = 'B'
-                    elif a <= majlimit[1]:
+                    elif a <= major_limit[1]:
                         fb = 'B'
-                    elif a <= majlimit[2]:
+                    elif a <= major_limit[2]:
                         fb = 'B'
                     if fb == 'B' and ang.get('no_bg', False):
                         fbx = 'B'
                         fb = ' '
                 a = abs(a2 - 90)
-                if a <= minlimit[0]:
+                if a <= minor_limit[0]:
                     fb = 'F'
                     dormant = False
-                elif a <= minlimit[1]:
+                elif a <= minor_limit[1]:
                     fb = 'F'
                     dormant = False
-                elif a <= minlimit[2]:
+                elif a <= minor_limit[2]:
                     fb = 'F'
                 a = abs(a3 - 90)
-                if a <= minlimit[0]:
+                if a <= minor_limit[0]:
                     fb = 'F'
                     dormant = False
-                elif a <= minlimit[1]:
+                elif a <= minor_limit[1]:
                     fb = 'F'
                     dormant = False
-                elif a <= minlimit[2]:
+                elif a <= minor_limit[2]:
                     fb = 'F'
                 a = abs(a4 - 90)
-                if a <= minlimit[0]:
+                if a <= minor_limit[0]:
                     fb = 'F'
                     dormant = False
-                elif a <= minlimit[1]:
+                elif a <= minor_limit[1]:
                     fb = 'F'
                     dormant = False
-                elif a <= minlimit[2]:
+                elif a <= minor_limit[2]:
                     fb = 'F'
                 if fb == 'F' or (pl == 'Moon' and 'I' in self.cclass):
                     plfg.append(pl)

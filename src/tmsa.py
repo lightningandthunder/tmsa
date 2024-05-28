@@ -170,7 +170,6 @@ class StartPage(Frame):
 
     def resize_chart_for_now(self):
         width = self.parent.winfo_width()
-        print(width)
 
         font = utils.get_scaled_font(width, 975)
         self.chart_for_now.configure(font=font)

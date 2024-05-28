@@ -152,13 +152,8 @@ def main_angularity_curve_2(a):
     return math.cos(math.radians(a))
 
 
-def minor_angularity_curve(a):
-    if a <= 2:
-        x = 3 * a / 2
-    else:
-        x = (a - 2) * 7 + 3
-    a = x * 6
-    return math.cos(math.radians(a))
+def minor_angularity_curve(orb_degrees: float):
+    return math.cos(math.radians(orb_degrees * 30))
 
 
 def inrange(value, center, tol):

@@ -13,3 +13,12 @@ def get_scaled_font(width: int, breakpoint: int) -> tkFont:
         if font_size == 18
         else tkFont(family='Lucida Console', size=font_size, weight='normal')
     )
+
+
+def to360(value):
+    if value >= 0.0 and value < 360.0:
+        return value
+    if value >= 360:
+        return to360(value - 360.0)
+    if value < 0.0:
+        return to360(value + 360.0)

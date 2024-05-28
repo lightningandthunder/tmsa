@@ -12,6 +12,7 @@ from swe import *
 from show import Report
 from show2 import Report2
 from widgets import *
+from utils import to360
 
 planet_names = [
     'Moon',
@@ -30,15 +31,6 @@ planet_names = [
     'True Node',
 ]
 planet_index = [1, 0] + [i for i in range(2, 10)] + [146199, 100377, 10, 11]
-
-
-def to360(value):
-    if value >= 0.0 and value < 360.0:
-        return value
-    if value >= 360:
-        return to360(value - 360.0)
-    if value < 0.0:
-        return to360(value + 360.0)
 
 
 class Chart:
@@ -138,8 +130,8 @@ class Chart:
             self.report = Report(chart, temporary, options)
 
     def precess(self, chart):
-        for pn in planet_names:
-            pd = chart[pn]
+        for planet_name in planet_names:
+            pd = chart[planet_name]
             pd[3:5] = cotrans([pd[0] + self.ayan, pd[1], pd[2]], self.oe)
             pd[5:7] = calc_azimuth(
                 self.jd, self.long, self.lat, to360(pd[0] + self.ayan), pd[1]
@@ -147,4 +139,4 @@ class Chart:
             pd[7] = calc_house_pos(
                 self.ramc, self.lat, self.oe, to360(pd[0] + self.ayan), pd[1]
             )
-            chart[pn] = pd
+            chart[planet_name] = pd
