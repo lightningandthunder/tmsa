@@ -1,13 +1,17 @@
-# Copyright 2024 Mike Nelson, Mike Verducci
+# Copyright 2021-2024 James Eshelman, Mike Nelson, Mike Verducci
 
-# This file is part of Time Matters Sidereal Astrology (TMSA).
+# This file is part of Time Matters: A Sidereal Astrology Toolkit (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, 
 # either version 3 of the License, or (at your option) any later version.
 # TMSA is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>. 
 
+from datetime import datetime
+import math
+import os
 from show_util import *
+from constants import VERSION
 
 def display(chart, planet):
     pd = chart[planet] 
@@ -32,12 +36,11 @@ class Report:
     def __init__(self, chart, temporary, options):
         rows = 65
         cols = 69
-        deg_sym ="°"
         arr = [[" " for i in range(cols)] for j in range(rows)]
         filename = make_chart_path(chart, temporary)
         filename = filename[0:-3] + "txt"
         try: 
-            chartfile =  open(filename, "w")
+            chartfile = open(filename, "w")
         except Exception as e:
             tkmessagebox.showerror(f"Unable to open file:", f"{e}") 
             return
@@ -472,7 +475,7 @@ class Report:
                             if j % 4 == 3 and j != len(empz) - 1:
                                 chartfile.write("\n"+ (" " * 9) + "| ")      
             chartfile.write("\n" + "-" * 72 + "\n")
-            chartfile.write(f"Created by TMSA 0.4.9.2  ({datetime.now().strftime('%d %b %Y')})")
+            chartfile.write(f"Created by Time Matters {VERSION}  ({datetime.now().strftime('%d %b %Y')})")
             self.filename = filename
         return
         
@@ -712,13 +715,6 @@ class Report:
             xi = ei
         x = x if xi <= zi else z
         return x
-            
-            
-            
-           
         
     def show(self):
         os.startfile(self.filename)
-    
-   
-        

@@ -1,23 +1,31 @@
-# Copyright 2024 Mike Nelson, Mike Verducci
+# Copyright 2021-2024 James Eshelman, Mike Nelson, Mike Verducci
 
-# This file is part of Time Matters Sidereal Astrology (TMSA).
+# This file is part of Time Matters: A Sidereal Astrology Toolkit (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, 
 # either version 3 of the License, or (at your option) any later version.
 # TMSA is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>. 
 
+from copy import deepcopy
+from datetime import datetime as dt
+import random
 from init import *
 from calc import Chart
 from locations import Locations
 from more_charts import MoreCharts
 from swe import *
 from widgets import *
+import tkinter.filedialog as tkfiledialog
+from geopy import Nominatim
+import anglicize
+import us
+from constants import DS, DQ, VERSION
 
 class Ingresses(Frame): 
     def __init__(self):
         super().__init__()
-        now = datetime.utcnow()
+        now = dt.utcnow()
         chart = {}
         Label(self, "Search", .15, .05, .15, anchor = tk.W) 
         self.init = True
@@ -276,7 +284,7 @@ class Ingresses(Frame):
             with open(RECENT_FILE, "r") as datafile:
                 recs = json.load(datafile)
         except Exception:
-            status.error("Can't open 'recent.json' file.")
+            self.status.error("Can't open 'recent.json' file.")
         delay(MoreCharts,recs, self.more_finish, 0)  
         
 
@@ -355,7 +363,7 @@ class Ingresses(Frame):
         if self.findbtn.disabled: return
         self.status.text = ""
         if not self.loc.text:  return self.status.error("Location required.", self.loc)
-        geolocator = Nominatim(user_agent = f"TMSA 0.4 {random.randrange(0, 100000):05d}")  
+        geolocator = Nominatim(user_agent = f"Time Matters {VERSION} {random.randrange(0, 100000):05d}")  
         self.loc.text = normalize(self.loc.text)
         try:
             location = geolocator.geocode(self.loc.text)

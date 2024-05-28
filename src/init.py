@@ -1,13 +1,18 @@
-# Copyright 2024 Mike Nelson, Mike Verducci
+# Copyright 2021-2024 James Eshelman, Mike Nelson, Mike Verducci
 
-# This file is part of Time Matters Sidereal Astrology (TMSA).
+# This file is part of Time Matters: A Sidereal Astrology Toolkit (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, 
 # either version 3 of the License, or (at your option) any later version.
 # TMSA is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>. 
 
+import json
+import os
+import sys
+import winreg
 from libs import *
+import tkinter.messagebox as tkmessagebox
 
 startup = True 
  
@@ -22,14 +27,15 @@ def app_path(path = None):
     
 month_abrev = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] 
 
-EPHE_PATH = r"C:\sweph\ephe"
+EPHE_PATH = "ephe"
 
-DLL_PATH = app_path(r"..\dll\swedll32.dll")
+# Originally...
+# DLL_PATH = app_path(r"..\dll\swedll32.dll")
+DLL_PATH = app_path(r"dll\swedll32.dll")
 
-HELP_PATH = app_path("..\help")
+HELP_PATH = app_path("help")
 
-
-d1 = os.path.expanduser("~\Documents")
+d1 = os.path.expanduser(r"~\Documents")
 if  os.path.exists(d1): 
     d1 = os.path.expandvars(d1)
 else:
@@ -44,7 +50,7 @@ for i in range(1000):
     except:
         d2 = None
 key.Close()
-if  d2:
+if d2:
     d2 = os.path.expandvars(d2)
     if os.path.exists(d2):
         docpath = d2
@@ -55,16 +61,16 @@ elif d1:
 else:
     docpath = "c:\\"
 
-CHART_PATH = os.path.join(docpath, r"tmsa\charts")
+CHART_PATH = os.path.join(docpath, "tmsa", "charts")
 os.makedirs(CHART_PATH, exist_ok=True) 
 
 TEMP_CHARTS = os.path.join(CHART_PATH, "temporary")
 
 
-ERROR_FILE = r"c:\\tmsa_errors\error.txt"
+ERROR_FILE = os.path.join(docpath, "tmsa_errors", "error.txt")
 os.makedirs(os.path.dirname(ERROR_FILE), exist_ok=True)
 
-OPTION_PATH = os.path.join(docpath, r"tmsa\options")
+OPTION_PATH = os.path.join(docpath, "tmsa", "options")
 os.makedirs(OPTION_PATH, exist_ok=True)
 
 STUDENT_FILE = os.path.join(OPTION_PATH, "student.json")
@@ -81,14 +87,14 @@ if not os.path.exists(LOCATIONS_FILE):
     
 RECENT_FILE = os.path.join(OPTION_PATH, "recent.json")
 
+COLOR_FILE = os.path.join(OPTION_PATH, "colors.json")
+
 if not os.path.exists(RECENT_FILE):
     try:
         with open(COLOR_FILE, "w") as datafile:
             json.dump([], datafile, indent = 4) 
     except Exception:
         pass  
-
-COLOR_FILE = os.path.join(OPTION_PATH, "colors.json")
 
 colors = {"bg_color": "black", "button_color": "blue", "text_color": "yellow", "error_color": "red"}
 default = True

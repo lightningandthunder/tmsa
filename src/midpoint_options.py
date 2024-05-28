@@ -1,6 +1,6 @@
-# Copyright 2024 Mike Nelson, Mike Verducci
+# Copyright 2021-2024 James Eshelman, Mike Nelson, Mike Verducci
 
-# This file is part of Time Matters Sidereal Astrology (TMSA).
+# This file is part of Time Matters: A Sidereal Astrology Toolkit (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, 
 # either version 3 of the License, or (at your option) any later version.
 # TMSA is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
@@ -62,19 +62,19 @@ class MidpointOptions(Frame):
         try:
             m = self.mp0.text.strip()
             m = int(m) if m else 0
-            if m > 90: return status.error("Orb for midpoint must be less than or equal to 90.", self.mp0)
+            if m > 90: return self.status.error("Orb for midpoint must be less than or equal to 90.", self.mp0)
             self.retdict["0"] = m       
             m = self.mp90.text.strip()
             m = int(m) if m else 0
-            if m > 90: return status.error("Orb for midpoint must be less than or equal to 90.", self.mp90)
+            if m > 90: return self.status.error("Orb for midpoint must be less than or equal to 90.", self.mp90)
             self.retdict["90"] = m
             m = self.mp45.text.strip()
             m = int(m) if m else 0
-            if m > 90: return status.error("Orb for midpoint must be less than or equal to 90.", self.mp45)
+            if m > 90: return self.status.error("Orb for midpoint must be less than or equal to 90.", self.mp45)
             self.retdict["45"] = m
             m = self.mpm.text.strip()
             m = int(m) if m else 0
-            if m > 90: return status.error("Orb for midpoint must be less than or equal to 90.", self.mpm)
+            if m > 90: return self.status.error("Orb for midpoint must be less than or equal to 90.", self.mpm)
             self.retdict["M"] =  m
             self.retdict["is90"] = "i" if self.is90.value else "d"
             self.destroy()

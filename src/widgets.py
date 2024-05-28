@@ -1,6 +1,6 @@
-# Copyright 2024 Mike Nelson, Mike Verducci
+# Copyright 2021-2024 James Eshelman, Mike Nelson, Mike Verducci
 
-# This file is part of Time Matters Sidereal Astrology (TMSA).
+# This file is part of Time Matters: A Sidereal Astrology Toolkit (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, 
 # either version 3 of the License, or (at your option) any later version.
 # TMSA is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
@@ -8,15 +8,33 @@
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>. 
 
 from init import *
+import tkinter as tk
+import tkinter.messagebox as tkmessagebox
+from tkinter.font import Font as tkFont
+import traceback
+from constants import VERSION
+from PIL import ImageTk
 
 main = tk.Tk()
+main.minsize(800, 600)
 main.state("zoomed")
-main.title("TMSA 0.4.9.2 by Mike Nelson")
-font = tkFont(family="Lucida Console", size=18, weight="normal")
+main.title(f"Time Matters {VERSION}")
+main.iconbitmap(app_path(os.path.join('assets', 'tmsa3.ico')))
+
+base_font = tkFont(family="Lucida Console", size=18, weight="normal")
+small_font = tkFont(family="Lucida Console", size=16, weight="normal")
+smallest_font = tkFont(family="Lucida Console", size=14, weight="normal")
 ulfont = tkFont(family="Lucida Console", size=18, weight="normal", underline = 1) 
+title_font = tkFont(family="Lucida Console", size=36, weight="bold") 
+
+# background = ImageTk.PhotoImage(file=app_path(os.path.join('assets', 'tmsa2.png')), size=1)
+# background_label = tk.Label(main, image=background)
+# background_label.place(x=0, y=0, relwidth=1,relheight=1) 
+
+# background_label.image = background
 
 def on_exit():
-    if tkmessagebox.askyesno("Are you sure?", "Quit TMSA 0.4.9.2?"):
+    if tkmessagebox.askyesno("Are you sure?", f"Quit Time Matters {VERSION}?"):
         main.destroy()
 
 main.protocol("WM_DELETE_WINDOW", on_exit)
@@ -136,7 +154,7 @@ class PropertyMixin():
         self["state"] = tk.DISABLED if state else tk.NORMAL
         
 class Label(PropertyMixin, tk.Label):
-    def __init__(self, root, text, x, y, width = .25, height = .05, anchor = tk.CENTER, font = font):
+    def __init__(self, root, text, x, y, width = .25, height = .05, anchor = tk.CENTER, font = base_font):
         super().__init__(root, text = text, foreground = TXT_COLOR, background = BG_COLOR)
         self["font"] = font
         self.x = x
@@ -148,7 +166,7 @@ class Label(PropertyMixin, tk.Label):
         
          
 class Button(PropertyMixin, tk.Button):
-    def __init__(self, root, text, x, y, width = .25, height = .05, font = font):
+    def __init__(self, root, text, x, y, width = .25, height = .05, font = base_font):
         super().__init__(root, text = text, foreground = TXT_COLOR, background = BTN_COLOR)
         self["font"] = font
         self.x = x
@@ -162,8 +180,8 @@ class Button(PropertyMixin, tk.Button):
 class Entry(PropertyMixin, tk.Entry):
     def __init__(self, root, text, x, y, width, height = .05, focus = True):
         self._var = tk.StringVar(root)
-        super().__init__(root, textvariable = self._var, foreground = "black", background = "white", takefocus = focus, font = font)
-        self["font"] = font
+        super().__init__(root, textvariable = self._var, foreground = "black", background = "white", takefocus = focus, font = base_font)
+        self["font"] = base_font
         self._var.set(text)
         self.x = x
         self.y = y
@@ -181,7 +199,7 @@ class Entry(PropertyMixin, tk.Entry):
         self._var.set(value)
 
 class Checkbutton(PropertyMixin, tk.Checkbutton):
-    def __init__(self, root, text, x, y, width, height = .05, focus = True, font = font):
+    def __init__(self, root, text, x, y, width, height = .05, focus = True, font = base_font):
         self._var = tk.IntVar(root)
         super().__init__(root, text = text, variable = self._var,foreground =TXT_COLOR, background = BG_COLOR, selectcolor = BG_COLOR, takefocus = focus)
         self["font"] = font
@@ -231,7 +249,7 @@ class Radiogroup():
       
 
 class Radiobutton(tk.Radiobutton):
-    def __init__(self, root, group, value, text, x, y, width, height = .05, focus = True, font = font):
+    def __init__(self, root, group, value, text, x, y, width, height = .05, focus = True, font = base_font):
         self._var = group.var
         super().__init__(root, text = text, variable = self._var, foreground =TXT_COLOR, background = BG_COLOR,
             selectcolor = BG_COLOR, value = value, takefocus = focus)
