@@ -89,6 +89,12 @@ class Chart:
                 chart[planet_name][1],
             )
             chart[planet_name] += [data]
+
+            data = calc_meridian_longitude(
+                chart[planet_name][5], chart[planet_name][6]
+            )
+            chart[planet_name] += [data]
+
         self.save_and_print(chart, temporary, burst)
 
     def save_and_print(self, chart, temporary, burst):
@@ -133,12 +139,23 @@ class Chart:
 
     def precess(self, chart):
         for planet_name in planet_names:
-            pd = chart[planet_name]
-            pd[3:5] = cotrans([pd[0] + self.ayan, pd[1], pd[2]], self.oe)
-            pd[5:7] = calc_azimuth(
-                self.jd, self.long, self.lat, to360(pd[0] + self.ayan), pd[1]
+            planet_data = chart[planet_name]
+            planet_data[3:5] = cotrans(
+                [planet_data[0] + self.ayan, planet_data[1], planet_data[2]],
+                self.oe,
             )
-            pd[7] = calc_house_pos(
-                self.ramc, self.lat, self.oe, to360(pd[0] + self.ayan), pd[1]
+            planet_data[5:7] = calc_azimuth(
+                self.jd,
+                self.long,
+                self.lat,
+                to360(planet_data[0] + self.ayan),
+                planet_data[1],
             )
-            chart[planet_name] = pd
+            planet_data[7] = calc_house_pos(
+                self.ramc,
+                self.lat,
+                self.oe,
+                to360(planet_data[0] + self.ayan),
+                planet_data[1],
+            )
+            chart[planet_name] = planet_data

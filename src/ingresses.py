@@ -11,7 +11,7 @@ from copy import deepcopy
 from datetime import datetime as dt
 import random
 from init import *
-from calc import Chart
+from chart import Chart
 from locations import Locations
 from more_charts import MoreCharts
 from swe import *

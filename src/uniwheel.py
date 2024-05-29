@@ -148,7 +148,7 @@ class Uniwheel:
 
             chartfile.write('\n\n' + '-' * 72 + '\n')
             chartfile.write(
-                'Pl Longitude   Lat   Speed    RA    Decl    Azi     Alt     PVL    Ang G\n'
+                'Pl Longitude   Lat   Speed    RA    Decl    Azi     Alt     PVL      ML    Ang G\n'
             )
             ang = options.get('angularity', {})
             major_limit = ang.get('major_angles', [3.0, 7.0, 10.0])
@@ -184,7 +184,14 @@ class Uniwheel:
                 chartfile.write(right(fmt_dm(planet_data[3], True), 7) + ' ')
                 chartfile.write(fmt_lat(planet_data[4], True) + ' ')
                 chartfile.write(right(fmt_dm(planet_data[5], True), 7) + ' ')
-                chartfile.write(s_dm(planet_data[6]) + ' ')
+
+                # PVL - for some reason this and ML are getting swapped
+                chartfile.write(right(s_dm(planet_data[6]), 7) + ' ')
+
+                # Meridian Longitude
+                chartfile.write(right(fmt_dm(planet_data[8], True), 7) + ' ')
+
+                # Angularity strength
                 chartfile.write(right(fmt_dm(planet_data[7], True), 7) + ' ')
                 a1 = planet_data[7] % 90
                 if ang['model'] == 1:

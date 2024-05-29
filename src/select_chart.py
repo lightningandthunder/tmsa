@@ -11,7 +11,7 @@ import json
 import os
 import shutil
 from init import *
-from calc import Chart
+from chart import Chart
 from new_chart import NewChart
 from solunars import Solunars
 from widgets import *

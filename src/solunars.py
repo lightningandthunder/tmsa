@@ -10,7 +10,7 @@
 from copy import deepcopy
 import random
 from init import *
-from calc import Chart
+from chart import Chart
 from locations import Locations
 from more_charts import MoreCharts
 from swe import *
@@ -23,21 +23,7 @@ from geopy import Nominatim
 import anglicize
 from constants import DS, DQ, VERSION
 import us
-
-
-def toDMS(value):
-    si = -1 if value < 0 else 1
-    value = abs(value)
-    d = int(value)
-    value = (value - d) * 60
-    m = int(value)
-    value = (value - m) * 60
-    s = round(value)
-    if s == 60:
-        m += 1
-        if m == 60:
-            d += 1
-    return (d, m, s, si)
+from utils import toDMS
 
 
 class Solunars(Frame):

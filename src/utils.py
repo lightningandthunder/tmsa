@@ -22,3 +22,18 @@ def to360(value):
         return to360(value - 360.0)
     if value < 0.0:
         return to360(value + 360.0)
+
+
+def toDMS(value):
+    si = -1 if value < 0 else 1
+    value = abs(value)
+    d = int(value)
+    value = (value - d) * 60
+    m = int(value)
+    value = (value - m) * 60
+    s = round(value)
+    if s == 60:
+        m += 1
+        if m == 60:
+            d += 1
+    return (d, m, s, si)

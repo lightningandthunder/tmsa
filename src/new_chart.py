@@ -15,7 +15,7 @@ import random
 import pytz
 from timezonefinder import TimezoneFinder
 from init import *
-from calc import Chart
+from chart import Chart
 from locations import Locations
 from widgets import *
 from geopy import Nominatim
