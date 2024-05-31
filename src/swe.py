@@ -21,6 +21,8 @@ from ctypes import (
 from init import *
 import math
 
+from utils import arccotangent, cotangent
+
 dll = CDLL(DLL_PATH)
 
 swe_set_ephe = getattr(dll, '_swe_set_ephe_path@4')
@@ -284,28 +286,19 @@ def cotrans(ecliptic, oe):
 
 
 def calc_meridian_longitude(azimuth: float, altitude: float):
-    print(f"azimuth: {azimuth}, altitude: {altitude}")
-    meridian_longitude_tangent = math.tan(math.radians(altitude)) / math.cos(
-        math.radians(azimuth)
-    )
-    print(f"ML tangent: {meridian_longitude_tangent}")
-    meridian_longitude = math.degrees(math.atan(meridian_longitude_tangent))
-    print(f"ML b4 normalization: {meridian_longitude}")
+    ratio = cotangent(math.radians(altitude)) / math.cos(math.radians(azimuth))
+    meridian_longitude = math.degrees(arccotangent(ratio))
     if meridian_longitude < 0:
-        print("adding 360")
         meridian_longitude += 360
 
-    if (
-        meridian_longitude >= 270
-        and meridian_longitude <= 360
-        and altitude < 0
-    ):
-        print("subtracting 180")
-        meridian_longitude -= 180
+    # if (
+    #     meridian_longitude >= 270
+    #     and meridian_longitude <= 360
+    #     and altitude < 0
+    # ):
+    #     meridian_longitude -= 180
 
-    if meridian_longitude >= 0 and meridian_longitude <= 90 and altitude > 0:
-        print("adding 180")
-        meridian_longitude += 180
+    # if meridian_longitude >= 0 and meridian_longitude <= 90 and altitude > 0:
+    #     meridian_longitude += 180
 
-    print(f"ML after normalization: {meridian_longitude}")
     return meridian_longitude

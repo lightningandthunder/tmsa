@@ -70,30 +70,42 @@ class Chart:
             planet_index = planet_indices[i]
             planet_name = planet_names[i]
 
-            data = calc_planet(self.jd, planet_index)
-            chart[planet_name] = data
-
-            data = calc_azimuth(
+            [
+                longitude,
+                latitude,
+                speed,
+                right_ascension,
+                declination,
+            ] = calc_planet(self.jd, planet_index)
+            [azimuth, altitude] = calc_azimuth(
                 self.jd,
                 self.long,
                 self.lat,
-                to360(chart[planet_name][0] + self.ayan),
-                chart[planet_name][1],
+                to360(longitude + self.ayan),
+                latitude,
             )
-            chart[planet_name] += data
-            data = calc_house_pos(
+            house_position = calc_house_pos(
                 self.ramc,
                 self.lat,
                 self.oe,
-                to360(chart[planet_name][0] + self.ayan),
-                chart[planet_name][1],
+                to360(longitude + self.ayan),
+                latitude,
             )
-            chart[planet_name] += [data]
+            meridian_longitude = calc_meridian_longitude(azimuth, altitude)
 
-            data = calc_meridian_longitude(
-                chart[planet_name][5], chart[planet_name][6]
-            )
-            chart[planet_name] += [data]
+            data = [
+                longitude,
+                latitude,
+                speed,
+                right_ascension,
+                declination,
+                azimuth,
+                altitude,
+                meridian_longitude,
+                house_position,
+            ]
+
+            chart[planet_name] = data
 
         self.save_and_print(chart, temporary, burst)
 
@@ -151,7 +163,10 @@ class Chart:
                 to360(planet_data[0] + self.ayan),
                 planet_data[1],
             )
-            planet_data[7] = calc_house_pos(
+            planet_data[7] = calc_meridian_longitude(
+                planet_data[5], planet_data[6]
+            )
+            planet_data[8] = calc_house_pos(
                 self.ramc,
                 self.lat,
                 self.oe,

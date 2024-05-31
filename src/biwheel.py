@@ -15,7 +15,7 @@ import os
 from show_util import *
 
 
-def display(chart, planet, prefix, pa_only=False):
+def write_to_file(chart, planet, prefix, pa_only=False):
     pd = chart[planet]
     index = planet_names.index(planet)
     pa = planet_abrev[index]
@@ -183,11 +183,13 @@ class Biwheel:
                         if len(temp) > 2:
                             planet = houses[i][j][0]
                             if houses[i][j][-1] == 't':
-                                arr[y[i] + j][x[i] : x[i] + 16] = display(
-                                    chart, planet, 't'
-                                )
+                                arr[y[i] + j][
+                                    x[i] : x[i] + 16
+                                ] = write_to_file(chart, planet, 't')
                             else:
-                                arr[y[i] + j][x[i] : x[i] + 16] = display(
+                                arr[y[i] + j][
+                                    x[i] : x[i] + 16
+                                ] = write_to_file(
                                     chart['base_chart'], planet, 'r'
                                 )
             for row in arr:
@@ -206,10 +208,13 @@ class Biwheel:
                 ex = ''
                 for planet_name in len(extras):
                     if planet_name[-1] == 't':
-                        ex += display(chart, planet_name[0], 't', True) + ' '
+                        ex += (
+                            write_to_file(chart, planet_name[0], 't', True)
+                            + ' '
+                        )
                     else:
                         ex += (
-                            display(
+                            write_to_file(
                                 chart['base_chart'], planet_name[0], 'r', True
                             )
                             + ' '

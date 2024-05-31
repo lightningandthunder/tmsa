@@ -15,10 +15,11 @@ from constants import VERSION
 from io import TextIOWrapper
 
 
-def display(chart, planet):
+def write_to_file(chart, planet):
     pd = chart[planet]
     index = planet_names.index(planet)
     pa = planet_abrev[index]
+
     d = pa + ' ' + zod_min(pd[0])
     if index < 14:
         d += ' ' + fmt_dm(pd[-1] % 30)
@@ -138,7 +139,7 @@ class Uniwheel:
                             planet = houses[planet_index][j][0]
                             arr[y[planet_index] + j][
                                 x[planet_index] : x[planet_index] + 16
-                            ] = display(chart, planet)
+                            ] = write_to_file(chart, planet)
 
             for row in arr:
                 chartfile.write(' ')
@@ -148,7 +149,7 @@ class Uniwheel:
 
             chartfile.write('\n\n' + '-' * 72 + '\n')
             chartfile.write(
-                'Pl Longitude   Lat   Speed    RA    Decl    Azi     Alt     PVL      ML    Ang G\n'
+                'Pl Longitude   Lat   Speed    RA     Decl   Azi     Alt      ML     PVL    Ang G\n'
             )
             ang = options.get('angularity', {})
             major_limit = ang.get('major_angles', [3.0, 7.0, 10.0])
@@ -183,17 +184,21 @@ class Uniwheel:
                     chartfile.write(s_ms(planet_data[2]) + ' ')
                 chartfile.write(right(fmt_dm(planet_data[3], True), 7) + ' ')
                 chartfile.write(fmt_lat(planet_data[4], True) + ' ')
-                chartfile.write(right(fmt_dm(planet_data[5], True), 7) + ' ')
 
-                # PVL - for some reason this and ML are getting swapped
+                # Azimuth
+                chartfile.write(
+                    right(fmt_dm(planet_data[5] + 180 % 360, True), 7) + ' '
+                )
+
+                # Altitude
                 chartfile.write(right(s_dm(planet_data[6]), 7) + ' ')
 
                 # Meridian Longitude
-                chartfile.write(right(fmt_dm(planet_data[8], True), 7) + ' ')
+                chartfile.write(fmt_dm(planet_data[7], True) + ' ')
 
-                # Angularity strength
-                chartfile.write(right(fmt_dm(planet_data[7], True), 7) + ' ')
-                a1 = planet_data[7] % 90
+                # House position
+                chartfile.write(right(fmt_dm(planet_data[8], True), 7) + ' ')
+                a1 = planet_data[8] % 90
                 if ang['model'] == 1:
                     p1 = main_angularity_curve_2(a1)
                 else:
@@ -286,13 +291,13 @@ class Uniwheel:
                     plang[planet_abrev[planet_index]] = fb
                 if fb == 'F':
                     if p == p1:
-                        if planet_data[7] >= 345 or planet_data[7] <= 15:
+                        if planet_data[8] >= 345 or planet_data[8] <= 15:
                             fb = 'A '
-                        if inrange(planet_data[7], 90, 15):
+                        if inrange(planet_data[8], 90, 15):
                             fb = 'I '
-                        if inrange(planet_data[7], 180, 15):
+                        if inrange(planet_data[8], 180, 15):
                             fb = 'D '
-                        if inrange(planet_data[7], 270, 15):
+                        if inrange(planet_data[8], 270, 15):
                             fb = 'M '
                     if p == p2:
                         a = chart['cusps'][1] - planet_data[0]

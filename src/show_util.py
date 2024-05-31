@@ -346,18 +346,3 @@ def s_ms(value):
         sec = 0
         min += 1
     return f'{s}{min:2}\'{sec:2}"'
-
-
-def display(chart, planet, prefix, pa_only=False):
-    pd = chart[planet]
-    index = planet_names.index(planet)
-    pa = planet_abrev[index]
-    if pa_only:
-        return prefix + pa
-    d = prefix + pa + ' ' + zod_min(pd[0])
-    if index < 14:
-        d += ' ' + fmt_dm(pd[-1] % 30)
-        d = d[0:-1]
-    else:
-        d = center(d, 16)
-    return d

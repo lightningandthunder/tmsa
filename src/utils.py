@@ -37,3 +37,11 @@ def toDMS(value):
         if m == 60:
             d += 1
     return (d, m, s, si)
+
+
+def cotangent(radians: float) -> float:
+    return 1 / math.tan(radians)
+
+
+def arccotangent(radians: float) -> float:
+    return math.atan(1 / radians)
