@@ -43,12 +43,11 @@ month_abrev = [
     'Dec',
 ]
 
-EPHE_PATH = 'ephe'
 
 # Originally...
 # DLL_PATH = app_path(r"..\dll\swedll32.dll")
 DLL_PATH = app_path(r'dll\swedll32.dll')
-
+EPHE_PATH = app_path('ephe')
 HELP_PATH = app_path('help')
 
 d1 = os.path.expanduser(r'~\Documents')

@@ -9,7 +9,7 @@
 
 from init import *
 from swe import *
-from uniwheel import Uniwheel
+from uniwheelV2 import Uniwheel
 from biwheel import Biwheel
 from widgets import *
 from utils import to360

@@ -17,8 +17,8 @@ from show_util import *
 
 def write_to_file(chart, planet, prefix, pa_only=False):
     pd = chart[planet]
-    index = planet_names.index(planet)
-    pa = planet_abrev[index]
+    index = PLANET_NAMES.index(planet)
+    pa = PLANET_NAMES_SHORT[index]
     if pa_only:
         return prefix + pa
     d = prefix + pa + ' ' + zod_min(pd[0])
@@ -126,7 +126,7 @@ class Biwheel:
             arr[31][18:51] = center(chart['notes'] or '')
             radix = chart['base_chart']
             arr[33][18:51] = center('Radical (r) Chart')
-            if chart['type'] not in ingresses:
+            if chart['type'] not in INGRESSES:
                 if (
                     'solar' not in radix['type'].lower()
                     and 'lunar' not in radix['type'].lower()
@@ -236,7 +236,7 @@ class Biwheel:
                     major_limit[i] = -3
                 if minor_limit[i] == 0:
                     minor_limit[i] = -3
-            for planet_name in planet_names:
+            for planet_name in PLANET_NAMES:
                 if planet_name == 'Eastpoint':
                     break
                 if planet_name == 'Eris' and not options.get('use_Eris', 1):
@@ -248,8 +248,8 @@ class Biwheel:
                 if planet_name == 'Mean Node' and options.get('Node', 0) != 2:
                     continue
                 planet_data = chart[planet_name]
-                i = planet_names.index(planet_name)
-                chartfile.write(left(planet_abrev[i], 3))
+                i = PLANET_NAMES.index(planet_name)
+                chartfile.write(left(PLANET_NAMES_SHORT[i], 3))
                 chartfile.write(zod_sec(planet_data[0]) + ' ')
                 chartfile.write(fmt_lat(planet_data[1], True) + ' ')
                 if abs(planet_data[2]) >= 1:
@@ -342,11 +342,11 @@ class Biwheel:
                 px = round((p + 1) * 50)
                 if fb == ' ':
                     if fbx == ' ':
-                        plang['t' + planet_abrev[i]] = ' '
+                        plang['t' + PLANET_NAMES_SHORT[i]] = ' '
                     else:
-                        plang['t' + planet_abrev[i]] = fbx
+                        plang['t' + PLANET_NAMES_SHORT[i]] = fbx
                 else:
-                    plang['t' + planet_abrev[i]] = fb
+                    plang['t' + PLANET_NAMES_SHORT[i]] = fb
                 if fb == 'F':
                     if p == p1:
                         if planet_data[7] >= 345 or planet_data[7] <= 15:
@@ -396,7 +396,7 @@ class Biwheel:
             plangt = deepcopy(plang)
             chartfile.write('-' * 72 + '\n')
             chartfile.write(center('Radical Planets', 72) + '\n')
-            for planet_name in planet_names:
+            for planet_name in PLANET_NAMES:
                 if planet_name == 'Eastpoint':
                     break
                 if planet_name == 'Eris' and not options.get('use_Eris', 1):
@@ -408,8 +408,8 @@ class Biwheel:
                 if planet_name == 'Mean Node' and options.get('Node', 0) != 2:
                     continue
                 planet_data = chart['base_chart'][planet_name]
-                i = planet_names.index(planet_name)
-                chartfile.write(left(planet_abrev[i], 3))
+                i = PLANET_NAMES.index(planet_name)
+                chartfile.write(left(PLANET_NAMES_SHORT[i], 3))
                 chartfile.write(zod_sec(planet_data[0]) + ' ')
                 chartfile.write(fmt_lat(planet_data[1], True) + ' ')
                 if abs(planet_data[2]) >= 1:
@@ -496,11 +496,11 @@ class Biwheel:
                 px = round((p + 1) * 50)
                 if fb == ' ':
                     if fbx == ' ':
-                        plang['r' + planet_abrev[i]] = ' '
+                        plang['r' + PLANET_NAMES_SHORT[i]] = ' '
                     else:
-                        plang['r' + planet_abrev[i]] = fbx
+                        plang['r' + PLANET_NAMES_SHORT[i]] = fbx
                 else:
-                    plang['r' + planet_abrev[i]] = fb
+                    plang['r' + PLANET_NAMES_SHORT[i]] = fb
                 if fb == 'F':
                     if p == p1:
                         if planet_data[7] >= 345 or planet_data[7] <= 15:
@@ -549,8 +549,8 @@ class Biwheel:
                 chartfile.write('\n')
             plangr = deepcopy(plang)
             chartfile.write('-' * 72 + '\n')
-            ea = options.get('ecliptic_aspects', default_ea)
-            ma = options.get('mundane_aspects', default_ma)
+            ea = options.get('ecliptic_aspects', DEFAULT_ECLIPTICAL_ORBS)
+            ma = options.get('mundane_aspects', DEFAULT_MUNDANE_ORBS)
             asp = [[], [], [], []]
             asph = ['Class 1', 'Class 2', 'Class 3', 'Other Partile']
             for i in range(13):
@@ -663,18 +663,18 @@ class Biwheel:
                     continue
                 if i == 13 and options.get('Node', 0) != 2:
                     continue
-                pn = planet_names[i]
+                pn = PLANET_NAMES[i]
                 xpn = 't' + pn
-                pa = planet_abrev[i]
+                pa = PLANET_NAMES_SHORT[i]
                 xpa = 't' + pa
                 planet_data = chart[pn]
                 if pa != 'Mo':
                     chartfile.write('\n')
                 chartfile.write(pa + ' ')
-                sign = sign_abrev[int(planet_data[0] // 30)]
-                if sign in pos_sign[pa]:
+                sign = SIGNS_SHORT[int(planet_data[0] // 30)]
+                if sign in POS_SIGN[pa]:
                     x = '+'
-                elif sign in neg_sign[pa]:
+                elif sign in NEG_SIGN[pa]:
                     x = '-'
                 else:
                     x = ' '
@@ -712,18 +712,18 @@ class Biwheel:
                     continue
                 if i == 13 and options.get('Node', 0) != 2:
                     continue
-                pn = planet_names[i]
+                pn = PLANET_NAMES[i]
                 xpn = 'r' + pn
-                pa = planet_abrev[i]
+                pa = PLANET_NAMES_SHORT[i]
                 xpa = 'r' + pa
                 planet_data = chart['base_chart'][pn]
                 if pa != 'Mo':
                     chartfile.write('\n')
                 chartfile.write(pa + ' ')
-                sign = sign_abrev[int(planet_data[0] // 30)]
-                if sign in pos_sign[pa]:
+                sign = SIGNS_SHORT[int(planet_data[0] // 30)]
+                if sign in POS_SIGN[pa]:
                     x = '+'
-                elif sign in neg_sign[pa]:
+                elif sign in NEG_SIGN[pa]:
                     x = '-'
                 else:
                     x = ' '
@@ -758,7 +758,7 @@ class Biwheel:
 
     def sort_house(self, chart, h, options):
         house = []
-        for pl in planet_names:
+        for pl in PLANET_NAMES:
             if pl == 'Eris' and not options.get('use_Eris', 1):
                 continue
             if pl == 'Sedna' and not options.get('use_Sedna', 0):
@@ -773,7 +773,7 @@ class Biwheel:
             if pd[-1] // 30 == h:
                 pos = (pd[-1] % 30) / 2
                 house.append([pl, pd[-1], pos, 't'])
-        for pl in planet_names:
+        for pl in PLANET_NAMES:
             if pl == 'Eris' and not options.get('use_Eris', 1):
                 continue
             if pl == 'Sedna' and not options.get('use_Sedna', 0):
@@ -811,8 +811,8 @@ class Biwheel:
         return new
 
     def find_easpect(self, chart, i, j, ea, options, plfg, atype):
-        pn1 = planet_names[i]
-        pn2 = planet_names[j]
+        pn1 = PLANET_NAMES[i]
+        pn2 = PLANET_NAMES[j]
         if self.cclass == 'SR' and pn1 == 'Sun' and pn2 == 'Sun':
             return ('', 0, 0)
         if self.cclass == 'LR' and pn1 == 'Moon' and pn2 == 'Moon':
@@ -832,19 +832,19 @@ class Biwheel:
         ) != 2:
             return ('', 0, 0)
         if atype < 2:
-            pd1 = chart[planet_names[i]]
+            pd1 = chart[PLANET_NAMES[i]]
             pre1 = 't'
         else:
-            pd1 = chart['base_chart'][planet_names[i]]
+            pd1 = chart['base_chart'][PLANET_NAMES[i]]
             pre1 = 'r'
         if atype == 0:
-            pd2 = chart[planet_names[j]]
+            pd2 = chart[PLANET_NAMES[j]]
             pre2 = 't'
         else:
-            pd2 = chart['base_chart'][planet_names[j]]
+            pd2 = chart['base_chart'][PLANET_NAMES[j]]
             pre2 = 'r'
-        pa1 = planet_abrev[i]
-        pa2 = planet_abrev[j]
+        pa1 = PLANET_NAMES_SHORT[i]
+        pa2 = PLANET_NAMES_SHORT[j]
         astr = ['0', '180', '90', '45', '45', '120', '60', '30', '30']
         anum = [0, 180, 90, 45, 135, 120, 60, 30, 150]
         aname = ['co', 'op', 'sq', 'oc', 'oc', 'tr', 'sx', 'in', 'in']
@@ -902,8 +902,8 @@ class Biwheel:
         )
 
     def find_maspect(self, chart, i, j, ma, options, plfg, atype):
-        pn1 = planet_names[i]
-        pn2 = planet_names[j]
+        pn1 = PLANET_NAMES[i]
+        pn2 = PLANET_NAMES[j]
         if self.cclass == 'SR' and pn1 == 'Sun' and pn2 == 'Sun':
             return ('', 0, 0)
         if self.cclass == 'LR' and pn1 == 'Moon' and pn2 == 'Moon':
@@ -923,19 +923,19 @@ class Biwheel:
         ) != 2:
             return ('', 0, 0)
         if atype < 2:
-            pd1 = chart[planet_names[i]]
+            pd1 = chart[PLANET_NAMES[i]]
             pre1 = 't'
         else:
-            pd1 = chart['base_chart'][planet_names[i]]
+            pd1 = chart['base_chart'][PLANET_NAMES[i]]
             pre1 = 'r'
         if atype == 0:
-            pd2 = chart[planet_names[j]]
+            pd2 = chart[PLANET_NAMES[j]]
             pre2 = 't'
         else:
-            pd2 = chart['base_chart'][planet_names[j]]
+            pd2 = chart['base_chart'][PLANET_NAMES[j]]
             pre2 = 'r'
-        pa1 = planet_abrev[i]
-        pa2 = planet_abrev[j]
+        pa1 = PLANET_NAMES_SHORT[i]
+        pa2 = PLANET_NAMES_SHORT[j]
         d = abs(pd1[7] - pd2[7]) % 360
         if d > 180:
             d = 360 - d

@@ -12,7 +12,7 @@ from init import *
 from widgets import *
 
 
-sign_abrev = [
+SIGNS_SHORT = [
     'Ar',
     'Ta',
     'Ge',
@@ -26,7 +26,7 @@ sign_abrev = [
     'Aq',
     'Pi',
 ]
-planet_names = [
+PLANET_NAMES = [
     'Moon',
     'Sun',
     'Mercury',
@@ -44,7 +44,7 @@ planet_names = [
     'Eastpoint',
     'Vertex',
 ]
-planet_abrev = [
+PLANET_NAMES_SHORT = [
     'Mo',
     'Su',
     'Me',
@@ -62,7 +62,7 @@ planet_abrev = [
     'Ep',
     'Vx',
 ]
-default_ea = {
+DEFAULT_ECLIPTICAL_ORBS = {
     '0': [3.0, 7.0, 10.0],
     '180': [3.0, 7.0, 10.0],
     '90': [3.0, 6.0, 7.5],
@@ -71,14 +71,14 @@ default_ea = {
     '60': [3.0, 6.0, 7.5],
     '30': [0, 0, 0],
 }
-default_ma = {
+DEFAULT_MUNDANE_ORBS = {
     '0': [3.0, 0, 0],
     '180': [3.0, 0, 0],
     '90': [3.0, 0, 0],
     '45': [0, 0, 0],
 }
 
-ingresses = [
+INGRESSES = [
     'Capsolar',
     'Cansolar',
     'Arisolar',
@@ -89,7 +89,7 @@ ingresses = [
     'Liblunar',
 ]
 
-pos_sign = {
+POS_SIGN = {
     'Mo': ['Cn', 'Ta'],
     'Su': ['Le', 'Ar'],
     'Me': ['Ge', 'Vi'],
@@ -105,7 +105,7 @@ pos_sign = {
     'No': [],
 }
 
-neg_sign = {
+NEG_SIGN = {
     'Mo': ['Cp', 'Sc'],
     'Su': ['Aq', 'Li'],
     'Me': ['Sg', 'Pi'],
@@ -172,7 +172,7 @@ def zod_min(value):
             s = -1
         min = 0
         deg += 1
-    return f'{(deg % 30) or d:2d}{sign_abrev[(deg // 30) + s]}{min:2d}'
+    return f'{(deg % 30) or d:2d}{SIGNS_SHORT[(deg // 30) + s]}{min:2d}'
 
 
 def zod_sec(value):
@@ -194,7 +194,7 @@ def zod_sec(value):
         min = 0
         deg += 1
     return (
-        f'{(deg % 30) or d:2d}{sign_abrev[deg // 30 + s]}{min:2d}\'{sec:2d}"'
+        f'{(deg % 30) or d:2d}{SIGNS_SHORT[deg // 30 + s]}{min:2d}\'{sec:2d}"'
     )
 
 

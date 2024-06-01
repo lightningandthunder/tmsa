@@ -12,13 +12,12 @@ import math
 import os
 from show_util import *
 from constants import VERSION
-from io import TextIOWrapper
 
 
 def write_to_file(chart, planet):
     pd = chart[planet]
-    index = planet_names.index(planet)
-    pa = planet_abrev[index]
+    index = PLANET_NAMES.index(planet)
+    pa = PLANET_NAMES_SHORT[index]
 
     d = pa + ' ' + zod_min(pd[0])
     if index < 14:
@@ -28,7 +27,7 @@ def write_to_file(chart, planet):
     return d
 
 
-def get_class(value):
+def get_return_class(value):
     value = value.lower()
     if value[0:3] in ['cap', 'can', 'ari', 'lib']:
         return 'SI' if 'solar' in value else 'LI'
@@ -41,7 +40,7 @@ class Uniwheel:
     def __init__(self, chart, temporary, options):
         rows = 65
         cols = 69
-        arr = [[' ' for i in range(cols)] for j in range(rows)]
+        chart_grid = [[' ' for i in range(cols)] for j in range(rows)]
         filename = make_chart_path(chart, temporary)
         filename = filename[0:-3] + 'txt'
         try:
@@ -49,54 +48,55 @@ class Uniwheel:
         except Exception as e:
             tkmessagebox.showerror(f'Unable to open file:', f'{e}')
             return
+
         with chartfile:
             self.cclass = chart.get('class', None)
             if not self.cclass:
-                self.cclass = get_class(chart['type'])
+                self.cclass = get_return_class(chart['type'])
             chartfile.write('\n')
             for planet_index in range(cols):
-                arr[0][planet_index] = '-'
-                arr[16][planet_index] = '-'
+                chart_grid[0][planet_index] = '-'
+                chart_grid[16][planet_index] = '-'
                 if planet_index <= 17 or planet_index >= 51:
-                    arr[32][planet_index] = '-'
-                arr[48][planet_index] = '-'
-                arr[64][planet_index] = '-'
+                    chart_grid[32][planet_index] = '-'
+                chart_grid[48][planet_index] = '-'
+                chart_grid[64][planet_index] = '-'
             for planet_index in range(rows):
-                arr[planet_index][0] = '|'
-                arr[planet_index][17] = '|'
+                chart_grid[planet_index][0] = '|'
+                chart_grid[planet_index][17] = '|'
                 if planet_index <= 16 or planet_index >= 48:
-                    arr[planet_index][34] = '|'
-                arr[planet_index][51] = '|'
-                arr[planet_index][68] = '|'
+                    chart_grid[planet_index][34] = '|'
+                chart_grid[planet_index][51] = '|'
+                chart_grid[planet_index][68] = '|'
             for planet_index in range(0, rows, 16):
                 for j in range(0, cols, 17):
                     if planet_index == 32 and j == 34:
                         continue
-                    arr[planet_index][j] = '+'
-            cusps = chart['cusps']
-            cusps = [zod_min(c) for c in cusps]
-            arr[0][14:20] = cusps[11]
-            arr[0][31:37] = cusps[10]
-            arr[0][48:54] = cusps[9]
-            arr[16][0:6] = cusps[12]
-            arr[16][63:69] = cusps[8]
-            arr[32][0:6] = cusps[1]
-            arr[32][63:69] = cusps[7]
-            arr[48][0:6] = cusps[2]
-            arr[48][63:69] = cusps[6]
-            arr[64][14:20] = cusps[3]
-            arr[64][31:37] = cusps[4]
-            arr[64][48:54] = cusps[5]
-            if chart['type'] not in ingresses:
+                    chart_grid[planet_index][j] = '+'
+            cusps = [zod_min(c) for c in chart['cusps']]
+            chart_grid[0][14:20] = cusps[11]
+            chart_grid[0][31:37] = cusps[10]
+            chart_grid[0][48:54] = cusps[9]
+            chart_grid[16][0:6] = cusps[12]
+            chart_grid[16][63:69] = cusps[8]
+            chart_grid[32][0:6] = cusps[1]
+            chart_grid[32][63:69] = cusps[7]
+            chart_grid[48][0:6] = cusps[2]
+            chart_grid[48][63:69] = cusps[6]
+            chart_grid[64][14:20] = cusps[3]
+            chart_grid[64][31:37] = cusps[4]
+            chart_grid[64][48:54] = cusps[5]
+
+            if chart['type'] not in INGRESSES:
                 name = chart['name']
                 if ';' in name:
                     name = name.split(';')
                     name = name[0]
-                arr[21][18:51] = center(name)
+                chart_grid[21][18:51] = center(name)
             chtype = chart['type']
             if chtype.endswith(' Single Wheel'):
                 chtype = chtype.replace(' Single Wheel', '')
-            arr[23][18:51] = center(chtype)
+            chart_grid[23][18:51] = center(chtype)
             line = (
                 str(chart['day']) + ' ' + month_abrev[chart['month'] - 1] + ' '
             )
@@ -108,20 +108,22 @@ class Uniwheel:
             if not chart['style']:
                 line += 'OS '
             line += fmt_hms(chart['time']) + ' ' + chart['zone']
-            arr[25][18:51] = center(line)
-            arr[27][18:51] = center(chart['location'])
-            arr[29][18:51] = center(
+            chart_grid[25][18:51] = center(line)
+            chart_grid[27][18:51] = center(chart['location'])
+            chart_grid[29][18:51] = center(
                 fmt_lat(chart['latitude']) + ' ' + fmt_long(chart['longitude'])
             )
-            arr[31][18:51] = center(
+            chart_grid[31][18:51] = center(
                 'UT ' + fmt_hms(chart['time'] + chart['correction'])
             )
-            arr[33][18:51] = center('RAMC ' + fmt_dms(chart['ramc']))
-            arr[35][18:51] = center('OE ' + fmt_dms(chart['oe']))
-            arr[37][18:51] = center('SVP ' + zod_sec(360 - chart['ayan']))
-            arr[39][18:51] = center('Sidereal Zodiac')
-            arr[41][18:51] = center('Campanus Houses')
-            arr[43][18:51] = center(chart['notes'] or '* * * * *')
+            chart_grid[33][18:51] = center('RAMC ' + fmt_dms(chart['ramc']))
+            chart_grid[35][18:51] = center('OE ' + fmt_dms(chart['oe']))
+            chart_grid[37][18:51] = center(
+                'SVP ' + zod_sec(360 - chart['ayan'])
+            )
+            chart_grid[39][18:51] = center('Sidereal Zodiac')
+            chart_grid[41][18:51] = center('Campanus Houses')
+            chart_grid[43][18:51] = center(chart['notes'] or '* * * * *')
 
             x = [1, 1, 18, 35, 52, 52, 52, 52, 35, 18, 1, 1]
             y = [33, 49, 49, 49, 49, 33, 17, 1, 1, 1, 1, 17]
@@ -137,11 +139,11 @@ class Uniwheel:
                         temp = houses[planet_index][j]
                         if len(temp) > 2:
                             planet = houses[planet_index][j][0]
-                            arr[y[planet_index] + j][
+                            chart_grid[y[planet_index] + j][
                                 x[planet_index] : x[planet_index] + 16
                             ] = write_to_file(chart, planet)
 
-            for row in arr:
+            for row in chart_grid:
                 chartfile.write(' ')
                 for col in row:
                     chartfile.write(col)
@@ -151,9 +153,13 @@ class Uniwheel:
             chartfile.write(
                 'Pl Longitude   Lat   Speed    RA     Decl   Azi     Alt      ML     PVL    Ang G\n'
             )
-            ang = options.get('angularity', {})
-            major_limit = ang.get('major_angles', [3.0, 7.0, 10.0])
-            minor_limit = ang.get('minor_angles', [1.0, 2.0, 3.0])
+            angularity_options = options.get('angularity', {})
+            major_limit = angularity_options.get(
+                'major_angles', [3.0, 7.0, 10.0]
+            )
+            minor_limit = angularity_options.get(
+                'minor_angles', [1.0, 2.0, 3.0]
+            )
             plfg = []
             plang = {}
             dormant = True if 'I' in self.cclass else False
@@ -162,7 +168,8 @@ class Uniwheel:
                     major_limit[planet_index] = -3
                 if minor_limit[planet_index] == 0:
                     minor_limit[planet_index] = -3
-            for planet_name in planet_names:
+
+            for planet_name in PLANET_NAMES:
                 if planet_name == 'Eastpoint':
                     break
                 if planet_name == 'Eris' and not options.get('use_Eris', 1):
@@ -174,8 +181,8 @@ class Uniwheel:
                 if planet_name == 'Mean Node' and options.get('Node', 0) != 2:
                     continue
                 planet_data = chart[planet_name]
-                planet_index = planet_names.index(planet_name)
-                chartfile.write(left(planet_abrev[planet_index], 3))
+                planet_index = PLANET_NAMES.index(planet_name)
+                chartfile.write(left(PLANET_NAMES_SHORT[planet_index], 3))
                 chartfile.write(zod_sec(planet_data[0]) + ' ')
                 chartfile.write(fmt_lat(planet_data[1], True) + ' ')
                 if abs(planet_data[2]) >= 1:
@@ -198,8 +205,9 @@ class Uniwheel:
 
                 # House position
                 chartfile.write(right(fmt_dm(planet_data[8], True), 7) + ' ')
+
                 a1 = planet_data[8] % 90
-                if ang['model'] == 1:
+                if angularity_options['model'] == 1:
                     p1 = main_angularity_curve_2(a1)
                 else:
                     p1 = main_angularity_curve(a1)
@@ -236,7 +244,7 @@ class Uniwheel:
                 elif a <= major_limit[2]:
                     fb = 'F'
                 if fb == ' ':
-                    if ang['model'] == 0:
+                    if angularity_options['model'] == 0:
                         if a1 >= 60:
                             a = a1 - 60
                         else:
@@ -249,7 +257,7 @@ class Uniwheel:
                         fb = 'B'
                     elif a <= major_limit[2]:
                         fb = 'B'
-                    if fb == 'B' and ang.get('no_bg', False):
+                    if fb == 'B' and angularity_options.get('no_bg', False):
                         fbx = 'B'
                         fb = ' '
                 a = abs(a2 - 90)
@@ -284,11 +292,11 @@ class Uniwheel:
                 strength_percent = round((p + 1) * 50)
                 if fb == ' ':
                     if fbx == ' ':
-                        plang[planet_abrev[planet_index]] = ' '
+                        plang[PLANET_NAMES_SHORT[planet_index]] = ' '
                     else:
-                        plang[planet_abrev[planet_index]] = fbx
+                        plang[PLANET_NAMES_SHORT[planet_index]] = fbx
                 else:
-                    plang[planet_abrev[planet_index]] = fb
+                    plang[PLANET_NAMES_SHORT[planet_index]] = fb
                 if fb == 'F':
                     if p == p1:
                         if planet_data[8] >= 345 or planet_data[8] <= 15:
@@ -338,16 +346,17 @@ class Uniwheel:
             if dormant:
                 chartfile.write('-' * 72 + '\n')
                 chartfile.write(center('Dormant Ingress', 72) + '\n')
-            ea = options.get('ecliptic_aspects', default_ea)
-            ma = options.get('mundane_aspects', default_ma)
+
+            ea = options.get('ecliptic_aspects', DEFAULT_ECLIPTICAL_ORBS)
+            ma = options.get('mundane_aspects', DEFAULT_MUNDANE_ORBS)
             asp = [[], [], [], []]
             asph = ['Class 1', 'Class 2', 'Class 3', 'Other Partile']
             for planet_index in range(14):
                 for j in range(planet_index + 1, 14):
-                    (easp, cle, orbe) = self.find_easpect(
+                    (easp, cle, orbe) = self.find_ecliptical_aspect(
                         chart, planet_index, j, ea, options, plfg, dormant
                     )
-                    (masp, clm, orbm) = self.find_maspect(
+                    (masp, clm, orbm) = self.find_mundane_aspect(
                         chart, planet_index, j, ma, options, plfg, dormant
                     )
                     if easp and masp:
@@ -405,8 +414,8 @@ class Uniwheel:
                     chartfile.write(center(a, 72) + '\n')
                 chartfile.write('-' * 72 + '\n')
             chartfile.write(center('Cosmic State', 72) + '\n')
-            moonsi = sign_abrev[int(chart['Moon'][0] // 30)]
-            sunsi = sign_abrev[int(chart['Sun'][0] // 30)]
+            moonsi = SIGNS_SHORT[int(chart['Moon'][0] // 30)]
+            sunsi = SIGNS_SHORT[int(chart['Sun'][0] // 30)]
             cclass = chart['class']
             for planet_index in range(14):
                 if planet_index == 10 and not options.get('use_Eris', 1):
@@ -417,16 +426,16 @@ class Uniwheel:
                     continue
                 if planet_index == 13 and options.get('Node', 0) != 2:
                     continue
-                pa = planet_abrev[planet_index]
-                pn = planet_names[planet_index]
+                pa = PLANET_NAMES_SHORT[planet_index]
+                pn = PLANET_NAMES[planet_index]
                 planet_data = chart[pn]
                 if pa != 'Mo':
                     chartfile.write('\n')
                 chartfile.write(pa + ' ')
-                sign = sign_abrev[int(planet_data[0] // 30)]
-                if sign in pos_sign[pa]:
+                sign = SIGNS_SHORT[int(planet_data[0] // 30)]
+                if sign in POS_SIGN[pa]:
                     x = '+'
-                elif sign in neg_sign[pa]:
+                elif sign in NEG_SIGN[pa]:
                     x = '-'
                 else:
                     x = ' '
@@ -435,17 +444,17 @@ class Uniwheel:
                 cr = False
                 if cclass != 'I':
                     if pa != 'Mo':
-                        if moonsi in pos_sign[pa]:
+                        if moonsi in POS_SIGN[pa]:
                             chartfile.write(f' Mo {moonsi}+')
                             cr = True
-                        elif moonsi in neg_sign[pa]:
+                        elif moonsi in NEG_SIGN[pa]:
                             chartfile.write(f' Mo {moonsi}-')
                             cr = True
                     if pa != 'Su':
-                        if sunsi in pos_sign[pa]:
+                        if sunsi in POS_SIGN[pa]:
                             chartfile.write(f' Su {sunsi}+')
                             cr = True
-                        elif sunsi in neg_sign[pa]:
+                        elif sunsi in NEG_SIGN[pa]:
                             chartfile.write(f' Su {sunsi}-')
                             cr = True
                 asplist = []
@@ -482,9 +491,9 @@ class Uniwheel:
                         continue
                     if j == 13 and options.get('Node', 0) != 2:
                         continue
-                    plna = planet_names[j]
+                    plna = PLANET_NAMES[j]
                     plong = chart[plna][0]
-                    plab = planet_abrev[j]
+                    plab = PLANET_NAMES_SHORT[j]
                     if options.get('show_aspects', 0) == 0 or plna in plfg:
                         plist.append([plab, plong])
                 plist.append(['As', chart['cusps'][1]])
@@ -511,7 +520,7 @@ class Uniwheel:
                             chartfile.write('   ' + a + '   ')
                             if j % 4 == 3 and j != len(emp) - 1:
                                 chartfile.write('\n' + (' ' * 9) + '| ')
-            sign = sign_abrev[int(chart['cusps'][1] // 30)]
+            sign = SIGNS_SHORT[int(chart['cusps'][1] // 30)]
             plist = []
             for planet_index in range(14):
                 if planet_index == 10 and not options.get('use_Eris', 1):
@@ -522,11 +531,11 @@ class Uniwheel:
                     continue
                 if planet_index == 13 and options.get('Node', 0) != 2:
                     continue
-                plna = planet_names[planet_index]
+                plna = PLANET_NAMES[planet_index]
                 plong = chart[plna][0]
                 plra = chart[plna][3]
                 plpvl = chart[plna][7]
-                plab = planet_abrev[planet_index]
+                plab = PLANET_NAMES_SHORT[planet_index]
                 if options.get('show_aspects', 0) == 0 or plna in plfg:
                     plist.append([plab, plong, plra, plpvl])
             plist.append(['Mc', chart['cusps'][10]])
@@ -546,7 +555,7 @@ class Uniwheel:
                         chartfile.write('   ' + a + '   ')
                         if j % 4 == 3 and j != len(emp) - 1:
                             chartfile.write('\n' + (' ' * 9) + '| ')
-            sign = sign_abrev[int(chart['cusps'][10] // 30)]
+            sign = SIGNS_SHORT[int(chart['cusps'][10] // 30)]
             plist[-1] = ['As', chart['cusps'][1]]
             if len(plist) > 1:
                 emp = []
@@ -619,21 +628,21 @@ class Uniwheel:
 
     def sort_house(self, chart, h, options):
         house = []
-        for pl in planet_names:
-            if pl == 'Eris' and not options.get('use_Eris', 1):
+        for planet_name in PLANET_NAMES:
+            if planet_name == 'Eris' and not options.get('use_Eris', 1):
                 continue
-            if pl == 'Sedna' and not options.get('use_Sedna', 0):
+            if planet_name == 'Sedna' and not options.get('use_Sedna', 0):
                 continue
-            if pl == 'Vertex' and not options.get('use_Vertex', 0):
+            if planet_name == 'Vertex' and not options.get('use_Vertex', 0):
                 continue
-            if pl == 'True Node' and options.get('Node', 0) != 1:
+            if planet_name == 'True Node' and options.get('Node', 0) != 1:
                 continue
-            if pl == 'Mean Node' and options.get('Node', 0) != 2:
+            if planet_name == 'Mean Node' and options.get('Node', 0) != 2:
                 continue
-            pd = chart[pl]
-            if pd[-1] // 30 == h:
-                pos = (pd[-1] % 30) / 2
-                house.append([pl, pd[-1], pos])
+            planet_data = chart[planet_name]
+            if planet_data[-1] // 30 == h:
+                pos = (planet_data[-1] % 30) / 2
+                house.append([planet_name, planet_data[-1], pos])
         house.sort(key=lambda h: h[1])
         return self.spread(house)
 
@@ -654,9 +663,9 @@ class Uniwheel:
             placed += 1
         return new
 
-    def find_easpect(self, chart, i, j, ea, options, plfg, dormant):
-        pn1 = planet_names[i]
-        pn2 = planet_names[j]
+    def find_ecliptical_aspect(self, chart, i, j, ea, options, plfg, dormant):
+        pn1 = PLANET_NAMES[i]
+        pn2 = PLANET_NAMES[j]
         if (pn1 == 'Eris' or pn2 == 'Eris') and not options.get('use_Eris', 1):
             return ('', 0, 0)
         if (pn1 == 'Sedna' or pn2 == 'Sedna') and not options.get(
@@ -671,10 +680,10 @@ class Uniwheel:
             'Node', 0
         ) != 2:
             return ('', 0, 0)
-        pd1 = chart[planet_names[i]]
-        pd2 = chart[planet_names[j]]
-        pa1 = planet_abrev[i]
-        pa2 = planet_abrev[j]
+        pd1 = chart[PLANET_NAMES[i]]
+        pd2 = chart[PLANET_NAMES[j]]
+        pa1 = PLANET_NAMES_SHORT[i]
+        pa2 = PLANET_NAMES_SHORT[j]
         astr = ['0', '180', '90', '45', '45', '120', '60', '30', '30']
         anum = [0, 180, 90, 45, 135, 120, 60, 30, 150]
         aname = ['co', 'op', 'sq', 'oc', 'oc', 'tr', 'sx', 'in', 'in']
@@ -729,9 +738,9 @@ class Uniwheel:
         p = f'{p:3d}'
         return (f'{pa1} {asp} {pa2} {fmt_dm(abs(d), True)}{p}%  ', acl, d)
 
-    def find_maspect(self, chart, i, j, ma, options, plfg, dormant):
-        pn1 = planet_names[i]
-        pn2 = planet_names[j]
+    def find_mundane_aspect(self, chart, i, j, ma, options, plfg, dormant):
+        pn1 = PLANET_NAMES[i]
+        pn2 = PLANET_NAMES[j]
         if (pn1 == 'Eris' or pn2 == 'Eris') and not options.get('use_Eris', 1):
             return ('', 0, 0)
         if (pn1 == 'Sedna' or pn2 == 'Sedna') and not options.get(
@@ -746,10 +755,10 @@ class Uniwheel:
             'Node', 0
         ) != 2:
             return ('', 0, 0)
-        pd1 = chart[planet_names[i]]
-        pd2 = chart[planet_names[j]]
-        pa1 = planet_abrev[i]
-        pa2 = planet_abrev[j]
+        pd1 = chart[PLANET_NAMES[i]]
+        pd2 = chart[PLANET_NAMES[j]]
+        pa1 = PLANET_NAMES_SHORT[i]
+        pa2 = PLANET_NAMES_SHORT[j]
         d = abs(pd1[7] - pd2[7]) % 360
         if d > 180:
             d = 360 - d
@@ -807,6 +816,7 @@ class Uniwheel:
     def find_midpoint(self, planet, plist, i, j, options):
         mpx = options.get('midpoints', {})
         if planet[0] == 'Ep':
+            # mmp is evidently a planet
             return self.mmp_eastpoint(planet, mmp, plist, i, j)
         if planet[0] == 'Ze':
             return self.mmp_zenith(planet, mmp, plist, i, j)

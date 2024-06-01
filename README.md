@@ -10,7 +10,7 @@ Please see the [Trello board](https://trello.com/b/NpRZTYxh/tmsa-roadmap) to see
 More info forthcoming.
 
 ### Installation for developers
-More info forthcoming.
+Make sure to have `dll` and `ephe` folders in your `src` directory for running the program directly from the command line!
 
 ### How to build this application
 ##### For 32-bit Windows:
