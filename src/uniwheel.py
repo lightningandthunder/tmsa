@@ -23,7 +23,7 @@ def write_to_file(chart, planet):
     if index < 14:
         d += ' ' + fmt_dm(pd[-1] % 30)
     else:
-        d = center(d, 16)
+        d = center_align(d, 16)
     return d
 
 
@@ -92,11 +92,11 @@ class Uniwheel:
                 if ';' in name:
                     name = name.split(';')
                     name = name[0]
-                chart_grid[21][18:51] = center(name)
+                chart_grid[21][18:51] = center_align(name)
             chtype = chart['type']
             if chtype.endswith(' Single Wheel'):
                 chtype = chtype.replace(' Single Wheel', '')
-            chart_grid[23][18:51] = center(chtype)
+            chart_grid[23][18:51] = center_align(chtype)
             line = (
                 str(chart['day']) + ' ' + month_abrev[chart['month'] - 1] + ' '
             )
@@ -108,22 +108,24 @@ class Uniwheel:
             if not chart['style']:
                 line += 'OS '
             line += fmt_hms(chart['time']) + ' ' + chart['zone']
-            chart_grid[25][18:51] = center(line)
-            chart_grid[27][18:51] = center(chart['location'])
-            chart_grid[29][18:51] = center(
+            chart_grid[25][18:51] = center_align(line)
+            chart_grid[27][18:51] = center_align(chart['location'])
+            chart_grid[29][18:51] = center_align(
                 fmt_lat(chart['latitude']) + ' ' + fmt_long(chart['longitude'])
             )
-            chart_grid[31][18:51] = center(
+            chart_grid[31][18:51] = center_align(
                 'UT ' + fmt_hms(chart['time'] + chart['correction'])
             )
-            chart_grid[33][18:51] = center('RAMC ' + fmt_dms(chart['ramc']))
-            chart_grid[35][18:51] = center('OE ' + fmt_dms(chart['oe']))
-            chart_grid[37][18:51] = center(
+            chart_grid[33][18:51] = center_align(
+                'RAMC ' + fmt_dms(chart['ramc'])
+            )
+            chart_grid[35][18:51] = center_align('OE ' + fmt_dms(chart['oe']))
+            chart_grid[37][18:51] = center_align(
                 'SVP ' + zod_sec(360 - chart['ayan'])
             )
-            chart_grid[39][18:51] = center('Sidereal Zodiac')
-            chart_grid[41][18:51] = center('Campanus Houses')
-            chart_grid[43][18:51] = center(chart['notes'] or '* * * * *')
+            chart_grid[39][18:51] = center_align('Sidereal Zodiac')
+            chart_grid[41][18:51] = center_align('Campanus Houses')
+            chart_grid[43][18:51] = center_align(chart['notes'] or '* * * * *')
 
             x = [1, 1, 18, 35, 52, 52, 52, 52, 35, 18, 1, 1]
             y = [33, 49, 49, 49, 49, 33, 17, 1, 1, 1, 1, 17]
@@ -182,29 +184,36 @@ class Uniwheel:
                     continue
                 planet_data = chart[planet_name]
                 planet_index = PLANET_NAMES.index(planet_name)
-                chartfile.write(left(PLANET_NAMES_SHORT[planet_index], 3))
+                chartfile.write(
+                    left_align(PLANET_NAMES_SHORT[planet_index], 3)
+                )
                 chartfile.write(zod_sec(planet_data[0]) + ' ')
                 chartfile.write(fmt_lat(planet_data[1], True) + ' ')
                 if abs(planet_data[2]) >= 1:
                     chartfile.write(s_dm(planet_data[2]) + ' ')
                 else:
                     chartfile.write(s_ms(planet_data[2]) + ' ')
-                chartfile.write(right(fmt_dm(planet_data[3], True), 7) + ' ')
+                chartfile.write(
+                    right_align(fmt_dm(planet_data[3], True), 7) + ' '
+                )
                 chartfile.write(fmt_lat(planet_data[4], True) + ' ')
 
                 # Azimuth
                 chartfile.write(
-                    right(fmt_dm(planet_data[5] + 180 % 360, True), 7) + ' '
+                    right_align(fmt_dm(planet_data[5] + 180 % 360, True), 7)
+                    + ' '
                 )
 
                 # Altitude
-                chartfile.write(right(s_dm(planet_data[6]), 7) + ' ')
+                chartfile.write(right_align(s_dm(planet_data[6]), 7) + ' ')
 
                 # Meridian Longitude
                 chartfile.write(fmt_dm(planet_data[7], True) + ' ')
 
                 # House position
-                chartfile.write(right(fmt_dm(planet_data[8], True), 7) + ' ')
+                chartfile.write(
+                    right_align(fmt_dm(planet_data[8], True), 7) + ' '
+                )
 
                 a1 = planet_data[8] % 90
                 if angularity_options['model'] == 1:
@@ -345,7 +354,7 @@ class Uniwheel:
                 chartfile.write('\n')
             if dormant:
                 chartfile.write('-' * 72 + '\n')
-                chartfile.write(center('Dormant Ingress', 72) + '\n')
+                chartfile.write(center_align('Dormant Ingress', 72) + '\n')
 
             ea = options.get('ecliptic_aspects', DEFAULT_ECLIPTICAL_ORBS)
             ma = options.get('mundane_aspects', DEFAULT_MUNDANE_ORBS)
@@ -383,7 +392,7 @@ class Uniwheel:
                 chartfile.write('-' * 72 + '\n')
                 for planet_index in range(0, 3):
                     chartfile.write(
-                        center(
+                        center_align(
                             f'{asph[planet_index]} Aspects'
                             if asph[planet_index]
                             else '',
@@ -395,25 +404,25 @@ class Uniwheel:
                 max(len(asp[0]), len(asp[1]), len(asp[2]))
             ):
                 if planet_index < len(asp[0]):
-                    chartfile.write(left(asp[0][planet_index], 24))
+                    chartfile.write(left_align(asp[0][planet_index], 24))
                 else:
                     chartfile.write(' ' * 24)
                 if planet_index < len(asp[1]):
-                    chartfile.write(center(asp[1][planet_index], 24))
+                    chartfile.write(center_align(asp[1][planet_index], 24))
                 else:
                     chartfile.write(' ' * 24)
                 if planet_index < len(asp[2]):
-                    chartfile.write(right(asp[2][planet_index], 24))
+                    chartfile.write(right_align(asp[2][planet_index], 24))
                 else:
                     chartfile.write(' ' * 24)
                 chartfile.write('\n')
             chartfile.write('-' * 72 + '\n')
             if asp[3]:
-                chartfile.write(center(f'{asph[3]} Aspects', 72) + '\n')
+                chartfile.write(center_align(f'{asph[3]} Aspects', 72) + '\n')
                 for a in asp[3]:
-                    chartfile.write(center(a, 72) + '\n')
+                    chartfile.write(center_align(a, 72) + '\n')
                 chartfile.write('-' * 72 + '\n')
-            chartfile.write(center('Cosmic State', 72) + '\n')
+            chartfile.write(center_align('Cosmic State', 72) + '\n')
             moonsi = SIGNS_SHORT[int(chart['Moon'][0] // 30)]
             sunsi = SIGNS_SHORT[int(chart['Sun'][0] // 30)]
             cclass = chart['class']

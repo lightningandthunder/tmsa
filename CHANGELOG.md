@@ -2,6 +2,7 @@
 - Change strength calculation for minor angles
 - Add Blue for code formatting
 - Add calculations for Vertex/Antivertex contacts in azimuth
+- Stop autotabbing while typing in form fields
 
 ### 0.4.13
 - Move to semantic versioning (major.minor.patch format)

@@ -56,7 +56,7 @@ def delay(func, *args, **kwargs):
     main.after(1, func, *args, **kwargs)
 
 
-def check_num(widget, maxnum):
+def check_num(widget):
     text = widget.text
     l = len(text)
     if l == 0:
@@ -64,17 +64,9 @@ def check_num(widget, maxnum):
     if text[-1] not in '0123456789':
         widget.text = text[0:-1]
         return
-    num = int(text)
-    if num * 10 > maxnum:
-        widget.tk_focusNext().focus()
-        return
-    maxlen = len(str(maxnum))
-    if l >= maxlen:
-        widget.tk_focusNext().focus()
-        return
 
 
-def check_dec(widget, maxnum):
+def check_dec(widget):
     text = widget.text
     l = len(text)
     if l == 0:
@@ -88,7 +80,7 @@ def check_dec(widget, maxnum):
         return
 
 
-def check_snum(widget, minnum, maxnum):
+def check_snum(widget):
     text = widget.text
     l = len(text)
     if l == 0:
@@ -97,15 +89,6 @@ def check_snum(widget, minnum, maxnum):
         return
     if text[-1] not in '0123456789':
         widget.text = text[0:-1]
-        return
-    num = int(text)
-    if num * 10 > maxnum:
-        widget.tk_focusNext().focus()
-    elif num * 10 < minnum:
-        widget.tk_focusNext().focus()
-    maxlen = len(str(maxnum)) if num >= 0 else len(str(minnum))
-    if l >= maxlen:
-        widget.tk_focusNext().focus()
         return
 
 

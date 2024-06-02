@@ -26,7 +26,7 @@ def write_to_file(chart, planet, prefix, pa_only=False):
         d += ' ' + fmt_dm(pd[-1] % 30)
         d = d[0:-1]
     else:
-        d = center(d, 16)
+        d = center_align(d, 16)
     return d
 
 
@@ -89,16 +89,16 @@ class Biwheel:
             arr[64][14:20] = cusps[3]
             arr[64][31:37] = cusps[4]
             arr[64][48:54] = cusps[5]
-            arr[19][18:51] = center('Transiting (t) Chart')
+            arr[19][18:51] = center_align('Transiting (t) Chart')
             if (
                 'solar' not in chart['type'].lower()
                 and 'lunar' not in chart['type'].lower()
             ):
-                arr[20][18:51] = center(chart['name'])
+                arr[20][18:51] = center_align(chart['name'])
             elif 'return' in chart['type'].lower():
                 parts = chart['name'].split(';')
-                arr[20][18:51] = center(parts[0])
-            arr[21][18:51] = center(chart['type'])
+                arr[20][18:51] = center_align(parts[0])
+            arr[21][18:51] = center_align(chart['type'])
             line = (
                 str(chart['day']) + ' ' + month_abrev[chart['month'] - 1] + ' '
             )
@@ -110,35 +110,37 @@ class Biwheel:
             if not chart['style']:
                 line += 'OS '
             line += fmt_hms(chart['time']) + ' ' + chart['zone']
-            arr[22][18:51] = center(line)
-            arr[23][18:51] = center(chart['location'])
-            arr[24][18:51] = center(
+            arr[22][18:51] = center_align(line)
+            arr[23][18:51] = center_align(chart['location'])
+            arr[24][18:51] = center_align(
                 fmt_lat(chart['latitude']) + ' ' + fmt_long(chart['longitude'])
             )
-            arr[25][18:51] = center(
+            arr[25][18:51] = center_align(
                 'UT ' + fmt_hms(chart['time'] + chart['correction'])
             )
-            arr[26][18:51] = center('RAMC ' + fmt_dms(chart['ramc']))
-            arr[27][18:51] = center('OE ' + fmt_dms(chart['oe']))
-            arr[28][18:51] = center('SVP ' + zod_sec(360 - chart['ayan']))
-            arr[29][18:51] = center('Sidereal Zodiac')
-            arr[30][18:51] = center('Campanus Houses')
-            arr[31][18:51] = center(chart['notes'] or '')
+            arr[26][18:51] = center_align('RAMC ' + fmt_dms(chart['ramc']))
+            arr[27][18:51] = center_align('OE ' + fmt_dms(chart['oe']))
+            arr[28][18:51] = center_align(
+                'SVP ' + zod_sec(360 - chart['ayan'])
+            )
+            arr[29][18:51] = center_align('Sidereal Zodiac')
+            arr[30][18:51] = center_align('Campanus Houses')
+            arr[31][18:51] = center_align(chart['notes'] or '')
             radix = chart['base_chart']
-            arr[33][18:51] = center('Radical (r) Chart')
+            arr[33][18:51] = center_align('Radical (r) Chart')
             if chart['type'] not in INGRESSES:
                 if (
                     'solar' not in radix['type'].lower()
                     and 'lunar' not in radix['type'].lower()
                 ):
-                    arr[34][18:51] = center(radix['name'])
+                    arr[34][18:51] = center_align(radix['name'])
                 elif 'return' in radix['type'].lower():
                     parts = radix['name'].split(';')
-                    arr[34][18:51] = center(parts[0])
+                    arr[34][18:51] = center_align(parts[0])
             chtype = radix['type']
             if chtype.endswith(' Single Wheel'):
                 chtype = chtype.replace(' Single Wheel', '')
-            arr[35][18:51] = center(chtype)
+            arr[35][18:51] = center_align(chtype)
             line = (
                 str(radix['day']) + ' ' + month_abrev[radix['month'] - 1] + ' '
             )
@@ -150,20 +152,22 @@ class Biwheel:
             if not radix['style']:
                 line += 'OS '
             line += fmt_hms(radix['time']) + ' ' + radix['zone']
-            arr[36][18:51] = center(line)
-            arr[37][18:51] = center(radix['location'])
-            arr[38][18:51] = center(
+            arr[36][18:51] = center_align(line)
+            arr[37][18:51] = center_align(radix['location'])
+            arr[38][18:51] = center_align(
                 fmt_lat(radix['latitude']) + ' ' + fmt_long(radix['longitude'])
             )
-            arr[39][18:51] = center(
+            arr[39][18:51] = center_align(
                 'UT ' + fmt_hms(radix['time'] + radix['correction'])
             )
-            arr[40][18:51] = center('RAMC ' + fmt_dms(radix['ramc']))
-            arr[41][18:51] = center('OE ' + fmt_dms(radix['oe']))
-            arr[42][18:51] = center('SVP ' + zod_sec(360 - radix['ayan']))
-            arr[43][18:51] = center('Sidereal Zodiac')
-            arr[44][18:51] = center('Campanus Houses')
-            arr[45][18:51] = center(radix['notes'] or '')
+            arr[40][18:51] = center_align('RAMC ' + fmt_dms(radix['ramc']))
+            arr[41][18:51] = center_align('OE ' + fmt_dms(radix['oe']))
+            arr[42][18:51] = center_align(
+                'SVP ' + zod_sec(360 - radix['ayan'])
+            )
+            arr[43][18:51] = center_align('Sidereal Zodiac')
+            arr[44][18:51] = center_align('Campanus Houses')
+            arr[45][18:51] = center_align(radix['notes'] or '')
 
             x = [1, 1, 18, 35, 52, 52, 52, 52, 35, 18, 1, 1]
             y = [33, 49, 49, 49, 49, 33, 17, 1, 1, 1, 1, 17]
@@ -202,7 +206,9 @@ class Biwheel:
                 chartfile.write('\n\n' + '-' * 72 + '\n')
                 s = 's' if len(extras) > 1 else ''
                 chartfile.write(
-                    center(f'Planet{s} not shown above, details below:', 72)
+                    center_align(
+                        f'Planet{s} not shown above, details below:', 72
+                    )
                     + '\n'
                 )
                 ex = ''
@@ -219,13 +225,13 @@ class Biwheel:
                             )
                             + ' '
                         )
-                chartfile.write(center(ex[0:-1], 72) + '\n')
+                chartfile.write(center_align(ex[0:-1], 72) + '\n')
 
             chartfile.write('\n\n' + '-' * 72 + '\n')
             chartfile.write(
                 'Pl Longitude   Lat   Speed    RA    Decl    Azi     Alt     PVL    Ang G\n'
             )
-            chartfile.write(center('Transiting Planets', 72) + '\n')
+            chartfile.write(center_align('Transiting Planets', 72) + '\n')
             ang = options.get('angularity', {})
             major_limit = ang.get('major_angles', [3.0, 7.0, 10.0])
             minor_limit = ang.get('minor_angles', [1.0, 2.0, 3.0])
@@ -249,18 +255,24 @@ class Biwheel:
                     continue
                 planet_data = chart[planet_name]
                 i = PLANET_NAMES.index(planet_name)
-                chartfile.write(left(PLANET_NAMES_SHORT[i], 3))
+                chartfile.write(left_align(PLANET_NAMES_SHORT[i], 3))
                 chartfile.write(zod_sec(planet_data[0]) + ' ')
                 chartfile.write(fmt_lat(planet_data[1], True) + ' ')
                 if abs(planet_data[2]) >= 1:
                     chartfile.write(s_dm(planet_data[2]) + ' ')
                 else:
                     chartfile.write(s_ms(planet_data[2]) + ' ')
-                chartfile.write(right(fmt_dm(planet_data[3], True), 7) + ' ')
+                chartfile.write(
+                    right_align(fmt_dm(planet_data[3], True), 7) + ' '
+                )
                 chartfile.write(fmt_lat(planet_data[4], True) + ' ')
-                chartfile.write(right(fmt_dm(planet_data[5], True), 7) + ' ')
+                chartfile.write(
+                    right_align(fmt_dm(planet_data[5], True), 7) + ' '
+                )
                 chartfile.write(s_dm(planet_data[6]) + ' ')
-                chartfile.write(right(fmt_dm(planet_data[7], True), 7) + ' ')
+                chartfile.write(
+                    right_align(fmt_dm(planet_data[7], True), 7) + ' '
+                )
                 a1 = planet_data[7] % 90
                 if ang['model'] == 1:
                     p1 = main_angularity_curve_2(a1)
@@ -395,7 +407,7 @@ class Biwheel:
                 chartfile.write('\n')
             plangt = deepcopy(plang)
             chartfile.write('-' * 72 + '\n')
-            chartfile.write(center('Radical Planets', 72) + '\n')
+            chartfile.write(center_align('Radical Planets', 72) + '\n')
             for planet_name in PLANET_NAMES:
                 if planet_name == 'Eastpoint':
                     break
@@ -409,18 +421,24 @@ class Biwheel:
                     continue
                 planet_data = chart['base_chart'][planet_name]
                 i = PLANET_NAMES.index(planet_name)
-                chartfile.write(left(PLANET_NAMES_SHORT[i], 3))
+                chartfile.write(left_align(PLANET_NAMES_SHORT[i], 3))
                 chartfile.write(zod_sec(planet_data[0]) + ' ')
                 chartfile.write(fmt_lat(planet_data[1], True) + ' ')
                 if abs(planet_data[2]) >= 1:
                     chartfile.write(s_dm(planet_data[2]) + ' ')
                 else:
                     chartfile.write(s_ms(planet_data[2]) + ' ')
-                chartfile.write(right(fmt_dm(planet_data[3], True), 7) + ' ')
+                chartfile.write(
+                    right_align(fmt_dm(planet_data[3], True), 7) + ' '
+                )
                 chartfile.write(fmt_lat(planet_data[4], True) + ' ')
-                chartfile.write(right(fmt_dm(planet_data[5], True), 7) + ' ')
+                chartfile.write(
+                    right_align(fmt_dm(planet_data[5], True), 7) + ' '
+                )
                 chartfile.write(s_dm(planet_data[6]) + ' ')
-                chartfile.write(right(fmt_dm(planet_data[7], True), 7) + ' ')
+                chartfile.write(
+                    right_align(fmt_dm(planet_data[7], True), 7) + ' '
+                )
                 a1 = planet_data[7] % 90
                 if ang['model'] == 1:
                     p1 = main_angularity_curve_2(a1)
@@ -628,31 +646,33 @@ class Biwheel:
             if any(asph):
                 for i in range(0, 3):
                     chartfile.write(
-                        center(f'{asph[i]} Aspects' if asph[i] else '', 24)
+                        center_align(
+                            f'{asph[i]} Aspects' if asph[i] else '', 24
+                        )
                     )
                 chartfile.write('\n')
             for i in range(max(len(asp[0]), len(asp[1]), len(asp[2]))):
                 if i < len(asp[0]):
-                    chartfile.write(left(asp[0][i], 24))
+                    chartfile.write(left_align(asp[0][i], 24))
                 else:
                     chartfile.write(' ' * 24)
                 if i < len(asp[1]):
-                    chartfile.write(center(asp[1][i], 24))
+                    chartfile.write(center_align(asp[1][i], 24))
                 else:
                     chartfile.write(' ' * 24)
                 if i < len(asp[2]):
-                    chartfile.write(right(asp[2][i], 24))
+                    chartfile.write(right_align(asp[2][i], 24))
                 else:
                     chartfile.write(' ' * 24)
                 chartfile.write('\n')
             chartfile.write('-' * 72 + '\n')
             if asp[3]:
-                chartfile.write(center(f'{asph[3]} Aspects', 76) + '\n')
+                chartfile.write(center_align(f'{asph[3]} Aspects', 76) + '\n')
                 for a in asp[3]:
-                    chartfile.write(center(a, 72) + '\n')
+                    chartfile.write(center_align(a, 72) + '\n')
                 chartfile.write('-' * 72 + '\n')
-            chartfile.write(center('Cosmic State', 72) + '\n')
-            chartfile.write(center('Transiting Planets', 72) + '\n')
+            chartfile.write(center_align('Cosmic State', 72) + '\n')
+            chartfile.write(center_align('Transiting Planets', 72) + '\n')
             cclass = chart['class']
             for i in range(14):
                 if i == 10 and not options.get('use_Eris', 1):
@@ -701,7 +721,7 @@ class Biwheel:
                     if j % 4 == 3 and j != len(asplist) - 1:
                         chartfile.write('\n' + (' ' * 8) + '| ')
             chartfile.write('\n' + '-' * 72 + '\n')
-            chartfile.write(center('Radical Planets', 72) + '\n')
+            chartfile.write(center_align('Radical Planets', 72) + '\n')
             cclass = chart['class']
             for i in range(14):
                 if i == 10 and not options.get('use_Eris', 1):

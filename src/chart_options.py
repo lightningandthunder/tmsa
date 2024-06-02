@@ -52,7 +52,7 @@ class ChartOptions(Frame):
         self.maj.append(Entry(self, '10', 0.45, 0.35, 0.05))
         for i in range(3):
             self.maj[i].bind(
-                '<KeyRelease>', lambda e: delay(check_dec, e.widget, 15)
+                '<KeyRelease>', lambda e: delay(check_dec, e.widget)
             )
         self.min = []
         self.min.append(Entry(self, '2', 0.55, 0.35, 0.05))
@@ -60,7 +60,7 @@ class ChartOptions(Frame):
         self.min.append(Entry(self, '', 0.75, 0.35, 0.05))
         for i in range(3):
             self.min[i].bind(
-                '<KeyRelease>', lambda e: delay(check_dec, e.widget, 5)
+                '<KeyRelease>', lambda e: delay(check_dec, e.widget)
             )
         Label(self, 'Ecliptic Aspects', 0.25, 0.4, 0.25)
         Label(self, 'Mundane Aspects', 0.55, 0.4, 0.25)
@@ -107,7 +107,7 @@ class ChartOptions(Frame):
             for j in range(3):
                 mxo[j].bind(
                     '<KeyRelease>',
-                    lambda e: delay(check_dec, e.widget, maxorb),
+                    lambda e: delay(check_dec, e.widget),
                 )
             self.maxorbs.append(mxo)
             if type(exact[i]) == list:
@@ -124,7 +124,7 @@ class ChartOptions(Frame):
                 for j in range(3):
                     mmxo[j].bind(
                         '<KeyRelease>',
-                        lambda e: delay(check_dec, e.widget, maxorb),
+                        lambda e: delay(check_dec, e.widget),
                     )
                 self.mmaxorbs.append(mmxo)
         Label(

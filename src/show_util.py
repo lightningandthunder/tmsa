@@ -152,8 +152,28 @@ def main_angularity_curve_2(a):
     return math.cos(math.radians(a))
 
 
+def eureka_curve(a):
+    return (faded_p_scale(a) + repressiveness_score(a)) / 1.25
+
+
+def calculate_angularity_curve(orb_degrees: float):
+    return math.cos(math.radians(orb_degrees * 4))
+
+
+def calculate_cadent_curve(orb_degrees: float):
+    return (math.cos(math.radians(4 * (orb_degrees - 60)))) * -1
+
+
+def faded_p_scale(p: float):
+    return p * ((2 * p + 1) / 2)
+
+
+def repressiveness_score(p: float):
+    return p * (1 - ((2 * p + 1) / 2))
+
+
 def minor_angularity_curve(orb_degrees: float):
-    return math.cos(math.radians(orb_degrees * 30))
+    return (math.cos(math.radians(orb_degrees * 30)) + 3) / 4
 
 
 def inrange(value: float, center: float, orb: float) -> bool:
@@ -198,7 +218,7 @@ def zod_sec(value):
     )
 
 
-def center(value, width=33):
+def center_align(value, width=33):
     if len(value) > width:
         value = value[0:width]
     left = (width - len(value)) // 2
@@ -208,13 +228,13 @@ def center(value, width=33):
     return left + value + right
 
 
-def left(value, width):
+def left_align(value, width):
     if len(value) > width:
         value = value[0:width]
     return value + ' ' * (width - len(value))
 
 
-def right(value, width):
+def right_align(value, width):
     if len(value) > width:
         value = value[0:width]
     return ' ' * (width - len(value)) + value

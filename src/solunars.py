@@ -58,15 +58,11 @@ class Solunars(Frame):
             self.dated = Entry(self, now.strftime('%d'), 0.4, 0.1, 0.1)
         self.datey = Entry(self, now.strftime('%Y'), 0.5, 0.1, 0.1)
         self.datey.bind('<FocusOut>', lambda _: delay(self.check_style))
-        self.datem.bind(
-            '<KeyRelease>', lambda _: delay(check_num, self.datem, 12)
-        )
-        self.dated.bind(
-            '<KeyRelease>', lambda _: delay(check_num, self.dated, 31)
-        )
+        self.datem.bind('<KeyRelease>', lambda _: delay(check_num, self.datem))
+        self.dated.bind('<KeyRelease>', lambda _: delay(check_num, self.dated))
         self.datey.bind(
             '<KeyRelease>',
-            lambda _: delay(check_snum, self.datem, -2999, 3000),
+            lambda _: delay(check_snum, self.datem),
         )
         self.bce = Checkbutton(self, 'BC/BCE', 0.6, 0.1, 0.1, focus=False)
         self.old = Checkbutton(self, 'OS', 0.7, 0.1, 0.1, focus=False)
@@ -74,17 +70,11 @@ class Solunars(Frame):
         h = '%I' if TIME_FMT == 'AM/PM' else '%H'
         self.timeh = Entry(self, now.strftime(h), 0.3, 0.15, 0.1)
         maxh = 12 if TIME_FMT == 'AM/PM' else 23
-        self.timeh.bind(
-            '<KeyRelease>', lambda _: delay(check_num, self.timeh, maxh)
-        )
+        self.timeh.bind('<KeyRelease>', lambda _: delay(check_num, self.timeh))
         self.timem = Entry(self, now.strftime('%M'), 0.4, 0.15, 0.1)
-        self.timem.bind(
-            '<KeyRelease>', lambda _: delay(check_num, self.timem, 59)
-        )
+        self.timem.bind('<KeyRelease>', lambda _: delay(check_num, self.timem))
         self.times = Entry(self, now.strftime('%S'), 0.5, 0.15, 0.1)
-        self.times.bind(
-            '<KeyRelease>', lambda _: delay(check_num, self.times, 59)
-        )
+        self.times.bind('<KeyRelease>', lambda _: delay(check_num, self.times))
         self.tmfmt = Radiogroup(self)
         if TIME_FMT == '24 Hour':
             Radiobutton(self, self.tmfmt, 2, '24 Hour Clock', 0.6, 0.15, 0.2)
@@ -105,17 +95,11 @@ class Solunars(Frame):
         Label(self, 'Lat D M S', 0.15, 0.25, 0.15, anchor=tk.W)
         (d, m, s, si) = toDMS(base['latitude'])
         self.latd = Entry(self, d, 0.3, 0.25, 0.1)
-        self.latd.bind(
-            '<KeyRelease>', lambda _: delay(check_num, self.latd, 89)
-        )
+        self.latd.bind('<KeyRelease>', lambda _: delay(check_num, self.latd))
         self.latm = Entry(self, m, 0.4, 0.25, 0.1)
-        self.latm.bind(
-            '<KeyRelease>', lambda _: delay(check_num, self.latm, 59)
-        )
+        self.latm.bind('<KeyRelease>', lambda _: delay(check_num, self.latm))
         self.lats = Entry(self, s, 0.5, 0.25, 0.1)
-        self.lats.bind(
-            '<KeyRelease>', lambda _: delay(check_num, self.lats, 59)
-        )
+        self.lats.bind('<KeyRelease>', lambda _: delay(check_num, self.lats))
         self.latdir = Radiogroup(self)
         Radiobutton(self, self.latdir, 0, 'North', 0.6, 0.25, 0.1)
         Radiobutton(self, self.latdir, 1, 'South', 0.7, 0.25, 0.1)
@@ -123,17 +107,11 @@ class Solunars(Frame):
         Label(self, 'Long D M S', 0.15, 0.3, 0.15, anchor=tk.W)
         (d, m, s, si) = toDMS(base['longitude'])
         self.longd = Entry(self, d, 0.3, 0.3, 0.1)
-        self.longd.bind(
-            '<KeyRelease>', lambda _: delay(check_num, self.longd, 180)
-        )
+        self.longd.bind('<KeyRelease>', lambda _: delay(check_num, self.longd))
         self.longm = Entry(self, m, 0.4, 0.3, 0.1)
-        self.longm.bind(
-            '<KeyRelease>', lambda _: delay(check_num, self.longm, 59)
-        )
+        self.longm.bind('<KeyRelease>', lambda _: delay(check_num, self.longm))
         self.longs = Entry(self, s, 0.5, 0.3, 0.1)
-        self.longs.bind(
-            '<KeyRelease>', lambda _: delay(check_num, self.longs, 59)
-        )
+        self.longs.bind('<KeyRelease>', lambda _: delay(check_num, self.longs))
         self.longdir = Radiogroup(self)
         Radiobutton(self, self.longdir, 0, 'East ', 0.6, 0.3, 0.1)
         Radiobutton(self, self.longdir, 1, 'West ', 0.7, 0.3, 0.1)

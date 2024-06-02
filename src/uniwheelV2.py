@@ -23,7 +23,7 @@ def write_to_file(chart, planet):
     if index < 14:
         data_line += ' ' + fmt_dm(planet_data[-1] % 30)
     else:
-        data_line = center(data_line, 16)
+        data_line = center_align(data_line, 16)
 
     return data_line
 
@@ -37,8 +37,6 @@ def get_return_class(value):
     return 'N'
 
 
-# Display table is fucked up for some reason.
-# Aspect calculation is not right.
 class Uniwheel:
     def __init__(self, chart, temporary, options):
         filename = make_chart_path(chart, temporary)
@@ -51,7 +49,7 @@ class Uniwheel:
 
         with chartfile:
             self.draw_chart(chart, chartfile, options)
-            self.draw_info_table(chart, chartfile, options)
+            self.write_info_table(chart, chartfile, options)
 
             chartfile.write('\n' + '-' * 72 + '\n')
             chartfile.write(
@@ -78,10 +76,10 @@ class Uniwheel:
                 pos = (planet_data[-1] % 30) / 2
                 house.append([planet_name, planet_data[-1], pos])
         house.sort(key=lambda h: h[1])
-        return self.spread(house)
+        return self.spread_planets_within_house(house)
 
-    def spread(self, old, start=0):
-        new = [[] for i in range(15)]
+    def spread_planets_within_house(self, old, start=0):
+        new = [[] for _ in range(15)]
         placed = 0
         for i in range(len(old)):
             x = int(old[i][-1]) + start
@@ -97,155 +95,214 @@ class Uniwheel:
             placed += 1
         return new
 
-    def find_ecliptical_aspect(self, chart, i, j, ea, options, plfg, dormant):
-        pn1 = PLANET_NAMES[i]
-        pn2 = PLANET_NAMES[j]
-        if (pn1 == 'Eris' or pn2 == 'Eris') and not options.get('use_Eris', 1):
+    def find_ecliptical_aspect(
+        self,
+        chart,
+        planet_index_1,
+        planet_index_2,
+        ecliptical_orbs,
+        options,
+        foreground_planets,
+        dormant,
+    ):
+        planet_name_1 = PLANET_NAMES[planet_index_1]
+        planet_name_2 = PLANET_NAMES[planet_index_2]
+        if (
+            planet_name_1 == 'Eris' or planet_name_2 == 'Eris'
+        ) and not options.get('use_Eris', 1):
             return ('', 0, 0)
-        if (pn1 == 'Sedna' or pn2 == 'Sedna') and not options.get(
-            'use_Sedna', 0
-        ):
+        if (
+            planet_name_1 == 'Sedna' or planet_name_2 == 'Sedna'
+        ) and not options.get('use_Sedna', 0):
             return ('', 0, 0)
-        if (pn1 == 'True Node' or pn2 == 'True Node') and options.get(
-            'Node', 0
-        ) != 1:
+        if (
+            planet_name_1 == 'True Node' or planet_name_2 == 'True Node'
+        ) and options.get('Node', 0) != 1:
             return ('', 0, 0)
-        if (pn1 == 'Mean Node' or pn2 == 'Mean Node') and options.get(
-            'Node', 0
-        ) != 2:
+        if (
+            planet_name_1 == 'Mean Node' or planet_name_2 == 'Mean Node'
+        ) and options.get('Node', 0) != 2:
             return ('', 0, 0)
-        pd1 = chart[PLANET_NAMES[i]]
-        pd2 = chart[PLANET_NAMES[j]]
-        pa1 = PLANET_NAMES_SHORT[i]
-        pa2 = PLANET_NAMES_SHORT[j]
-        astr = ['0', '180', '90', '45', '45', '120', '60', '30', '30']
-        anum = [0, 180, 90, 45, 135, 120, 60, 30, 150]
-        aname = ['co', 'op', 'sq', 'oc', 'oc', 'tr', 'sx', 'in', 'in']
-        d = abs(pd1[0] - pd2[0]) % 360
-        if d > 180:
-            d = 360 - d
-        for i in range(9):
-            aspd = ea[astr[i]]
-            if aspd[2]:
-                maxorb = aspd[2]
-            elif aspd[1]:
-                maxorb = aspd[1] * 1.25
-            elif aspd[0]:
-                maxorb = aspd[0] * 2.5
+        planet_data_1 = chart[PLANET_NAMES[planet_index_1]]
+        planet_data_2 = chart[PLANET_NAMES[planet_index_2]]
+        planet_short_name_1 = PLANET_NAMES_SHORT[planet_index_1]
+        planet_short_name_2 = PLANET_NAMES_SHORT[planet_index_2]
+        aspect_strings = [
+            '0',
+            '180',
+            '90',
+            '45',
+            '45',
+            '120',
+            '60',
+            '30',
+            '30',
+        ]
+        aspect_ints = [0, 180, 90, 45, 135, 120, 60, 30, 150]
+        aspect_names = ['co', 'op', 'sq', 'oc', 'oc', 'tr', 'sx', 'in', 'in']
+        raw_orb = abs(planet_data_1[0] - planet_data_2[0]) % 360
+        if raw_orb > 180:
+            raw_orb = 360 - raw_orb
+        for planet_index_1 in range((len(aspect_strings) - 1)):
+            test_orb = ecliptical_orbs[aspect_strings[planet_index_1]]
+            if test_orb[2]:
+                maxorb = test_orb[2]
+            elif test_orb[1]:
+                maxorb = test_orb[1] * 1.25
+            elif test_orb[0]:
+                maxorb = test_orb[0] * 2.5
             else:
                 maxorb = -1
-            if d >= anum[i] - maxorb and d <= anum[i] + maxorb:
-                asp = aname[i]
+            if (
+                raw_orb >= aspect_ints[planet_index_1] - maxorb
+                and raw_orb <= aspect_ints[planet_index_1] + maxorb
+            ):
+                aspect = aspect_names[planet_index_1]
                 if maxorb <= 0:
                     return ('', 0, 0)
-                m = 60 / maxorb
-                d = abs(d - anum[i])
-                if d <= aspd[0]:
-                    acl = 1
-                elif d <= aspd[1]:
-                    acl = 2
-                elif d <= aspd[2]:
-                    acl = 3
+                strength = 60 / maxorb
+                raw_orb = abs(raw_orb - aspect_ints[planet_index_1])
+                if raw_orb <= test_orb[0]:
+                    aspect_class = 1
+                elif raw_orb <= test_orb[1]:
+                    aspect_class = 2
+                elif raw_orb <= test_orb[2]:
+                    aspect_class = 3
                 else:
                     return ('', 0, 0)
-                if pn1 == 'Moon' and 'I' in self.cclass:
+                if planet_name_1 == 'Moon' and 'I' in self.cclass:
                     break
                 if dormant:
                     return ('', 0, 0)
                 if options.get('show_aspects', 0) == 1:
-                    if pn1 not in plfg and pn2 not in plfg:
-                        if d <= 1 and options.get('partile_nf', False):
-                            acl = 4
+                    if (
+                        planet_name_1 not in foreground_planets
+                        and planet_name_2 not in foreground_planets
+                    ):
+                        if raw_orb <= 1 and options.get('partile_nf', False):
+                            aspect_class = 4
                         else:
                             return ('', 0, 0)
                 elif options.get('show_aspects', 0) == 2:
-                    if pn1 not in plfg or pn2 not in plfg:
-                        if d <= 1 and options.get('partile_nf', False):
-                            acl = 4
+                    if (
+                        planet_name_1 not in foreground_planets
+                        or planet_name_2 not in foreground_planets
+                    ):
+                        if raw_orb <= 1 and options.get('partile_nf', False):
+                            aspect_class = 4
                         else:
                             return ('', 0, 0)
                 break
         else:
             return ('', 0, 0)
-        p = math.cos(math.radians(d * m))
-        p = round((p - 0.5) * 200)
-        p = f'{p:3d}'
-        return (f'{pa1} {asp} {pa2} {fmt_dm(abs(d), True)}{p}%  ', acl, d)
+        strength_percent = math.cos(math.radians(raw_orb * strength))
+        strength_percent = round((strength_percent - 0.5) * 200)
+        strength_percent = f'{strength_percent:3d}'
+        return (
+            f'{planet_short_name_1} {aspect} {planet_short_name_2} {fmt_dm(abs(raw_orb), True)}{strength_percent}%  ',
+            aspect_class,
+            raw_orb,
+        )
 
-    def find_mundane_aspect(self, chart, i, j, ma, options, plfg, dormant):
-        pn1 = PLANET_NAMES[i]
-        pn2 = PLANET_NAMES[j]
-        if (pn1 == 'Eris' or pn2 == 'Eris') and not options.get('use_Eris', 1):
+    def find_mundane_aspect(
+        self,
+        chart,
+        planet_index_1,
+        planet_index_2,
+        mundane_orbs,
+        options,
+        planets_foreground,
+        dormant,
+    ):
+        planet_name_1 = PLANET_NAMES[planet_index_1]
+        planet_name_2 = PLANET_NAMES[planet_index_2]
+        if (
+            planet_name_1 == 'Eris' or planet_name_2 == 'Eris'
+        ) and not options.get('use_Eris', 1):
             return ('', 0, 0)
-        if (pn1 == 'Sedna' or pn2 == 'Sedna') and not options.get(
-            'use_Sedna', 0
-        ):
+        if (
+            planet_name_1 == 'Sedna' or planet_name_2 == 'Sedna'
+        ) and not options.get('use_Sedna', 0):
             return ('', 0, 0)
-        if (pn1 == 'True Node' or pn2 == 'True Node') and options.get(
-            'Node', 0
-        ) != 1:
+        if (
+            planet_name_1 == 'True Node' or planet_name_2 == 'True Node'
+        ) and options.get('Node', 0) != 1:
             return ('', 0, 0)
-        if (pn1 == 'Mean Node' or pn2 == 'Mean Node') and options.get(
-            'Node', 0
-        ) != 2:
+        if (
+            planet_name_1 == 'Mean Node' or planet_name_2 == 'Mean Node'
+        ) and options.get('Node', 0) != 2:
             return ('', 0, 0)
-        pd1 = chart[PLANET_NAMES[i]]
-        pd2 = chart[PLANET_NAMES[j]]
-        pa1 = PLANET_NAMES_SHORT[i]
-        pa2 = PLANET_NAMES_SHORT[j]
-        d = abs(pd1[7] - pd2[7]) % 360
-        if d > 180:
-            d = 360 - d
-        astr = ['0', '180', '90', '45', '45']
-        anum = [0, 180, 90, 45, 135]
-        aname = ['co', 'op', 'sq', 'oc', 'oc']
-        for i in range(5):
-            aspd = ma[astr[i]]
-            if aspd[2]:
-                maxorb = aspd[2]
-            elif aspd[1]:
-                maxorb = aspd[1] * 1.25
-            elif aspd[0]:
-                maxorb = aspd[0] * 2.5
+        planet_data_1 = chart[PLANET_NAMES[planet_index_1]]
+        planet_data_2 = chart[PLANET_NAMES[planet_index_2]]
+        planet_short_name_1 = PLANET_NAMES_SHORT[planet_index_1]
+        planet_short_name_2 = PLANET_NAMES_SHORT[planet_index_2]
+
+        raw_orb = abs(planet_data_1[8] - planet_data_2[8]) % 360
+        if raw_orb > 180:
+            raw_orb = 360 - raw_orb
+        aspect_strings = ['0', '180', '90', '45', '45']
+        aspect_ints = [0, 180, 90, 45, 135]
+        aspect_names = ['co', 'op', 'sq', 'oc', 'oc']
+        for planet_index_1 in range((len(aspect_strings) - 1)):
+            test_aspect_orb = mundane_orbs[aspect_strings[planet_index_1]]
+            if test_aspect_orb[2]:
+                maxorb = test_aspect_orb[2]
+            elif test_aspect_orb[1]:
+                maxorb = test_aspect_orb[1] * 1.25
+            elif test_aspect_orb[0]:
+                maxorb = test_aspect_orb[0] * 2.5
             else:
                 maxorb = -1
-            if d >= anum[i] - maxorb and d <= anum[i] + maxorb:
-                asp = aname[i]
+            if (
+                raw_orb >= aspect_ints[planet_index_1] - maxorb
+                and raw_orb <= aspect_ints[planet_index_1] + maxorb
+            ):
+                asp = aspect_names[planet_index_1]
                 if maxorb <= 0:
                     return ('', 0, 0)
-                m = 60 / maxorb
-                d = abs(d - anum[i])
-                if d <= aspd[0]:
-                    acl = 1
-                elif d <= aspd[1]:
-                    acl = 2
-                elif d <= aspd[2]:
-                    acl = 3
+                strength = 60 / maxorb
+                raw_orb = abs(raw_orb - aspect_ints[planet_index_1])
+                if raw_orb <= test_aspect_orb[0]:
+                    aspect_class = 1
+                elif raw_orb <= test_aspect_orb[1]:
+                    aspect_class = 2
+                elif raw_orb <= test_aspect_orb[2]:
+                    aspect_class = 3
                 else:
                     return ('', 0, 0)
-                if pn1 == 'Moon' and 'I' in self.cclass:
+                if planet_name_1 == 'Moon' and 'I' in self.cclass:
                     break
                 if dormant:
                     return ('', 0, 0)
                 if options.get('show_aspects', 0) == 1:
-                    if pn1 not in plfg and pn2 not in plfg:
-                        if d <= 1 and options.get('partile_nf', False):
-                            acl = 4
+                    if (
+                        planet_name_1 not in planets_foreground
+                        and planet_name_2 not in planets_foreground
+                    ):
+                        if raw_orb <= 1 and options.get('partile_nf', False):
+                            aspect_class = 4
                         else:
                             return ('', 0, 0)
                 elif options.get('show_aspects', 0) == 2:
-                    if pn1 not in plfg or pn2 not in plfg:
-                        if d <= 1 and options.get('partile_nf', False):
-                            acl = 4
+                    if (
+                        planet_name_1 not in planets_foreground
+                        or planet_name_2 not in planets_foreground
+                    ):
+                        if raw_orb <= 1 and options.get('partile_nf', False):
+                            aspect_class = 4
                         else:
                             return ('', 0, 0)
                 break
         else:
             return ('', 0, 0)
-        p = math.cos(math.radians(d * m))
-        p = round((p - 0.5) * 200)
-        p = f'{p:3d}'
-        return (f'{pa1} {asp} {pa2} {fmt_dm(abs(d), True)}{p}% M', acl, d)
+        strength_percent = math.cos(math.radians(raw_orb * strength))
+        strength_percent = round((strength_percent - 0.5) * 200)
+        strength_percent = f'{strength_percent:3d}'
+        return (
+            f'{planet_short_name_1} {asp} {planet_short_name_2} {fmt_dm(abs(raw_orb), True)}{strength_percent}% M',
+            aspect_class,
+            raw_orb,
+        )
 
     def find_midpoint(self, planet, plist, i, j, options):
         mpx = options.get('midpoints', {})
@@ -617,11 +674,11 @@ class Uniwheel:
             if ';' in name:
                 name = name.split(';')
                 name = name[0]
-            chart_grid[21][18:51] = center(name)
+            chart_grid[21][18:51] = center_align(name)
         chtype = chart['type']
         if chtype.endswith(' Single Wheel'):
             chtype = chtype.replace(' Single Wheel', '')
-        chart_grid[23][18:51] = center(chtype)
+        chart_grid[23][18:51] = center_align(chtype)
         line = str(chart['day']) + ' ' + month_abrev[chart['month'] - 1] + ' '
         line += (
             f"{chart['year']} "
@@ -631,20 +688,22 @@ class Uniwheel:
         if not chart['style']:
             line += 'OS '
         line += fmt_hms(chart['time']) + ' ' + chart['zone']
-        chart_grid[25][18:51] = center(line)
-        chart_grid[27][18:51] = center(chart['location'])
-        chart_grid[29][18:51] = center(
+        chart_grid[25][18:51] = center_align(line)
+        chart_grid[27][18:51] = center_align(chart['location'])
+        chart_grid[29][18:51] = center_align(
             fmt_lat(chart['latitude']) + ' ' + fmt_long(chart['longitude'])
         )
-        chart_grid[31][18:51] = center(
+        chart_grid[31][18:51] = center_align(
             'UT ' + fmt_hms(chart['time'] + chart['correction'])
         )
-        chart_grid[33][18:51] = center('RAMC ' + fmt_dms(chart['ramc']))
-        chart_grid[35][18:51] = center('OE ' + fmt_dms(chart['oe']))
-        chart_grid[37][18:51] = center('SVP ' + zod_sec(360 - chart['ayan']))
-        chart_grid[39][18:51] = center('Sidereal Zodiac')
-        chart_grid[41][18:51] = center('Campanus Houses')
-        chart_grid[43][18:51] = center(chart['notes'] or '* * * * *')
+        chart_grid[33][18:51] = center_align('RAMC ' + fmt_dms(chart['ramc']))
+        chart_grid[35][18:51] = center_align('OE ' + fmt_dms(chart['oe']))
+        chart_grid[37][18:51] = center_align(
+            'SVP ' + zod_sec(360 - chart['ayan'])
+        )
+        chart_grid[39][18:51] = center_align('Sidereal Zodiac')
+        chart_grid[41][18:51] = center_align('Campanus Houses')
+        chart_grid[43][18:51] = center_align(chart['notes'] or '* * * * *')
 
         x = [1, 1, 18, 35, 52, 52, 52, 52, 35, 18, 1, 1]
         y = [33, 49, 49, 49, 49, 33, 17, 1, 1, 1, 1, 17]
@@ -670,7 +729,7 @@ class Uniwheel:
 
         chartfile.write('\n\n' + '-' * 72 + '\n')
 
-    def draw_info_table(self, chart, chartfile, options):
+    def write_info_table(self, chart, chartfile, options):
         chartfile.write(
             'Pl Longitude   Lat   Speed    RA     Decl   Azi     Alt      ML     PVL    Ang G\n'
         )
@@ -691,29 +750,29 @@ class Uniwheel:
                 continue
             planet_data = chart[planet_name]
             planet_index = PLANET_NAMES.index(planet_name)
-            chartfile.write(left(PLANET_NAMES_SHORT[planet_index], 3))
+            chartfile.write(left_align(PLANET_NAMES_SHORT[planet_index], 3))
             chartfile.write(zod_sec(planet_data[0]) + ' ')
             chartfile.write(fmt_lat(planet_data[1], True) + ' ')
             if abs(planet_data[2]) >= 1:
                 chartfile.write(s_dm(planet_data[2]) + ' ')
             else:
                 chartfile.write(s_ms(planet_data[2]) + ' ')
-            chartfile.write(right(fmt_dm(planet_data[3], True), 7) + ' ')
+            chartfile.write(right_align(fmt_dm(planet_data[3], True), 7) + ' ')
             chartfile.write(fmt_lat(planet_data[4], True) + ' ')
 
             # Azimuth
             chartfile.write(
-                right(fmt_dm(planet_data[5] + 180 % 360, True), 7) + ' '
+                right_align(fmt_dm(planet_data[5] + 180 % 360, True), 7) + ' '
             )
 
             # Altitude
-            chartfile.write(right(s_dm(planet_data[6]), 7) + ' ')
+            chartfile.write(right_align(s_dm(planet_data[6]), 7) + ' ')
 
             # Meridian Longitude
             chartfile.write(fmt_dm(planet_data[7], True) + ' ')
 
             # House position
-            chartfile.write(right(fmt_dm(planet_data[8], True), 7) + ' ')
+            chartfile.write(right_align(fmt_dm(planet_data[8], True), 7) + ' ')
 
             # Angularity
             (
@@ -750,88 +809,148 @@ class Uniwheel:
 
         if dormant:
             chartfile.write('-' * 72 + '\n')
-            chartfile.write(center('Dormant Ingress', 72) + '\n')
+            chartfile.write(center_align('Dormant Ingress', 72) + '\n')
 
         # Aspects
-        ea = options.get('ecliptic_aspects', DEFAULT_ECLIPTICAL_ORBS)
-        ma = options.get('mundane_aspects', DEFAULT_MUNDANE_ORBS)
-        asp = [[], [], [], []]
-        asph = ['Class 1', 'Class 2', 'Class 3', 'Other Partile']
+        ecliptical_orbs = options.get(
+            'ecliptic_aspects', DEFAULT_ECLIPTICAL_ORBS
+        )
+        mundane_orbs = options.get('mundane_aspects', DEFAULT_MUNDANE_ORBS)
+        aspects_by_class = [[], [], [], []]
+        aspect_class_headers = [
+            'Class 1',
+            'Class 2',
+            'Class 3',
+            'Other Partile',
+        ]
         for planet_index in range(14):
-            for j in range(planet_index + 1, 14):
-                (easp, cle, orbe) = self.find_ecliptical_aspect(
+            for remaining_planet in range(planet_index + 1, 14):
+                # If options say to skip one or both planets' aspects outside the foreground,
+                # just skip calculating anything
+                planet_name_1 = PLANET_NAMES[planet_index]
+                planet_name_2 = PLANET_NAMES[remaining_planet]
+                if options.get('show_aspects', 0) == 1:
+                    if (
+                        planet_name_1 not in planets_foreground
+                        and planet_name_2 not in planets_foreground
+                    ):
+                        if not options.get('partile_nf', False):
+                            continue
+                if options.get('show_aspects', 0) == 2:
+                    if (
+                        planet_name_1 not in planets_foreground
+                        or planet_name_2 not in planets_foreground
+                    ):
+                        if not options.get('partile_nf', False):
+                            continue
+
+                (
+                    ecliptical_aspect,
+                    ecliptical_aspect_class,
+                    ecliptical_orb,
+                ) = self.find_ecliptical_aspect(
                     chart,
                     planet_index,
-                    j,
-                    ea,
+                    remaining_planet,
+                    ecliptical_orbs,
                     options,
                     planets_foreground,
                     dormant,
                 )
-                (masp, clm, orbm) = self.find_mundane_aspect(
+                (
+                    mundane_aspect,
+                    mundane_aspect_class,
+                    mundane_orb,
+                ) = self.find_mundane_aspect(
                     chart,
                     planet_index,
-                    j,
-                    ma,
+                    remaining_planet,
+                    mundane_orbs,
                     options,
                     planets_foreground,
                     dormant,
                 )
-                if easp and masp:
-                    if orbm < orbe:
-                        easp = ''
+
+                if ecliptical_aspect and mundane_aspect:
+                    if mundane_orb < ecliptical_orb:
+                        ecliptical_aspect = ''
                     else:
-                        masp = ''
-                if easp:
-                    asp[cle - 1].append(easp)
-                if masp:
-                    asp[clm - 1].append(masp)
-        if len(asp[3]) == 0 or dormant:
-            del asp[3]
-            del asph[3]
-            asp.append([])
-            asph.append('')
+                        mundane_aspect = ''
+                if ecliptical_aspect:
+                    aspects_by_class[ecliptical_aspect_class - 1].append(
+                        ecliptical_aspect
+                    )
+                if mundane_aspect:
+                    aspects_by_class[mundane_aspect_class - 1].append(
+                        mundane_aspect
+                    )
+
+        if len(aspects_by_class[3]) == 0 or dormant:
+            del aspects_by_class[3]
+            del aspect_class_headers[3]
+            aspects_by_class.append([])
+            aspect_class_headers.append('')
         for planet_index in range(2, -1, -1):
-            if len(asp[planet_index]) == 0:
-                del asp[planet_index]
-                del asph[planet_index]
-                asp.append([])
-                asph.append('')
-        if any(asph):
+            if len(aspects_by_class[planet_index]) == 0:
+                del aspects_by_class[planet_index]
+                del aspect_class_headers[planet_index]
+                aspects_by_class.append([])
+                aspect_class_headers.append('')
+        if any(aspect_class_headers):
             chartfile.write('-' * 72 + '\n')
             for planet_index in range(0, 3):
                 chartfile.write(
-                    center(
-                        f'{asph[planet_index]} Aspects'
-                        if asph[planet_index]
+                    center_align(
+                        f'{aspect_class_headers[planet_index]} Aspects'
+                        if aspect_class_headers[planet_index]
                         else '',
                         24,
                     )
                 )
             chartfile.write('\n')
-        for planet_index in range(max(len(asp[0]), len(asp[1]), len(asp[2]))):
-            if planet_index < len(asp[0]):
-                chartfile.write(left(asp[0][planet_index], 24))
+
+        # Write aspects from all classes to file
+        for planet_index in range(
+            max(
+                len(aspects_by_class[0]),
+                len(aspects_by_class[1]),
+                len(aspects_by_class[2]),
+            )
+        ):
+            if planet_index < len(aspects_by_class[0]):
+                chartfile.write(
+                    left_align(aspects_by_class[0][planet_index], width=24)
+                )
             else:
                 chartfile.write(' ' * 24)
-            if planet_index < len(asp[1]):
-                chartfile.write(center(asp[1][planet_index], 24))
+            if planet_index < len(aspects_by_class[1]):
+                chartfile.write(
+                    center_align(aspects_by_class[1][planet_index], width=24)
+                )
             else:
                 chartfile.write(' ' * 24)
-            if planet_index < len(asp[2]):
-                chartfile.write(right(asp[2][planet_index], 24))
+            if planet_index < len(aspects_by_class[2]):
+                chartfile.write(
+                    right_align(aspects_by_class[2][planet_index], width=24)
+                )
             else:
                 chartfile.write(' ' * 24)
             chartfile.write('\n')
+
         chartfile.write('-' * 72 + '\n')
-        if asp[3]:
-            chartfile.write(center(f'{asph[3]} Aspects', 72) + '\n')
-            for a in asp[3]:
-                chartfile.write(center(a, 72) + '\n')
+        if aspects_by_class[3]:
+            chartfile.write(
+                center_align(f'{aspect_class_headers[3]} Aspects', width=72)
+                + '\n'
+            )
+            for a in aspects_by_class[3]:
+                chartfile.write(center_align(a, 72) + '\n')
             chartfile.write('-' * 72 + '\n')
-        chartfile.write(center('Cosmic State', 72) + '\n')
-        moonsi = SIGNS_SHORT[int(chart['Moon'][0] // 30)]
-        sunsi = SIGNS_SHORT[int(chart['Sun'][0] // 30)]
+
+        # Cosmic State
+        chartfile.write(center_align('Cosmic State', 72) + '\n')
+        moon_sign = SIGNS_SHORT[int(chart['Moon'][0] // 30)]
+        sun_sign = SIGNS_SHORT[int(chart['Sun'][0] // 30)]
         cclass = chart['class']
         for planet_index in range(14):
             if planet_index == 10 and not options.get('use_Eris', 1):
@@ -842,74 +961,87 @@ class Uniwheel:
                 continue
             if planet_index == 13 and options.get('Node', 0) != 2:
                 continue
-            pa = PLANET_NAMES_SHORT[planet_index]
-            pn = PLANET_NAMES[planet_index]
-            planet_data = chart[pn]
-            if pa != 'Mo':
+            planet_short_name = PLANET_NAMES_SHORT[planet_index]
+            planet_name = PLANET_NAMES[planet_index]
+            planet_data = chart[planet_name]
+            if planet_short_name != 'Mo':
                 chartfile.write('\n')
-            chartfile.write(pa + ' ')
+            chartfile.write(planet_short_name + ' ')
             sign = SIGNS_SHORT[int(planet_data[0] // 30)]
-            if sign in POS_SIGN[pa]:
-                x = '+'
-            elif sign in NEG_SIGN[pa]:
-                x = '-'
+            if sign in POS_SIGN[planet_short_name]:
+                plus_minus = '+'
+            elif sign in NEG_SIGN[planet_short_name]:
+                plus_minus = '-'
             else:
-                x = ' '
-            chartfile.write(f'{sign}{x} ')
-            chartfile.write(planet_foreground_angles.get(pa, '') + ' |')
+                plus_minus = ' '
+            chartfile.write(f'{sign}{plus_minus} ')
+            angle = planet_foreground_angles.get(planet_short_name, '')
+            if angle.strip() == '':
+                angle = ' '
+            elif angle.strip() == 'b':
+                angle = 'B'
+            else:
+                angle = 'F'
+            chartfile.write(angle + ' |')
+
+            # This has something to do with what row we're on
             cr = False
+
             if cclass != 'I':
-                if pa != 'Mo':
-                    if moonsi in POS_SIGN[pa]:
-                        chartfile.write(f' Mo {moonsi}+')
+                if planet_short_name != 'Mo':
+                    if moon_sign in POS_SIGN[planet_short_name]:
+                        chartfile.write(f' Mo {moon_sign}+')
                         cr = True
-                    elif moonsi in NEG_SIGN[pa]:
-                        chartfile.write(f' Mo {moonsi}-')
+                    elif moon_sign in NEG_SIGN[planet_short_name]:
+                        chartfile.write(f' Mo {moon_sign}-')
                         cr = True
-                if pa != 'Su':
-                    if sunsi in POS_SIGN[pa]:
-                        chartfile.write(f' Su {sunsi}+')
+                if planet_short_name != 'Su':
+                    if sun_sign in POS_SIGN[planet_short_name]:
+                        chartfile.write(f' Su {sun_sign}+')
                         cr = True
-                    elif sunsi in NEG_SIGN[pa]:
-                        chartfile.write(f' Su {sunsi}-')
+                    elif sun_sign in NEG_SIGN[planet_short_name]:
+                        chartfile.write(f' Su {sun_sign}-')
                         cr = True
-            asplist = []
-            for j in range(3):
-                for entry in asp[j]:
-                    if pa in entry:
+            aspect_list = []
+            for index_class in range(3):
+                for entry in aspects_by_class[index_class]:
+                    if planet_short_name in entry:
                         pct = str(200 - int(entry[15:18]))
                         entry = entry[0:15] + entry[20:]
-                        if entry[0:2] == pa:
+                        if entry[0:2] == planet_short_name:
                             entry = entry[3:]
                         else:
                             entry = f'{entry[3:5]} {entry[0:2]}{entry[8:]}'
-                        asplist.append([entry, pct])
-            asplist.sort(key=lambda p: p[1] + p[0][6:11])
-            if asplist:
+                        aspect_list.append([entry, pct])
+            aspect_list.sort(key=lambda p: p[1] + p[0][6:11])
+            if aspect_list:
                 if cr:
                     chartfile.write('\n' + (' ' * 9) + '| ')
                     cr = False
                 else:
                     chartfile.write(' ')
-            for j, a in enumerate(asplist):
-                chartfile.write(a[0] + '   ')
-                if j % 4 == 3 and j != len(asplist) - 1:
+            for remaining_planet, aspect in enumerate(aspect_list):
+                chartfile.write(aspect[0] + '   ')
+                if (
+                    remaining_planet % 4 == 3
+                    and remaining_planet != len(aspect_list) - 1
+                ):
                     chartfile.write('\n' + (' ' * 9) + '| ')
             plist = []
-            for j in range(14):
-                if j == planet_index:
+            for remaining_planet in range(14):
+                if remaining_planet == planet_index:
                     continue
-                if j == 10 and not options.get('use_Eris', 1):
+                if remaining_planet == 10 and not options.get('use_Eris', 1):
                     continue
-                if j == 11 and not options.get('use_Sedna', 0):
+                if remaining_planet == 11 and not options.get('use_Sedna', 0):
                     continue
-                if j == 12 and options.get('Node', 0) != 1:
+                if remaining_planet == 12 and options.get('Node', 0) != 1:
                     continue
-                if j == 13 and options.get('Node', 0) != 2:
+                if remaining_planet == 13 and options.get('Node', 0) != 2:
                     continue
-                plna = PLANET_NAMES[j]
+                plna = PLANET_NAMES[remaining_planet]
                 plong = chart[plna][0]
-                plab = PLANET_NAMES_SHORT[j]
+                plab = PLANET_NAMES_SHORT[remaining_planet]
                 if (
                     options.get('show_aspects', 0) == 0
                     or plna in planets_foreground
@@ -918,26 +1050,34 @@ class Uniwheel:
             plist.append(['As', chart['cusps'][1]])
             plist.append(['Mc', chart['cusps'][10]])
             if len(plist) > 1 and (
-                options.get('show_aspects', 0) == 0 or pn in planets_foreground
+                options.get('show_aspects', 0) == 0
+                or planet_name in planets_foreground
             ):
                 # ecliptic midpoints?
                 emp = []
-                for j in range(len(plist) - 1):
-                    for k in range(j + 1, len(plist)):
+                for remaining_planet in range(len(plist) - 1):
+                    for k in range(remaining_planet + 1, len(plist)):
                         mp = self.find_midpoint(
-                            [pa, planet_data[0]], plist, j, k, options
+                            [planet_short_name, planet_data[0]],
+                            plist,
+                            remaining_planet,
+                            k,
+                            options,
                         )
                         if mp:
                             emp.append(mp)
                 if emp:
                     emp.sort(key=lambda p: p[6:8])
-                    if cr or asplist:
+                    if cr or aspect_list:
                         chartfile.write('\n' + (' ' * 9) + '| ')
                     else:
                         chartfile.write(' ')
-                    for j, a in enumerate(emp):
+                    for remaining_planet, a in enumerate(emp):
                         chartfile.write('   ' + a + '   ')
-                        if j % 4 == 3 and j != len(emp) - 1:
+                        if (
+                            remaining_planet % 4 == 3
+                            and remaining_planet != len(emp) - 1
+                        ):
                             chartfile.write('\n' + (' ' * 9) + '| ')
         sign = SIGNS_SHORT[int(chart['cusps'][1] // 30)]
         plist = []
@@ -963,37 +1103,51 @@ class Uniwheel:
         plist.append(['Mc', chart['cusps'][10]])
         if len(plist) > 1:
             emp = []
-            for j in range(len(plist) - 1):
-                for k in range(j + 1, len(plist)):
+            for remaining_planet in range(len(plist) - 1):
+                for k in range(remaining_planet + 1, len(plist)):
                     mp = self.find_midpoint(
-                        ['As', chart['cusps'][1]], plist, j, k, options
+                        ['As', chart['cusps'][1]],
+                        plist,
+                        remaining_planet,
+                        k,
+                        options,
                     )
                     if mp:
                         emp.append(mp)
             if emp:
                 emp.sort(key=lambda p: p[6:8])
                 chartfile.write(f'\nAs {sign}    | ')
-                for j, a in enumerate(emp):
+                for remaining_planet, a in enumerate(emp):
                     chartfile.write('   ' + a + '   ')
-                    if j % 4 == 3 and j != len(emp) - 1:
+                    if (
+                        remaining_planet % 4 == 3
+                        and remaining_planet != len(emp) - 1
+                    ):
                         chartfile.write('\n' + (' ' * 9) + '| ')
         sign = SIGNS_SHORT[int(chart['cusps'][10] // 30)]
         plist[-1] = ['As', chart['cusps'][1]]
         if len(plist) > 1:
             emp = []
-            for j in range(len(plist) - 1):
-                for k in range(j + 1, len(plist)):
+            for remaining_planet in range(len(plist) - 1):
+                for k in range(remaining_planet + 1, len(plist)):
                     mp = self.find_midpoint(
-                        ['Mc', chart['cusps'][10]], plist, j, k, options
+                        ['Mc', chart['cusps'][10]],
+                        plist,
+                        remaining_planet,
+                        k,
+                        options,
                     )
                     if mp:
                         emp.append(mp)
             if emp:
                 emp.sort(key=lambda p: p[6:8])
                 chartfile.write(f'\nMc {sign}    | ')
-                for j, a in enumerate(emp):
+                for remaining_planet, a in enumerate(emp):
                     chartfile.write('   ' + a + '   ')
-                    if j % 4 == 3 and j != len(emp) - 1:
+                    if (
+                        remaining_planet % 4 == 3
+                        and remaining_planet != len(emp) - 1
+                    ):
                         chartfile.write('\n' + (' ' * 9) + '| ')
         del plist[-1]
         if len(plist) > 1:
@@ -1004,9 +1158,11 @@ class Uniwheel:
                 (chart['ramc'] + 90) % 360,
             ]
             ze = ['Ze', (chart['cusps'][1] - 90) % 360]
-            for j in range(len(plist) - 1):
-                for k in range(j + 1, len(plist)):
-                    mp = self.mmp_all(ep, ze, plist, j, k, options)
+            for remaining_planet in range(len(plist) - 1):
+                for k in range(remaining_planet + 1, len(plist)):
+                    mp = self.mmp_all(
+                        ep, ze, plist, remaining_planet, k, options
+                    )
                     if mp:
                         emp.append(mp)
             if emp:
@@ -1025,21 +1181,30 @@ class Uniwheel:
                 empz.sort(key=lambda p: p[6:8])
                 if empa:
                     chartfile.write(f'\nAngle    | ')
-                    for j, a in enumerate(empa):
+                    for remaining_planet, a in enumerate(empa):
                         chartfile.write('   ' + a + '   ')
-                        if j % 4 == 3 and j != len(empa) - 1:
+                        if (
+                            remaining_planet % 4 == 3
+                            and remaining_planet != len(empa) - 1
+                        ):
                             chartfile.write('\n' + (' ' * 9) + '| ')
                 if empe:
                     chartfile.write(f'\nEp       | ')
-                    for j, a in enumerate(empe):
+                    for remaining_planet, a in enumerate(empe):
                         chartfile.write('   ' + a + '   ')
-                        if j % 4 == 3 and j != len(empe) - 1:
+                        if (
+                            remaining_planet % 4 == 3
+                            and remaining_planet != len(empe) - 1
+                        ):
                             chartfile.write('\n' + (' ' * 9) + '| ')
                 if empz:
                     chartfile.write(f'\nZe       | ')
-                    for j, a in enumerate(empz):
+                    for remaining_planet, a in enumerate(empz):
                         chartfile.write('   ' + a + '   ')
-                        if j % 4 == 3 and j != len(empz) - 1:
+                        if (
+                            remaining_planet % 4 == 3
+                            and remaining_planet != len(empz) - 1
+                        ):
                             chartfile.write('\n' + (' ' * 9) + '| ')
 
     def show(self):
