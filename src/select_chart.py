@@ -17,6 +17,8 @@ from solunars import Solunars
 from widgets import *
 from more_charts import MoreCharts
 import tkinter.filedialog as tkfiledialog
+from utils import open_file, display_name
+from gui_utils import ShowHelp
 
 
 class SelectChart(Frame):
@@ -197,7 +199,7 @@ class SelectChart(Frame):
             return
         filename = filename[0:-3] + 'txt'
         if os.path.exists(filename):
-            os.startfile(filename)
+            open_file(filename)
         else:
             self.recalculate()
 

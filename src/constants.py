@@ -7,7 +7,20 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
+import sys
+
 DS = '\N{DEGREE SIGN}'
 DQ = '"'
 SQ = "'"
 VERSION = '0.5.0-alpha.1'
+
+
+PLATFORM = None
+
+match sys.platform:
+    case 'win32':
+        PLATFORM = 'Win32GUI'
+    case 'linux':
+        PLATFORM = 'linux'
+    case _:
+        raise RuntimeError(f'Unsupported architecture {sys.platform}')

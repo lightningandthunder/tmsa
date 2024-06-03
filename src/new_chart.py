@@ -23,6 +23,7 @@ import anglicize
 import us
 import tkinter.filedialog as tkfiledialog
 from constants import DS, DQ, VERSION
+from gui_utils import ShowHelp
 
 
 class NewChart(Frame):

@@ -12,6 +12,7 @@ import math
 import os
 from show_util import *
 from constants import VERSION
+from utils import open_file
 
 
 def write_to_file(chart, planet):
@@ -965,4 +966,4 @@ class Uniwheel:
         return x
 
     def show(self):
-        os.startfile(self.filename)
+        open_file(self.filename)

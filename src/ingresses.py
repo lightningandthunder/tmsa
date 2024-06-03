@@ -21,6 +21,8 @@ from geopy import Nominatim
 import anglicize
 import us
 from constants import DS, DQ, VERSION
+from utils import open_file, display_name
+from gui_utils import ShowHelp
 
 
 class Ingresses(Frame):
@@ -661,7 +663,7 @@ class Ingresses(Frame):
             else:
                 filename = self.event[0:-3] + 'txt'
                 if os.path.exists(filename):
-                    os.startfile(filename)
+                    open_file(filename)
         self.save_location(chart)
         if self.oneyear.checked:
             self.burst(chart, ingresses)

@@ -9,6 +9,7 @@
 
 from init import *
 from widgets import *
+from gui_utils import ShowHelp
 
 
 class MidpointOptions(Frame):

@@ -6,3 +6,4 @@ copy/
 dll/
 ephe/
 venv/
+venv/*

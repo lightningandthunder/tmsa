@@ -11,6 +11,7 @@ from init import *
 from midpoint_options import MidpointOptions
 from widgets import *
 import tkinter.filedialog as tkfiledialog
+from gui_utils import ShowHelp
 
 
 class ChartOptions(Frame):
@@ -149,7 +150,9 @@ class ChartOptions(Frame):
         )
         Button(self, 'Help', 0.4, 0.95, 0.2).bind(
             '<Button-1>',
-            lambda _: delay(ShowHelp, HELP_PATH + r'\chart_options.txt'),
+            lambda _: delay(
+                ShowHelp, os.path.join(HELP_PATH, 'chart_options.txt')
+            ),
         )
         backbtn = Button(self, 'Back', 0.6, 0.95, 0.2)
         backbtn.bind('<Button-1>', lambda _: delay(self.destroy))
@@ -174,7 +177,7 @@ class ChartOptions(Frame):
             with open(filepath, 'r') as datafile:
                 options = json.load(datafile)
         except Exception as e:
-            self.status.error(f"Unable to load file: '{filename}'.")
+            self.status.error(f"Unable to load option file: '{filename}'.")
             return
         self.optfile.text = filename[0:-4].replace('_', ' ')
         self.eris.checked = options.get('use_Eris', True)

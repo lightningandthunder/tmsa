@@ -1,6 +1,21 @@
 import math
 from widgets import base_font
 from tkinter.font import Font as tkFont
+import os
+from constants import PLATFORM
+import shutil
+import subprocess
+
+
+def open_file(file: str):
+    match PLATFORM:
+        case 'Win32GUI':
+            os.startfile(file)
+        case 'linux':
+            if shutil.which('xdg-open'):
+                subprocess.call(['xdg-open', file])
+            elif 'EDITOR' in os.environ:
+                subprocess.call([os.environ['EDITOR'], file])
 
 
 def get_scaled_font(width: int, breakpoint: int) -> tkFont:
@@ -45,3 +60,15 @@ def cotangent(radians: float) -> float:
 
 def arccotangent(radians: float) -> float:
     return math.atan(1 / radians)
+
+
+def display_name(path):
+    name = os.path.basename(path)
+    name = name[0:-4]
+    if name.count('~') == 1:
+        return name.replace('~', ': ')
+    parts = name.split('~')
+    index = parts[0].find(';')
+    if index > -1:
+        parts[0] = parts[0][0:index]
+    return f'{parts[0]} ({parts[1]}) {parts[2]}'

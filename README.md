@@ -29,14 +29,11 @@ First, install Pyenv so you can easily install a specific Python version and mak
 
 Unfortunately, you can't use Conda, as this breaks all of the fonts.
 ```shell
+sudo apt-get install makeself
+
 pyenv install 3.10
 pyenv global 3.10
 python3 -m venv venv
-
-sudo apt install python3-dev tcl-dev tk-dev \
-    fontconfig libfontconfig1 libfontconfig1-dev \
-    cmake cmake-data extra-cmake-modules build-essential
-python -m pip install scikit-build
 
 pip install -r etc/requirements-linux.txt
 
@@ -49,7 +46,7 @@ sudo mkdir -p /var/log/tmsa
 sudo chown $USER:$USER /var/log/tmsa
 sudo chmod 755 /var/log/tmsa
 
-
+python setup.py build_installer
 ```
 
 ### Contributing

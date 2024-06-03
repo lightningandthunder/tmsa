@@ -20,10 +20,12 @@ from ctypes import (
 )
 from init import *
 import math
+from constants import PLATFORM
 
 from utils import arccotangent, cotangent
 
 dll = CDLL(DLL_PATH)
+
 
 if PLATFORM == 'Win32GUI':
     swe_set_ephe = getattr(dll, '_swe_set_ephe_path@4')
@@ -40,8 +42,9 @@ def _get_handle_for_platform(dll: CDLL, windows_string: str):
     elif PLATFORM == 'linux':
         [handle, _] = windows_string.split('@')
         handle = handle.strip('_')
-        
+
     return getattr(dll, handle)
+
 
 swe_julday = _get_handle_for_platform(dll, '_swe_julday@24')
 swe_julday.argtypes = [c_int, c_int, c_int, c_double, c_int]
@@ -67,7 +70,9 @@ swe_calc_ut.argtypes = [
     POINTER(c_char * 256),
 ]
 
-swe_get_ayanamsa_ex_ut = _get_handle_for_platform(dll, '_swe_get_ayanamsa_ex_ut@20')
+swe_get_ayanamsa_ex_ut = _get_handle_for_platform(
+    dll, '_swe_get_ayanamsa_ex_ut@20'
+)
 swe_get_ayanamsa_ex_ut.argtypes = [
     c_double,
     c_int,
@@ -315,4 +320,3 @@ def calc_meridian_longitude(azimuth: float, altitude: float):
     #     meridian_longitude += 180
 
     return meridian_longitude
-

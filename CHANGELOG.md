@@ -3,6 +3,8 @@
 - Add Blue for code formatting
 - Add calculations for Vertex/Antivertex contacts in azimuth
 - Stop autotabbing while typing in form fields
+- Include support for Linux
+- Refactor uniwheels
 
 ### 0.4.13
 - Move to semantic versioning (major.minor.patch format)

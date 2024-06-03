@@ -23,7 +23,8 @@ from geopy import Nominatim
 import anglicize
 from constants import DS, DQ, VERSION
 import us
-from utils import toDMS
+from utils import toDMS, open_file, display_name
+from gui_utils import ShowHelp
 
 
 class Solunars(Frame):
@@ -634,7 +635,7 @@ class Solunars(Frame):
             else:
                 filename = self.event[0:-3] + 'txt'
                 if os.path.exists(filename):
-                    os.startfile(filename)
+                    open_file(filename)
         self.save_location(chart)
         if self.oneyear.checked:
             self.burst(chart, solunars)

@@ -13,6 +13,7 @@ from datetime import datetime
 import math
 import os
 from show_util import *
+from utils import open_file
 
 
 def write_to_file(chart, planet, prefix, pa_only=False):
@@ -1154,4 +1155,4 @@ class Biwheel:
         return x
 
     def show(self):
-        os.startfile(self.filename)
+        open_file(self.filename)

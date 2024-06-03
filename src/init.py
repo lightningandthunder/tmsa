@@ -11,7 +11,8 @@ import json
 import os
 import sys
 from libs import *
-import tkinter.messagebox as tkmessagebox
+from constants import PLATFORM
+import shutil
 
 startup = True
 
@@ -20,22 +21,15 @@ if getattr(sys, 'frozen', False):
 else:
     APP_PATH = os.path.dirname(os.path.abspath(__file__))
 
-PLATFORM = None
-
-match sys.platform:
-    case 'win32':
-        PLATFORM = 'Win32GUI'
-    case 'linux':
-        PLATFORM = 'linux'
-    case _:
-        raise RuntimeError(f'Unsupported architecture {sys.platform}')
-
 
 def app_path(path=None):
     if not path:
         return APP_PATH
     return os.path.abspath(os.path.join(APP_PATH, path))
 
+def copy_file_if_not_exists(expected: str, src: str):
+    if not os.path.exists(expected):
+        shutil.copyfile(src, expected)
 
 month_abrev = [
     'Jan',
@@ -111,6 +105,8 @@ if PLATFORM == 'Win32GUI':
     os.makedirs(OPTION_PATH, exist_ok=True)
 
 elif PLATFORM == 'linux':
+    import shutil
+
     CHART_PATH = os.path.join('/var', 'lib', 'tmsa', 'charts')
     os.makedirs(CHART_PATH, exist_ok=True)
     TEMP_CHARTS = os.path.join(CHART_PATH, 'temporary')
@@ -118,8 +114,16 @@ elif PLATFORM == 'linux':
     ERROR_FILE = os.path.join('/var', 'log', 'tmsa', 'error.txt')
     os.makedirs(os.path.dirname(ERROR_FILE), exist_ok=True)
 
-    OPTION_PATH = os.path.join(os.path.expanduser('~'), '.config', 'tmsa', 'options')
+    OPTION_PATH = os.path.join(
+        os.path.expanduser('~'), '.config', 'tmsa', 'options'
+    )
     os.makedirs(OPTION_PATH, exist_ok=True)
+
+    copy_file_if_not_exists(os.path.join(OPTION_PATH, 'Default_Natal.opt'), app_path(os.path.join('assets', 'Default_Natal.opt')))
+    copy_file_if_not_exists(os.path.join(OPTION_PATH, 'Cosmobiology.opt'), app_path(os.path.join('assets', 'Cosmobiology.opt')))
+    copy_file_if_not_exists(os.path.join(OPTION_PATH, 'Default_Ingress.opt'), app_path(os.path.join('assets', 'Default_Ingress.opt')))
+    copy_file_if_not_exists(os.path.join(OPTION_PATH, 'Default_Return.opt'), app_path(os.path.join('assets', 'Default_Return.opt')))
+    copy_file_if_not_exists(os.path.join(OPTION_PATH, 'Student_Natal.opt'), app_path(os.path.join('assets', 'Student_Natal.opt')))
 
 STUDENT_FILE = os.path.join(OPTION_PATH, 'student.json')
 
@@ -161,10 +165,13 @@ if os.path.exists(COLOR_FILE):
         pass
 
 if default:
-    print('Writing colors')
     try:
         with open(COLOR_FILE, 'w') as datafile:
-            json.dump(colors if colors is not None else default_colors, datafile, indent=4)
+            json.dump(
+                colors if colors is not None else default_colors,
+                datafile,
+                indent=4,
+            )
     except Exception:
         pass
 
@@ -260,27 +267,3 @@ def make_chart_path(chart, temporary):
         filepath = f'{first[0]}\\{first}\\{filename}'
     path = TEMP_CHARTS if temporary else CHART_PATH
     return os.path.abspath(os.path.join(path, filepath))
-
-
-class ShowHelp:
-    def __init__(self, filename):
-        os.startfile(filename)
-
-
-class NotImplemented:
-    def __init__(self):
-        tkmessagebox.showinfo(
-            'Not Implemented', 'This functionality not yet implemented.'
-        )
-
-
-def display_name(path):
-    name = os.path.basename(path)
-    name = name[0:-4]
-    if name.count('~') == 1:
-        return name.replace('~', ': ')
-    parts = name.split('~')
-    index = parts[0].find(';')
-    if index > -1:
-        parts[0] = parts[0][0:index]
-    return f'{parts[0]} ({parts[1]}) {parts[2]}'

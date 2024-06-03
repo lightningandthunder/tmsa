@@ -17,6 +17,7 @@ from geopy import Nominatim
 import anglicize
 from constants import DS, DQ, VERSION
 import us
+from gui_utils import ShowHelp
 
 
 class ProgramOptions(Frame):

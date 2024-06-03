@@ -9,6 +9,7 @@
 
 from init import *
 from widgets import *
+from utils import display_name
 
 
 class MoreCharts(Frame):

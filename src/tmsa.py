@@ -22,6 +22,7 @@ import shutil
 import json
 from constants import VERSION
 import utils
+from gui_utils import ShowHelp
 
 TITLE = f'Time Matters {VERSION}'
 INTRO = f"""A freeware program for calculating geometrically
