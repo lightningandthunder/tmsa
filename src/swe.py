@@ -25,16 +25,29 @@ from utils import arccotangent, cotangent
 
 dll = CDLL(DLL_PATH)
 
-swe_set_ephe = getattr(dll, '_swe_set_ephe_path@4')
+if PLATFORM == 'Win32GUI':
+    swe_set_ephe = getattr(dll, '_swe_set_ephe_path@4')
+elif PLATFORM == 'linux':
+    swe_set_ephe = getattr(dll, 'swe_set_ephe_path')
 swe_set_ephe.argtypes = [c_char_p]
 swe_set_ephe.restype = c_void_p
 swe_set_ephe(EPHE_PATH.encode())
 
-swe_julday = getattr(dll, '_swe_julday@24')
+
+def _get_handle_for_platform(dll: CDLL, windows_string: str):
+    if PLATFORM == 'Win32GUI':
+        handle = windows_string
+    elif PLATFORM == 'linux':
+        [handle, _] = windows_string.split('@')
+        handle = handle.strip('_')
+        
+    return getattr(dll, handle)
+
+swe_julday = _get_handle_for_platform(dll, '_swe_julday@24')
 swe_julday.argtypes = [c_int, c_int, c_int, c_double, c_int]
 swe_julday.restype = c_double
 
-swe_revjul = getattr(dll, '_swe_revjul@28')
+swe_revjul = _get_handle_for_platform(dll, '_swe_revjul@28')
 swe_revjul.argtypes = [
     c_double,
     c_int,
@@ -45,7 +58,7 @@ swe_revjul.argtypes = [
 ]
 swe_revjul.restype = c_void_p
 
-swe_calc_ut = getattr(dll, '_swe_calc_ut@24')
+swe_calc_ut = _get_handle_for_platform(dll, '_swe_calc_ut@24')
 swe_calc_ut.argtypes = [
     c_double,
     c_int,
@@ -54,7 +67,7 @@ swe_calc_ut.argtypes = [
     POINTER(c_char * 256),
 ]
 
-swe_get_ayanamsa_ex_ut = getattr(dll, '_swe_get_ayanamsa_ex_ut@20')
+swe_get_ayanamsa_ex_ut = _get_handle_for_platform(dll, '_swe_get_ayanamsa_ex_ut@20')
 swe_get_ayanamsa_ex_ut.argtypes = [
     c_double,
     c_int,
@@ -62,7 +75,7 @@ swe_get_ayanamsa_ex_ut.argtypes = [
     POINTER(c_char * 256),
 ]
 
-swe_houses_ex = getattr(dll, '_swe_houses_ex@40')
+swe_houses_ex = _get_handle_for_platform(dll, '_swe_houses_ex@40')
 swe_houses_ex.argtypes = [
     c_double,
     c_int,
@@ -73,7 +86,7 @@ swe_houses_ex.argtypes = [
     POINTER(c_double * 10),
 ]
 
-swe_house_pos = getattr(dll, '_swe_house_pos@36')
+swe_house_pos = _get_handle_for_platform(dll, '_swe_house_pos@36')
 swe_house_pos.argtypes = [
     c_double,
     c_double,
@@ -84,7 +97,7 @@ swe_house_pos.argtypes = [
 ]
 swe_house_pos.restype = c_double
 
-swe_azalt = getattr(dll, '_swe_azalt@40')
+swe_azalt = _get_handle_for_platform(dll, '_swe_azalt@40')
 swe_azalt.argtypes = [
     c_double,
     c_int,
@@ -95,7 +108,7 @@ swe_azalt.argtypes = [
     POINTER(c_double * 3),
 ]
 
-swe_lat_to_lmt = getattr(dll, '_swe_lat_to_lmt@24')
+swe_lat_to_lmt = _get_handle_for_platform(dll, '_swe_lat_to_lmt@24')
 swe_lat_to_lmt.argtypes = [
     c_double,
     c_double,
@@ -103,15 +116,15 @@ swe_lat_to_lmt.argtypes = [
     POINTER(c_char * 256),
 ]
 
-swe_solcross_ut = getattr(dll, '_swe_solcross_ut@24')
+swe_solcross_ut = _get_handle_for_platform(dll, '_swe_solcross_ut@24')
 swe_solcross_ut.argtypes = [c_double, c_double, c_int, POINTER(c_char * 256)]
 swe_solcross_ut.restype = c_double
 
-swe_mooncross_ut = getattr(dll, '_swe_mooncross_ut@24')
+swe_mooncross_ut = _get_handle_for_platform(dll, '_swe_mooncross_ut@24')
 swe_mooncross_ut.argtypes = [c_double, c_double, c_int, POINTER(c_char * 256)]
 swe_mooncross_ut.restype = c_double.restype = c_double
 
-swe_cotrans = getattr(dll, '_swe_cotrans@16')
+swe_cotrans = _get_handle_for_platform(dll, '_swe_cotrans@16')
 swe_cotrans.argtypes = [POINTER(c_double * 3), POINTER(c_double * 3), c_double]
 
 
@@ -302,3 +315,4 @@ def calc_meridian_longitude(azimuth: float, altitude: float):
     #     meridian_longitude += 180
 
     return meridian_longitude
+

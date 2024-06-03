@@ -17,15 +17,44 @@ from PIL import ImageTk
 
 main = tk.Tk()
 main.minsize(800, 600)
-main.state('zoomed')
-main.title(f'Time Matters {VERSION}')
-main.iconbitmap(app_path(os.path.join('assets', 'tmsa3.ico')))
+if PLATFORM == 'Win32GUI':
+    main.state('zoomed')
+    main.iconbitmap(app_path(os.path.join('assets', 'tmsa3.ico')))
+elif PLATFORM == 'linux':
+    main.state('normal')
+    main.wm_attributes("-zoomed", True) 
+    main.iconphoto(True, tk.PhotoImage(file=app_path(os.path.join('assets', 'tmsa2.png'))))
 
-base_font = tkFont(family='Lucida Console', size=18, weight='normal')
-small_font = tkFont(family='Lucida Console', size=16, weight='normal')
-smallest_font = tkFont(family='Lucida Console', size=14, weight='normal')
-ulfont = tkFont(family='Lucida Console', size=18, weight='normal', underline=1)
-title_font = tkFont(family='Lucida Console', size=36, weight='bold')
+main.title(f'Time Matters {VERSION}')
+
+
+if PLATFORM == 'Win32GUI':
+    base_font = tkFont(family='Lucida Console', size=18, weight='normal')
+    small_font = tkFont(family='Lucida Console', size=16, weight='normal')
+    smallest_font = tkFont(family='Lucida Console', size=14, weight='normal')
+    ulfont = tkFont(family='Lucida Console', size=18, weight='normal', underline=1)
+    title_font = tkFont(family='Lucida Console', size=36, weight='bold')
+elif PLATFORM == 'linux':
+    root_font = tk.font.nametofont("TkDefaultFont")
+    
+    print(tk.font.families())
+    print(tk.font.names())
+
+    base_font = root_font.copy()
+    print((base_font.configure(size=36)))
+    print(base_font.actual())
+
+    small_font = root_font.copy()
+    small_font.configure(size=16)
+    
+    smallest_font = root_font.copy()
+    smallest_font.configure(size=14)
+    
+    ulfont = root_font.copy()
+    ulfont.configure(size=18, underline=1)
+
+    title_font = root_font.copy()
+    title_font.configure(size=36, weight='bold')
 
 # background = ImageTk.PhotoImage(file=app_path(os.path.join('assets', 'tmsa2.png')), size=1)
 # background_label = tk.Label(main, image=background)

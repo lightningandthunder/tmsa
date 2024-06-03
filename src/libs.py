@@ -30,5 +30,4 @@ from tkinter.font import Font as tkFont
 import tkinter.messagebox as tkmessagebox
 import traceback
 import us
-import winreg
 import webbrowser

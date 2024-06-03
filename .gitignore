@@ -5,3 +5,4 @@ build/
 copy/
 dll/
 ephe/
+venv/
