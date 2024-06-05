@@ -72,3 +72,17 @@ def display_name(path):
     if index > -1:
         parts[0] = parts[0][0:index]
     return f'{parts[0]} ({parts[1]}) {parts[2]}'
+
+
+def north_azimuth(azimuth: float):
+    return azimuth > 270 or azimuth < 90
+
+
+def southern_azimuth(azimuth: float):
+    return 90 < azimuth < 270
+
+
+def add_360_if_negative(angle: float):
+    if angle < 0:
+        angle += 360
+    return angle

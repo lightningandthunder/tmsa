@@ -1,5 +1,6 @@
 ### 0.5.0
 - Change strength calculation for minor angles
+- Add calculations for meridian longitude
 - Add Blue for code formatting
 - Add calculations for Vertex/Antivertex contacts in azimuth
 - Stop autotabbing while typing in form fields

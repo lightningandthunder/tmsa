@@ -21,8 +21,7 @@ import os
 import shutil
 import json
 from constants import VERSION
-import utils
-from gui_utils import ShowHelp
+from gui_utils import ShowHelp, newline_if_past_breakpoint
 
 TITLE = f'Time Matters {VERSION}'
 INTRO = f"""A freeware program for calculating geometrically
@@ -53,30 +52,48 @@ class StartPage(Frame):
         self.parent = main
         self.parent.bind('<Configure>', self.resize)
 
-        Label(self, TITLE, X_COORD, 0.025, WIDTH, font=title_font)
-        Label(self, INTRO, X_COORD, 0.125, WIDTH, HEIGHT_UNIT * 3)
-        Label(self, DEDICATION, X_COORD, 0.225, WIDTH, HEIGHT_UNIT)
-        Label(
+        self.title = Label(self, TITLE, X_COORD, 0.025, WIDTH, font=title_font)
+        self.intro = Label(
+            self, INTRO, X_COORD, 0.125, WIDTH, HEIGHT_UNIT * 3, font=base_font
+        )
+        self.dedication = Label(
+            self, DEDICATION, X_COORD, 0.225, WIDTH, HEIGHT_UNIT
+        )
+        self.solunars = Label(
             self, SOLUNARS, X_COORD, 0.25, WIDTH, HEIGHT_UNIT, font=ulfont
-        ).bind('<Button-1>', lambda _: webbrowser.open_new(SOLUNARS))
-        Label(self, FOR_MORE_INFO, X_COORD, 0.325, WIDTH, HEIGHT_UNIT)
-        Label(
+        )
+        self.solunars.bind(
+            '<Button-1>', lambda _: webbrowser.open_new(SOLUNARS)
+        )
+
+        self.for_more_info = Label(
+            self, FOR_MORE_INFO, X_COORD, 0.325, WIDTH, HEIGHT_UNIT
+        )
+        self.points = Label(
             self, POINTS, X_COORD, 0.35, WIDTH, HEIGHT_UNIT, font=ulfont
-        ).bind('<Button-1>', lambda _: webbrowser.open_new(POINTS))
-        Label(self, COPYRIGHT, X_COORD, 0.65, WIDTH, HEIGHT_UNIT * 4)
-        Label(
+        )
+        self.points.bind('<Button-1>', lambda _: webbrowser.open_new(POINTS))
+
+        self.copyright = Label(
+            self, COPYRIGHT, X_COORD, 0.65, WIDTH, HEIGHT_UNIT * 4
+        )
+
+        self.license = Label(
             self, LICENSE, X_COORD, 0.74, WIDTH, HEIGHT_UNIT, font=ulfont
-        ).bind('<Button-1>', lambda _: webbrowser.open_new(LICENSE))
-        Label(self, SOURCE_CODE, X_COORD, 0.825, WIDTH, HEIGHT_UNIT)
-        Label(
-            self, GITHUB, X_COORD, 0.85, WIDTH, HEIGHT_UNIT, font=ulfont
-        ).bind('<Button-1>', lambda _: webbrowser.open_new(GITHUB))
+        )
+        self.license.bind('<Button-1>', lambda _: webbrowser.open_new(LICENSE))
 
-        chart_for_now = Button(self, 'Chart for Now', 0.2, 0.4, 0.2)
-        chart_for_now.bind('<Button-1>', lambda _: delay(NewChart, False))
-        chart_for_now.focus()
+        self.source_code = Label(
+            self, SOURCE_CODE, X_COORD, 0.825, WIDTH, HEIGHT_UNIT
+        )
+        Label(self, GITHUB, X_COORD, 0.85, WIDTH, HEIGHT_UNIT, font=ulfont)
+        self.source_code.bind(
+            '<Button-1>', lambda _: webbrowser.open_new(GITHUB)
+        )
 
-        self.chart_for_now = chart_for_now
+        self.chart_for_now = Button(self, 'Chart for Now', 0.2, 0.4, 0.2)
+        self.chart_for_now.bind('<Button-1>', lambda _: delay(NewChart, False))
+        self.chart_for_now.focus()
 
         Button(self, 'New Chart', 0.4, 0.4, 0.2).bind(
             '<Button-1>', lambda _: delay(NewChart)
@@ -109,7 +126,7 @@ class StartPage(Frame):
             '<Button-1>', lambda _: delay(ShowHelp, HELP_PATH + r'\main.txt')
         )
         self.program_options = Button(
-            self, 'Program Options', 0.4, 0.5, 0.2, font=small_font
+            self, 'Program Options', 0.4, 0.5, 0.2, font=font_16
         )
         self.program_options.bind(
             '<Button-1>', lambda _: delay(ProgramOptions)
@@ -150,30 +167,64 @@ class StartPage(Frame):
         self.resize_program_options()
         self.resize_chart_options()
         self.resize_chart_for_now()
+        self.resize_intro()
+
+    def resize_intro(self):
+        height = self.parent.winfo_height()
+
+        scale_factor = height / 1070 if height < 1070 else 1
+        print(self.intro.height)
+        self.intro.configure(height=math.floor(scale_factor * HEIGHT_UNIT * 3))
+        if height < 800:
+            self.intro.configure(font=font_10)
+        elif height < 1070:
+            self.intro.configure(font=font_12)
+        else:
+            self.intro.configure(font=base_font)
 
     def resize_predictive_options(self):
         width = self.parent.winfo_width()
 
-        font = utils.get_scaled_font(width, 1350)
-        self.predictive_options.configure(font=font)
+        text = newline_if_past_breakpoint(
+            self.predictive_options.text, 1350, width
+        )
+        self.predictive_options.configure(
+            text=text, font=font_16 if width < 1350 else base_font
+        )
+        # font = utils.get_scaled_font(width, 1350)
+        # self.predictive_options.configure(font=font)
 
     def resize_program_options(self):
         width = self.parent.winfo_width()
 
-        font = utils.get_scaled_font(width, 1125)
-        self.program_options.configure(font=font)
+        text = newline_if_past_breakpoint(
+            self.program_options.text, 1125, width
+        )
+        self.program_options.configure(
+            text=text, font=font_16 if width < 1125 else base_font
+        )
+        # font = utils.get_scaled_font(width, 1125)
+        # self.program_options.configure(font=font)
 
     def resize_chart_options(self):
         width = self.parent.winfo_width()
 
-        font = utils.get_scaled_font(width, 975)
-        self.chart_options.configure(font=font)
+        text = newline_if_past_breakpoint(self.chart_options.text, 975, width)
+        self.chart_options.configure(
+            text=text, font=font_16 if width < 975 else base_font
+        )
+        # font = utils.get_scaled_font(width, 975)
+        # self.chart_options.configure(font=font)
 
     def resize_chart_for_now(self):
         width = self.parent.winfo_width()
 
-        font = utils.get_scaled_font(width, 975)
-        self.chart_for_now.configure(font=font)
+        text = newline_if_past_breakpoint(self.chart_for_now.text, 975, width)
+        self.chart_for_now.configure(
+            text=text, font=font_16 if width < 975 else base_font
+        )
+        # font = utils.get_scaled_font(width, 975)
+        # self.chart_for_now.configure(font=font)
 
 
 StartPage()

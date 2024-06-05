@@ -27,9 +27,11 @@ def app_path(path=None):
         return APP_PATH
     return os.path.abspath(os.path.join(APP_PATH, path))
 
+
 def copy_file_if_not_exists(expected: str, src: str):
     if not os.path.exists(expected):
         shutil.copyfile(src, expected)
+
 
 month_abrev = [
     'Jan',
@@ -119,11 +121,26 @@ elif PLATFORM == 'linux':
     )
     os.makedirs(OPTION_PATH, exist_ok=True)
 
-    copy_file_if_not_exists(os.path.join(OPTION_PATH, 'Default_Natal.opt'), app_path(os.path.join('assets', 'Default_Natal.opt')))
-    copy_file_if_not_exists(os.path.join(OPTION_PATH, 'Cosmobiology.opt'), app_path(os.path.join('assets', 'Cosmobiology.opt')))
-    copy_file_if_not_exists(os.path.join(OPTION_PATH, 'Default_Ingress.opt'), app_path(os.path.join('assets', 'Default_Ingress.opt')))
-    copy_file_if_not_exists(os.path.join(OPTION_PATH, 'Default_Return.opt'), app_path(os.path.join('assets', 'Default_Return.opt')))
-    copy_file_if_not_exists(os.path.join(OPTION_PATH, 'Student_Natal.opt'), app_path(os.path.join('assets', 'Student_Natal.opt')))
+    copy_file_if_not_exists(
+        os.path.join(OPTION_PATH, 'Default_Natal.opt'),
+        app_path(os.path.join('assets', 'Default_Natal.opt')),
+    )
+    copy_file_if_not_exists(
+        os.path.join(OPTION_PATH, 'Cosmobiology.opt'),
+        app_path(os.path.join('assets', 'Cosmobiology.opt')),
+    )
+    copy_file_if_not_exists(
+        os.path.join(OPTION_PATH, 'Default_Ingress.opt'),
+        app_path(os.path.join('assets', 'Default_Ingress.opt')),
+    )
+    copy_file_if_not_exists(
+        os.path.join(OPTION_PATH, 'Default_Return.opt'),
+        app_path(os.path.join('assets', 'Default_Return.opt')),
+    )
+    copy_file_if_not_exists(
+        os.path.join(OPTION_PATH, 'Student_Natal.opt'),
+        app_path(os.path.join('assets', 'Student_Natal.opt')),
+    )
 
 STUDENT_FILE = os.path.join(OPTION_PATH, 'student.json')
 

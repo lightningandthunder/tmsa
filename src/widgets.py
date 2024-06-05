@@ -34,8 +34,10 @@ main.title(f'Time Matters {VERSION}')
 
 if PLATFORM == 'Win32GUI':
     base_font = tkFont(family='Lucida Console', size=18, weight='normal')
-    small_font = tkFont(family='Lucida Console', size=16, weight='normal')
-    smallest_font = tkFont(family='Lucida Console', size=14, weight='normal')
+    font_16 = tkFont(family='Lucida Console', size=16, weight='normal')
+    font_14 = tkFont(family='Lucida Console', size=14, weight='normal')
+    font_12 = tkFont(family='Lucida Console', size=12, weight='normal')
+    font_10 = tkFont(family='Lucida Console', size=10, weight='normal')
     ulfont = tkFont(
         family='Lucida Console', size=18, weight='normal', underline=1
     )
@@ -46,11 +48,17 @@ elif PLATFORM == 'linux':
     base_font = root_font.copy()
     base_font.configure(size=18)
 
-    small_font = root_font.copy()
-    small_font.configure(size=16)
+    font_16 = root_font.copy()
+    font_16.configure(size=16)
 
-    smallest_font = root_font.copy()
-    smallest_font.configure(size=14)
+    font_14 = root_font.copy()
+    font_14.configure(size=14)
+
+    font_12 = root_font.copy()
+    font_12.configure(size=12)
+
+    font_10 = root_font.copy()
+    font_10.configure(size=10)
 
     ulfont = root_font.copy()
     ulfont.configure(size=18, underline=1)

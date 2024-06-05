@@ -22,7 +22,13 @@ from init import *
 import math
 from constants import PLATFORM
 
-from utils import arccotangent, cotangent
+from utils import (
+    arccotangent,
+    cotangent,
+    add_360_if_negative,
+    southern_azimuth,
+    north_azimuth,
+)
 
 dll = CDLL(DLL_PATH)
 
@@ -306,17 +312,35 @@ def cotrans(ecliptic, oe):
 def calc_meridian_longitude(azimuth: float, altitude: float):
     ratio = cotangent(math.radians(altitude)) / math.cos(math.radians(azimuth))
     meridian_longitude = math.degrees(arccotangent(ratio))
-    if meridian_longitude < 0:
-        meridian_longitude += 360
+    meridian_longitude = add_360_if_negative(meridian_longitude)
 
-    # if (
-    #     meridian_longitude >= 270
-    #     and meridian_longitude <= 360
-    #     and altitude < 0
-    # ):
-    #     meridian_longitude -= 180
+    # We have a few cases here: nothern/southern ML, above/below horizon.
+    # ML 0-90 should mean south-above
+    # ML 90-180 should mean north-above
+    # ML 180-270 should mean north-below
+    # ML 270-360 should mean south-below
 
-    # if meridian_longitude >= 0 and meridian_longitude <= 90 and altitude > 0:
-    #     meridian_longitude += 180
+    # This is separate from northern/southern AZIMUTH though:
+    # Southern azimuth is 90-270; Northern azimuth is 270-90.
+
+    # Correct above/below errors
+    if altitude >= 0 and meridian_longitude > 270:
+        meridian_longitude = add_360_if_negative(180 - meridian_longitude)
+    elif altitude < 0 and meridian_longitude < 90:
+        meridian_longitude = add_360_if_negative(180 - meridian_longitude)
+
+    # Correct northern/southern errors
+    elif (
+        meridian_longitude > 270 or meridian_longitude < 90
+    ) and north_azimuth(azimuth):
+        meridian_longitude = add_360_if_negative(180 - meridian_longitude)
+    elif (90 < meridian_longitude < 270) and southern_azimuth(azimuth):
+        meridian_longitude = add_360_if_negative(180 - meridian_longitude)
+
+    # Re-check above/below errors, with pure 180° correction, not a flip
+    if altitude >= 0 and meridian_longitude > 180:
+        meridian_longitude = meridian_longitude - 180
+    elif altitude < 0 and meridian_longitude < 180:
+        meridian_longitude = add_360_if_negative(meridian_longitude - 180)
 
     return meridian_longitude
