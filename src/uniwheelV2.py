@@ -10,7 +10,7 @@
 from datetime import datetime
 import math
 import os
-from show_util import *
+from chart_utils import *
 from constants import VERSION
 from utils import open_file
 
@@ -471,12 +471,14 @@ class Uniwheel:
 
         house_cycle_position = planet_data[8] % 90
         if angularity_options['model'] == 1:
-            mundane_angularity_strength = major_angularity_curve_2(
-                house_cycle_position
+            mundane_angularity_strength = (
+                major_angularity_curve_midquadrant_background(
+                    house_cycle_position
+                )
             )
         else:
-            mundane_angularity_strength = major_angularity_curve(
-                house_cycle_position
+            mundane_angularity_strength = (
+                major_angularity_curve_cadent_background(house_cycle_position)
             )
 
         aspect_to_asc = abs(chart['cusps'][1] - planet_data[0])

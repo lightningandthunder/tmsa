@@ -128,7 +128,7 @@ DQ = '"'
 SQ = "'"
 
 
-def major_angularity_curve(orb):
+def major_angularity_curve_cadent_background(orb):
     if orb <= 10:
         orb *= 6
     elif orb > 10 and orb <= 40:
@@ -141,7 +141,7 @@ def major_angularity_curve(orb):
     return _major_angle_angularity_strength_percent(orb)
 
 
-def major_angularity_curve_2(orb):
+def major_angularity_curve_midquadrant_background(orb):
     if orb > 45:
         orb = 90 - orb
     if orb <= 10:
@@ -165,7 +165,7 @@ def _major_angle_angularity_strength_percent(orb: float) -> float:
     return round(raw * 100)
 
 
-def eureka_curve(orb):
+def major_angularity_curve_eureka_formula(orb):
     initial_angularity = math.cos(math.radians(orb * 4))
     # Reduce the weight - this essentially is a square of the calculated score
     faded_angularity = initial_angularity * ((initial_angularity + 1) / 2)

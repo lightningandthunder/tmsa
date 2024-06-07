@@ -10,7 +10,7 @@
 from datetime import datetime
 import math
 import os
-from show_util import *
+from chart_utils import *
 from constants import VERSION
 from utils import open_file
 
@@ -218,9 +218,9 @@ class Uniwheel:
 
                 a1 = planet_data[8] % 90
                 if angularity_options['model'] == 1:
-                    p1 = major_angularity_curve_2(a1)
+                    p1 = major_angularity_curve_midquadrant_background(a1)
                 else:
-                    p1 = major_angularity_curve(a1)
+                    p1 = major_angularity_curve_cadent_background(a1)
                 a2 = abs(chart['cusps'][1] - planet_data[0])
                 if a2 > 180:
                     a2 = 360 - a2
