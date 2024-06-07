@@ -173,7 +173,6 @@ class StartPage(Frame):
         height = self.parent.winfo_height()
 
         scale_factor = height / 1070 if height < 1070 else 1
-        print(self.intro.height)
         self.intro.configure(height=math.floor(scale_factor * HEIGHT_UNIT * 3))
         if height < 800:
             self.intro.configure(font=font_10)

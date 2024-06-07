@@ -128,32 +128,61 @@ DQ = '"'
 SQ = "'"
 
 
-def main_angularity_curve(a):
-    if a <= 10:
-        a *= 6
-    elif a > 10 and a <= 40:
-        a = 2 * a + 40
-    elif a > 40 and a <= 60:
-        a *= 3
+def major_angularity_curve(orb):
+    if orb <= 10:
+        orb *= 6
+    elif orb > 10 and orb <= 40:
+        orb = 2 * orb + 40
+    elif orb > 40 and orb <= 60:
+        orb *= 3
     else:
-        a = 6 * a - 180
-    return math.cos(math.radians(a))
+        orb = 6 * orb - 180
+
+    return _major_angle_angularity_strength_percent(orb)
 
 
-def main_angularity_curve_2(a):
-    if a > 45:
-        a = 90 - a
-    if a <= 10:
-        a *= 6
-    elif a > 10 and a <= 35:
-        a = 2.4 * a + 36
+def major_angularity_curve_2(orb):
+    if orb > 45:
+        orb = 90 - orb
+    if orb <= 10:
+        orb *= 6
+    elif orb > 10 and orb <= 35:
+        orb = 2.4 * orb + 36
     else:
-        a = 6 * a - 90
-    return math.cos(math.radians(a))
+        orb = 6 * orb - 90
+
+    return _major_angle_angularity_strength_percent(orb)
 
 
-def eureka_curve(a):
-    return (faded_p_scale(a) + repressiveness_score(a)) / 1.25
+def _major_angle_angularity_strength_percent(orb: float) -> float:
+    # Normalize the -1 to +1 range to a percentage
+    raw = math.cos(math.radians(orb))
+    # Convert from -1 to +1 to 0 to +2
+    raw = raw + 1
+    # Reduce to 0 to +1
+    raw /= 2
+    # Convert to percentage
+    return round(raw * 100)
+
+
+def eureka_curve(orb):
+    initial_angularity = math.cos(math.radians(orb * 4))
+    # Reduce the weight - this essentially is a square of the calculated score
+    faded_angularity = initial_angularity * ((initial_angularity + 1) / 2)
+    # Same curve as angularity, but shifted 60 degrees
+    cadency_strength = -1 * math.cos(math.radians(4 * (orb - 60)))
+    # Reduce the weight of this term as before
+    faded_cadency_strength = cadency_strength * (
+        1 - ((cadency_strength + 1) / 2)
+    )
+
+    # This is a curve that moves between -1.125 and +1.125
+    penultimate_score = faded_angularity + faded_cadency_strength
+    # Convert to -1 to +1
+    penultimate_score /= 1.125
+    # Convert to 0 to +1
+    raw_decimal = (penultimate_score + 1) / 2
+    return round(raw_decimal * 100)
 
 
 def calculate_angularity_curve(orb_degrees: float):
@@ -173,7 +202,16 @@ def repressiveness_score(p: float):
 
 
 def minor_angularity_curve(orb_degrees: float):
-    return (math.cos(math.radians(orb_degrees * 30)) + 3) / 4
+    # Cosine curve
+    raw = math.cos(math.radians(orb_degrees * 30))
+    # Convert from -1 to +1 to 0 to +2
+    raw += 1
+    # Spread this curve across 50 percentage points
+    raw *= 25
+    # Finally, add 50 get a percentage
+    raw += 50
+
+    return round(raw)
 
 
 def inrange(value: float, center: float, orb: float) -> bool:

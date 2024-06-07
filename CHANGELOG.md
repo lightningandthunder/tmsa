@@ -6,6 +6,8 @@
 - Stop autotabbing while typing in form fields
 - Include support for Linux
 - Refactor uniwheels
+- Add vertical scaling to title screen
+- Add text wrap to buttons
 
 ### 0.4.13
 - Move to semantic versioning (major.minor.patch format)

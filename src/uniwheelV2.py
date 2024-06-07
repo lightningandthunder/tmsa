@@ -471,13 +471,14 @@ class Uniwheel:
 
         house_cycle_position = planet_data[8] % 90
         if angularity_options['model'] == 1:
-            mundane_angularity_strength = main_angularity_curve_2(
+            mundane_angularity_strength = major_angularity_curve_2(
                 house_cycle_position
             )
         else:
-            mundane_angularity_strength = main_angularity_curve(
+            mundane_angularity_strength = major_angularity_curve(
                 house_cycle_position
             )
+
         aspect_to_asc = abs(chart['cusps'][1] - planet_data[0])
         if aspect_to_asc > 180:
             aspect_to_asc = 360 - aspect_to_asc
@@ -778,7 +779,7 @@ class Uniwheel:
             # Angularity
             (
                 angularity,
-                angularity_strength,
+                strength_percent,
                 dormant,
                 is_mundanely_background,
             ) = self.calc_angle_and_strength(
@@ -786,7 +787,6 @@ class Uniwheel:
                 chart,
                 angularity_options,
             )
-            strength_percent = round((angularity_strength + 1) * 50)
             planet_foreground_angles[
                 PLANET_NAMES_SHORT[planet_index]
             ] = angularity

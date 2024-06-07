@@ -276,9 +276,9 @@ class Biwheel:
                 )
                 a1 = planet_data[7] % 90
                 if ang['model'] == 1:
-                    p1 = main_angularity_curve_2(a1)
+                    p1 = major_angularity_curve_2(a1)
                 else:
-                    p1 = main_angularity_curve(a1)
+                    p1 = major_angularity_curve(a1)
                 a2 = abs(chart['cusps'][1] - planet_data[0])
                 if a2 > 180:
                     a2 = 360 - a2
@@ -442,9 +442,9 @@ class Biwheel:
                 )
                 a1 = planet_data[7] % 90
                 if ang['model'] == 1:
-                    p1 = main_angularity_curve_2(a1)
+                    p1 = major_angularity_curve_2(a1)
                 else:
-                    p1 = main_angularity_curve(a1)
+                    p1 = major_angularity_curve(a1)
                 a2 = abs(chart['cusps'][1] - planet_data[0])
                 if a2 > 180:
                     a2 = 360 - a2
