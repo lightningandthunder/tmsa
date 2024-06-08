@@ -155,7 +155,6 @@ def major_angularity_curve_midquadrant_background(orb):
 
 
 def _major_angle_angularity_strength_percent(orb: float) -> float:
-    print('orb: ', orb)
     # Normalize the -1 to +1 range to a percentage
     raw = math.cos(math.radians(orb))
     # Convert from -1 to +1 to 0 to +2
@@ -163,7 +162,6 @@ def _major_angle_angularity_strength_percent(orb: float) -> float:
     # Reduce to 0 to +1
     raw /= 2
     # Convert to percentage
-    print('rounded: ', round(raw * 100))
     return round(raw * 100)
 
 
@@ -189,18 +187,6 @@ def major_angularity_curve_eureka_formula(orb):
 
 def calculate_angularity_curve(orb_degrees: float):
     return math.cos(math.radians(orb_degrees * 4))
-
-
-def calculate_cadent_curve(orb_degrees: float):
-    return (math.cos(math.radians(4 * (orb_degrees - 60)))) * -1
-
-
-def faded_p_scale(p: float):
-    return p * ((2 * p + 1) / 2)
-
-
-def repressiveness_score(p: float):
-    return p * (1 - ((2 * p + 1) / 2))
 
 
 def minor_angularity_curve(orb_degrees: float):

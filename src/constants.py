@@ -12,7 +12,7 @@ import sys
 DS = '\N{DEGREE SIGN}'
 DQ = '"'
 SQ = "'"
-VERSION = '0.5.0a1'
+VERSION = '0.5.0a2'
 
 
 PLATFORM = None

@@ -41,7 +41,7 @@ class ChartOptions(Frame):
             self,
             self.bgcurve,
             2,
-            'Single-equation "Eureka" curve',
+            'Eureka curve',
             0.6,
             0.2,
             0.2,

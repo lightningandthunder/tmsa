@@ -420,12 +420,11 @@ class BiwheelV2:
                     fb = '  '
 
                 if inrange(planet_data[5], 270, minor_limit[2]):
-                    chartfile.write(f'     Vx')
+                    fb = 'Vx'
                 elif inrange(planet_data[5], 90, minor_limit[2]):
-                    chartfile.write(f'     Av')
-                else:
-                    chartfile.write(f'{angularity_score: 3}% {fb}')
-                chartfile.write('\n')
+                    fb = 'Av'
+                chartfile.write(f'{angularity_score:3d}% {fb}')
+                chartfile.write('\n\n')
             plangt = deepcopy(plang)
             chartfile.write('-' * 72 + '\n')
             chartfile.write(center_align('Radical Planets', 72) + '\n')
@@ -471,10 +470,12 @@ class BiwheelV2:
                     major_angle_orb = (
                         major_angularity_curve_midquadrant_background(a1)
                     )
-                else:
+                elif ang['model'] == 0:
                     major_angle_orb = major_angularity_curve_cadent_background(
                         a1
                     )
+                else:   # model 2
+                    major_angle_orb = major_angularity_curve_eureka_formula(a1)
                 a2 = abs(chart['cusps'][1] - planet_data[0])
                 if a2 > 180:
                     a2 = 360 - a2
@@ -594,11 +595,10 @@ class BiwheelV2:
                     fb = '  '
 
                 if inrange(planet_data[5], 270, minor_limit[2]):
-                    chartfile.write(f'     Vx')
+                    fb = 'Vx'
                 elif inrange(planet_data[5], 90, minor_limit[2]):
-                    chartfile.write(f'     Av')
-                else:
-                    chartfile.write(f'{angularity_score: 3}% {fb}')
+                    fb = 'Av'
+                chartfile.write(f'{angularity_score:3d}% {fb}')
                 chartfile.write('\n')
             plangr = deepcopy(plang)
             chartfile.write('-' * 72 + '\n')

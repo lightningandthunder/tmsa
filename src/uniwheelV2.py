@@ -476,9 +476,13 @@ class Uniwheel:
                     house_cycle_position
                 )
             )
-        else:
+        elif angularity_options['model'] == 0:
             mundane_angularity_strength = (
                 major_angularity_curve_cadent_background(house_cycle_position)
+            )
+        else:   # model == 2
+            mundane_angularity_strength = (
+                major_angularity_curve_eureka_formula(house_cycle_position)
             )
 
         aspect_to_asc = abs(chart['cusps'][1] - planet_data[0])
@@ -765,9 +769,7 @@ class Uniwheel:
             chartfile.write(fmt_lat(planet_data[4], True) + ' ')
 
             # Azimuth
-            chartfile.write(
-                right_align(fmt_dm(planet_data[5] + 180 % 360, True), 7) + ' '
-            )
+            chartfile.write(right_align(fmt_dm(planet_data[5], True), 7) + ' ')
 
             # Altitude
             chartfile.write(right_align(s_dm(planet_data[6]), 7) + ' ')
@@ -805,11 +807,11 @@ class Uniwheel:
             )
 
             if inrange(planet_data[5], 270, minor_limit[2]):
-                chartfile.write(f'     Vx')
+                angularity = 'Vx'
             elif inrange(planet_data[5], 90, minor_limit[2]):
-                chartfile.write(f'     Av')
-            else:
-                chartfile.write(f'{strength_percent:3d}% {angularity}')
+                angularity = 'Av'
+
+            chartfile.write(f'{strength_percent:3d}% {angularity}')
             chartfile.write('\n')
 
         if dormant:

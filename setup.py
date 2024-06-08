@@ -107,6 +107,7 @@ options = {
         "includes": [
             "biwheel",
             "chart_options",
+            "chart_utils",
             "chart",
             "classes",
             "constants",
@@ -120,7 +121,6 @@ options = {
             "new_chart",
             "program_options",
             "select_chart",
-            "show_util",
             "solunars",
             "swe",
             "tmsa",

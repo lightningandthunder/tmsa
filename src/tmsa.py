@@ -8,7 +8,6 @@
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
 import math
-from tkinter import PhotoImage
 from init import *
 from chart_options import ChartOptions
 from ingresses import Ingresses
@@ -21,9 +20,13 @@ import os
 import shutil
 import json
 from constants import VERSION
-from gui_utils import ShowHelp, newline_if_past_breakpoint
+from gui_utils import (
+    ShowHelp,
+    newline_if_past_breakpoint,
+    format_version_for_title,
+)
 
-TITLE = f'Time Matters {VERSION}'
+TITLE = f'Time Matters {format_version_for_title(VERSION)}'
 INTRO = f"""A freeware program for calculating geometrically
 accurate astrological charts in the Sidereal Zodiac,
 as rediscovered by Cyril Fagan and Donald Bradley."""
