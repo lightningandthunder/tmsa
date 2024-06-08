@@ -155,6 +155,7 @@ def major_angularity_curve_midquadrant_background(orb):
 
 
 def _major_angle_angularity_strength_percent(orb: float) -> float:
+    print('orb: ', orb)
     # Normalize the -1 to +1 range to a percentage
     raw = math.cos(math.radians(orb))
     # Convert from -1 to +1 to 0 to +2
@@ -162,6 +163,7 @@ def _major_angle_angularity_strength_percent(orb: float) -> float:
     # Reduce to 0 to +1
     raw /= 2
     # Convert to percentage
+    print('rounded: ', round(raw * 100))
     return round(raw * 100)
 
 
@@ -221,39 +223,37 @@ def inrange(value: float, center: float, orb: float) -> bool:
 def zod_min(value):
     value %= 360
     deg = int(value)
-    min = round((value - deg) * 60)
+    minute = round((value - deg) * 60)
     d = 0
     s = 0
-    if min == 60:
+    if minute == 60:
         if deg % 30 == 29:
             d = 30
             s = -1
-        min = 0
+        minute = 0
         deg += 1
-    return f'{(deg % 30) or d:2d}{SIGNS_SHORT[(deg // 30) + s]}{min:2d}'
+    return f'{(deg % 30) or d:2d}{SIGNS_SHORT[(deg // 30) + s]}{minute:2d}'
 
 
 def zod_sec(value):
     value %= 360
     deg = int(value)
     value = (value - deg) * 60
-    min = int(value)
-    value = (value - min) * 60
+    minute = int(value)
+    value = (value - minute) * 60
     sec = round(value)
     d = 0
     s = 0
     if sec == 60:
         sec = 0
-        min += 1
-    if min == 60:
+        minute += 1
+    if minute == 60:
         if deg % 30 == 29:
             d = 30
             s = -1
-        min = 0
+        minute = 0
         deg += 1
-    return (
-        f'{(deg % 30) or d:2d}{SIGNS_SHORT[deg // 30 + s]}{min:2d}\'{sec:2d}"'
-    )
+    return f'{(deg % 30) or d:2d}{SIGNS_SHORT[deg // 30 + s]}{minute:2d}\'{sec:2d}"'
 
 
 def center_align(value, width=33):
@@ -288,14 +288,14 @@ def fmt_hms(time):
         time += 24
     hour = int(time)
     time = (time - hour) * 60
-    min = int(time)
-    time = (time - min) * 60
+    minute = int(time)
+    time = (time - minute) * 60
     sec = round(time)
     if sec == 60:
         sec = 0
-        min += 1
-    if min == 60:
-        min = 0
+        minute += 1
+    if minute == 60:
+        minute = 0
         hour += 1
     if hour == 24:
         hour = 0
@@ -306,7 +306,7 @@ def fmt_hms(time):
         day = ' +2 days'
     else:
         day = f' {day:+d} day'
-    return f'{hour:2d}:{min:02d}:{sec:02d}{day}'
+    return f'{hour:2d}:{minute:02d}:{sec:02d}{day}'
 
 
 def fmt_lat(value, nosec=False):
@@ -317,21 +317,21 @@ def fmt_lat(value, nosec=False):
     deg = int(value)
     value = (value - deg) * 60
     if nosec:
-        min = round(value)
+        minute = round(value)
         sec = 0
     else:
-        min = int(value)
-        value = (value - min) * 60
+        minute = int(value)
+        value = (value - minute) * 60
         sec = round(value)
     if sec == 60:
-        min += 1
+        minute += 1
         sec = 0
-    if min == 60:
+    if minute == 60:
         deg += 1
-        min = 0
+        minute = 0
     if nosec:
-        return f'{deg:2d}{sym}{min:2d}'
-    return f"{deg:2d}{sym}{min:2d}'{sec:2d}{DQ}"
+        return f'{deg:2d}{sym}{minute:2d}'
+    return f"{deg:2d}{sym}{minute:2d}'{sec:2d}{DQ}"
 
 
 def fmt_long(value):
@@ -341,43 +341,49 @@ def fmt_long(value):
         value = -value
     deg = int(value)
     value = (value - deg) * 60
-    min = int(value)
-    value = (value - min) * 60
+    minute = int(value)
+    value = (value - minute) * 60
     sec = round(value)
     if sec == 60:
-        min += 1
+        minute += 1
         sec = 0
-    if min == 60:
+    if minute == 60:
         deg += 1
-        min = 0
-    return f"{deg:3d}{sym}{min:2d}'{sec:2d}{DQ}"
+        minute = 0
+    return f"{deg:3d}{sym}{minute:2d}'{sec:2d}{DQ}"
 
 
 def fmt_dms(value):
     deg = int(value)
     value = (value - deg) * 60
-    min = int(value)
-    value = (value - min) * 60
+    minute = int(value)
+    value = (value - minute) * 60
     sec = round(value)
     if sec == 60:
         sec = 0
-        min += 1
-    if min == 60:
-        min = 0
+        minute += 1
+    if minute == 60:
+        minute = 0
         deg += 1
-    return f"{deg:2d}{DS}{min:2}'{sec:2}{DQ}"
+    return f"{deg:2d}{DS}{minute:2}'{sec:2}{DQ}"
 
 
-def fmt_dm(value, noz=False):
+def fmt_dm(value, noz=False, degree_digits=2):
     deg = int(value)
     value = (value - deg) * 60
-    min = round(value)
-    if min == 60:
-        min = 0
+    minute = round(value)
+    if minute == 60:
+        minute = 0
         deg += 1
     if noz:
-        return f"{deg:2d}{DS}{min:2}'"
-    return f"{deg:02d}{DS}{min:02}'"
+        if degree_digits == 2:
+            return f"{deg:2d}{DS}{minute:2}'"
+        if degree_digits == 3:
+            return f"{deg:>3d}{DS}{minute:>2}'"
+    if degree_digits == 2:
+        return f"{deg:>02d}{DS}{minute:>02}'"
+    if degree_digits == 3:
+        return f"{deg:>03d}{DS}{minute:>02}'"
 
 
 def s_dm(value):

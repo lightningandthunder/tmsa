@@ -10,7 +10,7 @@
 from init import *
 from swe import *
 from uniwheelV2 import Uniwheel
-from biwheel import Biwheel
+from biwheelV2 import BiwheelV2
 from widgets import *
 from utils import to360
 
@@ -145,7 +145,7 @@ class Chart:
                 pass
         if chart.get('base_chart', None):
             self.precess(chart['base_chart'])
-            self.report = Biwheel(chart, temporary, options)
+            self.report = BiwheelV2(chart, temporary, options)
         else:
             self.report = Uniwheel(chart, temporary, options)
 

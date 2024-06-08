@@ -773,7 +773,9 @@ class Uniwheel:
             chartfile.write(right_align(s_dm(planet_data[6]), 7) + ' ')
 
             # Meridian Longitude
-            chartfile.write(fmt_dm(planet_data[7], True) + ' ')
+            chartfile.write(
+                fmt_dm(planet_data[7], degree_digits=3, noz=True) + ' '
+            )
 
             # House position
             chartfile.write(right_align(fmt_dm(planet_data[8], True), 7) + ' ')
