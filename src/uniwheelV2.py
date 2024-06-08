@@ -52,7 +52,7 @@ class Uniwheel:
             self.draw_chart(chart, chartfile, options)
             self.write_info_table(chart, chartfile, options)
 
-            chartfile.write('\n' + '-' * 72 + '\n')
+            chartfile.write('\n' + '-' * 81 + '\n')
             chartfile.write(
                 f"Created by Time Matters {VERSION}  ({datetime.now().strftime('%d %b %Y')})"
             )
@@ -735,7 +735,7 @@ class Uniwheel:
                 chartfile.write(col)
             chartfile.write('\n')
 
-        chartfile.write('\n\n' + '-' * 72 + '\n')
+        chartfile.write('\n\n' + '-' * 81 + '\n')
 
     def write_info_table(self, chart, chartfile, options):
         chartfile.write(
@@ -815,8 +815,8 @@ class Uniwheel:
             chartfile.write('\n')
 
         if dormant:
-            chartfile.write('-' * 72 + '\n')
-            chartfile.write(center_align('Dormant Ingress', 72) + '\n')
+            chartfile.write('-' * 81 + '\n')
+            chartfile.write(center_align('Dormant Ingress', 81) + '\n')
 
         # Aspects
         ecliptical_orbs = options.get(
@@ -904,7 +904,7 @@ class Uniwheel:
                 aspects_by_class.append([])
                 aspect_class_headers.append('')
         if any(aspect_class_headers):
-            chartfile.write('-' * 72 + '\n')
+            chartfile.write('-' * 81 + '\n')
             for planet_index in range(0, 3):
                 chartfile.write(
                     center_align(
@@ -944,18 +944,18 @@ class Uniwheel:
                 chartfile.write(' ' * 24)
             chartfile.write('\n')
 
-        chartfile.write('-' * 72 + '\n')
+        chartfile.write('-' * 81 + '\n')
         if aspects_by_class[3]:
             chartfile.write(
-                center_align(f'{aspect_class_headers[3]} Aspects', width=72)
+                center_align(f'{aspect_class_headers[3]} Aspects', width=81)
                 + '\n'
             )
             for a in aspects_by_class[3]:
-                chartfile.write(center_align(a, 72) + '\n')
-            chartfile.write('-' * 72 + '\n')
+                chartfile.write(center_align(a, 81) + '\n')
+            chartfile.write('-' * 81 + '\n')
 
         # Cosmic State
-        chartfile.write(center_align('Cosmic State', 72) + '\n')
+        chartfile.write(center_align('Cosmic State', 81) + '\n')
         moon_sign = SIGNS_SHORT[int(chart['Moon'][0] // 30)]
         sun_sign = SIGNS_SHORT[int(chart['Sun'][0] // 30)]
         cclass = chart['class']

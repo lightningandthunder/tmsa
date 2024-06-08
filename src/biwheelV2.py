@@ -204,11 +204,11 @@ class BiwheelV2:
                 chartfile.write('\n')
 
             if extras:
-                chartfile.write('\n\n' + '-' * 72 + '\n')
+                chartfile.write('\n\n' + '-' * 81 + '\n')
                 s = 's' if len(extras) > 1 else ''
                 chartfile.write(
                     center_align(
-                        f'Planet{s} not shown above, details below:', 72
+                        f'Planet{s} not shown above, details below:', 81
                     )
                     + '\n'
                 )
@@ -226,13 +226,13 @@ class BiwheelV2:
                             )
                             + ' '
                         )
-                chartfile.write(center_align(ex[0:-1], 72) + '\n')
+                chartfile.write(center_align(ex[0:-1], 81) + '\n')
 
-            chartfile.write('\n\n' + '-' * 72 + '\n')
+            chartfile.write('\n\n' + '-' * 81 + '\n')
             chartfile.write(
                 'Pl Longitude   Lat   Speed    RA     Decl   Azi     Alt      ML     PVL    Ang G\n'
             )
-            chartfile.write(center_align('Transiting Planets', 72) + '\n')
+            chartfile.write(center_align('Transiting Planets', 81) + '\n')
             ang = options.get('angularity', {})
             major_limit = ang.get('major_angles', [3.0, 7.0, 10.0])
             minor_limit = ang.get('minor_angles', [1.0, 2.0, 3.0])
@@ -424,10 +424,10 @@ class BiwheelV2:
                 elif inrange(planet_data[5], 90, minor_limit[2]):
                     fb = 'Av'
                 chartfile.write(f'{angularity_score:3d}% {fb}')
-                chartfile.write('\n\n')
+                chartfile.write('\n')
             plangt = deepcopy(plang)
-            chartfile.write('-' * 72 + '\n')
-            chartfile.write(center_align('Radical Planets', 72) + '\n')
+            chartfile.write('-' * 81 + '\n')
+            chartfile.write(center_align('Radical Planets', 81) + '\n')
             for planet_name in PLANET_NAMES:
                 if planet_name == 'Eastpoint':
                     break
@@ -601,7 +601,7 @@ class BiwheelV2:
                 chartfile.write(f'{angularity_score:3d}% {fb}')
                 chartfile.write('\n')
             plangr = deepcopy(plang)
-            chartfile.write('-' * 72 + '\n')
+            chartfile.write('-' * 81 + '\n')
             ea = options.get('ecliptic_aspects', DEFAULT_ECLIPTICAL_ORBS)
             ma = options.get('mundane_aspects', DEFAULT_MUNDANE_ORBS)
             asp = [[], [], [], []]
@@ -700,14 +700,14 @@ class BiwheelV2:
                 else:
                     chartfile.write(' ' * 24)
                 chartfile.write('\n')
-            chartfile.write('-' * 72 + '\n')
+            chartfile.write('-' * 81 + '\n')
             if asp[3]:
                 chartfile.write(center_align(f'{asph[3]} Aspects', 76) + '\n')
                 for a in asp[3]:
-                    chartfile.write(center_align(a, 72) + '\n')
-                chartfile.write('-' * 72 + '\n')
-            chartfile.write(center_align('Cosmic State', 72) + '\n')
-            chartfile.write(center_align('Transiting Planets', 72) + '\n')
+                    chartfile.write(center_align(a, 81) + '\n')
+                chartfile.write('-' * 81 + '\n')
+            chartfile.write(center_align('Cosmic State', 81) + '\n')
+            chartfile.write(center_align('Transiting Planets', 81) + '\n')
             cclass = chart['class']
             for i in range(14):
                 if i == 10 and not options.get('use_Eris', 1):
@@ -755,8 +755,8 @@ class BiwheelV2:
                     chartfile.write(a[0] + '   ')
                     if j % 4 == 3 and j != len(asplist) - 1:
                         chartfile.write('\n' + (' ' * 8) + '| ')
-            chartfile.write('\n' + '-' * 72 + '\n')
-            chartfile.write(center_align('Radical Planets', 72) + '\n')
+            chartfile.write('\n' + '-' * 81 + '\n')
+            chartfile.write(center_align('Radical Planets', 81) + '\n')
             cclass = chart['class']
             for i in range(14):
                 if i == 10 and not options.get('use_Eris', 1):
@@ -805,7 +805,7 @@ class BiwheelV2:
                     if j % 4 == 3 and j != len(asplist) - 1:
                         chartfile.write('\n' + (' ' * 8) + '| ')
             self.filename = filename
-            chartfile.write('\n' + '-' * 72 + '\n')
+            chartfile.write('\n' + '-' * 81 + '\n')
             chartfile.write(
                 f"Created by Time Matters {VERSION} ({datetime.now().strftime('%d %b %Y')})"
             )
