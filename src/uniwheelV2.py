@@ -469,20 +469,22 @@ class Uniwheel:
             if minor_angle_orbs[orb_class] == 0:
                 minor_angle_orbs[orb_class] = -3
 
-        house_cycle_position = planet_data[8] % 90
+        house_quadrant_position = planet_data[8] % 90
         if angularity_options['model'] == 1:
             mundane_angularity_strength = (
                 major_angularity_curve_midquadrant_background(
-                    house_cycle_position
+                    house_quadrant_position
                 )
             )
         elif angularity_options['model'] == 0:
             mundane_angularity_strength = (
-                major_angularity_curve_cadent_background(house_cycle_position)
+                major_angularity_curve_cadent_background(
+                    house_quadrant_position
+                )
             )
         else:   # model == 2
             mundane_angularity_strength = (
-                major_angularity_curve_eureka_formula(house_cycle_position)
+                major_angularity_curve_eureka_formula(house_quadrant_position)
             )
 
         aspect_to_asc = abs(chart['cusps'][1] - planet_data[0])
@@ -522,10 +524,11 @@ class Uniwheel:
         is_mundanely_background = False
 
         mundane_angularity_orb = (
-            90 - house_cycle_position
-            if house_cycle_position > 45
-            else house_cycle_position
+            90 - house_quadrant_position
+            if house_quadrant_position > 45
+            else house_quadrant_position
         )
+
         if mundane_angularity_orb <= major_angle_orbs[0]:
             angularity = 'F'
             dormant = False
@@ -535,23 +538,11 @@ class Uniwheel:
             angularity = 'F'
 
         if angularity == ' ':
-            if angularity_options['model'] == 0:
-                if house_cycle_position >= 60:
-                    mundane_background_orb = house_cycle_position - 60
-                else:
-                    mundane_background_orb = (60 - house_cycle_position) / 2
-            else:
-                mundane_background_orb = abs(mundane_angularity_orb - 45)
-            if mundane_background_orb <= major_angle_orbs[0]:
-                angularity = 'B'
-            elif mundane_background_orb <= major_angle_orbs[1]:
-                angularity = 'B'
-            elif mundane_background_orb <= major_angle_orbs[2]:
-                angularity = 'B'
-
-            if angularity == 'B' and angularity_options.get('no_bg', False):
+            if mundane_angularity_strength <= 25:
                 is_mundanely_background = True
-                angularity = ' '
+                angularity = 'B'
+                if angularity_options.get('no_bg', False):
+                    angularity = ' '
 
         zenith_nadir_orb = abs(aspect_to_asc - 90)
         if zenith_nadir_orb <= minor_angle_orbs[0]:
