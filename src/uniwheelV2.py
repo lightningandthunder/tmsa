@@ -96,7 +96,7 @@ class Uniwheel:
         ecliptical_orbs,
         options,
         foreground_planets,
-        dormant,
+        whole_chart_is_dormant,
     ):
         planet_name_1 = PLANET_NAMES[planet_index_1]
         planet_name_2 = PLANET_NAMES[planet_index_2]
@@ -165,7 +165,7 @@ class Uniwheel:
                     return ('', 0, 0)
                 if planet_name_1 == 'Moon' and 'I' in self.cclass:
                     break
-                if dormant:
+                if whole_chart_is_dormant:
                     return ('', 0, 0)
                 if options.get('show_aspects', 0) == 1:
                     if (
@@ -453,7 +453,6 @@ class Uniwheel:
         minor_angle_orbs = angularity_options.get(
             'minor_angles', [1.0, 2.0, 3.0]
         )
-        planet_negates_dormancy = False if 'I' in self.cclass else True
 
         for orb_class in range(3):
             if major_angle_orbs[orb_class] == 0:
@@ -523,13 +522,12 @@ class Uniwheel:
 
         if mundane_angularity_orb <= major_angle_orbs[0]:
             angularity = 'F'
-            planet_negates_dormancy = True
         elif mundane_angularity_orb <= major_angle_orbs[1]:
             angularity = 'F'
         elif mundane_angularity_orb <= major_angle_orbs[2]:
             angularity = 'F'
 
-        if angularity == ' ':
+        else:
             if mundane_angularity_strength <= 25:
                 is_mundanely_background = True
                 angularity = 'B'
@@ -539,44 +537,47 @@ class Uniwheel:
         zenith_nadir_orb = abs(aspect_to_asc - 90)
         if zenith_nadir_orb <= minor_angle_orbs[0]:
             angularity = 'F'
-            planet_negates_dormancy = True
         elif zenith_nadir_orb <= minor_angle_orbs[1]:
             angularity = 'F'
-            planet_negates_dormancy = True
         elif zenith_nadir_orb <= minor_angle_orbs[2]:
             angularity = 'F'
 
         ep_wp_eclipto_orb = abs(aspect_to_mc - 90)
         if ep_wp_eclipto_orb <= minor_angle_orbs[0]:
             angularity = 'F'
-            planet_negates_dormancy = True
         elif ep_wp_eclipto_orb <= minor_angle_orbs[1]:
             angularity = 'F'
-            planet_negates_dormancy = True
         elif ep_wp_eclipto_orb <= minor_angle_orbs[2]:
             angularity = 'F'
 
         ep_wp_ascension_orb = abs(ramc_aspect - 90)
         if ep_wp_ascension_orb <= minor_angle_orbs[0]:
             angularity = 'F'
-            planet_negates_dormancy = True
         elif ep_wp_ascension_orb <= minor_angle_orbs[1]:
             angularity = 'F'
-            planet_negates_dormancy = True
         elif ep_wp_ascension_orb <= minor_angle_orbs[2]:
             angularity = 'F'
+
+        angularity_orb = -1
 
         # if foreground, get specific angle - we can probably do this all at once
         if angularity == 'F':
             # Foreground in prime vertical longitude
             if angularity_strength == mundane_angularity_strength:
-                if planet_data[8] >= 345 or planet_data[8] <= 15:
+                if planet_data[8] >= 345: 
+                    angularity_orb = 360 - planet_data[8]
                     angularity = 'A '
-                if inrange(planet_data[8], 90, 15):
+                elif planet_data[8] <= 15:
+                    angularity_orb = planet_data[8]
+                    angularity = 'A '
+                elif inrange(planet_data[8], 90, 15):
+                    angularity_orb = abs(planet_data[8] - 90)
                     angularity = 'I '
-                if inrange(planet_data[8], 180, 15):
+                elif inrange(planet_data[8], 180, 15):
+                    angularity_orb = abs(planet_data[8] - 180)
                     angularity = 'D '
-                if inrange(planet_data[8], 270, 15):
+                elif inrange(planet_data[8], 270, 15):
+                    angularity_orb = abs(planet_data[8] - 270)
                     angularity = 'M '
 
             # Foreground on Zenith/Nadir
@@ -585,8 +586,10 @@ class Uniwheel:
                 if zenith_nadir_orb < 0:
                     zenith_nadir_orb += 360
                 if inrange(zenith_nadir_orb, 90, 5):
+                    angularity_orb = abs(zenith_nadir_orb - 90)
                     angularity = 'Z '
                 if inrange(zenith_nadir_orb, 270, 5):
+                    angularity_orb = abs(zenith_nadir_orb - 270)
                     angularity = 'N '
 
             # Foreground on Eastpoint/Westpoint
@@ -595,21 +598,33 @@ class Uniwheel:
                 if ep_wp_eclipto_orb < 0:
                     ep_wp_eclipto_orb += 360
                 if inrange(ep_wp_eclipto_orb, 90, 5):
+                    angularity_orb = abs(ep_wp_eclipto_orb - 90)
                     angularity = 'W '
                 if inrange(ep_wp_eclipto_orb, 270, 5):
+                    angularity_orb = abs(ep_wp_eclipto_orb - 270)
                     angularity = 'E '
+
             if angularity_strength == ramc_square_strength:
                 ep_wp_ascension_orb = chart['ramc'] - planet_data[3]
                 if ep_wp_ascension_orb < 0:
                     ep_wp_ascension_orb += 360
                 if inrange(ep_wp_ascension_orb, 90, 5):
+                    angularity_orb = abs(ep_wp_ascension_orb - 90)
                     angularity = 'Wa'
                 if inrange(ep_wp_ascension_orb, 270, 5):
+                    angularity_orb = abs(ep_wp_ascension_orb - 270)
                     angularity = 'Ea'
+
         if angularity == 'B':
             angularity = ' b'
-        if angularity == ' ':
+        elif angularity == ' ':
             angularity = '  '
+
+        if 'I' not in self.cclass:
+            # It's not an ingress; dormancy is always negated
+            planet_negates_dormancy = True
+        else:
+            planet_negates_dormancy = angularity_activates_ingress(angularity_orb, angularity)
 
         return (
             angularity,
@@ -787,9 +802,9 @@ class Uniwheel:
                 PLANET_NAMES_SHORT[planet_index]
             ] = angularity
 
-            empty_angularity = angularity.strip() == ''
+            angularity_is_empty = angularity.strip() == ''
 
-            if empty_angularity and is_mundanely_background:
+            if angularity_is_empty and is_mundanely_background:
                 planet_foreground_angles[
                     PLANET_NAMES_SHORT[planet_index]
                 ] = 'B'
@@ -799,14 +814,13 @@ class Uniwheel:
                 'minor_angles', [1.0, 2.0, 3.0]
             )
 
-            if empty_angularity and inrange(
-                planet_data[5], 270, minor_limit[2]
-            ):
-                angularity = 'Vx'
-            elif empty_angularity and inrange(
-                planet_data[5], 90, minor_limit[2]
-            ):
-                angularity = 'Av'
+            if angularity_is_empty or is_mundanely_background: 
+                if inrange(planet_data[5], 270, minor_limit[2]):
+                    angularity = 'Vx'
+                elif inrange(
+                    planet_data[5], 90, minor_limit[2]
+                ):
+                    angularity = 'Av'
 
             chartfile.write(f'{strength_percent:3d}% {angularity}')
             chartfile.write('\n')

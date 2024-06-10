@@ -236,8 +236,8 @@ class BiwheelV2:
             minor_limit = angularity_options.get(
                 'minor_angles', [1.0, 2.0, 3.0]
             )
-            plfg = []
-            plang = {}
+            planets_in_foreground = []
+            planet_angles = {}
             for column_index in range(3):
                 if major_limit[column_index] == 0:
                     major_limit[column_index] = -3
@@ -373,15 +373,15 @@ class BiwheelV2:
                 if fb == 'F' or (
                     planet_name == 'Moon' and self.cclass == 'SR'
                 ):
-                    plfg.append('t' + planet_name)
+                    planets_in_foreground.append('t' + planet_name)
 
                 if fb == ' ':
                     if fbx == ' ':
-                        plang['t' + PLANET_NAMES_SHORT[column_index]] = ' '
+                        planet_angles['t' + PLANET_NAMES_SHORT[column_index]] = ' '
                     else:
-                        plang['t' + PLANET_NAMES_SHORT[column_index]] = fbx
+                        planet_angles['t' + PLANET_NAMES_SHORT[column_index]] = fbx
                 else:
-                    plang['t' + PLANET_NAMES_SHORT[column_index]] = fb
+                    planet_angles['t' + PLANET_NAMES_SHORT[column_index]] = fb
                 if fb == 'F':
                     if angularity_score == major_angle_orb:
                         if planet_data[8] >= 345 or planet_data[8] <= 15:
@@ -421,7 +421,7 @@ class BiwheelV2:
                 if fb == ' ':
                     fb = '  '
 
-                empty_angularity = angularity.strip() == ''
+                empty_angularity = fb.strip() == ''
 
                 # Conjunctions to Vertex/Antivertex
                 minor_limit = angularity_options.get(
@@ -439,7 +439,7 @@ class BiwheelV2:
 
                 chartfile.write(f'{angularity_score:3d}% {fb}')
                 chartfile.write('\n')
-            plangt = deepcopy(plang)
+
             chartfile.write('-' * 81 + '\n')
             chartfile.write(center_align('Radical Planets', 81) + '\n')
             for planet_name in PLANET_NAMES:
@@ -563,14 +563,14 @@ class BiwheelV2:
                 elif a <= minor_limit[2]:
                     fb = 'F'
                 if fb == 'F':
-                    plfg.append('r' + planet_name)
+                    planets_in_foreground.append('r' + planet_name)
                 if fb == ' ':
                     if fbx == ' ':
-                        plang['r' + PLANET_NAMES_SHORT[column_index]] = ' '
+                        planet_angles['r' + PLANET_NAMES_SHORT[column_index]] = ' '
                     else:
-                        plang['r' + PLANET_NAMES_SHORT[column_index]] = fbx
+                        planet_angles['r' + PLANET_NAMES_SHORT[column_index]] = fbx
                 else:
-                    plang['r' + PLANET_NAMES_SHORT[column_index]] = fb
+                    planet_angles['r' + PLANET_NAMES_SHORT[column_index]] = fb
                 if fb == 'F':
                     if angularity_score == major_angle_orb:
                         if planet_data[8] >= 345 or planet_data[8] <= 15:
@@ -616,31 +616,36 @@ class BiwheelV2:
                     fb = 'Av'
                 chartfile.write(f'{angularity_score:3d}% {fb}')
                 chartfile.write('\n')
-            plangr = deepcopy(plang)
+
             chartfile.write('-' * 81 + '\n')
-            ea = options.get('ecliptic_aspects', DEFAULT_ECLIPTICAL_ORBS)
-            ma = options.get('mundane_aspects', DEFAULT_MUNDANE_ORBS)
-            asp = [[], [], [], []]
-            asph = ['Class 1', 'Class 2', 'Class 3', 'Other Partile']
+            ecliptic_aspects = options.get('ecliptic_aspects', DEFAULT_ECLIPTICAL_ORBS)
+            mundane_aspects = options.get('mundane_aspects', DEFAULT_MUNDANE_ORBS)
+            aspect_classes = [[], [], [], []]
+            aspect_headers = ['Class 1', 'Class 2', 'Class 3', 'Other Partile']
+            
+            # Transit to transit
             for column_index in range(13):
                 for sub_index in range(column_index + 1, 14):
-                    (easp, cle, orbe) = self.find_easpect(
-                        chart, column_index, sub_index, ea, options, plfg, 0
+                    (ecliptic_aspect, ecliptic_class, ecliptic_orb) = self.find_easpect(
+                        chart, column_index, sub_index, ecliptic_aspects, options, planets_in_foreground, 0
                     )
-                    (masp, clm, orbm) = self.find_maspect(
-                        chart, column_index, sub_index, ma, options, plfg, 0
+                    (mundane_aspect, mundane_class, mundane_orb) = self.find_maspect(
+                        chart, column_index, sub_index, mundane_aspects, options, planets_in_foreground, 0
                     )
-                    if easp and masp:
-                        if orbm < orbe:
-                            easp = ''
+                    if ecliptic_aspect and mundane_aspect:
+                        if mundane_orb < ecliptic_orb:
+                            ecliptic_aspect = ''
                         else:
-                            masp = ''
-                    if easp:
-                        asp[cle - 1].append(easp)
-                    if masp:
-                        asp[clm - 1].append(masp)
+                            mundane_aspect = ''
+                    if ecliptic_aspect:
+                        aspect_classes[ecliptic_class - 1].append(ecliptic_aspect)
+                    if mundane_aspect:
+                        aspect_classes[mundane_class - 1].append(mundane_aspect)
+                        
+            # Transits to natal
             for column_index in range(14):
                 for sub_index in range(14):
+                    # Skip showing solunar return aspects to itself
                     if (
                         column_index == 0
                         and sub_index == 0
@@ -653,92 +658,100 @@ class BiwheelV2:
                         and self.cclass == 'SR'
                     ):
                         continue
-                    (easp, cle, orbe) = self.find_easpect(
-                        chart, column_index, sub_index, ea, options, plfg, 1
+
+                    (ecliptic_aspect, ecliptic_class, ecliptic_orb) = self.find_easpect(
+                        chart, column_index, sub_index, ecliptic_aspects, options, planets_in_foreground, 1
                     )
-                    (masp, clm, orbm) = self.find_maspect(
-                        chart, column_index, sub_index, ma, options, plfg, 1
+                    (mundane_aspect, mundane_class, mundane_orb) = self.find_maspect(
+                        chart, column_index, sub_index, mundane_aspects, options, planets_in_foreground, 1
                     )
-                    if easp and masp:
-                        if orbm < orbe:
-                            easp = ''
+
+                    if ecliptic_aspect and mundane_aspect:
+                        if mundane_orb < ecliptic_orb:
+                            ecliptic_aspect = ''
                         else:
-                            masp = ''
-                    if easp:
-                        asp[cle - 1].append(easp)
-                    if masp:
-                        asp[clm - 1].append(masp)
+                            mundane_aspect = ''
+                    if ecliptic_aspect:
+                        aspect_classes[ecliptic_class - 1].append(ecliptic_aspect)
+                    if mundane_aspect:
+                        aspect_classes[mundane_class - 1].append(mundane_aspect)
+
+            # Natal to natal
             for column_index in range(13):
                 for sub_index in range(column_index + 1, 14):
-                    (easp, cle, orbe) = self.find_easpect(
-                        chart, column_index, sub_index, ea, options, plfg, 2
+                    (ecliptic_aspect, ecliptic_class, ecliptic_orb) = self.find_easpect(
+                        chart, column_index, sub_index, ecliptic_aspects, options, planets_in_foreground, 2
                     )
-                    (masp, clm, orbm) = self.find_maspect(
-                        chart, column_index, sub_index, ma, options, plfg, 2
+                    (mundane_aspect, mundane_class, mundane_orb) = self.find_maspect(
+                        chart, column_index, sub_index, mundane_aspects, options, planets_in_foreground, 2
                     )
-                    if easp and masp:
-                        if orbm < orbe:
-                            easp = ''
+                    if ecliptic_aspect and mundane_aspect:
+                        if mundane_orb < ecliptic_orb:
+                            ecliptic_aspect = ''
                         else:
-                            masp = ''
-                    if easp:
-                        asp[cle - 1].append(easp)
-                    if masp:
-                        asp[clm - 1].append(masp)
-            for column_index in range(4):
+                            mundane_aspect = ''
+                    if ecliptic_aspect:
+                        aspect_classes[ecliptic_class - 1].append(ecliptic_aspect)
+                    if mundane_aspect:
+                        aspect_classes[mundane_class - 1].append(mundane_aspect)
+
+            print("Aspects: ", aspect_classes)
+            for aspect_class in range(4):
                 inserts = []
-                for sub_index in range(len(asp[column_index])):
-                    if sub_index == 0:
+                for aspect_index in range(len(aspect_classes[aspect_class])):
+                    if aspect_index == 0:
                         save = (
-                            asp[column_index][sub_index][0]
-                            + asp[column_index][sub_index][8]
+                            aspect_classes[aspect_class][aspect_index][0]
+                            + aspect_classes[aspect_class][aspect_index][8]
                         )
                     a = (
-                        asp[column_index][sub_index][0]
-                        + asp[column_index][sub_index][8]
+                        aspect_classes[aspect_class][aspect_index][0]
+                        + aspect_classes[aspect_class][aspect_index][8]
                     )
                     if a != save:
-                        inserts.append(sub_index)
+                        inserts.append(aspect_index)
                         save = a
                 for k in range(len(inserts) - 1, -1, -1):
-                    asp[column_index].insert(inserts[k], '-' * 22)
+                    aspect_classes[aspect_class].insert(inserts[k], '-' * 22)
+            print("Inserts: ", inserts)
+            print("Aspects after inserts: ", aspect_classes)
             for column_index in range(2, -1, -1):
-                if len(asp[column_index]) == 0:
-                    del asp[column_index]
-                    del asph[column_index]
-                    asp.append([])
-                    asph.append('')
-            if any(asph):
+                if len(aspect_classes[column_index]) == 0:
+                    del aspect_classes[column_index]
+                    del aspect_headers[column_index]
+                    aspect_classes.append([])
+                    aspect_headers.append('')
+            if any(aspect_headers):
                 for column_index in range(0, 3):
                     chartfile.write(
                         center_align(
-                            f'{asph[column_index]} Aspects'
-                            if asph[column_index]
+                            f'{aspect_headers[column_index]} Aspects'
+                            if aspect_headers[column_index]
                             else '',
                             24,
                         )
                     )
                 chartfile.write('\n')
             for column_index in range(
-                max(len(asp[0]), len(asp[1]), len(asp[2]))
+                max(len(aspect_classes[0]), len(aspect_classes[1]), len(aspect_classes[2]))
             ):
-                if column_index < len(asp[0]):
-                    chartfile.write(left_align(asp[0][column_index], 24))
+                if column_index < len(aspect_classes[0]):
+                    chartfile.write(left_align(aspect_classes[0][column_index], 24))
                 else:
                     chartfile.write(' ' * 24)
-                if column_index < len(asp[1]):
-                    chartfile.write(center_align(asp[1][column_index], 24))
+                if column_index < len(aspect_classes[1]):
+                    chartfile.write(center_align(aspect_classes[1][column_index], 24))
                 else:
                     chartfile.write(' ' * 24)
-                if column_index < len(asp[2]):
-                    chartfile.write(right_align(asp[2][column_index], 24))
+                if column_index < len(aspect_classes[2]):
+                    chartfile.write(right_align(aspect_classes[2][column_index], 24))
                 else:
                     chartfile.write(' ' * 24)
                 chartfile.write('\n')
             chartfile.write('-' * 81 + '\n')
-            if asp[3]:
-                chartfile.write(center_align(f'{asph[3]} Aspects', 76) + '\n')
-                for a in asp[3]:
+            if aspect_classes[3]:
+                chartfile.write(center_align(f'{aspect_headers[3]} Aspects', 76) + '\n')
+                for a in aspect_classes[3]:
                     chartfile.write(center_align(a, 81) + '\n')
                 chartfile.write('-' * 81 + '\n')
             chartfile.write(center_align('Cosmic State', 81) + '\n')
@@ -769,10 +782,10 @@ class BiwheelV2:
                 else:
                     x = ' '
                 chartfile.write(f'{sign}{x} ')
-                chartfile.write(plang.get(pa, '') + ' |')
+                chartfile.write(planet_angles.get(pa, '') + ' |')
                 asplist = []
                 for sub_index in range(3):
-                    for entry in asp[sub_index]:
+                    for entry in aspect_classes[sub_index]:
                         if xpa in entry:
                             pct = str(200 - int(entry[17:20]))
                             entry = entry[0:17] + entry[22:]
@@ -818,10 +831,10 @@ class BiwheelV2:
                 else:
                     x = ' '
                 chartfile.write(f'{sign}{x} ')
-                chartfile.write(plang.get(pa, '') + ' |')
+                chartfile.write(planet_angles.get(pa, '') + ' |')
                 asplist = []
                 for sub_index in range(3):
-                    for entry in asp[sub_index]:
+                    for entry in aspect_classes[sub_index]:
                         if xpa in entry:
                             pct = str(200 - int(entry[17:20]))
                             entry = entry[0:17] + entry[22:]

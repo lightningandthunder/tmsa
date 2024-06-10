@@ -29,11 +29,3 @@ def newline_if_past_breakpoint(
         return f'{" ".join(text[0:len(text) - 1])}\n{text[-1]}'
 
     return ' '.join(text.split('\n'))
-
-
-def format_version_for_title(version: str) -> str:
-    if 'a' in version:
-        return f'Version {version} ALPHA'
-    if 'b' in version:
-        return f'Version {version} BETA'
-    return f'Version {version}'

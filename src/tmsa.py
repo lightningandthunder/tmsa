@@ -23,10 +23,9 @@ from constants import VERSION
 from gui_utils import (
     ShowHelp,
     newline_if_past_breakpoint,
-    format_version_for_title,
 )
 
-TITLE = f'Time Matters {format_version_for_title(VERSION)}'
+TITLE = f'Time Matters {VERSION}'
 INTRO = f"""A freeware program for calculating geometrically
 accurate astrological charts in the Sidereal Zodiac,
 as rediscovered by Cyril Fagan and Donald Bradley."""
