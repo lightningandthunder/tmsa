@@ -377,9 +377,13 @@ class BiwheelV2:
 
                 if fb == ' ':
                     if fbx == ' ':
-                        planet_angles['t' + PLANET_NAMES_SHORT[column_index]] = ' '
+                        planet_angles[
+                            't' + PLANET_NAMES_SHORT[column_index]
+                        ] = ' '
                     else:
-                        planet_angles['t' + PLANET_NAMES_SHORT[column_index]] = fbx
+                        planet_angles[
+                            't' + PLANET_NAMES_SHORT[column_index]
+                        ] = fbx
                 else:
                     planet_angles['t' + PLANET_NAMES_SHORT[column_index]] = fb
                 if fb == 'F':
@@ -566,9 +570,13 @@ class BiwheelV2:
                     planets_in_foreground.append('r' + planet_name)
                 if fb == ' ':
                     if fbx == ' ':
-                        planet_angles['r' + PLANET_NAMES_SHORT[column_index]] = ' '
+                        planet_angles[
+                            'r' + PLANET_NAMES_SHORT[column_index]
+                        ] = ' '
                     else:
-                        planet_angles['r' + PLANET_NAMES_SHORT[column_index]] = fbx
+                        planet_angles[
+                            'r' + PLANET_NAMES_SHORT[column_index]
+                        ] = fbx
                 else:
                     planet_angles['r' + PLANET_NAMES_SHORT[column_index]] = fb
                 if fb == 'F':
@@ -618,19 +626,43 @@ class BiwheelV2:
                 chartfile.write('\n')
 
             chartfile.write('-' * 81 + '\n')
-            ecliptic_aspects = options.get('ecliptic_aspects', DEFAULT_ECLIPTICAL_ORBS)
-            mundane_aspects = options.get('mundane_aspects', DEFAULT_MUNDANE_ORBS)
+            ecliptic_aspects = options.get(
+                'ecliptic_aspects', DEFAULT_ECLIPTICAL_ORBS
+            )
+            mundane_aspects = options.get(
+                'mundane_aspects', DEFAULT_MUNDANE_ORBS
+            )
             aspect_classes = [[], [], [], []]
             aspect_headers = ['Class 1', 'Class 2', 'Class 3', 'Other Partile']
-            
+
             # Transit to transit
             for column_index in range(13):
                 for sub_index in range(column_index + 1, 14):
-                    (ecliptic_aspect, ecliptic_class, ecliptic_orb) = self.find_easpect(
-                        chart, column_index, sub_index, ecliptic_aspects, options, planets_in_foreground, 0
+                    (
+                        ecliptic_aspect,
+                        ecliptic_class,
+                        ecliptic_orb,
+                    ) = self.find_easpect(
+                        chart,
+                        column_index,
+                        sub_index,
+                        ecliptic_aspects,
+                        options,
+                        planets_in_foreground,
+                        0,
                     )
-                    (mundane_aspect, mundane_class, mundane_orb) = self.find_maspect(
-                        chart, column_index, sub_index, mundane_aspects, options, planets_in_foreground, 0
+                    (
+                        mundane_aspect,
+                        mundane_class,
+                        mundane_orb,
+                    ) = self.find_maspect(
+                        chart,
+                        column_index,
+                        sub_index,
+                        mundane_aspects,
+                        options,
+                        planets_in_foreground,
+                        0,
                     )
                     if ecliptic_aspect and mundane_aspect:
                         if mundane_orb < ecliptic_orb:
@@ -638,10 +670,14 @@ class BiwheelV2:
                         else:
                             mundane_aspect = ''
                     if ecliptic_aspect:
-                        aspect_classes[ecliptic_class - 1].append(ecliptic_aspect)
+                        aspect_classes[ecliptic_class - 1].append(
+                            ecliptic_aspect
+                        )
                     if mundane_aspect:
-                        aspect_classes[mundane_class - 1].append(mundane_aspect)
-                        
+                        aspect_classes[mundane_class - 1].append(
+                            mundane_aspect
+                        )
+
             # Transits to natal
             for column_index in range(14):
                 for sub_index in range(14):
@@ -659,11 +695,31 @@ class BiwheelV2:
                     ):
                         continue
 
-                    (ecliptic_aspect, ecliptic_class, ecliptic_orb) = self.find_easpect(
-                        chart, column_index, sub_index, ecliptic_aspects, options, planets_in_foreground, 1
+                    (
+                        ecliptic_aspect,
+                        ecliptic_class,
+                        ecliptic_orb,
+                    ) = self.find_easpect(
+                        chart,
+                        column_index,
+                        sub_index,
+                        ecliptic_aspects,
+                        options,
+                        planets_in_foreground,
+                        1,
                     )
-                    (mundane_aspect, mundane_class, mundane_orb) = self.find_maspect(
-                        chart, column_index, sub_index, mundane_aspects, options, planets_in_foreground, 1
+                    (
+                        mundane_aspect,
+                        mundane_class,
+                        mundane_orb,
+                    ) = self.find_maspect(
+                        chart,
+                        column_index,
+                        sub_index,
+                        mundane_aspects,
+                        options,
+                        planets_in_foreground,
+                        1,
                     )
 
                     if ecliptic_aspect and mundane_aspect:
@@ -672,18 +728,42 @@ class BiwheelV2:
                         else:
                             mundane_aspect = ''
                     if ecliptic_aspect:
-                        aspect_classes[ecliptic_class - 1].append(ecliptic_aspect)
+                        aspect_classes[ecliptic_class - 1].append(
+                            ecliptic_aspect
+                        )
                     if mundane_aspect:
-                        aspect_classes[mundane_class - 1].append(mundane_aspect)
+                        aspect_classes[mundane_class - 1].append(
+                            mundane_aspect
+                        )
 
             # Natal to natal
             for column_index in range(13):
                 for sub_index in range(column_index + 1, 14):
-                    (ecliptic_aspect, ecliptic_class, ecliptic_orb) = self.find_easpect(
-                        chart, column_index, sub_index, ecliptic_aspects, options, planets_in_foreground, 2
+                    (
+                        ecliptic_aspect,
+                        ecliptic_class,
+                        ecliptic_orb,
+                    ) = self.find_easpect(
+                        chart,
+                        column_index,
+                        sub_index,
+                        ecliptic_aspects,
+                        options,
+                        planets_in_foreground,
+                        2,
                     )
-                    (mundane_aspect, mundane_class, mundane_orb) = self.find_maspect(
-                        chart, column_index, sub_index, mundane_aspects, options, planets_in_foreground, 2
+                    (
+                        mundane_aspect,
+                        mundane_class,
+                        mundane_orb,
+                    ) = self.find_maspect(
+                        chart,
+                        column_index,
+                        sub_index,
+                        mundane_aspects,
+                        options,
+                        planets_in_foreground,
+                        2,
                     )
                     if ecliptic_aspect and mundane_aspect:
                         if mundane_orb < ecliptic_orb:
@@ -691,30 +771,32 @@ class BiwheelV2:
                         else:
                             mundane_aspect = ''
                     if ecliptic_aspect:
-                        aspect_classes[ecliptic_class - 1].append(ecliptic_aspect)
+                        aspect_classes[ecliptic_class - 1].append(
+                            ecliptic_aspect
+                        )
                     if mundane_aspect:
-                        aspect_classes[mundane_class - 1].append(mundane_aspect)
+                        aspect_classes[mundane_class - 1].append(
+                            mundane_aspect
+                        )
 
-            print("Aspects: ", aspect_classes)
             for aspect_class in range(4):
                 inserts = []
                 for aspect_index in range(len(aspect_classes[aspect_class])):
                     if aspect_index == 0:
                         save = (
                             aspect_classes[aspect_class][aspect_index][0]
-                            + aspect_classes[aspect_class][aspect_index][8]
+                            + aspect_classes[aspect_class][aspect_index][7]
                         )
                     a = (
                         aspect_classes[aspect_class][aspect_index][0]
-                        + aspect_classes[aspect_class][aspect_index][8]
+                        + aspect_classes[aspect_class][aspect_index][7]
                     )
                     if a != save:
                         inserts.append(aspect_index)
                         save = a
                 for k in range(len(inserts) - 1, -1, -1):
                     aspect_classes[aspect_class].insert(inserts[k], '-' * 22)
-            print("Inserts: ", inserts)
-            print("Aspects after inserts: ", aspect_classes)
+
             for column_index in range(2, -1, -1):
                 if len(aspect_classes[column_index]) == 0:
                     del aspect_classes[column_index]
@@ -733,24 +815,36 @@ class BiwheelV2:
                     )
                 chartfile.write('\n')
             for column_index in range(
-                max(len(aspect_classes[0]), len(aspect_classes[1]), len(aspect_classes[2]))
+                max(
+                    len(aspect_classes[0]),
+                    len(aspect_classes[1]),
+                    len(aspect_classes[2]),
+                )
             ):
                 if column_index < len(aspect_classes[0]):
-                    chartfile.write(left_align(aspect_classes[0][column_index], 24))
+                    chartfile.write(
+                        left_align(aspect_classes[0][column_index], 24)
+                    )
                 else:
                     chartfile.write(' ' * 24)
                 if column_index < len(aspect_classes[1]):
-                    chartfile.write(center_align(aspect_classes[1][column_index], 24))
+                    chartfile.write(
+                        center_align(aspect_classes[1][column_index], 24)
+                    )
                 else:
                     chartfile.write(' ' * 24)
                 if column_index < len(aspect_classes[2]):
-                    chartfile.write(right_align(aspect_classes[2][column_index], 24))
+                    chartfile.write(
+                        right_align(aspect_classes[2][column_index], 24)
+                    )
                 else:
                     chartfile.write(' ' * 24)
                 chartfile.write('\n')
             chartfile.write('-' * 81 + '\n')
             if aspect_classes[3]:
-                chartfile.write(center_align(f'{aspect_headers[3]} Aspects', 76) + '\n')
+                chartfile.write(
+                    center_align(f'{aspect_headers[3]} Aspects', 76) + '\n'
+                )
                 for a in aspect_classes[3]:
                     chartfile.write(center_align(a, 81) + '\n')
                 chartfile.write('-' * 81 + '\n')

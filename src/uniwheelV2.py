@@ -564,7 +564,7 @@ class Uniwheel:
         if angularity == 'F':
             # Foreground in prime vertical longitude
             if angularity_strength == mundane_angularity_strength:
-                if planet_data[8] >= 345: 
+                if planet_data[8] >= 345:
                     angularity_orb = 360 - planet_data[8]
                     angularity = 'A '
                 elif planet_data[8] <= 15:
@@ -624,7 +624,9 @@ class Uniwheel:
             # It's not an ingress; dormancy is always negated
             planet_negates_dormancy = True
         else:
-            planet_negates_dormancy = angularity_activates_ingress(angularity_orb, angularity)
+            planet_negates_dormancy = angularity_activates_ingress(
+                angularity_orb, angularity
+            )
 
         return (
             angularity,
@@ -814,12 +816,10 @@ class Uniwheel:
                 'minor_angles', [1.0, 2.0, 3.0]
             )
 
-            if angularity_is_empty or is_mundanely_background: 
+            if angularity_is_empty or is_mundanely_background:
                 if inrange(planet_data[5], 270, minor_limit[2]):
                     angularity = 'Vx'
-                elif inrange(
-                    planet_data[5], 90, minor_limit[2]
-                ):
+                elif inrange(planet_data[5], 90, minor_limit[2]):
                     angularity = 'Av'
 
             chartfile.write(f'{strength_percent:3d}% {angularity}')

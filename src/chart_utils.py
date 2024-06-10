@@ -453,6 +453,7 @@ def init_chart_grid(chart_cusps):
 
     return chart_grid
 
+
 def angularity_activates_ingress(orb: float, angle: str) -> bool:
     if orb < 0:
         return False
