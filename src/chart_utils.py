@@ -396,3 +396,59 @@ def s_ms(value):
         sec = 0
         min += 1
     return f'{s}{min:2}\'{sec:2}"'
+
+
+def get_return_class(value):
+    value = value.lower()
+    if value[0:3] in ['cap', 'can', 'ari', 'lib']:
+        return 'SI' if 'solar' in value else 'LI'
+    if 'return' in value:
+        return 'SR' if 'solar' in value else 'LR'
+    return 'N'
+
+
+def init_chart_grid(chart_cusps):
+    rows = 65
+    cols = 69
+    chart_grid = [[' ' for _ in range(cols)] for _ in range(rows)]
+
+    # self.cclass = chart.get('class', None)
+    # if not self.cclass:
+    #     self.cclass = get_return_class(chart['type'])
+
+    # Ommitted a newline here
+
+    for column_index in range(cols):
+        chart_grid[0][column_index] = '-'
+        chart_grid[16][column_index] = '-'
+        if column_index <= 17 or column_index >= 51:
+            chart_grid[32][column_index] = '-'
+        chart_grid[48][column_index] = '-'
+        chart_grid[64][column_index] = '-'
+    for row_index in range(rows):
+        chart_grid[row_index][0] = '|'
+        chart_grid[row_index][17] = '|'
+        if row_index <= 16 or row_index >= 48:
+            chart_grid[row_index][34] = '|'
+        chart_grid[row_index][51] = '|'
+        chart_grid[row_index][68] = '|'
+    for index in range(0, rows, 16):
+        for sub_index in range(0, cols, 17):
+            if index == 32 and sub_index == 34:
+                continue
+            chart_grid[index][sub_index] = '+'
+    cusps = [zod_min(c) for c in chart_cusps]
+    chart_grid[0][14:20] = cusps[11]
+    chart_grid[0][31:37] = cusps[10]
+    chart_grid[0][48:54] = cusps[9]
+    chart_grid[16][0:6] = cusps[12]
+    chart_grid[16][63:69] = cusps[8]
+    chart_grid[32][0:6] = cusps[1]
+    chart_grid[32][63:69] = cusps[7]
+    chart_grid[48][0:6] = cusps[2]
+    chart_grid[48][63:69] = cusps[6]
+    chart_grid[64][14:20] = cusps[3]
+    chart_grid[64][31:37] = cusps[4]
+    chart_grid[64][48:54] = cusps[5]
+
+    return chart_grid

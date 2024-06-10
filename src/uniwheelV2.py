@@ -9,7 +9,6 @@
 
 from datetime import datetime
 import math
-import os
 from chart_utils import *
 from constants import VERSION
 from utils import open_file
@@ -29,17 +28,10 @@ def write_to_file(chart, planet):
     return data_line
 
 
-def get_return_class(value):
-    value = value.lower()
-    if value[0:3] in ['cap', 'can', 'ari', 'lib']:
-        return 'SI' if 'solar' in value else 'LI'
-    if 'return' in value:
-        return 'SR' if 'solar' in value else 'LR'
-    return 'N'
-
-
 class Uniwheel:
     def __init__(self, chart, temporary, options):
+        self.table_width = 81
+
         filename = make_chart_path(chart, temporary)
         filename = filename[0:-3] + 'txt'
         try:
@@ -52,7 +44,7 @@ class Uniwheel:
             self.draw_chart(chart, chartfile, options)
             self.write_info_table(chart, chartfile, options)
 
-            chartfile.write('\n' + '-' * 81 + '\n')
+            chartfile.write('\n' + '-' * self.table_width + '\n')
             chartfile.write(
                 f"Created by Time Matters {VERSION}  ({datetime.now().strftime('%d %b %Y')})"
             )
@@ -461,7 +453,7 @@ class Uniwheel:
         minor_angle_orbs = angularity_options.get(
             'minor_angles', [1.0, 2.0, 3.0]
         )
-        dormant = True if 'I' in self.cclass else False
+        planet_negates_dormancy = False if 'I' in self.cclass else True
 
         for orb_class in range(3):
             if major_angle_orbs[orb_class] == 0:
@@ -531,7 +523,7 @@ class Uniwheel:
 
         if mundane_angularity_orb <= major_angle_orbs[0]:
             angularity = 'F'
-            dormant = False
+            planet_negates_dormancy = True
         elif mundane_angularity_orb <= major_angle_orbs[1]:
             angularity = 'F'
         elif mundane_angularity_orb <= major_angle_orbs[2]:
@@ -547,30 +539,30 @@ class Uniwheel:
         zenith_nadir_orb = abs(aspect_to_asc - 90)
         if zenith_nadir_orb <= minor_angle_orbs[0]:
             angularity = 'F'
-            dormant = False
+            planet_negates_dormancy = True
         elif zenith_nadir_orb <= minor_angle_orbs[1]:
             angularity = 'F'
-            dormant = False
+            planet_negates_dormancy = True
         elif zenith_nadir_orb <= minor_angle_orbs[2]:
             angularity = 'F'
 
         ep_wp_eclipto_orb = abs(aspect_to_mc - 90)
         if ep_wp_eclipto_orb <= minor_angle_orbs[0]:
             angularity = 'F'
-            dormant = False
+            planet_negates_dormancy = True
         elif ep_wp_eclipto_orb <= minor_angle_orbs[1]:
             angularity = 'F'
-            dormant = False
+            planet_negates_dormancy = True
         elif ep_wp_eclipto_orb <= minor_angle_orbs[2]:
             angularity = 'F'
 
         ep_wp_ascension_orb = abs(ramc_aspect - 90)
         if ep_wp_ascension_orb <= minor_angle_orbs[0]:
             angularity = 'F'
-            dormant = False
+            planet_negates_dormancy = True
         elif ep_wp_ascension_orb <= minor_angle_orbs[1]:
             angularity = 'F'
-            dormant = False
+            planet_negates_dormancy = True
         elif ep_wp_ascension_orb <= minor_angle_orbs[2]:
             angularity = 'F'
 
@@ -622,7 +614,7 @@ class Uniwheel:
         return (
             angularity,
             angularity_strength,
-            dormant,
+            planet_negates_dormancy,
             is_mundanely_background,
         )
 
@@ -642,18 +634,18 @@ class Uniwheel:
                 chart_grid[32][column_index] = '-'
             chart_grid[48][column_index] = '-'
             chart_grid[64][column_index] = '-'
-        for column_index in range(rows):
-            chart_grid[column_index][0] = '|'
-            chart_grid[column_index][17] = '|'
-            if column_index <= 16 or column_index >= 48:
-                chart_grid[column_index][34] = '|'
-            chart_grid[column_index][51] = '|'
-            chart_grid[column_index][68] = '|'
-        for column_index in range(0, rows, 16):
+        for row_index in range(rows):
+            chart_grid[row_index][0] = '|'
+            chart_grid[row_index][17] = '|'
+            if row_index <= 16 or row_index >= 48:
+                chart_grid[row_index][34] = '|'
+            chart_grid[row_index][51] = '|'
+            chart_grid[row_index][68] = '|'
+        for index in range(0, rows, 16):
             for sub_index in range(0, cols, 17):
-                if column_index == 32 and sub_index == 34:
+                if index == 32 and sub_index == 34:
                     continue
-                chart_grid[column_index][sub_index] = '+'
+                chart_grid[index][sub_index] = '+'
         cusps = [zod_min(c) for c in chart['cusps']]
         chart_grid[0][14:20] = cusps[11]
         chart_grid[0][31:37] = cusps[10]
@@ -726,7 +718,7 @@ class Uniwheel:
                 chartfile.write(col)
             chartfile.write('\n')
 
-        chartfile.write('\n\n' + '-' * 81 + '\n')
+        chartfile.write('\n\n' + '-' * self.table_width + '\n')
 
     def write_info_table(self, chart, chartfile, options):
         chartfile.write(
@@ -735,6 +727,9 @@ class Uniwheel:
         angularity_options = options.get('angularity', {})
         planets_foreground = []
         planet_foreground_angles = {}
+
+        # Default to true if this is an ingress chart
+        whole_chart_is_dormant = True if 'I' in self.cclass else False
 
         for planet_name in PLANET_NAMES:
             if planet_name == 'Eastpoint':
@@ -777,17 +772,24 @@ class Uniwheel:
             (
                 angularity,
                 strength_percent,
-                dormant,
+                planet_negates_dormancy,
                 is_mundanely_background,
             ) = self.calc_angle_and_strength(
                 planet_data,
                 chart,
                 angularity_options,
             )
+
+            if planet_negates_dormancy:
+                whole_chart_is_dormant = False
+
             planet_foreground_angles[
                 PLANET_NAMES_SHORT[planet_index]
             ] = angularity
-            if not angularity.strip() and is_mundanely_background:
+
+            empty_angularity = angularity.strip() == ''
+
+            if empty_angularity and is_mundanely_background:
                 planet_foreground_angles[
                     PLANET_NAMES_SHORT[planet_index]
                 ] = 'B'
@@ -797,17 +799,23 @@ class Uniwheel:
                 'minor_angles', [1.0, 2.0, 3.0]
             )
 
-            if inrange(planet_data[5], 270, minor_limit[2]):
+            if empty_angularity and inrange(
+                planet_data[5], 270, minor_limit[2]
+            ):
                 angularity = 'Vx'
-            elif inrange(planet_data[5], 90, minor_limit[2]):
+            elif empty_angularity and inrange(
+                planet_data[5], 90, minor_limit[2]
+            ):
                 angularity = 'Av'
 
             chartfile.write(f'{strength_percent:3d}% {angularity}')
             chartfile.write('\n')
 
-        if dormant:
-            chartfile.write('-' * 81 + '\n')
-            chartfile.write(center_align('Dormant Ingress', 81) + '\n')
+        if whole_chart_is_dormant:
+            chartfile.write('-' * self.table_width + '\n')
+            chartfile.write(
+                center_align('Dormant Ingress', self.table_width) + '\n'
+            )
 
         # Aspects
         ecliptical_orbs = options.get(
@@ -853,7 +861,7 @@ class Uniwheel:
                     ecliptical_orbs,
                     options,
                     planets_foreground,
-                    dormant,
+                    whole_chart_is_dormant,
                 )
                 (
                     mundane_aspect,
@@ -866,7 +874,7 @@ class Uniwheel:
                     mundane_orbs,
                     options,
                     planets_foreground,
-                    dormant,
+                    whole_chart_is_dormant,
                 )
 
                 if ecliptical_aspect and mundane_aspect:
@@ -883,7 +891,7 @@ class Uniwheel:
                         mundane_aspect
                     )
 
-        if len(aspects_by_class[3]) == 0 or dormant:
+        if len(aspects_by_class[3]) == 0 or whole_chart_is_dormant:
             del aspects_by_class[3]
             del aspect_class_headers[3]
             aspects_by_class.append([])
@@ -895,7 +903,7 @@ class Uniwheel:
                 aspects_by_class.append([])
                 aspect_class_headers.append('')
         if any(aspect_class_headers):
-            chartfile.write('-' * 81 + '\n')
+            chartfile.write('-' * self.table_width + '\n')
             for planet_index in range(0, 3):
                 chartfile.write(
                     center_align(
@@ -935,18 +943,21 @@ class Uniwheel:
                 chartfile.write(' ' * 24)
             chartfile.write('\n')
 
-        chartfile.write('-' * 81 + '\n')
+        chartfile.write('-' * self.table_width + '\n')
         if aspects_by_class[3]:
             chartfile.write(
-                center_align(f'{aspect_class_headers[3]} Aspects', width=81)
+                center_align(
+                    f'{aspect_class_headers[3]} Aspects',
+                    width=self.table_width,
+                )
                 + '\n'
             )
             for a in aspects_by_class[3]:
-                chartfile.write(center_align(a, 81) + '\n')
-            chartfile.write('-' * 81 + '\n')
+                chartfile.write(center_align(a, self.table_width) + '\n')
+            chartfile.write('-' * self.table_width + '\n')
 
         # Cosmic State
-        chartfile.write(center_align('Cosmic State', 81) + '\n')
+        chartfile.write(center_align('Cosmic State', self.table_width) + '\n')
         moon_sign = SIGNS_SHORT[int(chart['Moon'][0] // 30)]
         sun_sign = SIGNS_SHORT[int(chart['Sun'][0] // 30)]
         cclass = chart['class']
