@@ -233,11 +233,11 @@ class UniwheelV2:
         raw_orb = abs(planet_data_1[8] - planet_data_2[8]) % 360
         if raw_orb > 180:
             raw_orb = 360 - raw_orb
-        aspect_strings = ['0', '180', '90', '45', '45']
+        aspect_strings = ['0', '180', '90', '45', '135']
         aspect_ints = [0, 180, 90, 45, 135]
         aspect_names = ['co', 'op', 'sq', 'oc', 'oc']
-        for planet_index_1 in range((len(aspect_strings) - 1)):
-            test_aspect_orb = mundane_orbs[aspect_strings[planet_index_1]]
+        for aspect_string_index in range((len(aspect_strings) - 1)):
+            test_aspect_orb = mundane_orbs[aspect_strings[aspect_string_index]]
             if test_aspect_orb[2]:
                 maxorb = test_aspect_orb[2]
             elif test_aspect_orb[1]:
@@ -247,14 +247,14 @@ class UniwheelV2:
             else:
                 maxorb = -1
             if (
-                raw_orb >= aspect_ints[planet_index_1] - maxorb
-                and raw_orb <= aspect_ints[planet_index_1] + maxorb
+                raw_orb >= aspect_ints[aspect_string_index] - maxorb
+                and raw_orb <= aspect_ints[aspect_string_index] + maxorb
             ):
-                asp = aspect_names[planet_index_1]
+                asp = aspect_names[aspect_string_index]
                 if maxorb <= 0:
                     return ('', 0, 0)
                 strength = 60 / maxorb
-                raw_orb = abs(raw_orb - aspect_ints[planet_index_1])
+                raw_orb = abs(raw_orb - aspect_ints[aspect_string_index])
                 if raw_orb <= test_aspect_orb[0]:
                     aspect_class = 1
                 elif raw_orb <= test_aspect_orb[1]:
@@ -291,6 +291,7 @@ class UniwheelV2:
         strength_percent = math.cos(math.radians(raw_orb * strength))
         strength_percent = round((strength_percent - 0.5) * 200)
         strength_percent = f'{strength_percent:3d}'
+
         return (
             f'{planet_short_name_1} {asp} {planet_short_name_2} {fmt_dm(abs(raw_orb), True)}{strength_percent}% M',
             aspect_class,
