@@ -173,19 +173,19 @@ class Ingresses(Frame):
                 self.latdir.value = 1
             else:
                 self.latdir.value = 0
-            deg = int(value)
-            value = (value - deg) * 60
-            min = int(value)
-            value = (value - min) * 60
+            degree = int(value)
+            value = (value - degree) * 60
+            minute = int(value)
+            value = (value - minute) * 60
             sec = round(value)
             if sec == 60:
                 sec = 0
-                min += 1
-            if min == 60:
-                min = 0
-                deg += 1
-            self.latd.text = deg
-            self.latm.text = min
+                minute += 1
+            if minute == 60:
+                minute = 0
+                degree += 1
+            self.latd.text = degree
+            self.latm.text = minute
             self.lats.text = sec
             value = HOME_LOC[2]
             if value < 0:
@@ -193,19 +193,19 @@ class Ingresses(Frame):
                 self.longdir.value = 1
             else:
                 self.longdir.value = 0
-            deg = int(value)
-            value = (value - deg) * 60
-            min = int(value)
-            value = (value - min) * 60
+            degree = int(value)
+            value = (value - degree) * 60
+            minute = int(value)
+            value = (value - minute) * 60
             sec = round(value)
             if sec == 60:
                 sec = 0
-                min += 1
-            if min == 60:
-                min = 0
-                deg += 1
-            self.longd.text = deg
-            self.longm.text = min
+                minute += 1
+            if minute == 60:
+                minute = 0
+                degree += 1
+            self.longd.text = degree
+            self.longm.text = minute
             self.longs.text = sec
 
     def enable_find(self):

@@ -9,7 +9,7 @@
 
 from init import *
 from swe import *
-from uniwheelV2 import Uniwheel
+from uniwheelV2 import UniwheelV2
 from biwheelV2 import BiwheelV2
 from widgets import *
 from utils import to360
@@ -147,7 +147,7 @@ class Chart:
             self.precess(chart['base_chart'])
             self.report = BiwheelV2(chart, temporary, options)
         else:
-            self.report = Uniwheel(chart, temporary, options)
+            self.report = UniwheelV2(chart, temporary, options)
 
     def precess(self, chart):
         for planet_name in planet_names:

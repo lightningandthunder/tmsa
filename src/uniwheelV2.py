@@ -28,7 +28,7 @@ def write_to_file(chart, planet):
     return data_line
 
 
-class Uniwheel:
+class UniwheelV2:
     def __init__(self, chart, temporary, options):
         self.table_width = 81
 
@@ -806,6 +806,11 @@ class Uniwheel:
 
             angularity_is_empty = angularity.strip() == ''
 
+            if not angularity_is_empty or (
+                planet_name == 'Moon' and 'I' in self.cclass
+            ):
+                planets_foreground.append(planet_name)
+
             if angularity_is_empty and is_mundanely_background:
                 planet_foreground_angles[
                     PLANET_NAMES_SHORT[planet_index]
@@ -843,12 +848,15 @@ class Uniwheel:
             'Class 3',
             'Other Partile',
         ]
+
         for planet_index in range(14):
             for remaining_planet in range(planet_index + 1, 14):
                 # If options say to skip one or both planets' aspects outside the foreground,
                 # just skip calculating anything
                 planet_name_1 = PLANET_NAMES[planet_index]
                 planet_name_2 = PLANET_NAMES[remaining_planet]
+
+                # 1+ FG, i.e. 1 or more foreground
                 if options.get('show_aspects', 0) == 1:
                     if (
                         planet_name_1 not in planets_foreground
@@ -856,6 +864,8 @@ class Uniwheel:
                     ):
                         if not options.get('partile_nf', False):
                             continue
+
+                # 2 FG
                 if options.get('show_aspects', 0) == 2:
                     if (
                         planet_name_1 not in planets_foreground
