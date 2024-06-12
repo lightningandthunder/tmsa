@@ -22,7 +22,14 @@ from geopy import Nominatim
 import anglicize
 import us
 import tkinter.filedialog as tkfiledialog
-from constants import DS, DQ, VERSION
+from constants import (
+    DS,
+    DQ,
+    VERSION,
+    LABEL_X_COORD,
+    LABEL_WIDTH,
+    LABEL_HEIGHT_UNIT,
+)
 from gui_utils import ShowHelp
 
 
