@@ -15,9 +15,9 @@ import random
 import pytz
 from timezonefinder import TimezoneFinder
 from init import *
-from chart import Chart
-from locations import Locations
-from widgets import *
+from user_interfaces.chart import Chart
+from user_interfaces.locations import Locations
+from user_interfaces.widgets import *
 from geopy import Nominatim
 import anglicize
 import us
@@ -713,7 +713,7 @@ class NewChart(Frame):
         self.options.text = text[1:-4]
 
     def temp_options(self):
-        from chart_options import ChartOptions
+        from user_interfaces.chart_options import ChartOptions
 
         ChartOptions(self.options.text, True, self.options)
 

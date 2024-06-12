@@ -9,12 +9,12 @@
 
 import math
 from init import *
-from chart_options import ChartOptions
-from ingresses import Ingresses
-from new_chart import NewChart
-from program_options import ProgramOptions
-from select_chart import SelectChart
-from widgets import *
+from user_interfaces.chart_options import ChartOptions
+from user_interfaces.ingresses import Ingresses
+from user_interfaces.new_chart import NewChart
+from user_interfaces.program_options import ProgramOptions
+from user_interfaces.select_chart import SelectChart
+from user_interfaces.widgets import *
 import webbrowser
 import os
 import shutil

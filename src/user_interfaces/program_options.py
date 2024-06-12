@@ -9,8 +9,8 @@
 
 import random
 from init import *
-from locations import Locations
-from widgets import *
+from user_interfaces.locations import Locations
+from user_interfaces.widgets import *
 import json
 import tkinter.colorchooser as tkcolorchooser
 from geopy import Nominatim

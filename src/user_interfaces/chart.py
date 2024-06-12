@@ -9,9 +9,9 @@
 
 from init import *
 from swe import *
-from uniwheelV2 import UniwheelV2
-from biwheelV2 import BiwheelV2
-from widgets import *
+from user_interfaces.uniwheelV2 import UniwheelV2
+from user_interfaces.biwheelV2 import BiwheelV2
+from user_interfaces.widgets import *
 from utils import to360
 
 planet_names = [

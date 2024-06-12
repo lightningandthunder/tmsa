@@ -1,5 +1,5 @@
 import math
-from widgets import base_font
+from user_interfaces.widgets import base_font
 from tkinter.font import Font as tkFont
 import os
 from constants import PLATFORM

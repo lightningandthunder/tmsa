@@ -10,11 +10,11 @@
 from copy import deepcopy
 import random
 from init import *
-from chart import Chart
-from locations import Locations
-from more_charts import MoreCharts
+from user_interfaces.chart import Chart
+from user_interfaces.locations import Locations
+from user_interfaces.more_charts import MoreCharts
 from swe import *
-from widgets import *
+from user_interfaces.widgets import *
 from datetime import datetime as dt
 import tkinter.filedialog as tkfiledialog
 import json
@@ -190,7 +190,7 @@ class Solunars(Frame):
 
     def back(self):
         self.destroy()
-        from select_chart import SelectChart
+        from user_interfaces.select_chart import SelectChart
 
         SelectChart()
 
@@ -473,7 +473,7 @@ class Solunars(Frame):
         self.options.text = text[1:-4]
 
     def temp_options(self):
-        from chart_options import ChartOptions
+        from user_interfaces.chart_options import ChartOptions
 
         ChartOptions(self.options.text, True, self.options)
 

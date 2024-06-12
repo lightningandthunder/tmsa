@@ -11,11 +11,11 @@ import json
 import os
 import shutil
 from init import *
-from chart import Chart
-from new_chart import NewChart
-from solunars import Solunars
-from widgets import *
-from more_charts import MoreCharts
+from user_interfaces.chart import Chart
+from user_interfaces.new_chart import NewChart
+from user_interfaces.solunars import Solunars
+from user_interfaces.widgets import *
+from user_interfaces.more_charts import MoreCharts
 import tkinter.filedialog as tkfiledialog
 from utils import open_file, display_name
 from gui_utils import ShowHelp
