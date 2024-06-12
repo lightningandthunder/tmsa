@@ -9,7 +9,7 @@
 
 
 from init import *
-from widgets import *
+from user_interfaces.widgets import *
 
 from constants import LABEL_X_COORD, LABEL_HEIGHT_UNIT, LABEL_WIDTH
 
