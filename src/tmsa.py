@@ -23,6 +23,8 @@ from program_options import ProgramOptions
 from select_chart import SelectChart
 from widgets import *
 
+from constants import LABEL_X_COORD, LABEL_HEIGHT_UNIT, LABEL_WIDTH
+
 TITLE = f'Time Matters {VERSION}'
 INTRO = f"""A freeware program for calculating geometrically
 accurate astrological charts in the Sidereal Zodiac,
@@ -39,10 +41,6 @@ POINTS = 'www.solunars.com/viewtopic.php?f=8&t=2259'
 SOURCE_CODE = 'Source code may be found at'
 GITHUB = 'https://github.com/lightningandthunder/tmsa'
 
-X_COORD = 0
-WIDTH = 1
-HEIGHT_UNIT = 0.022
-
 
 class StartPage(Frame):
     def __init__(self):
@@ -52,41 +50,95 @@ class StartPage(Frame):
         self.parent = main
         self.parent.bind('<Configure>', self.resize)
 
-        self.title = Label(self, TITLE, X_COORD, 0.025, WIDTH, font=title_font)
+        self.title = Label(
+            self, TITLE, LABEL_X_COORD, 0.025, LABEL_WIDTH, font=title_font
+        )
         self.intro = Label(
-            self, INTRO, X_COORD, 0.125, WIDTH, HEIGHT_UNIT * 3, font=base_font
+            self,
+            INTRO,
+            LABEL_X_COORD,
+            0.125,
+            LABEL_WIDTH,
+            LABEL_HEIGHT_UNIT * 3,
+            font=base_font,
         )
         self.dedication = Label(
-            self, DEDICATION, X_COORD, 0.225, WIDTH, HEIGHT_UNIT
+            self,
+            DEDICATION,
+            LABEL_X_COORD,
+            0.225,
+            LABEL_WIDTH,
+            LABEL_HEIGHT_UNIT,
         )
         self.solunars = Label(
-            self, SOLUNARS, X_COORD, 0.25, WIDTH, HEIGHT_UNIT, font=ulfont
+            self,
+            SOLUNARS,
+            LABEL_X_COORD,
+            0.25,
+            LABEL_WIDTH,
+            LABEL_HEIGHT_UNIT,
+            font=ulfont,
         )
         self.solunars.bind(
             '<Button-1>', lambda _: webbrowser.open_new(SOLUNARS)
         )
 
         self.for_more_info = Label(
-            self, FOR_MORE_INFO, X_COORD, 0.325, WIDTH, HEIGHT_UNIT
+            self,
+            FOR_MORE_INFO,
+            LABEL_X_COORD,
+            0.325,
+            LABEL_WIDTH,
+            LABEL_HEIGHT_UNIT,
         )
         self.points = Label(
-            self, POINTS, X_COORD, 0.35, WIDTH, HEIGHT_UNIT, font=ulfont
+            self,
+            POINTS,
+            LABEL_X_COORD,
+            0.35,
+            LABEL_WIDTH,
+            LABEL_HEIGHT_UNIT,
+            font=ulfont,
         )
         self.points.bind('<Button-1>', lambda _: webbrowser.open_new(POINTS))
 
         self.copyright = Label(
-            self, COPYRIGHT, X_COORD, 0.65, WIDTH, HEIGHT_UNIT * 4
+            self,
+            COPYRIGHT,
+            LABEL_X_COORD,
+            0.65,
+            LABEL_WIDTH,
+            LABEL_HEIGHT_UNIT * 4,
         )
 
         self.license = Label(
-            self, LICENSE, X_COORD, 0.74, WIDTH, HEIGHT_UNIT, font=ulfont
+            self,
+            LICENSE,
+            LABEL_X_COORD,
+            0.74,
+            LABEL_WIDTH,
+            LABEL_HEIGHT_UNIT,
+            font=ulfont,
         )
         self.license.bind('<Button-1>', lambda _: webbrowser.open_new(LICENSE))
 
         self.source_code = Label(
-            self, SOURCE_CODE, X_COORD, 0.825, WIDTH, HEIGHT_UNIT
+            self,
+            SOURCE_CODE,
+            LABEL_X_COORD,
+            0.825,
+            LABEL_WIDTH,
+            LABEL_HEIGHT_UNIT,
         )
-        Label(self, GITHUB, X_COORD, 0.85, WIDTH, HEIGHT_UNIT, font=ulfont)
+        Label(
+            self,
+            GITHUB,
+            LABEL_X_COORD,
+            0.85,
+            LABEL_WIDTH,
+            LABEL_HEIGHT_UNIT,
+            font=ulfont,
+        )
         self.source_code.bind(
             '<Button-1>', lambda _: webbrowser.open_new(GITHUB)
         )
@@ -173,7 +225,9 @@ class StartPage(Frame):
         height = self.parent.winfo_height()
 
         scale_factor = height / 1070 if height < 1070 else 1
-        self.intro.configure(height=math.floor(scale_factor * HEIGHT_UNIT * 3))
+        self.intro.configure(
+            height=math.floor(scale_factor * LABEL_HEIGHT_UNIT * 3)
+        )
         if height < 800:
             self.intro.configure(font=font_10)
         elif height < 1070:

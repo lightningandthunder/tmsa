@@ -24,3 +24,7 @@ match sys.platform:
         PLATFORM = 'linux'
     case _:
         raise RuntimeError(f'Unsupported architecture {sys.platform}')
+
+LABEL_X_COORD = 0
+LABEL_WIDTH = 1
+LABEL_HEIGHT_UNIT = 0.022
