@@ -7,6 +7,8 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
+import json
+import os
 import random
 import tkinter.filedialog as tkfiledialog
 from copy import deepcopy
@@ -23,15 +25,18 @@ from init import *
 from locations import Locations
 from more_charts import MoreCharts
 from swe import *
-from utils import display_name, open_file
+from utils import display_name, open_file, toDMS
 from widgets import *
 
 
-class Ingresses(Frame):
-    def __init__(self):
+class Solunars(Frame):
+    def __init__(self, base, filename):
         super().__init__()
         now = dt.utcnow()
         chart = {}
+        self.base = base
+        self.filename = filename
+        self.fnlbl = Label(self, display_name(filename), 0, 0, 1)
         Label(self, 'Search', 0.15, 0.05, 0.15, anchor=tk.W)
         self.init = True
         self.search = Radiogroup(self)
@@ -83,7 +88,7 @@ class Ingresses(Frame):
             if now.strftime('%p') == 'PM':
                 self.tmfmt.value = 1
         Label(self, 'Location', 0.15, 0.2, 0.15, anchor=tk.W)
-        self.loc = Entry(self, '', 0.3, 0.2, 0.3)
+        self.loc = Entry(self, base['location'], 0.3, 0.2, 0.3)
         self.loc.bind('<KeyRelease>', lambda _: delay(self.enable_find))
         Button(self, 'Recent', 0.6, 0.2, 0.1).bind(
             '<Button-1>', lambda _: delay(self.recent_loc)
@@ -91,30 +96,33 @@ class Ingresses(Frame):
         self.findbtn = Button(self, 'Find', 0.7, 0.2, 0.1)
         self.findbtn.bind('<Button-1>', lambda _: delay(self.find))
         Label(self, 'Lat D M S', 0.15, 0.25, 0.15, anchor=tk.W)
-        self.latd = Entry(self, '', 0.3, 0.25, 0.1)
+        (d, m, s, si) = toDMS(base['latitude'])
+        self.latd = Entry(self, d, 0.3, 0.25, 0.1)
         self.latd.bind('<KeyRelease>', lambda _: delay(check_num, self.latd))
-        self.latm = Entry(self, '', 0.4, 0.25, 0.1)
+        self.latm = Entry(self, m, 0.4, 0.25, 0.1)
         self.latm.bind('<KeyRelease>', lambda _: delay(check_num, self.latm))
-        self.lats = Entry(self, '0', 0.5, 0.25, 0.1)
+        self.lats = Entry(self, s, 0.5, 0.25, 0.1)
         self.lats.bind('<KeyRelease>', lambda _: delay(check_num, self.lats))
         self.latdir = Radiogroup(self)
         Radiobutton(self, self.latdir, 0, 'North', 0.6, 0.25, 0.1)
         Radiobutton(self, self.latdir, 1, 'South', 0.7, 0.25, 0.1)
+        self.latdir.value = 1 if si == -1 else 0
         Label(self, 'Long D M S', 0.15, 0.3, 0.15, anchor=tk.W)
-        self.longd = Entry(self, '', 0.3, 0.3, 0.1)
+        (d, m, s, si) = toDMS(base['longitude'])
+        self.longd = Entry(self, d, 0.3, 0.3, 0.1)
         self.longd.bind('<KeyRelease>', lambda _: delay(check_num, self.longd))
-        self.longm = Entry(self, '', 0.4, 0.3, 0.1)
+        self.longm = Entry(self, m, 0.4, 0.3, 0.1)
         self.longm.bind('<KeyRelease>', lambda _: delay(check_num, self.longm))
-        self.longs = Entry(self, '0', 0.5, 0.3, 0.1)
+        self.longs = Entry(self, s, 0.5, 0.3, 0.1)
         self.longs.bind('<KeyRelease>', lambda _: delay(check_num, self.longs))
         self.longdir = Radiogroup(self)
         Radiobutton(self, self.longdir, 0, 'East ', 0.6, 0.3, 0.1)
         Radiobutton(self, self.longdir, 1, 'West ', 0.7, 0.3, 0.1)
-        self.longdir.value = 1
+        self.longdir.value = 1 if si == -1 else 0
         Label(self, 'Notes', 0.15, 0.35, 0.15, anchor=tk.W)
         self.notes = Entry(self, '', 0.3, 0.35, 0.3)
         Label(self, 'Options', 0.15, 0.4, 0.15, anchor=tk.W)
-        self.options = Entry(self, 'Default Ingress', 0.3, 0.4, 0.3)
+        self.options = Entry(self, 'Default Return', 0.3, 0.4, 0.3)
         Button(self, 'Select', 0.6, 0.4, 0.1).bind(
             '<Button-1>', lambda _: delay(self.select_options)
         )
@@ -129,16 +137,16 @@ class Ingresses(Frame):
             '<Button-1>', lambda _: delay(self.more_files)
         )
         self.event = None
-        Label(self, 'Solar Ingress', 0.15, 0.5, 0.3, anchor=tk.W)
-        self.capsolar = Checkbutton(self, 'Capricorn', 0.3, 0.5, 0.13)
-        self.cansolar = Checkbutton(self, 'Cancer', 0.43, 0.5, 0.09)
-        self.arisolar = Checkbutton(self, 'Aries', 0.52, 0.5, 0.09)
-        self.libsolar = Checkbutton(self, 'Libra', 0.61, 0.5, 0.09)
-        Label(self, 'Lunar Ingress', 0.15, 0.55, 0.3, anchor=tk.W)
-        self.caplunar = Checkbutton(self, 'Capricorn', 0.3, 0.55, 0.13)
-        self.canlunar = Checkbutton(self, 'Cancer', 0.43, 0.55, 0.09)
-        self.arilunar = Checkbutton(self, 'Aries', 0.52, 0.55, 0.09)
-        self.liblunar = Checkbutton(self, 'Libra', 0.61, 0.55, 0.09)
+        Label(self, 'Solar Returns', 0.15, 0.5, 0.3, anchor=tk.W)
+        self.mainsolar = Checkbutton(self, 'SSR', 0.3, 0.5, 0.1)
+        self.demisolar = Checkbutton(self, 'DSSR', 0.4, 0.5, 0.1)
+        self.fqsolar = Checkbutton(self, 'QSSR1', 0.5, 0.5, 0.1)
+        self.lqsolar = Checkbutton(self, 'QSSR3', 0.6, 0.5, 0.1)
+        Label(self, 'Lunar Returns', 0.15, 0.55, 0.3, anchor=tk.W)
+        self.mainlunar = Checkbutton(self, 'SLR', 0.3, 0.55, 0.1)
+        self.demilunar = Checkbutton(self, 'DSLR', 0.4, 0.55, 0.1)
+        self.fqlunar = Checkbutton(self, 'QSLR1', 0.5, 0.55, 0.1)
+        self.lqlunar = Checkbutton(self, 'QSLR3', 0.6, 0.55, 0.1)
         Button(self, 'Select All', 0.3, 0.6, 0.2).bind(
             '<Button-1>', lambda _: delay(self.all_charts, True)
         )
@@ -146,7 +154,7 @@ class Ingresses(Frame):
             '<Button-1>', lambda _: delay(self.all_charts, False)
         )
         self.oneyear = Checkbutton(
-            self, 'All Selected Ingresses For One Year', 0.3, 0.65, 0.4
+            self, 'All Selected Solunars For One Year', 0.3, 0.65, 0.4
         )
         self.oneyear.config(state=tk.DISABLED)
         self.istemp = Radiogroup(self)
@@ -161,54 +169,11 @@ class Ingresses(Frame):
         )
         Button(self, 'Help', 0.5, 0.8, 0.2).bind(
             '<Button-1>',
-            lambda _: delay(ShowHelp, HELP_PATH + r'\ingresses.txt'),
+            lambda _: delay(ShowHelp, HELP_PATH + r'\solunars.txt'),
         )
-        Button(self, 'Back', 0.7, 0.8, 0.20).bind(
-            '<Button-1>', lambda _: delay(self.destroy)
-        )
+        backbtn = Button(self, 'Back', 0.7, 0.8, 0.20)
+        backbtn.bind('<Button-1>', lambda _: delay(self.back))
         self.status = Label(self, '', 0, 0.9, 1)
-        if HOME_LOC:
-            self.loc.text = HOME_LOC[0]
-            value = HOME_LOC[1]
-            if value < 0:
-                value = -value
-                self.latdir.value = 1
-            else:
-                self.latdir.value = 0
-            degree = int(value)
-            value = (value - degree) * 60
-            minute = int(value)
-            value = (value - minute) * 60
-            sec = round(value)
-            if sec == 60:
-                sec = 0
-                minute += 1
-            if minute == 60:
-                minute = 0
-                degree += 1
-            self.latd.text = degree
-            self.latm.text = minute
-            self.lats.text = sec
-            value = HOME_LOC[2]
-            if value < 0:
-                value = -value
-                self.longdir.value = 1
-            else:
-                self.longdir.value = 0
-            degree = int(value)
-            value = (value - degree) * 60
-            minute = int(value)
-            value = (value - minute) * 60
-            sec = round(value)
-            if sec == 60:
-                sec = 0
-                minute += 1
-            if minute == 60:
-                minute = 0
-                degree += 1
-            self.longd.text = degree
-            self.longm.text = minute
-            self.longs.text = sec
 
     def enable_find(self):
         self.findbtn.disabled = False
@@ -225,15 +190,21 @@ class Ingresses(Frame):
         self.search.value = value
         self.init = False
 
+    def back(self):
+        self.destroy()
+        from user_interfaces.select_chart import SelectChart
+
+        SelectChart()
+
     def all_charts(self, value):
-        self.capsolar.checked = value
-        self.cansolar.checked = value
-        self.arisolar.checked = value
-        self.libsolar.checked = value
-        self.caplunar.checked = value
-        self.canlunar.checked = value
-        self.arilunar.checked = value
-        self.liblunar.checked = value
+        self.mainsolar.checked = value
+        self.demisolar.checked = value
+        self.fqsolar.checked = value
+        self.lqsolar.checked = value
+        self.mainlunar.checked = value
+        self.demilunar.checked = value
+        self.fqlunar.checked = value
+        self.lqlunar.checked = value
 
     def more_finish(self, selected):
         if selected:
@@ -276,7 +247,7 @@ class Ingresses(Frame):
         t = 60 * (t - mi)
         se = round(t)
         if se == 60:
-            se = 0
+            sec = 0
             mi += 1
         if mi == 60:
             mi = 0
@@ -319,7 +290,6 @@ class Ingresses(Frame):
         self.longd.text = d
         self.longm.text = m
         self.longs.text = s
-        filename = filename[0:-3] + 'txt'
 
     def more_files(self):
         self.event = None
@@ -417,11 +387,11 @@ class Ingresses(Frame):
             location = geolocator.geocode(self.loc.text)
         except Exception as e:
             return self.status.error(
-                f'Unable to connect to location database.', self.loc
+                f'Unable to connect to location database.', self.latd
             )
         if not location:
             return self.status.error(
-                f"'{self.loc.text}' not in database.", self.loc
+                f"'{self.loc.text}' not in database.", self.latd
             )
         loc = str(location).split(',')
         locx = []
@@ -490,6 +460,7 @@ class Ingresses(Frame):
         self.longm.text = longm
         self.longs.text = longs
         self.longdir.value = 0 if direc == 'E' else 1
+        self.notes.focus()
 
     def select_options(self):
         name = tkfiledialog.askopenfilename(
@@ -504,51 +475,18 @@ class Ingresses(Frame):
         self.options.text = text[1:-4]
 
     def temp_options(self):
-        from chart_options import ChartOptions
+        from user_interfaces.chart_options import ChartOptions
 
         ChartOptions(self.options.text, True, self.options)
 
     def clear(self):
         self.destroy()
-        Ingresses()
+        Solunars(self.base, self.filename)
 
     def calculate(self):
         self.status.text = ''
-        self.findbtn.disabled = True
+        self.findbtn.disabled = False
         chart = {}
-        self.status.text = ''
-        chart['location'] = normalize(self.loc.text) or 'Undisclosed'
-        try:
-            lat = (
-                int(self.latd.text)
-                + int(self.latm.text) / 60
-                + int(self.lats.text or '0') / 3600
-            )
-        except Exception:
-            return self.status.error('Latitude must be numeric.', self.latd)
-        if lat < 0 or lat > 89.99:
-            return self.status.error(
-                f"Latitude must be between 0{DS} and 89{DS}59'59{DQ}.",
-                self.latd,
-            )
-        if self.latdir.value == 1:
-            lat = -lat
-        chart['latitude'] = lat
-        try:
-            long = (
-                int(self.longd.text)
-                + int(self.longm.text) / 60
-                + int(self.longs.text or '0') / 3600
-            )
-        except Exception:
-            return self.status.error('Longitude must be numeric.', self.longd)
-        if long < 0 or long > 180:
-            return self.status.error(
-                f'Longitude must be between 0{DS} and 180{DS}.', self.longd
-            )
-        if self.longdir.value == 1:
-            long = -long
-        chart['longitude'] = long
         try:
             y = int(self.datey.text)
             m = int(self.datem.text)
@@ -575,7 +513,6 @@ class Ingresses(Frame):
             return self.status.error(
                 'Day must be between 1 and 31.', self.dated
             )
-            return
         chart['day'] = d
         z = str(y) if y > 0 else str(-y + 1) + ' BCE'
         if self.old.checked and y > 1582:
@@ -590,6 +527,7 @@ class Ingresses(Frame):
                 f'Is {d} {month_abrev[m -1]} {z} new style (Gregorian)?',
             ):
                 return
+        chart['style'] = 0 if self.old.checked else 1
         try:
             time = (
                 int(self.timeh.text)
@@ -626,28 +564,62 @@ class Ingresses(Frame):
             if self.tmfmt.value == 1:
                 time += 12
         chart['time'] = time
-        chart['style'] = 0 if self.old.checked else 1
+        chart['location'] = normalize(self.loc.text)
+        if not chart['location']:
+            return self.status.error('Location must be specified.', self.loc)
+        try:
+            lat = (
+                int(self.latd.text)
+                + int(self.latm.text) / 60
+                + int(self.lats.text or '0') / 3600
+            )
+        except Exception:
+            return self.status.error('Latitude must be numeric.', self.latd)
+        if lat < 0 or lat > 89.99:
+            return self.status.error(
+                f"Latitude must be between 0{DS} and 89{DS}59'59{DQ}.",
+                self.latd,
+            )
+        if self.latdir.value == 1:
+            lat = -lat
+        chart['latitude'] = lat
+        try:
+            long = (
+                int(self.longd.text)
+                + int(self.longm.text) / 60
+                + int(self.longs.text or '0') / 3600
+            )
+        except Exception:
+            return self.status.error('Longitude must be numeric.', self.longd)
+        if long < 0 or long > 180:
+            return self.status.error(
+                f'Longitude must be between 0{DS} and 180{DS}.', self.longd
+            )
+        if self.longdir.value == 1:
+            long = -long
+        chart['longitude'] = long
         chart['notes'] = normalize(self.notes.text, True)
         chart['options'] = self.options.text.strip()
-        ingresses = []
-        if self.capsolar.checked:
-            ingresses.append('Capsolar')
-        if self.cansolar.checked:
-            ingresses.append('Cansolar')
-        if self.arisolar.checked:
-            ingresses.append('Arisolar')
-        if self.libsolar.checked:
-            ingresses.append('Libsolar')
-        if self.caplunar.checked:
-            ingresses.append('Caplunar')
-        if self.canlunar.checked:
-            ingresses.append('Canlunar')
-        if self.arilunar.checked:
-            ingresses.append('Arilunar')
-        if self.liblunar.checked:
-            ingresses.append('Liblunar')
-        if not ingresses:
-            self.status.error('No ingresses selected.')
+        chart['base_chart'] = self.base
+        solunars = []
+        if self.mainsolar.checked:
+            solunars.append('Solar Return')
+        if self.demisolar.checked:
+            solunars.append('Demi-Solar Return')
+        if self.fqsolar.checked:
+            solunars.append('First Quarti-Solar Return')
+        if self.lqsolar.checked:
+            solunars.append('Last Quarti-Solar Return')
+        if self.mainlunar.checked:
+            solunars.append('Lunar Return')
+        if self.demilunar.checked:
+            solunars.append('Demi-Lunar Return')
+        if self.fqlunar.checked:
+            solunars.append('First Quarti-Lunar Return')
+        if self.lqlunar.checked:
+            solunars.append('Last Quarti-Lunar Return')
+        if not solunars:
+            self.status.error('No solunars selected.')
             return
         if self.event:
             if self.event == '<':
@@ -661,24 +633,24 @@ class Ingresses(Frame):
                 )
                 cchart['options'] = self.eopt
                 cchart['base_chart'] = None
-                self.make_chart(cchart, date, 'Event')
+                self.make_chart(cchart, date, 'Event', 'N')
             else:
                 filename = self.event[0:-3] + 'txt'
                 if os.path.exists(filename):
                     open_file(filename)
         self.save_location(chart)
         if self.oneyear.checked:
-            self.burst(chart, ingresses)
+            self.burst(chart, solunars)
         elif self.search.value == 0:
-            self.asearch(chart, ingresses)
+            self.asearch(chart, solunars)
         elif self.search.value == 1:
-            self.fsearch(chart, ingresses)
+            self.fsearch(chart, solunars)
         elif self.search.value == 2:
-            self.bsearch(chart, ingresses)
+            self.bsearch(chart, solunars)
         else:
             self.status.error('No search direction selected.')
 
-    def fsearch(self, chart, ingresses):
+    def fsearch(self, chart, solunars):
         start = julday(
             chart['year'],
             chart['month'],
@@ -686,22 +658,36 @@ class Ingresses(Frame):
             chart['time'],
             chart['style'],
         )
-        for ing in ingresses:
-            if 'Ari' in ing:
-                target = 0
-            if 'Can' in ing:
-                target = 90
-            if 'Lib' in ing:
-                target = 180
-            if 'Cap' in ing:
-                target = 270
-            if 'solar' in ing:
+        sun = chart['base_chart']['Sun'][0]
+        moon = chart['base_chart']['Moon'][0]
+        for sol in solunars:
+            cchart = deepcopy(chart)
+            sl = sol.lower()
+            if 'solar' in sl:
+                cclass = 'SR'
+                if 'demi' in sl:
+                    target = (sun + 180) % 360
+                elif 'first' in sl:
+                    target = (sun + 90) % 360
+                elif 'last' in sl:
+                    target = (sun + 270) % 360
+                else:
+                    target = sun
                 date = calc_sun_crossing(target, start)
-            if 'lunar' in ing:
+            elif 'lunar' in sl:
+                cclass = 'LR'
+                if 'demi' in sl:
+                    target = (moon + 180) % 360
+                elif 'first' in sl:
+                    target = (moon + 90) % 360
+                elif 'last' in sl:
+                    target = (moon + 270) % 360
+                else:
+                    target = moon
                 date = calc_moon_crossing(target, start)
-            self.make_chart(chart, date, ing)
+            self.make_chart(chart, date, sol, cclass)
 
-    def bsearch(self, chart, ingresses):
+    def bsearch(self, chart, solunars):
         start = julday(
             chart['year'],
             chart['month'],
@@ -709,26 +695,39 @@ class Ingresses(Frame):
             chart['time'],
             chart['style'],
         )
-        for ing in ingresses:
-            if 'Ari' in ing:
-                target = 0
-            if 'Can' in ing:
-                target = 90
-            if 'Lib' in ing:
-                target = 180
-            if 'Cap' in ing:
-                target = 270
-            if 'solar' in ing:
+        sun = chart['base_chart']['Sun'][0]
+        moon = chart['base_chart']['Moon'][0]
+        for sol in solunars:
+            sl = sol.lower()
+            if 'solar' in sl:
+                cclass = 'SR'
+                if 'demi' in sl:
+                    target = (sun + 180) % 360
+                elif 'first' in sl:
+                    target = (sun + 90) % 360
+                elif 'last' in sl:
+                    target = (sun + 270) % 360
+                else:
+                    target = sun
                 date = calc_sun_crossing(target, start - 184)
                 if date > start:
                     date = calc_sun_crossing(target, start - 367)
-            if 'lunar' in ing:
+            elif 'lunar' in sl:
+                cclass = 'LR'
+                if 'demi' in sl:
+                    target = (moon + 180) % 360
+                elif 'first' in sl:
+                    target = (moon + 90) % 360
+                elif 'last' in sl:
+                    target = (moon + 270) % 360
+                else:
+                    target = moon
                 date = calc_moon_crossing(target, start - 15)
                 if date > start:
                     date = calc_moon_crossing(target, start - 29)
-            self.make_chart(chart, date, ing)
+            self.make_chart(chart, date, sol, cclass)
 
-    def burst(self, chart, ingresses):
+    def burst(self, chart, solunars):
         start = julday(
             chart['year'],
             chart['month'],
@@ -736,38 +735,67 @@ class Ingresses(Frame):
             chart['time'],
             chart['style'],
         )
+        sun = chart['base_chart']['Sun'][0]
+        moon = chart['base_chart']['Moon'][0]
         if self.search.value == 2:
             start -= 366
-        for ing in ingresses:
-            if 'solar' in ing:
-                if 'Ari' in ing:
-                    target = 0
-                if 'Can' in ing:
-                    target = 90
-                if 'Lib' in ing:
-                    target = 180
-                if 'Cap' in ing:
-                    target = 270
+        for sol in solunars:
+            cchart = deepcopy(chart)
+            sl = sol.lower()
+            if 'solar' in sl:
+                cclass = 'SR'
+                if 'demi' in sl:
+                    target = (sun + 180) % 360
+                elif 'first' in sl:
+                    target = (sun + 90) % 360
+                elif 'last' in sl:
+                    target = (sun + 270) % 360
+                else:
+                    target = sun
                 date = calc_sun_crossing(target, start)
-                self.make_chart(chart, date, ing, False)
+            elif 'lunar' in sl:
+                cclass = 'LR'
+                if 'demi' in sl:
+                    target = (moon + 180) % 360
+                elif 'first' in sl:
+                    target = (moon + 90) % 360
+                elif 'last' in sl:
+                    target = (moon + 270) % 360
+                else:
+                    target = moon
+                date = calc_moon_crossing(target, start)
+            self.make_chart(chart, date, sol, cclass, False)
         for i in range(0, 366, 26):
-            for ing in ingresses:
-                if 'lunar' in ing:
-                    if 'Ari' in ing:
-                        target = 0
-                    if 'Can' in ing:
-                        target = 90
-                    if 'Lib' in ing:
-                        target = 180
-                    if 'Cap' in ing:
-                        target = 270
+            for sol in solunars:
+                sl = sol.lower()
+                if 'solar' in sl:
+                    cclass = 'SR'
+                    if 'demi' in sl:
+                        target = (sun + 180) % 360
+                    elif 'first' in sl:
+                        target = (sun + 90) % 360
+                    elif 'last' in sl:
+                        target = (sun + 270) % 360
+                    else:
+                        target = sun
+                    date = calc_sun_crossing(target, start)
+                elif 'lunar' in sl:
+                    cclass = 'LR'
+                    if 'demi' in sl:
+                        target = (moon + 180) % 360
+                    elif 'first' in sl:
+                        target = (moon + 90) % 360
+                    elif 'last' in sl:
+                        target = (moon + 270) % 360
+                    else:
+                        target = moon
                     date = calc_moon_crossing(target, start + i)
-                    self.make_chart(chart, date, ing, False)
                     if date > start + 366:
                         continue
+            self.make_chart(chart, date, sol, cclass, False)
         self.status.text = 'Charts complete.'
 
-    def asearch(self, chart, ingresses):
+    def asearch(self, chart, solunars):
         found = False
         start = julday(
             chart['year'],
@@ -776,41 +804,109 @@ class Ingresses(Frame):
             chart['time'],
             chart['style'],
         )
-        for ing in ingresses:
-            cchart = deepcopy(chart)
-            if 'Ari' in ing:
-                target = 0
-            if 'Can' in ing:
-                target = 90
-            if 'Lib' in ing:
-                target = 180
-            if 'Cap' in ing:
-                target = 270
-            if 'solar' in ing:
-                date = calc_sun_crossing(target, start - 184)
-                if date > start:
-                    date = calc_sun_crossing(target, start - 367)
+        sun = chart['base_chart']['Sun'][0]
+        moon = chart['base_chart']['Moon'][0]
+        srs = []
+        lrs = []
+        for sol in solunars:
+            sl = sol.lower()
+            if 'solar' in sl:
+                srs.append(sol)
+            if 'lunar' in sl:
+                lrs.append(sol)
+        cclass = 'SR'
+        if srs:
+            cclass = 'SR'
+            date = calc_sun_crossing(sun, start - 184)
+            if date > start:
+                if date - start <= 15 and srs[0] == 'Solar Return':
+                    self.make_chart(chart, date, srs[0], cclass)
+                date = calc_sun_crossing(sun, start - 367)
+            if srs[0] == 'Solar Return':
+                self.make_chart(chart, date, srs[0], cclass)
                 found = True
-                self.make_chart(chart, date, ing)
-            if 'lunar' in ing:
-                date = calc_moon_crossing(target, start - 15)
-                if date > start:
-                    date = calc_moon_crossing(target, start - 29)
+                srs = srs[1:]
+            dstart = date
+        if srs:
+            target = (sun + 180) % 360
+            date = calc_sun_crossing(target, dstart)
+            if date > start:
+                if date - start <= 15 and srs[0] == 'Demi-Solar Return':
+                    self.make_chart(chart, date, srs[0], cclass)
+                    found = True
+                qstart = dstart
+            else:
+                if srs[0] == 'Demi-Solar Return':
+                    self.make_chart(chart, date, srs[0], cclass)
+                    found = True
+                qstart = date
+            if srs[0] == 'Demi-Solar Return':
+                srs = srs[1:]
+        if srs:
+            if qstart == dstart:
+                target = (sun + 90) % 360
+                chtype = 'First Quarti-Solar Return'
+            else:
+                target = (sun + 270) % 360
+                chtype = 'Last Quarti-Solar Return'
+            date = calc_sun_crossing(target, qstart)
+            if date - start <= 15:
+                self.make_chart(chart, date, chtype, cclass)
+        if lrs:
+            cclass = 'LR'
+            date = calc_moon_crossing(moon, start - 15)
+            if date > start:
+                if date - start <= 1.25 and lrs[0] == 'Lunar Return':
+                    self.make_chart(chart, date, lrs[0], cclass)
+                date = calc_moon_crossing(moon, start - 29)
+            if lrs[0] == 'Lunar Return':
+                self.make_chart(chart, date, lrs[0], cclass)
                 found = True
-                self.make_chart(chart, date, ing)
+                lrs = lrs[1:]
+            dstart = date
+        if lrs:
+            target = (moon + 180) % 360
+            date = calc_moon_crossing(target, dstart)
+            if date > start:
+                if date - start <= 1.25 and lrs[0] == 'Demi-Lunar Return':
+                    self.make_chart(chart, date, lrs[0], cclass)
+                    found = True
+                qstart = dstart
+            else:
+                if lrs[0] == 'Demi-Lunar Return':
+                    self.make_chart(chart, date, lrs[0], cclass)
+                    found = True
+                qstart = date
+            if lrs[0] == 'Demi-Lunar Return':
+                lrs = lrs[1:]
+        if lrs:
+            if qstart == dstart:
+                target = (moon + 90) % 360
+                chtype = 'First Quarti-Lunar Return'
+            else:
+                target = (moon + 270) % 360
+                chtype = 'Last Quarti-Lunar Return'
+            date = calc_moon_crossing(target, qstart)
+            if date - start <= 1.25:
+                self.make_chart(chart, date, chtype, cclass)
+                found = True
         if not found:
             self.status.error('No charts found.')
 
-    def make_chart(self, chart, date, chtype, show=True):
+    def make_chart(self, chart, date, chtype, cclass, show=True):
         cchart = deepcopy(chart)
         (y, m, d, t) = revjul(date, cchart['style'])
         cchart['year'] = y
         cchart['month'] = m
         cchart['day'] = d
         cchart['time'] = t
-        cchart['name'] = ''
+        cchart['name'] = (
+            f"{cchart['base_chart']['name']}"
+            if chart.get('base_chart', None)
+            else ''
+        )
         cchart['type'] = chtype
-        cchart['class'] = 'I'
+        cchart['class'] = cclass
         cchart['correction'] = 0
         cchart['zone'] = 'UT'
         if show:

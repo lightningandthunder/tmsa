@@ -707,7 +707,7 @@ class NewChart(Frame):
         self.options.text = text[1:-4]
 
     def temp_options(self):
-        from chart_options import ChartOptions
+        from user_interfaces.chart_options import ChartOptions
 
         ChartOptions(self.options.text, True, self.options)
 
