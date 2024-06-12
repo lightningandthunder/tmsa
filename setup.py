@@ -3,23 +3,38 @@ import os
 import sys
 import zipfile
 from src.constants import VERSION
+from setuptools import Command
+import subprocess
+import shutil
 
 base = ""
 out_dir = "dist"
+build_dir = None
 match sys.platform:
     case "win32":
         base = "Win32GUI"
+    case "linux":
+        base = None
+        build_dir = os.path.join('build', 'exe.linux-x86_64-3.10')
     case _:
         raise RuntimeError(f"Unsupported architecture {sys.platform}")
 
-executable = Executable(
-        script=os.path.join("src", "tmsa.py"),
-        copyright="Copyright (C) 2024 James A. Eshelman",
-        base=base,
-        icon=os.path.join("src", "assets", "tmsa3.ico"),
-        shortcut_name="Time Matters",
-        shortcut_dir="DesktopFolder"
-    )
+match sys.platform:
+        case "win32":
+            executable = Executable(
+                    script=os.path.join("src", "tmsa.py"),
+                    copyright="Copyright (C) 2024 James A. Eshelman",
+                    base=base,
+                    icon=os.path.join("src", "assets", "tmsa3.ico"),
+                    shortcut_name="Time Matters",
+                    shortcut_dir="DesktopFolder"
+                )
+        case "linux":
+            executable = Executable(
+                    script=os.path.join("src", "tmsa.py"),
+                    copyright="Copyright (C) 2024 James A. Eshelman",
+                    base=base,
+                )
 
 # https://stackoverflow.com/questions/15734703/use-cx-freeze-to-create-an-msi-that-adds-a-shortcut-to-the-desktop/15736406#15736406
 # https://learn.microsoft.com/en-us/windows/win32/msi/shortcut-table
@@ -81,7 +96,7 @@ options = {
     "build_exe": {
         "include_path": "src,public",
         "include_files": [
-            (os.path.join("copy", "dll", "swedll32.dll"), os.path.join("dll", "swedll32.dll")),
+            (os.path.join("copy", "dll"), "dll"),
             (os.path.join("copy", "ephe"), "ephe"),
             (os.path.join("src", "assets"), "assets"),
             "help",
@@ -90,9 +105,13 @@ options = {
             'distutils',    
         ],
         "includes": [
-            "calc",
+            "biwheel",
             "chart_options",
+            "chart_utils",
+            "chart",
+            "classes",
             "constants",
+            "gui_utils",
             "ingresses",
             "init",
             "libs",
@@ -102,12 +121,12 @@ options = {
             "new_chart",
             "program_options",
             "select_chart",
-            "show_util",
-            "show",
-            "show2",
             "solunars",
             "swe",
             "tmsa",
+            "uniwheel",
+            "uniwheelV2",
+            "utils",
             "widgets",
         ],
         'include_msvcr': True,
@@ -120,12 +139,47 @@ options = {
     }
 }
 
+class BuildInstaller(Command):
+    description = "Build the executable and create a makeself installer"
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        # First, run the build command from cx_Freeze
+        self.run_command('build_exe')
+
+        # Name of the output installer
+        installer_name = f"TimeMatters-{VERSION}-linux-x86_64.sh"
+
+        # Command to create the self-extracting installer using makeself
+        makeself_command = [
+            'makeself',
+            '--notemp',
+            build_dir,
+            installer_name,
+            f'Time Matters {VERSION} Installer',
+            './tmsa',
+        ]
+
+        # Run the makeself command
+        subprocess.check_call(makeself_command)
+
+cmdclass = {
+    'build_installer': BuildInstaller,
+}
+
 setup(
     name="Time Matters",
     version=VERSION,
     description="Time Matters",
     options=options,
     executables=[executable],
+    **({"cmdclass": cmdclass} if sys.platform == "linux" else {})
 )
 
 if sys.platform == "win32":
@@ -135,3 +189,13 @@ if sys.platform == "win32":
     installer_path = os.path.join(out_dir, f"{file_name}.msi")
     with zipfile.ZipFile(zipped_path, 'w') as zipf:
         zipf.write(installer_path, arcname=f"{file_name}.msi")
+elif sys.platform == 'linux':
+    os.makedirs(out_dir, exist_ok=True)
+    shutil.move(f"TimeMatters-{VERSION}-linux-x86_64.sh", build_dir)
+    
+    file_name = f"TimeMatters-{VERSION}-linux-x86_64"
+    zipped_file_name = f"{file_name}.zip"
+    zipped_path = os.path.join(out_dir, zipped_file_name)
+    installer_path = os.path.join(build_dir, f"{file_name}.sh")
+    with zipfile.ZipFile(zipped_path, 'w') as zipf:
+        zipf.write(installer_path, arcname=f"{file_name}.zip")

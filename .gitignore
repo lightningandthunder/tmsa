@@ -4,3 +4,6 @@ dist/
 build/
 copy/
 dll/
+ephe/
+venv/
+venv/*
