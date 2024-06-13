@@ -236,8 +236,10 @@ class BiwheelV2:
             minor_limit = angularity_options.get(
                 'minor_angles', [1.0, 2.0, 3.0]
             )
-            planets_in_foreground = []
-            planet_angles = {}
+
+            planets_foreground = []
+            planet_foreground_angles = {}
+
             for column_index in range(3):
                 if major_limit[column_index] == 0:
                     major_limit[column_index] = -3
@@ -255,9 +257,9 @@ class BiwheelV2:
                 if planet_name == 'Mean Node' and options.get('Node', 0) != 2:
                     continue
                 planet_data = chart[planet_name]
-                column_index = PLANET_NAMES.index(planet_name)
+                planet_index = PLANET_NAMES.index(planet_name)
                 chartfile.write(
-                    left_align(PLANET_NAMES_SHORT[column_index], 3)
+                    left_align(PLANET_NAMES_SHORT[planet_index], 3)
                 )
                 chartfile.write(zod_sec(planet_data[0]) + ' ')
                 chartfile.write(fmt_lat(planet_data[1], True) + ' ')
@@ -287,161 +289,47 @@ class BiwheelV2:
                 chartfile.write(
                     right_align(fmt_dm(planet_data[8], True), 7) + ' '
                 )
-                a1 = planet_data[8] % 90
-                if angularity_options['model'] == 1:
-                    major_angle_orb = (
-                        major_angularity_curve_midquadrant_background(a1)
-                    )
-                else:
-                    major_angle_orb = major_angularity_curve_cadent_background(
-                        a1
-                    )
-                a2 = abs(chart['cusps'][1] - planet_data[0])
-                if a2 > 180:
-                    a2 = 360 - a2
-                if inrange(a2, 90, 3):
-                    square_asc_orb = minor_angularity_curve(abs(a2 - 90))
-                else:
-                    square_asc_orb = -2
-                a3 = abs(chart['cusps'][10] - planet_data[0])
-                if a3 > 180:
-                    a3 = 360 - a3
-                if inrange(a3, 90, 3):
-                    square_mc_orb = minor_angularity_curve(abs(a3 - 90))
-                else:
-                    square_mc_orb = -2
-                a4 = abs(chart['ramc'] - planet_data[3])
-                if a4 > 180:
-                    a4 = 360 - a4
-                if inrange(a4, 90, 3):
-                    ramc_square_orb = minor_angularity_curve(abs(a4 - 90))
-                else:
-                    ramc_square_orb = -2
-                angularity_score = max(
-                    major_angle_orb,
-                    square_asc_orb,
-                    square_mc_orb,
-                    ramc_square_orb,
+
+                # Angularity
+                (
+                    angularity,
+                    strength_percent,
+                    _,
+                    is_mundanely_background,
+                ) = self.calc_angle_and_strength(
+                    planet_data,
+                    chart,
+                    angularity_options,
                 )
-                fb = ' '
-                fbx = ' '
-                a = 90 - a1 if a1 > 45 else a1
-                if a <= major_limit[0]:
-                    fb = 'F'
-                elif a <= major_limit[1]:
-                    fb = 'F'
-                elif a <= major_limit[2]:
-                    fb = 'F'
-                if fb == ' ' and not angularity_options.get('no_bg', False):
-                    if angularity_options['model'] == 0:
-                        if a1 >= 60:
-                            a = a1 - 60
-                        else:
-                            a = (60 - a1) / 2
-                    else:
-                        a = abs(a - 45)
-                    if a <= major_limit[0]:
-                        fb = 'B'
-                    elif a <= major_limit[1]:
-                        fb = 'B'
-                    elif a <= major_limit[2]:
-                        fb = 'B'
-                    if fb == 'B' and angularity_options.get('no_bg', False):
-                        fbx = 'B'
-                        fb = ' '
-                a = abs(a2 - 90)
-                if a <= minor_limit[0]:
-                    fb = 'F'
-                elif a <= minor_limit[1]:
-                    fb = 'F'
-                elif a <= minor_limit[2]:
-                    fb = 'F'
-                a = abs(a3 - 90)
-                if a <= minor_limit[0]:
-                    fb = 'F'
-                elif a <= minor_limit[1]:
-                    fb = 'F'
-                elif a <= minor_limit[2]:
-                    fb = 'F'
-                a = abs(a4 - 90)
-                if a <= minor_limit[0]:
-                    fb = 'F'
-                elif a <= minor_limit[1]:
-                    fb = 'F'
-                elif a <= minor_limit[2]:
-                    fb = 'F'
-                if fb == 'F' or (
-                    planet_name == 'Moon' and self.cclass == 'SR'
+
+                planet_foreground_angles[
+                    't' + PLANET_NAMES_SHORT[planet_index]
+                ] = angularity
+
+                angularity_is_empty = angularity.strip() == ''
+
+                if not angularity_is_empty or (
+                    planet_name == 'Moon' and 'I' in self.cclass
                 ):
-                    planets_in_foreground.append('t' + planet_name)
+                    planets_foreground.append('t' + planet_name)
 
-                if fb == ' ':
-                    if fbx == ' ':
-                        planet_angles[
-                            't' + PLANET_NAMES_SHORT[column_index]
-                        ] = ' '
-                    else:
-                        planet_angles[
-                            't' + PLANET_NAMES_SHORT[column_index]
-                        ] = fbx
-                else:
-                    planet_angles['t' + PLANET_NAMES_SHORT[column_index]] = fb
-                if fb == 'F':
-                    if angularity_score == major_angle_orb:
-                        if planet_data[8] >= 345 or planet_data[8] <= 15:
-                            fb = 'A '
-                        if inrange(planet_data[8], 90, 15):
-                            fb = 'I '
-                        if inrange(planet_data[8], 180, 15):
-                            fb = 'D '
-                        if inrange(planet_data[8], 270, 15):
-                            fb = 'M '
-                    if angularity_score == square_asc_orb:
-                        a = chart['cusps'][1] - planet_data[0]
-                        if a < 0:
-                            a += 360
-                        if inrange(a, 90, 5):
-                            fb = 'Z '
-                        if inrange(a, 270, 5):
-                            fb = 'N '
-                    if angularity_score == square_mc_orb:
-                        a = chart['cusps'][10] - planet_data[0]
-                        if a < 0:
-                            a += 360
-                        if inrange(a, 90, 5):
-                            fb = 'W '
-                        if inrange(a, 270, 5):
-                            fb = 'E '
-                    if angularity_score == ramc_square_orb:
-                        a = chart['ramc'] - planet_data[3]
-                        if a < 0:
-                            a += 360
-                        if inrange(a, 90, 5):
-                            fb = 'Wa'
-                        if inrange(a, 270, 5):
-                            fb = 'Ea'
-                if fb == 'B':
-                    fb = ' b'
-                if fb == ' ':
-                    fb = '  '
-
-                empty_angularity = fb.strip() == ''
+                if angularity_is_empty and is_mundanely_background:
+                    planet_foreground_angles[
+                        't' + PLANET_NAMES_SHORT[planet_index]
+                    ] = 'B'
 
                 # Conjunctions to Vertex/Antivertex
                 minor_limit = angularity_options.get(
                     'minor_angles', [1.0, 2.0, 3.0]
                 )
 
-                if empty_angularity and inrange(
-                    planet_data[5], 270, minor_limit[2]
-                ):
-                    angularity = 'Vx'
-                elif empty_angularity and inrange(
-                    planet_data[5], 90, minor_limit[2]
-                ):
-                    angularity = 'Av'
+                if angularity_is_empty or is_mundanely_background:
+                    if inrange(planet_data[5], 270, minor_limit[2]):
+                        angularity = 'Vx'
+                    elif inrange(planet_data[5], 90, minor_limit[2]):
+                        angularity = 'Av'
 
-                chartfile.write(f'{angularity_score:3d}% {fb}')
+                chartfile.write(f'{strength_percent:3d}% {angularity}')
                 chartfile.write('\n')
 
             chartfile.write('-' * 81 + '\n')
@@ -458,9 +346,9 @@ class BiwheelV2:
                 if planet_name == 'Mean Node' and options.get('Node', 0) != 2:
                     continue
                 planet_data = chart['base_chart'][planet_name]
-                column_index = PLANET_NAMES.index(planet_name)
+                planet_index = PLANET_NAMES.index(planet_name)
                 chartfile.write(
-                    left_align(PLANET_NAMES_SHORT[column_index], 3)
+                    left_align(PLANET_NAMES_SHORT[planet_index], 3)
                 )
                 chartfile.write(zod_sec(planet_data[0]) + ' ')
                 chartfile.write(fmt_lat(planet_data[1], True) + ' ')
@@ -482,147 +370,51 @@ class BiwheelV2:
                     fmt_dm(planet_data[7], degree_digits=3, noz=True) + ' '
                 )
 
+                # House position
                 chartfile.write(
                     right_align(fmt_dm(planet_data[8], True), 7) + ' '
                 )
-                a1 = planet_data[8] % 90
-                if angularity_options['model'] == 1:
-                    major_angle_orb = (
-                        major_angularity_curve_midquadrant_background(a1)
-                    )
-                elif angularity_options['model'] == 0:
-                    major_angle_orb = major_angularity_curve_cadent_background(
-                        a1
-                    )
-                else:   # model 2
-                    major_angle_orb = major_angularity_curve_eureka_formula(a1)
-                a2 = abs(chart['cusps'][1] - planet_data[0])
-                if a2 > 180:
-                    a2 = 360 - a2
-                if inrange(a2, 90, 3):
-                    square_asc_orb = minor_angularity_curve(abs(a2 - 90))
-                else:
-                    square_asc_orb = -2
-                a3 = abs(chart['cusps'][10] - planet_data[0])
-                if a3 > 180:
-                    a3 = 360 - a3
-                if inrange(a3, 90, 3):
-                    square_mc_orb = minor_angularity_curve(abs(a3 - 90))
-                else:
-                    square_mc_orb = -2
-                a4 = abs(chart['ramc'] - planet_data[3])
-                if a4 > 180:
-                    a4 = 360 - a4
-                if inrange(a4, 90, 3):
-                    ramc_square_orb = minor_angularity_curve(abs(a4 - 90))
-                else:
-                    ramc_square_orb = -2
-                angularity_score = max(
-                    major_angle_orb,
-                    square_asc_orb,
-                    square_mc_orb,
-                    ramc_square_orb,
-                )
-                fb = ' '
-                a = 90 - a1 if a1 > 45 else a1
-                if a <= major_limit[0]:
-                    fb = 'F'
-                elif a <= major_limit[1]:
-                    fb = 'F'
-                elif a <= major_limit[2]:
-                    fb = 'F'
-                if fb == ' ' and not angularity_options.get('no_bg', False):
-                    if angularity_options['model'] == 0:
-                        if a1 >= 60:
-                            a = a1 - 60
-                        else:
-                            a = (60 - a1) / 2
-                    else:
-                        a = abs(a - 45)
-                    if a <= major_limit[0]:
-                        fb = 'B'
-                    elif a <= major_limit[1]:
-                        fb = 'B'
-                    elif a <= major_limit[2]:
-                        fb = 'B'
-                a = abs(a2 - 90)
-                if a <= minor_limit[0]:
-                    fb = 'F'
-                elif a <= minor_limit[1]:
-                    fb = 'F'
-                elif a <= minor_limit[2]:
-                    fb = 'F'
-                a = abs(a3 - 90)
-                if a <= minor_limit[0]:
-                    fb = 'F'
-                elif a <= minor_limit[1]:
-                    fb = 'F'
-                elif a <= minor_limit[2]:
-                    fb = 'F'
-                a = abs(a4 - 90)
-                if a <= minor_limit[0]:
-                    fb = 'F'
-                elif a <= minor_limit[1]:
-                    fb = 'F'
-                elif a <= minor_limit[2]:
-                    fb = 'F'
-                if fb == 'F':
-                    planets_in_foreground.append('r' + planet_name)
-                if fb == ' ':
-                    if fbx == ' ':
-                        planet_angles[
-                            'r' + PLANET_NAMES_SHORT[column_index]
-                        ] = ' '
-                    else:
-                        planet_angles[
-                            'r' + PLANET_NAMES_SHORT[column_index]
-                        ] = fbx
-                else:
-                    planet_angles['r' + PLANET_NAMES_SHORT[column_index]] = fb
-                if fb == 'F':
-                    if angularity_score == major_angle_orb:
-                        if planet_data[8] >= 345 or planet_data[8] <= 15:
-                            fb = 'A '
-                        if inrange(planet_data[8], 90, 15):
-                            fb = 'I '
-                        if inrange(planet_data[8], 180, 15):
-                            fb = 'D '
-                        if inrange(planet_data[8], 270, 15):
-                            fb = 'M '
-                    if angularity_score == square_asc_orb:
-                        a = chart['cusps'][1] - planet_data[0]
-                        if a < 0:
-                            a += 360
-                        if inrange(a, 90, 5):
-                            fb = 'Z '
-                        if inrange(a, 270, 5):
-                            fb = 'N '
-                    if angularity_score == square_mc_orb:
-                        a = chart['cusps'][10] - planet_data[0]
-                        if a < 0:
-                            a += 360
-                        if inrange(a, 90, 5):
-                            fb = 'W '
-                        if inrange(a, 270, 5):
-                            fb = 'E '
-                    if angularity_score == ramc_square_orb:
-                        a = chart['ramc'] - planet_data[3]
-                        if a < 0:
-                            a += 360
-                        if inrange(a, 90, 5):
-                            fb = 'Wa'
-                        if inrange(a, 270, 5):
-                            fb = 'Ea'
-                if fb == 'B':
-                    fb = ' b'
-                if fb == ' ':
-                    fb = '  '
 
-                if inrange(planet_data[5], 270, minor_limit[2]):
-                    fb = 'Vx'
-                elif inrange(planet_data[5], 90, minor_limit[2]):
-                    fb = 'Av'
-                chartfile.write(f'{angularity_score:3d}% {fb}')
+                # Angularity
+                (
+                    angularity,
+                    strength_percent,
+                    _,
+                    is_mundanely_background,
+                ) = self.calc_angle_and_strength(
+                    planet_data,
+                    chart,
+                    angularity_options,
+                )
+
+                planet_foreground_angles[
+                    'r' + PLANET_NAMES_SHORT[planet_index]
+                ] = angularity
+
+                angularity_is_empty = angularity.strip() == ''
+
+                if not angularity_is_empty or (
+                    planet_name == 'Moon' and 'I' in self.cclass
+                ):
+                    planets_foreground.append('r' + planet_name)
+
+                if angularity_is_empty and is_mundanely_background:
+                    planet_foreground_angles[
+                        'r' + PLANET_NAMES_SHORT[planet_index]
+                    ] = 'B'
+
+                # Conjunctions to Vertex/Antivertex
+                minor_limit = angularity_options.get(
+                    'minor_angles', [1.0, 2.0, 3.0]
+                )
+
+                if angularity_is_empty or is_mundanely_background:
+                    if inrange(planet_data[5], 270, minor_limit[2]):
+                        angularity = 'Vx'
+                    elif inrange(planet_data[5], 90, minor_limit[2]):
+                        angularity = 'Av'
+
+                chartfile.write(f'{strength_percent:3d}% {angularity}')
                 chartfile.write('\n')
 
             chartfile.write('-' * 81 + '\n')
@@ -648,7 +440,7 @@ class BiwheelV2:
                         sub_index,
                         ecliptic_aspects,
                         options,
-                        planets_in_foreground,
+                        planets_foreground,
                         0,
                     )
                     (
@@ -661,7 +453,7 @@ class BiwheelV2:
                         sub_index,
                         mundane_aspects,
                         options,
-                        planets_in_foreground,
+                        planets_foreground,
                         0,
                     )
                     if ecliptic_aspect and mundane_aspect:
@@ -705,7 +497,7 @@ class BiwheelV2:
                         sub_index,
                         ecliptic_aspects,
                         options,
-                        planets_in_foreground,
+                        planets_foreground,
                         1,
                     )
                     (
@@ -718,7 +510,7 @@ class BiwheelV2:
                         sub_index,
                         mundane_aspects,
                         options,
-                        planets_in_foreground,
+                        planets_foreground,
                         1,
                     )
 
@@ -749,7 +541,7 @@ class BiwheelV2:
                         sub_index,
                         ecliptic_aspects,
                         options,
-                        planets_in_foreground,
+                        planets_foreground,
                         2,
                     )
                     (
@@ -762,7 +554,7 @@ class BiwheelV2:
                         sub_index,
                         mundane_aspects,
                         options,
-                        planets_in_foreground,
+                        planets_foreground,
                         2,
                     )
                     if ecliptic_aspect and mundane_aspect:
@@ -876,7 +668,7 @@ class BiwheelV2:
                 else:
                     x = ' '
                 chartfile.write(f'{sign}{x} ')
-                chartfile.write(planet_angles.get(pa, '') + ' |')
+                chartfile.write(planet_foreground_angles.get(pa, '') + ' |')
                 asplist = []
                 for sub_index in range(3):
                     for entry in aspect_classes[sub_index]:
@@ -925,7 +717,7 @@ class BiwheelV2:
                 else:
                     x = ' '
                 chartfile.write(f'{sign}{x} ')
-                chartfile.write(planet_angles.get(pa, '') + ' |')
+                chartfile.write(planet_foreground_angles.get(pa, '') + ' |')
                 asplist = []
                 for sub_index in range(3):
                     for entry in aspect_classes[sub_index]:
@@ -1187,6 +979,202 @@ class BiwheelV2:
             f'{pre1}{pa1} {asp} {pre2}{pa2} {fmt_dm(abs(d), True)}{p}% M',
             acl,
             d,
+        )
+
+    def calc_angle_and_strength(
+        self,
+        planet_data: list,
+        chart: dict,
+        angularity_options: dict,
+    ) -> tuple[str, float, bool, bool]:
+        # I should be able to rewrite this mostly using self. variables
+
+        major_angle_orbs = angularity_options.get(
+            'major_angles', [3.0, 7.0, 10.0]
+        )
+        minor_angle_orbs = angularity_options.get(
+            'minor_angles', [1.0, 2.0, 3.0]
+        )
+
+        for orb_class in range(3):
+            if major_angle_orbs[orb_class] == 0:
+                major_angle_orbs[orb_class] = -3
+            if minor_angle_orbs[orb_class] == 0:
+                minor_angle_orbs[orb_class] = -3
+
+        house_quadrant_position = planet_data[8] % 90
+        if angularity_options['model'] == 1:
+            mundane_angularity_strength = (
+                major_angularity_curve_midquadrant_background(
+                    house_quadrant_position
+                )
+            )
+        elif angularity_options['model'] == 0:
+            mundane_angularity_strength = (
+                major_angularity_curve_cadent_background(
+                    house_quadrant_position
+                )
+            )
+        else:   # model == 2
+            mundane_angularity_strength = (
+                major_angularity_curve_eureka_formula(house_quadrant_position)
+            )
+
+        aspect_to_asc = abs(chart['cusps'][1] - planet_data[0])
+        if aspect_to_asc > 180:
+            aspect_to_asc = 360 - aspect_to_asc
+        if inrange(aspect_to_asc, 90, 3):
+            square_asc_strength = minor_angularity_curve(
+                abs(aspect_to_asc - 90)
+            )
+        else:
+            square_asc_strength = -2
+        aspect_to_mc = abs(chart['cusps'][10] - planet_data[0])
+        if aspect_to_mc > 180:
+            aspect_to_mc = 360 - aspect_to_mc
+        if inrange(aspect_to_mc, 90, 3):
+            square_mc_strength = minor_angularity_curve(abs(aspect_to_mc - 90))
+        else:
+            square_mc_strength = -2
+        ramc_aspect = abs(chart['ramc'] - planet_data[3])
+        if ramc_aspect > 180:
+            ramc_aspect = 360 - ramc_aspect
+        if inrange(ramc_aspect, 90, 3):
+            ramc_square_strength = minor_angularity_curve(
+                abs(ramc_aspect - 90)
+            )
+        else:
+            ramc_square_strength = -2
+
+        angularity_strength = max(
+            mundane_angularity_strength,
+            square_asc_strength,
+            square_mc_strength,
+            ramc_square_strength,
+        )
+
+        angularity = ' '
+        is_mundanely_background = False
+
+        mundane_angularity_orb = (
+            90 - house_quadrant_position
+            if house_quadrant_position > 45
+            else house_quadrant_position
+        )
+
+        if mundane_angularity_orb <= major_angle_orbs[0]:
+            angularity = 'F'
+        elif mundane_angularity_orb <= major_angle_orbs[1]:
+            angularity = 'F'
+        elif mundane_angularity_orb <= major_angle_orbs[2]:
+            angularity = 'F'
+
+        else:
+            if mundane_angularity_strength <= 25:
+                is_mundanely_background = True
+                angularity = 'B'
+                if angularity_options.get('no_bg', False):
+                    angularity = ' '
+
+        zenith_nadir_orb = abs(aspect_to_asc - 90)
+        if zenith_nadir_orb <= minor_angle_orbs[0]:
+            angularity = 'F'
+        elif zenith_nadir_orb <= minor_angle_orbs[1]:
+            angularity = 'F'
+        elif zenith_nadir_orb <= minor_angle_orbs[2]:
+            angularity = 'F'
+
+        ep_wp_eclipto_orb = abs(aspect_to_mc - 90)
+        if ep_wp_eclipto_orb <= minor_angle_orbs[0]:
+            angularity = 'F'
+        elif ep_wp_eclipto_orb <= minor_angle_orbs[1]:
+            angularity = 'F'
+        elif ep_wp_eclipto_orb <= minor_angle_orbs[2]:
+            angularity = 'F'
+
+        ep_wp_ascension_orb = abs(ramc_aspect - 90)
+        if ep_wp_ascension_orb <= minor_angle_orbs[0]:
+            angularity = 'F'
+        elif ep_wp_ascension_orb <= minor_angle_orbs[1]:
+            angularity = 'F'
+        elif ep_wp_ascension_orb <= minor_angle_orbs[2]:
+            angularity = 'F'
+
+        angularity_orb = -1
+
+        # if foreground, get specific angle - we can probably do this all at once
+        if angularity == 'F':
+            # Foreground in prime vertical longitude
+            if angularity_strength == mundane_angularity_strength:
+                if planet_data[8] >= 345:
+                    angularity_orb = 360 - planet_data[8]
+                    angularity = 'A '
+                elif planet_data[8] <= 15:
+                    angularity_orb = planet_data[8]
+                    angularity = 'A '
+                elif inrange(planet_data[8], 90, 15):
+                    angularity_orb = abs(planet_data[8] - 90)
+                    angularity = 'I '
+                elif inrange(planet_data[8], 180, 15):
+                    angularity_orb = abs(planet_data[8] - 180)
+                    angularity = 'D '
+                elif inrange(planet_data[8], 270, 15):
+                    angularity_orb = abs(planet_data[8] - 270)
+                    angularity = 'M '
+
+            # Foreground on Zenith/Nadir
+            if angularity_strength == square_asc_strength:
+                zenith_nadir_orb = chart['cusps'][1] - planet_data[0]
+                if zenith_nadir_orb < 0:
+                    zenith_nadir_orb += 360
+                if inrange(zenith_nadir_orb, 90, 5):
+                    angularity_orb = abs(zenith_nadir_orb - 90)
+                    angularity = 'Z '
+                if inrange(zenith_nadir_orb, 270, 5):
+                    angularity_orb = abs(zenith_nadir_orb - 270)
+                    angularity = 'N '
+
+            # Foreground on Eastpoint/Westpoint
+            if angularity_strength == square_mc_strength:
+                ep_wp_eclipto_orb = chart['cusps'][10] - planet_data[0]
+                if ep_wp_eclipto_orb < 0:
+                    ep_wp_eclipto_orb += 360
+                if inrange(ep_wp_eclipto_orb, 90, 5):
+                    angularity_orb = abs(ep_wp_eclipto_orb - 90)
+                    angularity = 'W '
+                if inrange(ep_wp_eclipto_orb, 270, 5):
+                    angularity_orb = abs(ep_wp_eclipto_orb - 270)
+                    angularity = 'E '
+
+            if angularity_strength == ramc_square_strength:
+                ep_wp_ascension_orb = chart['ramc'] - planet_data[3]
+                if ep_wp_ascension_orb < 0:
+                    ep_wp_ascension_orb += 360
+                if inrange(ep_wp_ascension_orb, 90, 5):
+                    angularity_orb = abs(ep_wp_ascension_orb - 90)
+                    angularity = 'Wa'
+                if inrange(ep_wp_ascension_orb, 270, 5):
+                    angularity_orb = abs(ep_wp_ascension_orb - 270)
+                    angularity = 'Ea'
+
+        if angularity == 'B':
+            angularity = ' b'
+        elif angularity == ' ':
+            angularity = '  '
+
+        if 'I' not in self.cclass:
+            # It's not an ingress; dormancy is always negated
+            planet_negates_dormancy = True
+        else:
+            planet_negates_dormancy = angularity_activates_ingress(
+                angularity_orb, angularity
+            )
+
+        return (
+            angularity,
+            angularity_strength,
+            planet_negates_dormancy,
+            is_mundanely_background,
         )
 
     def find_midpoint(self, planet, plist, i, j, options):

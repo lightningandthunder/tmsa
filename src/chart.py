@@ -166,6 +166,9 @@ class Chart:
             planet_data[7] = calc_meridian_longitude(
                 planet_data[5], planet_data[6]
             )
+
+            print(planet_data)
+
             planet_data[8] = calc_house_pos(
                 self.ramc,
                 self.lat,
