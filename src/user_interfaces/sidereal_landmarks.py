@@ -8,10 +8,10 @@
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
 
-from init import *
-from user_interfaces.widgets import *
+from src.init import *
+from src.user_interfaces.widgets import *
 
-from constants import LABEL_X_COORD, LABEL_HEIGHT_UNIT, LABEL_WIDTH
+from src.constants import LABEL_X_COORD, LABEL_HEIGHT_UNIT, LABEL_WIDTH
 
 # https://stackoverflow.com/questions/71677889/create-a-scrollbar-to-a-full-window-tkinter-in-python
 

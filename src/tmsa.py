@@ -23,7 +23,7 @@ from program_options import ProgramOptions
 from select_chart import SelectChart
 from widgets import *
 
-from constants import LABEL_X_COORD, LABEL_HEIGHT_UNIT, LABEL_WIDTH
+from src.constants import LABEL_X_COORD, LABEL_HEIGHT_UNIT, LABEL_WIDTH
 
 TITLE = f'Time Matters {VERSION}'
 INTRO = f"""A freeware program for calculating geometrically
