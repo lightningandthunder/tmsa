@@ -7,9 +7,9 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
-from init import *
-from user_interfaces.widgets import *
-from utils import display_name
+from src.init import *
+from src.user_interfaces.widgets import *
+from src.utils import display_name
 
 
 class MoreCharts(Frame):

@@ -18,11 +18,11 @@ from ctypes import (
     c_char,
     create_string_buffer,
 )
-from init import *
+from src.init import *
 import math
-from constants import PLATFORM
+from src.constants import PLATFORM
 
-from utils import (
+from src.utils import (
     arccotangent,
     cotangent,
     add_360_if_negative,

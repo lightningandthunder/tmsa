@@ -1,8 +1,8 @@
 import math
-from user_interfaces.widgets import base_font
+from src.user_interfaces.widgets import base_font
 from tkinter.font import Font as tkFont
 import os
-from constants import PLATFORM
+from src.constants import PLATFORM
 import shutil
 import subprocess
 

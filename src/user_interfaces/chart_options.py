@@ -8,10 +8,10 @@
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
 from init import *
-from user_interfaces.midpoint_options import MidpointOptions
-from user_interfaces.widgets import *
+from src.user_interfaces.midpoint_options import MidpointOptions
+from src.user_interfaces.widgets import *
 import tkinter.filedialog as tkfiledialog
-from gui_utils import ShowHelp
+from src.gui_utils import ShowHelp
 
 
 class ChartOptions(Frame):

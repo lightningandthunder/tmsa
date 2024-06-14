@@ -14,15 +14,15 @@ import random
 
 import pytz
 from timezonefinder import TimezoneFinder
-from init import *
-from user_interfaces.chart import Chart
-from user_interfaces.locations import Locations
-from user_interfaces.widgets import *
+from src.init import *
+from src.user_interfaces.chart import Chart
+from src.user_interfaces.locations import Locations
+from src.user_interfaces.widgets import *
 from geopy import Nominatim
 import anglicize
 import us
 import tkinter.filedialog as tkfiledialog
-from constants import (
+from src.constants import (
     DS,
     DQ,
     VERSION,

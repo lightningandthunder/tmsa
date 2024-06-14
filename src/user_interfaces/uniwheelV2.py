@@ -9,9 +9,9 @@
 
 from datetime import datetime
 import math
-from chart_utils import *
-from constants import VERSION
-from utils import open_file
+from src.chart_utils import *
+from src.constants import VERSION
+from src.utils import open_file
 
 
 def write_to_file(chart, planet):

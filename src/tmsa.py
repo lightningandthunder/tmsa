@@ -8,24 +8,24 @@
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
 import math
-from init import *
-from user_interfaces.chart_options import ChartOptions
-from user_interfaces.ingresses import Ingresses
-from user_interfaces.new_chart import NewChart
-from user_interfaces.program_options import ProgramOptions
-from user_interfaces.select_chart import SelectChart
-from user_interfaces.widgets import *
+from src.init import *
+from src.user_interfaces.chart_options import ChartOptions
+from src.user_interfaces.ingresses import Ingresses
+from src.user_interfaces.new_chart import NewChart
+from src.user_interfaces.program_options import ProgramOptions
+from src.user_interfaces.select_chart import SelectChart
+from src.user_interfaces.widgets import *
 import webbrowser
 import os
 import shutil
 import json
-from constants import VERSION
-from gui_utils import (
+from src.constants import VERSION
+from src.gui_utils import (
     ShowHelp,
     newline_if_past_breakpoint,
 )
 
-from constants import LABEL_X_COORD, LABEL_HEIGHT_UNIT, LABEL_WIDTH
+from src.constants import LABEL_X_COORD, LABEL_HEIGHT_UNIT, LABEL_WIDTH
 
 TITLE = f'Time Matters {VERSION}'
 INTRO = f"""A freeware program for calculating geometrically

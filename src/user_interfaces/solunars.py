@@ -9,22 +9,22 @@
 
 from copy import deepcopy
 import random
-from init import *
-from user_interfaces.chart import Chart
-from user_interfaces.locations import Locations
-from user_interfaces.more_charts import MoreCharts
-from swe import *
-from user_interfaces.widgets import *
+from src.init import *
+from src.user_interfaces.chart import Chart
+from src.user_interfaces.locations import Locations
+from src.user_interfaces.more_charts import MoreCharts
+from src.swe import *
+from src.user_interfaces.widgets import *
 from datetime import datetime as dt
 import tkinter.filedialog as tkfiledialog
 import json
 import os
 from geopy import Nominatim
 import anglicize
-from constants import DS, DQ, VERSION
+from src.constants import DS, DQ, VERSION
 import us
-from utils import toDMS, open_file, display_name
-from gui_utils import ShowHelp
+from src.utils import toDMS, open_file, display_name
+from src.gui_utils import ShowHelp
 
 
 class Solunars(Frame):

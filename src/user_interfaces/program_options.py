@@ -8,16 +8,16 @@
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
 import random
-from init import *
-from user_interfaces.locations import Locations
-from user_interfaces.widgets import *
+from src.init import *
+from src.user_interfaces.locations import Locations
+from src.user_interfaces.widgets import *
 import json
 import tkinter.colorchooser as tkcolorchooser
 from geopy import Nominatim
 import anglicize
-from constants import DS, DQ, VERSION
+from src.constants import DS, DQ, VERSION
 import us
-from gui_utils import ShowHelp
+from src.gui_utils import ShowHelp
 
 
 class ProgramOptions(Frame):

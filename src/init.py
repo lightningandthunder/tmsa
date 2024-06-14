@@ -10,8 +10,8 @@
 import json
 import os
 import sys
-from libs import *
-from constants import PLATFORM
+from src.libs import *
+from src.constants import PLATFORM
 import shutil
 
 startup = True
