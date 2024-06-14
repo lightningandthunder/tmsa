@@ -806,13 +806,16 @@ class UniwheelV2:
             ] = angularity
 
             angularity_is_empty = angularity.strip() == ''
+            angularity_is_background = angularity.strip().lower() == 'b'
 
-            if not angularity_is_empty or (
-                planet_name == 'Moon' and 'I' in self.cclass
-            ):
+            if (
+                not angularity_is_empty
+                and not angularity_is_background
+                and not is_mundanely_background
+            ) or (planet_name == 'Moon' and 'I' in self.cclass):
                 planets_foreground.append(planet_name)
 
-            if angularity_is_empty and is_mundanely_background:
+            if angularity_is_background or is_mundanely_background:
                 planet_foreground_angles[
                     PLANET_NAMES_SHORT[planet_index]
                 ] = 'B'
