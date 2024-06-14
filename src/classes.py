@@ -51,3 +51,8 @@ class ChartObject:
     planets: dict[str, PlanetData]
     cusps: list[float]
     angles: dict[str, float]
+
+
+@dataclass
+class Options:
+    pass

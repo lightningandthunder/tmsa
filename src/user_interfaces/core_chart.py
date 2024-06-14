@@ -10,6 +10,7 @@
 from datetime import datetime
 import math
 from chart_utils import *
+from classes import ChartObject
 from constants import VERSION
 from utils import open_file
 
@@ -28,8 +29,8 @@ def write_to_file(chart, planet):
     return data_line
 
 
-class UniwheelV2:
-    def __init__(self, chart, temporary, options):
+class CoreChartWheel:
+    def __init__(self, chart: ChartObject, temporary: bool, options):
         self.table_width = 81
 
         filename = make_chart_path(chart, temporary)
@@ -298,147 +299,17 @@ class UniwheelV2:
             raw_orb,
         )
 
-    def find_midpoint(self, planet, plist, i, j, options):
-        mpx = options.get('midpoints', {})
-        if planet[0] == 'Ep':
-            # mmp is evidently a planet
-            return self.mmp_eastpoint(planet, mmp, plist, i, j)
-        if planet[0] == 'Ze':
-            return self.mmp_zenith(planet, mmp, plist, i, j)
-        p = planet[1]
-        m = (plist[i][1] + plist[j][1]) / 2
-        d = (p - m) % 360
-        if d > 180:
-            d = 360 - d
-        mp0 = mpx.get('0', 0) / 60
-        if mp0:
-            if d <= mp0 or d > 180 - mp0:
-                if d < 90:
-                    z = d
-                else:
-                    z = 180 - d
-                return f"{plist[i][0]}/{plist[j][0]} {round(z * 60):2}'d"
-        mp90 = mpx.get('90', 0) / 60
-        if mp90:
-            if d >= 90 - mp90 and d <= 90 + mp90:
-                z = abs(d - 90)
-                di = mpx.get('is90', 'd')
-                return f"{plist[i][0]}/{plist[j][0]} {round(z * 60):2}'{di}"
-        mp45 = mpx.get('45', 0) / 60
-        if mp45:
-            if d >= 45 - mp45 and d <= 45 + mp45:
-                z = abs(d - 45)
-                return f"{plist[i][0]}/{plist[j][0]} {round(z * 60):2}'i"
-            if d >= 135 - mp45 and d <= 135 + mp45:
-                z = abs(d - 135)
-                return f"{plist[i][0]}/{plist[j][0]} {round(z * 60):2}'i"
-        return ''
-
-    def mmp_major(self, plist, i, j, mmp):
-        m = (plist[i][3] + plist[j][3]) / 2
-        m %= 90
-        if m > mmp and m < 90 - mmp:
-            return ''
-        z = 90 - m if m > 45 else m
-        return f"{plist[i][0]}/{plist[j][0]} {round(z * 60):2}'MA"
-
-    def mmp_eastpoint(self, planet, plist, i, j, mmp):
-        m = (plist[i][1] + plist[j][1]) / 2
-        p = planet[1]
-        d = (p - m) % 360
-        if d > 180:
-            d = 360 - d
-        if d <= mmp or d >= 180 - mmp:
-            if d < 90:
-                z1 = d
-            else:
-                z1 = 180 - d
-        else:
-            z1 = 1000
-        m = (plist[i][2] + plist[j][2]) / 2
-        p = planet[2]
-        d = (p - m) % 360
-        if d > 180:
-            d = 360 - d
-        if d <= mmp or d >= 180 - mmp:
-            if d < 90:
-                z2 = d
-            else:
-                z2 = 180 - d
-        else:
-            z2 = 1000
-        z = min(z1, z2)
-        xl1 = (plist[i][1] - planet[1]) % 360
-        xa1 = (plist[i][2] - planet[2]) % 360
-        if xl1 > 180:
-            xl1 = 360 - xl1
-        if xa1 > 180:
-            xa1 = 360 - xa1
-        xl2 = (plist[j][1] - planet[1]) % 360
-        xa2 = (plist[j][2] - planet[2]) % 360
-        if xl2 > 180:
-            xl2 = 360 - xl2
-        if xa2 > 180:
-            xa2 = 360 - xa2
-        if not any(
-            [
-                xl1 <= 3,
-                xl1 >= 177,
-                xa1 <= 3,
-                xa1 >= 177,
-                xl2 <= 3,
-                xl2 >= 177,
-                xa2 <= 3,
-                xa2 >= 177,
-            ]
-        ):
-            return ''
-        if z < 1000:
-            return f"{plist[i][0]}/{plist[j][0]} {round(z * 60):2}'ME"
-        return ''
-
-    def mmp_zenith(self, planet, plist, i, j, mmp):
-        p = planet[1]
-        x = (plist[i][1] - p) % 360
-        if x > 180:
-            x = 360 - x
-        if x > 3 and x < 177:
-            return ''
-        x = plist[i][2] - p % 360
-        if x > 180:
-            x = 360 - x
-        if x > 3 and x < 177:
-            return ''
-        m = (plist[i][1] + plist[j][1]) / 2
-        d = (p - m) % 360
-        if d > 180:
-            d = 360 - d
-        if d <= mmp or d >= 180 - mmp:
-            if d < 90:
-                z = d
-            else:
-                z = 180 - d
-            return f"{plist[i][0]}/{plist[j][0]} {round(z * 60):2}'MZ"
-        return ''
-
-    def mmp_all(self, ep, ze, plist, i, j, options):
-        mmp = options.get('midpoints', {}).get('M', 0) / 60
-        if not mmp:
-            return ''
-        a = self.mmp_major(plist, i, j, mmp)
-        e = self.mmp_eastpoint(ep, plist, i, j, mmp)
-        z = self.mmp_zenith(ze, plist, i, j, mmp)
-        ai = a[6:8] if a else '99'
-        ei = e[6:8] if e else '99'
-        zi = e[6:8] if z else '99'
-        if ai <= ei:
-            x = a
-            xi = ai
-        else:
-            x = e
-            xi = ei
-        x = x if xi <= zi else z
-        return x
+    def find_pvp_aspect(self, chart, planet_index, options):
+        # I need to ask Jim more about this, but...
+        # Find conjunct/opp in azimuth across horizon - these are conj/opp.
+        # Find azimuth squares to planets near meridian (90* of azimuth) - squares.
+        # That is still measured in azimuth.
+        # Find ML squares of one planet on horizon and one on PV measured in ML;
+        # what that actually means is planet co horizon in PVL
+        # plus planet co Vx/Av in azimuth...? Those should be affected by
+        # "class 3 orbs for minor angles," which i'll need to default down to
+        # class 2 and class 1 if any are absent
+        pass
 
     def calc_angle_and_strength(
         self,
@@ -806,16 +677,13 @@ class UniwheelV2:
             ] = angularity
 
             angularity_is_empty = angularity.strip() == ''
-            angularity_is_background = angularity.strip().lower() == 'b'
 
-            if (
-                not angularity_is_empty
-                and not angularity_is_background
-                and not is_mundanely_background
-            ) or (planet_name == 'Moon' and 'I' in self.cclass):
+            if not angularity_is_empty or (
+                planet_name == 'Moon' and 'I' in self.cclass
+            ):
                 planets_foreground.append(planet_name)
 
-            if angularity_is_background or is_mundanely_background:
+            if angularity_is_empty and is_mundanely_background:
                 planet_foreground_angles[
                     PLANET_NAMES_SHORT[planet_index]
                 ] = 'B'
