@@ -49,6 +49,15 @@ sudo chmod 755 /var/log/tmsa
 python setup.py build_installer
 ```
 
+You might need to also install a bunch of other packages to get `tkextrafont` to build:
+
+```shell
+sudo apt install tcl-dev tk-dev
+sudo apt install build-essential python3-dev python3-pip cmake
+
+```
+
+
 ##### For MacOS (x86) (Make sure you're using Python 3.10)
 ```shell
 python3 -m venv venv

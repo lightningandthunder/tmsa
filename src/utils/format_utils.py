@@ -8,18 +8,6 @@ from constants import PLATFORM
 from widgets import base_font
 
 
-def open_file(file: str):
-    match PLATFORM:
-        case 'Win32GUI':
-            os.startfile(file)
-        case 'linux':
-            if shutil.which('xdg-open'):
-                subprocess.call(['xdg-open', file])
-            elif 'EDITOR' in os.environ:
-                subprocess.call([os.environ['EDITOR'], file])
-        case 'darwin':
-            subprocess.run(['open', '-a', 'TextEdit', file])
-
 
 def get_scaled_font(width: int, breakpoint: int) -> tkFont:
     font_size = (
