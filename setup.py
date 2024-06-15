@@ -16,6 +16,8 @@ match sys.platform:
     case "linux":
         base = None
         build_dir = os.path.join('build', 'exe.linux-x86_64-3.10')
+    case "darwin":
+        base = None
     case _:
         raise RuntimeError(f"Unsupported architecture {sys.platform}")
 
@@ -30,6 +32,12 @@ match sys.platform:
                     shortcut_dir="DesktopFolder"
                 )
         case "linux":
+            executable = Executable(
+                    script=os.path.join("src", "tmsa.py"),
+                    copyright="Copyright (C) 2024 James A. Eshelman",
+                    base=base,
+                )
+        case "darwin":
             executable = Executable(
                     script=os.path.join("src", "tmsa.py"),
                     copyright="Copyright (C) 2024 James A. Eshelman",

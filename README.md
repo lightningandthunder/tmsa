@@ -49,6 +49,15 @@ sudo chmod 755 /var/log/tmsa
 python setup.py build_installer
 ```
 
+##### For MacOS (x86)
+```shell
+python3 -m venv venv
+
+
+pip install -r etc/requirements-macos-x86.txt
+export PYTHONPATH="${PYTHONPATH}:${pwd}"
+```
+
 ### Contributing
 
 ##### Formatting
