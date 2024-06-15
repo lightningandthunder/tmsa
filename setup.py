@@ -100,6 +100,12 @@ match sys.platform:
 #     ],
 # }
 
+source_files = []
+for root, dirs, files in os.walk('src'):
+    for file in files:
+        if file.endswith('.py'):
+            source_files.append(os.path.join(root, file))
+
 options = {
     "build_exe": {
         "include_path": "src,public",
@@ -108,34 +114,10 @@ options = {
             (os.path.join("copy", "ephe"), "ephe"),
             (os.path.join("src", "assets"), "assets"),
             "help",
+            *source_files
         ],
         "packages": [
             'distutils',    
-        ],
-        "includes": [
-            "biwheel",
-            "chart_options",
-            "chart_utils",
-            "chart",
-            "classes",
-            "constants",
-            "gui_utils",
-            "ingresses",
-            "init",
-            "libs",
-            "locations",
-            "midpoint_options",
-            "more_charts",
-            "new_chart",
-            "program_options",
-            "select_chart",
-            "solunars",
-            "swe",
-            "tmsa",
-            "uniwheel",
-            "uniwheelV2",
-            "utils",
-            "widgets",
         ],
         'include_msvcr': True,
     },
@@ -144,7 +126,11 @@ options = {
         # "data": msi_data,
         # "environment_variables": [],
         "upgrade_code": "{1b179824-25df-4630-80a7-b3930038f5e9}",
-    }
+    },
+    "bdist_dmg": {
+        "volume_label": f"Time Matters {VERSION}",
+        "applications_shortcut": True,
+    },
 }
 
 class BuildInstaller(Command):
