@@ -31,6 +31,9 @@ elif PLATFORM == 'linux':
     main.iconphoto(
         True, tk.PhotoImage(file=app_path(os.path.join('assets', 'tmsa2.png')))
     )
+elif PLATFORM == 'darwin':
+    main.state('zoomed')
+    main.iconbitmap(app_path(os.path.join('assets', 'tmsa3.ico')))
 
 main.title(f'Time Matters {VERSION}')
 
@@ -45,6 +48,30 @@ if PLATFORM == 'Win32GUI':
     )
     title_font = tkFont(family='Lucida Console', size=36, weight='bold')
 elif PLATFORM == 'linux':
+    root_font = tk.font.nametofont('TkDefaultFont')
+
+    base_font = root_font.copy()
+    base_font.configure(size=18)
+
+    font_16 = root_font.copy()
+    font_16.configure(size=16)
+
+    font_14 = root_font.copy()
+    font_14.configure(size=14)
+
+    font_12 = root_font.copy()
+    font_12.configure(size=12)
+
+    font_10 = root_font.copy()
+    font_10.configure(size=10)
+
+    ulfont = root_font.copy()
+    ulfont.configure(size=18, underline=1)
+
+    title_font = root_font.copy()
+    title_font.configure(size=36, weight='bold')
+
+elif PLATFORM == 'darwin':
     root_font = tk.font.nametofont('TkDefaultFont')
 
     base_font = root_font.copy()

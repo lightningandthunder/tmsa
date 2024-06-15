@@ -17,6 +17,8 @@ def open_file(file: str):
                 subprocess.call(['xdg-open', file])
             elif 'EDITOR' in os.environ:
                 subprocess.call([os.environ['EDITOR'], file])
+        case 'darwin':
+            subprocess.run(['open', '-a', 'TextEdit', file])
 
 
 def get_scaled_font(width: int, breakpoint: int) -> tkFont:

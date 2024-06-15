@@ -56,14 +56,18 @@ if PLATFORM == 'Win32GUI':
     d1 = os.path.expanduser(r'~\Documents')
 elif PLATFORM == 'linux':
     d1 = os.path.join('/var', 'lib', 'tmsa')
+elif PLATFORM == 'darwin':
+    d1 = os.path.join(os.path.expanduser('~'), 'Documents')
 
 # Originally...
 # DLL_PATH = app_path(r"..\dll\swedll32.dll")
 
 if PLATFORM == 'Win32GUI':
     DLL_PATH = app_path(os.path.join('dll', 'swedll32.dll'))
-if PLATFORM == 'linux':
+elif PLATFORM == 'linux':
     DLL_PATH = app_path(os.path.join('dll', 'libswe.so'))
+elif PLATFORM == 'darwin':
+    DLL_PATH = app_path(os.path.join('dll', 'libswe.dylib'))
 
 if os.path.exists(d1):
     d1 = os.path.expandvars(d1)
@@ -120,6 +124,40 @@ elif PLATFORM == 'linux':
     OPTION_PATH = os.path.join(
         os.path.expanduser('~'), '.config', 'tmsa', 'options'
     )
+    os.makedirs(OPTION_PATH, exist_ok=True)
+
+    copy_file_if_not_exists(
+        os.path.join(OPTION_PATH, 'Default_Natal.opt'),
+        app_path(os.path.join('assets', 'Default_Natal.opt')),
+    )
+    copy_file_if_not_exists(
+        os.path.join(OPTION_PATH, 'Cosmobiology.opt'),
+        app_path(os.path.join('assets', 'Cosmobiology.opt')),
+    )
+    copy_file_if_not_exists(
+        os.path.join(OPTION_PATH, 'Default_Ingress.opt'),
+        app_path(os.path.join('assets', 'Default_Ingress.opt')),
+    )
+    copy_file_if_not_exists(
+        os.path.join(OPTION_PATH, 'Default_Return.opt'),
+        app_path(os.path.join('assets', 'Default_Return.opt')),
+    )
+    copy_file_if_not_exists(
+        os.path.join(OPTION_PATH, 'Student_Natal.opt'),
+        app_path(os.path.join('assets', 'Student_Natal.opt')),
+    )
+
+elif PLATFORM == 'darwin':
+    import shutil
+
+    CHART_PATH = os.path.join(d1, 'tmsa', 'charts')
+    os.makedirs(CHART_PATH, exist_ok=True)
+    TEMP_CHARTS = os.path.join(CHART_PATH, 'temporary')
+
+    ERROR_FILE = os.path.join(d1, 'tmsa', 'logs', 'error.txt')
+    os.makedirs(os.path.dirname(ERROR_FILE), exist_ok=True)
+
+    OPTION_PATH = os.path.join(d1, 'tmsa', 'options')
     os.makedirs(OPTION_PATH, exist_ok=True)
 
     copy_file_if_not_exists(
