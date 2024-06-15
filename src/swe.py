@@ -37,6 +37,8 @@ if PLATFORM == 'Win32GUI':
     swe_set_ephe = getattr(dll, '_swe_set_ephe_path@4')
 elif PLATFORM == 'linux':
     swe_set_ephe = getattr(dll, 'swe_set_ephe_path')
+elif PLATFORM == 'darwin':
+    swe_set_ephe = getattr(dll, 'swe_set_ephe_path')
 swe_set_ephe.argtypes = [c_char_p]
 swe_set_ephe.restype = c_void_p
 swe_set_ephe(EPHE_PATH.encode())
@@ -46,6 +48,9 @@ def _get_handle_for_platform(dll: CDLL, windows_string: str):
     if PLATFORM == 'Win32GUI':
         handle = windows_string
     elif PLATFORM == 'linux':
+        [handle, _] = windows_string.split('@')
+        handle = handle.strip('_')
+    elif PLATFORM == 'darwin':
         [handle, _] = windows_string.split('@')
         handle = handle.strip('_')
 

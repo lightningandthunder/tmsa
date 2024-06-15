@@ -22,6 +22,8 @@ match sys.platform:
         PLATFORM = 'Win32GUI'
     case 'linux':
         PLATFORM = 'linux'
+    case 'darwin':
+        PLATFORM = 'darwin'
     case _:
         raise RuntimeError(f'Unsupported architecture {sys.platform}')
 
