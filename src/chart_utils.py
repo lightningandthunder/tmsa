@@ -8,9 +8,9 @@
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
 import math
+
 from src.init import *
 from src.user_interfaces.widgets import *
-
 
 SIGNS_SHORT = [
     'Ar',

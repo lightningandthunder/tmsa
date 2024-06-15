@@ -7,22 +7,24 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
+import random
+import tkinter.filedialog as tkfiledialog
 from copy import deepcopy
 from datetime import datetime as dt
-import random
+
+import anglicize
+import us
+from geopy import Nominatim
+
+from src.constants import DQ, DS, VERSION
+from src.gui_utils import ShowHelp
 from src.init import *
+from src.swe import *
 from src.user_interfaces.chart import Chart
 from src.user_interfaces.locations import Locations
 from src.user_interfaces.more_charts import MoreCharts
-from src.swe import *
 from src.user_interfaces.widgets import *
-import tkinter.filedialog as tkfiledialog
-from geopy import Nominatim
-import anglicize
-import us
-from src.constants import DS, DQ, VERSION
-from src.utils import open_file, display_name
-from src.gui_utils import ShowHelp
+from src.utils import display_name, open_file
 
 
 class Ingresses(Frame):

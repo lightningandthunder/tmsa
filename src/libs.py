@@ -7,27 +7,28 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
-import anglicize
-from copy import *
-from ctypes import *
-from datetime import datetime, timedelta
-from geopy import *
-from geopy.geocoders import *
 import json
 import math
 import os
-import pytz
 import random
-import subprocess
 import shutil
+import subprocess
 import sys
 import time
-from timezonefinder import TimezoneFinder
 import tkinter as tk
 import tkinter.colorchooser as tkcolorchooser
 import tkinter.filedialog as tkfiledialog
-from tkinter.font import Font as tkFont
 import tkinter.messagebox as tkmessagebox
 import traceback
-import us
 import webbrowser
+from copy import *
+from ctypes import *
+from datetime import datetime, timedelta
+from tkinter.font import Font as tkFont
+
+import anglicize
+import pytz
+import us
+from geopy import *
+from geopy.geocoders import *
+from timezonefinder import TimezoneFinder

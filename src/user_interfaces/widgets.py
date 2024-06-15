@@ -7,33 +7,42 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
-from src.init import *
+import os
 import tkinter as tk
 import tkinter.messagebox as tkmessagebox
-from tkinter.font import Font as tkFont
 import traceback
-from src.constants import VERSION, PLATFORM
+from tkinter.font import Font as tkFont
+
 from PIL import ImageTk
+
+from src.constants import PLATFORM, VERSION
+from src.init import *
 
 main = tk.Tk()
 main.minsize(800, 600)
-if PLATFORM == 'Win32GUI':
-    main.state('zoomed')
-    main.iconbitmap(app_path(os.path.join('assets', 'tmsa3.ico')))
-elif PLATFORM == 'linux':
-    main.state('normal')
-    main.wm_attributes('-zoomed', True)
 
-    icon = tk.PhotoImage(file=app_path(os.path.join('assets', 'tmsa2.png')))
-    main.wm_iconphoto(True, icon)
-    main.iconphoto(
-        True, tk.PhotoImage(file=app_path(os.path.join('assets', 'tmsa2.png')))
-    )
-elif PLATFORM == 'darwin':
-    main.state('zoomed')
-    main.iconbitmap(app_path(os.path.join('assets', 'tmsa3.ico')))
+if not os.environ['TMSA_TEST']:
+    if PLATFORM == 'Win32GUI':
 
-main.title(f'Time Matters {VERSION}')
+        main.state('zoomed')
+        main.iconbitmap(app_path(os.path.join('assets', 'tmsa3.ico')))
+    elif PLATFORM == 'linux':
+        main.state('normal')
+        main.wm_attributes('-zoomed', True)
+
+        icon = tk.PhotoImage(
+            file=app_path(os.path.join('assets', 'tmsa2.png'))
+        )
+        main.wm_iconphoto(True, icon)
+        main.iconphoto(
+            True,
+            tk.PhotoImage(file=app_path(os.path.join('assets', 'tmsa2.png'))),
+        )
+    elif PLATFORM == 'darwin':
+        main.state('zoomed')
+        main.iconbitmap(app_path(os.path.join('assets', 'tmsa3.ico')))
+
+    main.title(f'Time Matters {VERSION}')
 
 if PLATFORM == 'Win32GUI':
     base_font = tkFont(family='Lucida Console', size=18, weight='normal')

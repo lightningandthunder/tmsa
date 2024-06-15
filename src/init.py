@@ -9,10 +9,11 @@
 
 import json
 import os
-import sys
-from src.libs import *
-from src.constants import PLATFORM
 import shutil
+import sys
+
+from src.constants import PLATFORM
+from src.libs import *
 
 startup = True
 

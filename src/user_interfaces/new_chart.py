@@ -7,30 +7,31 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
-from datetime import datetime as dt
 import json
 import os
 import random
+import tkinter.filedialog as tkfiledialog
+from datetime import datetime as dt
 
+import anglicize
 import pytz
+import us
+from geopy import Nominatim
 from timezonefinder import TimezoneFinder
+
+from gui_utils import ShowHelp
+from src.constants import (
+    DQ,
+    DS,
+    LABEL_HEIGHT_UNIT,
+    LABEL_WIDTH,
+    LABEL_X_COORD,
+    VERSION,
+)
 from src.init import *
 from src.user_interfaces.chart import Chart
 from src.user_interfaces.locations import Locations
 from src.user_interfaces.widgets import *
-from geopy import Nominatim
-import anglicize
-import us
-import tkinter.filedialog as tkfiledialog
-from src.constants import (
-    DS,
-    DQ,
-    VERSION,
-    LABEL_X_COORD,
-    LABEL_WIDTH,
-    LABEL_HEIGHT_UNIT,
-)
-from gui_utils import ShowHelp
 
 
 class NewChart(Frame):

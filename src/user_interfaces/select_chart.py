@@ -10,15 +10,16 @@
 import json
 import os
 import shutil
+import tkinter.filedialog as tkfiledialog
+
+from src.gui_utils import ShowHelp
 from src.init import *
 from src.user_interfaces.chart import Chart
+from src.user_interfaces.more_charts import MoreCharts
 from src.user_interfaces.new_chart import NewChart
 from src.user_interfaces.solunars import Solunars
 from src.user_interfaces.widgets import *
-from src.user_interfaces.more_charts import MoreCharts
-import tkinter.filedialog as tkfiledialog
-from src.utils import open_file, display_name
-from src.gui_utils import ShowHelp
+from src.utils import display_name, open_file
 
 
 class SelectChart(Frame):

@@ -7,17 +7,19 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
+import json
 import random
+import tkinter.colorchooser as tkcolorchooser
+
+import anglicize
+import us
+from geopy import Nominatim
+
+from src.constants import DQ, DS, VERSION
+from src.gui_utils import ShowHelp
 from src.init import *
 from src.user_interfaces.locations import Locations
 from src.user_interfaces.widgets import *
-import json
-import tkinter.colorchooser as tkcolorchooser
-from geopy import Nominatim
-import anglicize
-from src.constants import DS, DQ, VERSION
-import us
-from src.gui_utils import ShowHelp
 
 
 class ProgramOptions(Frame):
