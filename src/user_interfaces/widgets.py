@@ -19,23 +19,29 @@ from init import *
 
 main = tk.Tk()
 main.minsize(800, 600)
-if PLATFORM == 'Win32GUI':
-    main.state('zoomed')
-    main.iconbitmap(app_path(os.path.join('assets', 'tmsa3.ico')))
-elif PLATFORM == 'linux':
-    main.state('normal')
-    main.wm_attributes('-zoomed', True)
 
-    icon = tk.PhotoImage(file=app_path(os.path.join('assets', 'tmsa2.png')))
-    main.wm_iconphoto(True, icon)
-    main.iconphoto(
-        True, tk.PhotoImage(file=app_path(os.path.join('assets', 'tmsa2.png')))
-    )
-elif PLATFORM == 'darwin':
-    main.state('zoomed')
-    main.iconbitmap(app_path(os.path.join('assets', 'tmsa3.ico')))
+if not os.environ['TMSA_TEST']:
+    if PLATFORM == 'Win32GUI':
 
-main.title(f'Time Matters {VERSION}')
+        main.state('zoomed')
+        main.iconbitmap(app_path(os.path.join('assets', 'tmsa3.ico')))
+    elif PLATFORM == 'linux':
+        main.state('normal')
+        main.wm_attributes('-zoomed', True)
+
+        icon = tk.PhotoImage(
+            file=app_path(os.path.join('assets', 'tmsa2.png'))
+        )
+        main.wm_iconphoto(True, icon)
+        main.iconphoto(
+            True,
+            tk.PhotoImage(file=app_path(os.path.join('assets', 'tmsa2.png'))),
+        )
+    elif PLATFORM == 'darwin':
+        main.state('zoomed')
+        main.iconbitmap(app_path(os.path.join('assets', 'tmsa3.ico')))
+
+    main.title(f'Time Matters {VERSION}')
 
 if PLATFORM == 'Win32GUI':
     base_font = tkFont(family='Lucida Console', size=18, weight='normal')
