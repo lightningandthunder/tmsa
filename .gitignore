@@ -7,3 +7,4 @@ dll/
 ephe/
 venv/
 venv/*
+.pytest_cache/

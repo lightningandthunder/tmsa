@@ -14,7 +14,7 @@ from copy import deepcopy
 from datetime import datetime
 
 from chart_utils import *
-from utils import open_file
+from src.utils.format_utils import open_file
 
 
 def write_to_file(chart, planet, prefix, pa_only=False):
