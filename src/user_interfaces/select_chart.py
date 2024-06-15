@@ -19,7 +19,7 @@ from src.user_interfaces.more_charts import MoreCharts
 from src.user_interfaces.new_chart import NewChart
 from src.user_interfaces.solunars import Solunars
 from src.user_interfaces.widgets import *
-from src.utils import display_name, open_file
+from src.utils.format_utils import display_name, open_file
 
 
 class SelectChart(Frame):

@@ -26,7 +26,7 @@ from src.user_interfaces.chart import Chart
 from src.user_interfaces.locations import Locations
 from src.user_interfaces.more_charts import MoreCharts
 from src.user_interfaces.widgets import *
-from src.utils import display_name, open_file, toDMS
+from src.utils.format_utils import display_name, open_file, toDMS
 
 
 class Solunars(Frame):

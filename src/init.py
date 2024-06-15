@@ -14,6 +14,7 @@ import sys
 
 from src.constants import PLATFORM
 from src.libs import *
+from src.utils.os_utils import create_directory
 
 startup = True
 
@@ -115,16 +116,16 @@ elif PLATFORM == 'linux':
     import shutil
 
     CHART_PATH = os.path.join('/var', 'lib', 'tmsa', 'charts')
-    os.makedirs(CHART_PATH, exist_ok=True)
+    create_directory(CHART_PATH)
     TEMP_CHARTS = os.path.join(CHART_PATH, 'temporary')
 
     ERROR_FILE = os.path.join('/var', 'log', 'tmsa', 'error.txt')
-    os.makedirs(os.path.dirname(ERROR_FILE), exist_ok=True)
+    create_directory(os.path.dirname(ERROR_FILE))
 
     OPTION_PATH = os.path.join(
         os.path.expanduser('~'), '.config', 'tmsa', 'options'
     )
-    os.makedirs(OPTION_PATH, exist_ok=True)
+    create_directory(OPTION_PATH)
 
     copy_file_if_not_exists(
         os.path.join(OPTION_PATH, 'Default_Natal.opt'),

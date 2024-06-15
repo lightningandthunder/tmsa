@@ -21,7 +21,7 @@ from src.init import *
 main = tk.Tk()
 main.minsize(800, 600)
 
-if not os.environ['TMSA_TEST']:
+if not os.environ.get('TMSA_TEST'):
     if PLATFORM == 'Win32GUI':
 
         main.state('zoomed')

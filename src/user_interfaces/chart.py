@@ -12,7 +12,7 @@ from src.swe import *
 from src.user_interfaces.biwheelV2 import BiwheelV2
 from src.user_interfaces.uniwheelV2 import UniwheelV2
 from src.user_interfaces.widgets import *
-from src.utils import to360
+from src.utils.format_utils import to360
 
 planet_names = [
     'Moon',

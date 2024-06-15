@@ -9,7 +9,7 @@
 
 from src.init import *
 from src.user_interfaces.widgets import *
-from src.utils import display_name
+from src.utils.format_utils import display_name
 
 
 class MoreCharts(Frame):

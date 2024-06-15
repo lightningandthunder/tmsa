@@ -13,7 +13,7 @@ from datetime import datetime
 from src.chart_utils import *
 from src.classes import ChartObject
 from src.constants import VERSION
-from src.utils import open_file
+from src.utils.format_utils import open_file
 
 
 def write_to_file(chart, planet):

@@ -13,7 +13,7 @@ from copy import deepcopy
 from datetime import datetime
 
 from src.chart_utils import *
-from src.utils import open_file
+from src.utils.format_utils import open_file
 
 
 def write_to_file(chart, planet, prefix, pa_only=False):
