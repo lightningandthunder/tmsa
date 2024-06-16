@@ -11,6 +11,7 @@ import json
 import os
 import random
 import tkinter.filedialog as tkfiledialog
+import tkinter.messagebox as tkmessagebox
 from copy import deepcopy
 from datetime import datetime as dt
 
@@ -18,20 +19,19 @@ import anglicize
 import us
 from geopy import Nominatim
 
+from src import (CHART_PATH, DATE_FMT, HELP_PATH, LOCATIONS_FILE, OPTION_PATH,
+                 RECENT_FILE, TIME_FMT)
 from src.constants import DQ, DS, MONTHS, VERSION
-from src.program_launch import *
 from src.swe import *
 from src.user_interfaces.chart import Chart
 from src.user_interfaces.locations import Locations
 from src.user_interfaces.more_charts import MoreCharts
-from src.user_interfaces.widgets import *
-from src.utils.format_utils import (
-    display_name,
-    normalize_text,
-    open_file,
-    toDMS,
-)
+from src.user_interfaces.widgets import (Button, Checkbutton, Entry, Frame,
+                                         Label, Radiobutton, Radiogroup,
+                                         check_num, check_snum, delay, tk)
+from src.utils.format_utils import display_name, normalize_text, toDMS
 from src.utils.gui_utils import ShowHelp
+from src.utils.os_utils import open_file
 
 
 class Solunars(Frame):
@@ -174,7 +174,7 @@ class Solunars(Frame):
         )
         Button(self, 'Help', 0.5, 0.8, 0.2).bind(
             '<Button-1>',
-            lambda _: delay(ShowHelp, HELP_PATH + r'\solunars.txt'),
+            lambda _: delay(ShowHelp, os.path.join(HELP_PATH, 'solunars.txt')),
         )
         backbtn = Button(self, 'Back', 0.7, 0.8, 0.20)
         backbtn.bind('<Button-1>', lambda _: delay(self.back))

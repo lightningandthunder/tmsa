@@ -8,124 +8,10 @@
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
 import math
+import os
 
-from src.program_launch import *
-from src.user_interfaces.widgets import *
-
-SIGNS_SHORT = [
-    'Ar',
-    'Ta',
-    'Ge',
-    'Cn',
-    'Le',
-    'Vi',
-    'Li',
-    'Sc',
-    'Sg',
-    'Cp',
-    'Aq',
-    'Pi',
-]
-PLANET_NAMES = [
-    'Moon',
-    'Sun',
-    'Mercury',
-    'Venus',
-    'Mars',
-    'Jupiter',
-    'Saturn',
-    'Uranus',
-    'Neptune',
-    'Pluto',
-    'Eris',
-    'Sedna',
-    'Mean Node',
-    'True Node',
-    'Eastpoint',
-    'Vertex',
-]
-PLANET_NAMES_SHORT = [
-    'Mo',
-    'Su',
-    'Me',
-    'Ve',
-    'Ma',
-    'Ju',
-    'Sa',
-    'Ur',
-    'Ne',
-    'Pl',
-    'Er',
-    'Se',
-    'No',
-    'No',
-    'Ep',
-    'Vx',
-]
-DEFAULT_ECLIPTICAL_ORBS = {
-    '0': [3.0, 7.0, 10.0],
-    '180': [3.0, 7.0, 10.0],
-    '90': [3.0, 6.0, 7.5],
-    '45': [1.0, 2.0, 0],
-    '120': [3.0, 6.0, 7.5],
-    '60': [3.0, 6.0, 7.5],
-    '30': [0, 0, 0],
-}
-DEFAULT_MUNDANE_ORBS = {
-    '0': [3.0, 0, 0],
-    '180': [3.0, 0, 0],
-    '90': [3.0, 0, 0],
-    '45': [0, 0, 0],
-}
-
-INGRESSES = [
-    'Capsolar',
-    'Cansolar',
-    'Arisolar',
-    'Libsolar',
-    'Caplunar',
-    'Canlunar',
-    'Arilunar',
-    'Liblunar',
-]
-
-POS_SIGN = {
-    'Mo': ['Cn', 'Ta'],
-    'Su': ['Le', 'Ar'],
-    'Me': ['Ge', 'Vi'],
-    'Ve': ['Ta', 'Li', 'Pi'],
-    'Ma': ['Sc', 'Cp'],
-    'Ju': ['Sg', 'Cn'],
-    'Sa': ['Cp', 'Li'],
-    'Ur': ['Aq'],
-    'Ne': ['Pi'],
-    'Pl': ['Ar'],
-    'Er': [],
-    'Se': [],
-    'No': [],
-}
-
-NEG_SIGN = {
-    'Mo': ['Cp', 'Sc'],
-    'Su': ['Aq', 'Li'],
-    'Me': ['Sg', 'Pi'],
-    'Ve': ['Sc', 'Ar', 'Vi'],
-    'Ma': ['Ta', 'Cn'],
-    'Ju': ['Ge', 'Cp'],
-    'Sa': ['Cn', 'Ar'],
-    'Ur': ['Le'],
-    'Ne': ['Vi'],
-    'Pl': ['Li'],
-    'Er': [],
-    'Se': [],
-    'No': [],
-}
-
-DS = '\N{DEGREE SIGN}'
-
-DS = '\N{DEGREE SIGN}'
-DQ = '"'
-SQ = "'"
+from src import CHART_PATH, TEMP_CHARTS
+from src.constants import DS, SIGNS_SHORT
 
 
 def major_angularity_curve_cadent_background(orb):
@@ -317,7 +203,7 @@ def fmt_lat(value, nosec=False):
         minute = 0
     if nosec:
         return f'{deg:2d}{sym}{minute:2d}'
-    return f"{deg:2d}{sym}{minute:2d}'{sec:2d}{DQ}"
+    return f'{deg:2d}{sym}{minute:2d}\'{sec:2d}"'
 
 
 def fmt_long(value):
@@ -336,7 +222,7 @@ def fmt_long(value):
     if minute == 60:
         deg += 1
         minute = 0
-    return f"{deg:3d}{sym}{minute:2d}'{sec:2d}{DQ}"
+    return f'{deg:3d}{sym}{minute:2d}\'{sec:2d}"'
 
 
 def fmt_dms(value):
@@ -351,7 +237,7 @@ def fmt_dms(value):
     if minute == 60:
         minute = 0
         deg += 1
-    return f"{deg:2d}{DS}{minute:2}'{sec:2}{DQ}"
+    return f'{deg:2d}{DS}{minute:2}\'{sec:2}"'
 
 
 def fmt_dm(value, noz=False, degree_digits=2):
@@ -461,3 +347,30 @@ def angularity_activates_ingress(orb: float, angle: str) -> bool:
     if angle.strip() in ['A', 'D', 'M', 'I']:
         return orb <= 3.0
     return orb <= 2.0
+
+
+def make_chart_path(chart, temporary):
+    ingress = (
+        True
+        if chart['type'][0:3] in ['Ari', 'Can', 'Lib', 'Cap']
+        or not chart['name']
+        else False
+    )
+    if ingress:
+        first = f"{chart['year']}-{chart['month']}-{chart['day']}"
+        second = chart['location']
+        third = chart['type']
+    else:
+        first = chart['name']
+        index = first.find(';')
+        if index > -1:
+            first = first[0:index]
+        second = f"{chart['year']}-{chart['month']:02d}-{chart['day']:02d}"
+        third = chart['type']
+    filename = f'{first}~{second}~{third}.dat'
+    if ingress:
+        filepath = f"{chart['year']}\\{filename}"
+    else:
+        filepath = f'{first[0]}\\{first}\\{filename}'
+    path = TEMP_CHARTS if temporary else CHART_PATH
+    return os.path.abspath(os.path.join(path, filepath))

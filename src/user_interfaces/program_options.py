@@ -8,17 +8,23 @@
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
 import json
+import os
 import random
+import sys
 import tkinter.colorchooser as tkcolorchooser
 
 import anglicize
 import us
 from geopy import Nominatim
 
+from src import (BG_COLOR, BTN_COLOR, COLOR_FILE, DATA_ENTRY_FILE, DATE_FMT,
+                 ERR_COLOR, HELP_PATH, HOME_LOC, HOME_LOC_FILE, LOCATIONS_FILE,
+                 STUDENT_FILE, TIME_FMT, TXT_COLOR)
 from src.constants import DQ, DS, VERSION
-from src.program_launch import *
 from src.user_interfaces.locations import Locations
-from src.user_interfaces.widgets import *
+from src.user_interfaces.widgets import (Button, Entry, Frame, Label,
+                                         Radiobutton, Radiogroup, check_num,
+                                         delay, tk)
 from src.utils.format_utils import normalize_text
 from src.utils.gui_utils import ShowHelp
 

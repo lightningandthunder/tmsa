@@ -13,10 +13,9 @@ import tkinter.messagebox as tkmessagebox
 import traceback
 from tkinter.font import Font as tkFont
 
-from PIL import ImageTk
-
+from src import BG_COLOR, BTN_COLOR, ERR_COLOR, ERROR_FILE, TXT_COLOR
 from src.constants import PLATFORM, VERSION
-from src.program_launch import *
+from src.utils.os_utils import app_path
 
 main = tk.Tk()
 main.minsize(800, 600)
@@ -101,12 +100,6 @@ elif PLATFORM == 'darwin':
 
     title_font = root_font.copy()
     title_font.configure(size=36, weight='bold')
-
-# background = ImageTk.PhotoImage(file=app_path(os.path.join('assets', 'tmsa2.png')), size=1)
-# background_label = tk.Label(main, image=background)
-# background_label.place(x=0, y=0, relwidth=1,relheight=1)
-
-# background_label.image = background
 
 
 def on_exit():

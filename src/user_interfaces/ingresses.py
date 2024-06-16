@@ -7,8 +7,11 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
+import json
+import os
 import random
 import tkinter.filedialog as tkfiledialog
+import tkinter.messagebox as tkmessagebox
 from copy import deepcopy
 from datetime import datetime as dt
 
@@ -16,15 +19,19 @@ import anglicize
 import us
 from geopy import Nominatim
 
+from src import (CHART_PATH, DATE_FMT, HELP_PATH, HOME_LOC, LOCATIONS_FILE,
+                 OPTION_PATH, RECENT_FILE, TIME_FMT)
 from src.constants import DQ, DS, MONTHS, VERSION
-from src.program_launch import *
-from src.swe import *
+from src.swe import calc_moon_crossing, calc_sun_crossing, julday, revjul
 from src.user_interfaces.chart import Chart
 from src.user_interfaces.locations import Locations
 from src.user_interfaces.more_charts import MoreCharts
-from src.user_interfaces.widgets import *
-from src.utils.format_utils import display_name, normalize_text, open_file
+from src.user_interfaces.widgets import (Button, Checkbutton, Entry, Frame,
+                                         Label, Radiobutton, Radiogroup,
+                                         check_num, check_snum, delay, tk)
+from src.utils.format_utils import display_name, normalize_text
 from src.utils.gui_utils import ShowHelp
+from src.utils.os_utils import open_file
 
 
 class Ingresses(Frame):
@@ -161,7 +168,9 @@ class Ingresses(Frame):
         )
         Button(self, 'Help', 0.5, 0.8, 0.2).bind(
             '<Button-1>',
-            lambda _: delay(ShowHelp, HELP_PATH + r'\ingresses.txt'),
+            lambda _: delay(
+                ShowHelp, os.path.join(HELP_PATH, 'ingresses.txt')
+            ),
         )
         Button(self, 'Back', 0.7, 0.8, 0.20).bind(
             '<Button-1>', lambda _: delay(self.destroy)

@@ -7,11 +7,16 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
+import json
+import os
 import tkinter.filedialog as tkfiledialog
+import tkinter.messagebox as tkmessagebox
 
-from src.program_launch import *
+from src import HELP_PATH, OPTION_PATH
 from src.user_interfaces.midpoint_options import MidpointOptions
-from src.user_interfaces.widgets import *
+from src.user_interfaces.widgets import (Button, Checkbutton, Entry, Frame,
+                                         Label, Radiobutton, Radiogroup,
+                                         check_dec, delay, tk)
 from src.utils.format_utils import normalize_text
 from src.utils.gui_utils import ShowHelp
 

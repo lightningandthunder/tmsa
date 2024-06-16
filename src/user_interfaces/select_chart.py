@@ -11,15 +11,17 @@ import json
 import os
 import shutil
 import tkinter.filedialog as tkfiledialog
+import tkinter.messagebox as tkmessagebox
 
-from src.program_launch import *
-from src.user_interfaces.chart import Chart
+from src import CHART_PATH, HELP_PATH, RECENT_FILE
 from src.user_interfaces.more_charts import MoreCharts
 from src.user_interfaces.new_chart import NewChart
 from src.user_interfaces.solunars import Solunars
-from src.user_interfaces.widgets import *
-from src.utils.format_utils import display_name, open_file
+from src.user_interfaces.widgets import Button, Frame, Label, delay, ulfont
+from src.utils.chart_utils import make_chart_path
+from src.utils.format_utils import display_name
 from src.utils.gui_utils import ShowHelp
+from src.utils.os_utils import open_file
 
 
 class SelectChart(Frame):
@@ -53,7 +55,9 @@ class SelectChart(Frame):
         )
         Button(self, 'Help', 0.3, 0.25, 0.2).bind(
             '<Button-1>',
-            lambda _: delay(ShowHelp, HELP_PATH + r'\selectchart.txt'),
+            lambda _: delay(
+                ShowHelp, os.path.join(HELP_PATH, 'selectchart.txt')
+            ),
         )
         self.last = Button(self, 'Back', 0.5, 0.25, 0.2)
         self.last.bind('<Button-1>', lambda _: delay(self.destroy))

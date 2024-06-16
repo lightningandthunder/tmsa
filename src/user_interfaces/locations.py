@@ -9,9 +9,9 @@
 
 import json
 
-from src.program_launch import *
-from src.user_interfaces.widgets import *
-from src.utils.chart_utils import *
+from src import LOCATIONS_FILE
+from src.user_interfaces.widgets import Button, Frame, Label, delay, ulfont
+from src.utils.chart_utils import fmt_lat, fmt_long
 
 
 class Locations(Frame):

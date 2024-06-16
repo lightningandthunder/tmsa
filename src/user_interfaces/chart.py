@@ -7,11 +7,17 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
-from src.program_launch import *
-from src.swe import *
+import json
+import os
+import tkinter.messagebox as tkmessagebox
+
+from src import OPTION_PATH, RECENT_FILE
+from src.swe import (calc_ayan, calc_azimuth, calc_cusps, calc_house_pos,
+                     calc_lat_to_lmt, calc_meridian_longitude, calc_obliquity,
+                     calc_planet, cotrans, julday)
 from src.user_interfaces.biwheelV2 import BiwheelV2
 from src.user_interfaces.uniwheelV2 import UniwheelV2
-from src.user_interfaces.widgets import *
+from src.utils.chart_utils import make_chart_path
 from src.utils.format_utils import to360
 
 planet_names = [

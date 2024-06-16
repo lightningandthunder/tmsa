@@ -11,6 +11,7 @@ import json
 import os
 import random
 import tkinter.filedialog as tkfiledialog
+import tkinter.messagebox as tkmessagebox
 from datetime import datetime as dt
 
 import anglicize
@@ -19,19 +20,14 @@ import us
 from geopy import Nominatim
 from timezonefinder import TimezoneFinder
 
-from src.constants import (
-    DQ,
-    DS,
-    LABEL_HEIGHT_UNIT,
-    LABEL_WIDTH,
-    LABEL_X_COORD,
-    MONTHS,
-    VERSION,
-)
-from src.program_launch import *
+from src import (DATE_FMT, HELP_PATH, HOME_LOC, LOCATIONS_FILE, OPTION_PATH,
+                 STUDENT_FILE, TIME_FMT)
+from src.constants import DS, MONTHS, VERSION
 from src.user_interfaces.chart import Chart
 from src.user_interfaces.locations import Locations
-from src.user_interfaces.widgets import *
+from src.user_interfaces.widgets import (Button, Checkbutton, Entry, Frame,
+                                         Label, Radiobutton, Radiogroup,
+                                         check_num, check_snum, delay, tk)
 from src.utils.format_utils import normalize_text
 from src.utils.gui_utils import ShowHelp
 
@@ -144,7 +140,7 @@ class NewChart(Frame):
         )
         Button(self, 'Help', 0.5, 0.7, 0.2).bind(
             '<Button-1>',
-            lambda _: delay(ShowHelp, HELP_PATH + r'\newchart.txt'),
+            lambda _: delay(ShowHelp, os.path.join(HELP_PATH, 'newchart.txt')),
         )
         Button(self, 'Back', 0.7, 0.7, 0.20).bind(
             '<Button-1>', lambda _: delay(self.destroy)
@@ -836,7 +832,7 @@ class NewChart(Frame):
             return self.status.error('Latitude must be numeric.', self.latd)
         if lat < 0 or lat > 89.99:
             return self.status.error(
-                f"Latitude must be between 0{DS} and 89{DS}59'59{DQ}.",
+                f'Latitude must be between 0{DS} and 89{DS}59\'59".',
                 self.latd,
             )
         if self.latdir.value == 1:
