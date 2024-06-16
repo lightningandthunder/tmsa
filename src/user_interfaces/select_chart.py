@@ -11,6 +11,7 @@ import json
 import os
 import shutil
 import tkinter.filedialog as tkfiledialog
+import tkinter.messagebox as tkmessagebox
 
 from chart import Chart
 from gui_utils import ShowHelp
@@ -53,7 +54,9 @@ class SelectChart(Frame):
         )
         Button(self, 'Help', 0.3, 0.25, 0.2).bind(
             '<Button-1>',
-            lambda _: delay(ShowHelp, HELP_PATH + r'\selectchart.txt'),
+            lambda _: delay(
+                ShowHelp, os.path.join(HELP_PATH, 'selectchart.txt')
+            ),
         )
         self.last = Button(self, 'Back', 0.5, 0.25, 0.2)
         self.last.bind('<Button-1>', lambda _: delay(self.destroy))

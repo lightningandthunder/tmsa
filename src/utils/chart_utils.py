@@ -8,6 +8,7 @@
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
 import math
+import os
 
 from init import *
 from user_interfaces.widgets import *
@@ -317,7 +318,7 @@ def fmt_lat(value, nosec=False):
         minute = 0
     if nosec:
         return f'{deg:2d}{sym}{minute:2d}'
-    return f"{deg:2d}{sym}{minute:2d}'{sec:2d}{DQ}"
+    return f'{deg:2d}{sym}{minute:2d}\'{sec:2d}"'
 
 
 def fmt_long(value):
@@ -336,7 +337,7 @@ def fmt_long(value):
     if minute == 60:
         deg += 1
         minute = 0
-    return f"{deg:3d}{sym}{minute:2d}'{sec:2d}{DQ}"
+    return f'{deg:3d}{sym}{minute:2d}\'{sec:2d}"'
 
 
 def fmt_dms(value):
@@ -351,7 +352,7 @@ def fmt_dms(value):
     if minute == 60:
         minute = 0
         deg += 1
-    return f"{deg:2d}{DS}{minute:2}'{sec:2}{DQ}"
+    return f'{deg:2d}{DS}{minute:2}\'{sec:2}"'
 
 
 def fmt_dm(value, noz=False, degree_digits=2):
@@ -461,3 +462,30 @@ def angularity_activates_ingress(orb: float, angle: str) -> bool:
     if angle.strip() in ['A', 'D', 'M', 'I']:
         return orb <= 3.0
     return orb <= 2.0
+
+
+def make_chart_path(chart, temporary):
+    ingress = (
+        True
+        if chart['type'][0:3] in ['Ari', 'Can', 'Lib', 'Cap']
+        or not chart['name']
+        else False
+    )
+    if ingress:
+        first = f"{chart['year']}-{chart['month']}-{chart['day']}"
+        second = chart['location']
+        third = chart['type']
+    else:
+        first = chart['name']
+        index = first.find(';')
+        if index > -1:
+            first = first[0:index]
+        second = f"{chart['year']}-{chart['month']:02d}-{chart['day']:02d}"
+        third = chart['type']
+    filename = f'{first}~{second}~{third}.dat'
+    if ingress:
+        filepath = f"{chart['year']}\\{filename}"
+    else:
+        filepath = f'{first[0]}\\{first}\\{filename}'
+    path = TEMP_CHARTS if temporary else CHART_PATH
+    return os.path.abspath(os.path.join(path, filepath))

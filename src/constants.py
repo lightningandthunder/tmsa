@@ -7,7 +7,10 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
+import os
 import sys
+
+VERSION = '0.6.0a0'
 
 DS = '\N{DEGREE SIGN}'
 DQ = '"'
@@ -26,6 +29,12 @@ match sys.platform:
         PLATFORM = 'darwin'
     case _:
         raise RuntimeError(f'Unsupported architecture {sys.platform}')
+
+if getattr(sys, 'frozen', False):
+    APP_PATH = os.path.dirname(sys.executable)
+else:
+    APP_PATH = os.path.dirname(os.path.abspath(__file__))
+
 
 LABEL_X_COORD = 0
 LABEL_WIDTH = 1

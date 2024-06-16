@@ -7,7 +7,10 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
+import json
+import os
 import tkinter.filedialog as tkfiledialog
+import tkinter.messagebox as tkmessagebox
 
 from gui_utils import ShowHelp
 from init import *

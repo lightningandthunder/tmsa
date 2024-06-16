@@ -11,6 +11,7 @@ import json
 import os
 import random
 import tkinter.filedialog as tkfiledialog
+import tkinter.messagebox as tkmessagebox
 from copy import deepcopy
 from datetime import datetime as dt
 
@@ -169,7 +170,7 @@ class Solunars(Frame):
         )
         Button(self, 'Help', 0.5, 0.8, 0.2).bind(
             '<Button-1>',
-            lambda _: delay(ShowHelp, HELP_PATH + r'\solunars.txt'),
+            lambda _: delay(ShowHelp, os.path.join(HELP_PATH, 'solunars.txt')),
         )
         backbtn = Button(self, 'Back', 0.7, 0.8, 0.20)
         backbtn.bind('<Button-1>', lambda _: delay(self.back))
