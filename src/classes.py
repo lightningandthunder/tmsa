@@ -4,6 +4,7 @@ from enum import Enum
 from typing import TypeVar
 
 from src import log_error, swe
+from src.utils.chart_utils import fmt_dm
 from src.utils.format_utils import to360
 
 T = TypeVar('T', bound='ChartObject')
@@ -334,9 +335,10 @@ class Aspect:
         return self
 
     def __str__(self):
-        # TODO - not sure if all of this is right
+        # This will read something like this:
+        # t.Ur co r.Su 1°23' 95% M
         return (
             f'{self.planet1_role}{self.planet1_short_name} '
             f'{self.type.value} {self.planet2_role}{self.planet2_short_name} '
-            f'{self.strength:.2f} {self.framework.value}'
+            f'{fmt_dm(abs(self.orb))} {self.strength:.2f} {self.framework.value}'
         ).strip()
