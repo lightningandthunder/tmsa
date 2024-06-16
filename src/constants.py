@@ -30,3 +30,18 @@ match sys.platform:
 LABEL_X_COORD = 0
 LABEL_WIDTH = 1
 LABEL_HEIGHT_UNIT = 0.022
+
+MONTHS = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+]

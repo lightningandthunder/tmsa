@@ -247,7 +247,7 @@ class ProgramOptions(Frame):
         geolocator = Nominatim(
             user_agent=f'Time Matters {VERSION} {random.randrange(0, 100000):05d}'
         )
-        self.loc.text = normalize(self.loc.text)
+        self.loc.text = normalize_text(self.loc.text)
         try:
             location = geolocator.geocode(self.loc.text)
         except Exception:
@@ -411,7 +411,7 @@ class ProgramOptions(Frame):
             )
         if self.longdir.value == 1:
             long = -long
-        loc = [normalize(self.loc.text, True), lat, long]
+        loc = [normalize_text(self.loc.text, True), lat, long]
         try:
             with open(HOME_LOC_FILE, 'w') as datafile:
                 json.dump(loc, datafile, indent=4)

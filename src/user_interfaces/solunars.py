@@ -382,7 +382,7 @@ class Solunars(Frame):
         geolocator = Nominatim(
             user_agent=f'Time Matters {VERSION} {random.randrange(0, 100000):05d}'
         )
-        self.loc.text = normalize(self.loc.text)
+        self.loc.text = normalize_text(self.loc.text)
         try:
             location = geolocator.geocode(self.loc.text)
         except Exception as e:
@@ -518,13 +518,13 @@ class Solunars(Frame):
         if self.old.checked and y > 1582:
             if not tkmessagebox.askyesno(
                 'Are you sure?',
-                f'Is {d} {month_abrev[m -1]} {z} old style (Julian)?',
+                f'Is {d} {MONTHS[m -1]} {z} old style (Julian)?',
             ):
                 return
         elif not self.old.checked and y <= 1582:
             if not tkmessagebox.askyesno(
                 'Are you sure?',
-                f'Is {d} {month_abrev[m -1]} {z} new style (Gregorian)?',
+                f'Is {d} {MONTHS[m -1]} {z} new style (Gregorian)?',
             ):
                 return
         chart['style'] = 0 if self.old.checked else 1
@@ -564,7 +564,7 @@ class Solunars(Frame):
             if self.tmfmt.value == 1:
                 time += 12
         chart['time'] = time
-        chart['location'] = normalize(self.loc.text)
+        chart['location'] = normalize_text(self.loc.text)
         if not chart['location']:
             return self.status.error('Location must be specified.', self.loc)
         try:
@@ -598,7 +598,7 @@ class Solunars(Frame):
         if self.longdir.value == 1:
             long = -long
         chart['longitude'] = long
-        chart['notes'] = normalize(self.notes.text, True)
+        chart['notes'] = normalize_text(self.notes.text, True)
         chart['options'] = self.options.text.strip()
         chart['base_chart'] = self.base
         solunars = []

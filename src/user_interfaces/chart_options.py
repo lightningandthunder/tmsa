@@ -167,7 +167,7 @@ class ChartOptions(Frame):
         backbtn = Button(self, 'Back', 0.6, 0.95, 0.2)
         backbtn.bind('<Button-1>', lambda _: delay(self.destroy))
         backbtn.bind('<Tab>', lambda _: delay(self.optfile.focus))
-        optfile = normalize(optname).replace(' ', '_') + '.opt'
+        optfile = normalize_text(optname).replace(' ', '_') + '.opt'
         self.optpath = os.path.join(OPTION_PATH, optfile)
         self.load(self.optpath)
         if istemp:
