@@ -9,10 +9,11 @@
 
 import tkinter.filedialog as tkfiledialog
 
-from init import *
-from src.gui_utils import ShowHelp
+from src.program_launch import *
+from src.utils.gui_utils import ShowHelp
 from src.user_interfaces.midpoint_options import MidpointOptions
 from src.user_interfaces.widgets import *
+from src.utils.format_utils import normalize_text
 
 
 class ChartOptions(Frame):
@@ -167,7 +168,7 @@ class ChartOptions(Frame):
         backbtn = Button(self, 'Back', 0.6, 0.95, 0.2)
         backbtn.bind('<Button-1>', lambda _: delay(self.destroy))
         backbtn.bind('<Tab>', lambda _: delay(self.optfile.focus))
-        optfile = normalize(optname).replace(' ', '_') + '.opt'
+        optfile = normalize_text(optname).replace(' ', '_') + '.opt'
         self.optpath = os.path.join(OPTION_PATH, optfile)
         self.load(self.optpath)
         if istemp:

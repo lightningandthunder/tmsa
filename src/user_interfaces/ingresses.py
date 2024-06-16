@@ -16,15 +16,15 @@ import anglicize
 import us
 from geopy import Nominatim
 
-from src.constants import DQ, DS, VERSION
-from src.gui_utils import ShowHelp
-from src.init import *
+from src.constants import DQ, DS, MONTHS, VERSION
+from src.utils.gui_utils import ShowHelp
+from src.program_launch import *
 from src.swe import *
 from src.user_interfaces.chart import Chart
 from src.user_interfaces.locations import Locations
 from src.user_interfaces.more_charts import MoreCharts
 from src.user_interfaces.widgets import *
-from src.utils.format_utils import display_name, open_file
+from src.utils.format_utils import display_name, normalize_text, open_file
 
 
 class Ingresses(Frame):
@@ -412,7 +412,7 @@ class Ingresses(Frame):
         geolocator = Nominatim(
             user_agent=f'Time Matters {VERSION} {random.randrange(0, 100000):05d}'
         )
-        self.loc.text = normalize(self.loc.text)
+        self.loc.text = normalize_text(self.loc.text)
         try:
             location = geolocator.geocode(self.loc.text)
         except Exception as e:
@@ -517,7 +517,7 @@ class Ingresses(Frame):
         self.findbtn.disabled = True
         chart = {}
         self.status.text = ''
-        chart['location'] = normalize(self.loc.text) or 'Undisclosed'
+        chart['location'] = normalize_text(self.loc.text) or 'Undisclosed'
         try:
             lat = (
                 int(self.latd.text)
@@ -581,13 +581,13 @@ class Ingresses(Frame):
         if self.old.checked and y > 1582:
             if not tkmessagebox.askyesno(
                 'Are you sure?',
-                f'Is {d} {month_abrev[m -1]} {z} old style (Julian)?',
+                f'Is {d} {MONTHS[m -1]} {z} old style (Julian)?',
             ):
                 return
         elif not self.old.checked and y <= 1582:
             if not tkmessagebox.askyesno(
                 'Are you sure?',
-                f'Is {d} {month_abrev[m -1]} {z} new style (Gregorian)?',
+                f'Is {d} {MONTHS[m -1]} {z} new style (Gregorian)?',
             ):
                 return
         try:
@@ -627,7 +627,7 @@ class Ingresses(Frame):
                 time += 12
         chart['time'] = time
         chart['style'] = 0 if self.old.checked else 1
-        chart['notes'] = normalize(self.notes.text, True)
+        chart['notes'] = normalize_text(self.notes.text, True)
         chart['options'] = self.options.text.strip()
         ingresses = []
         if self.capsolar.checked:

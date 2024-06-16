@@ -10,9 +10,9 @@
 import math
 from datetime import datetime
 
-from src.chart_utils import *
+from src.utils.chart_utils import *
 from src.classes import ChartObject
-from src.constants import VERSION
+from src.constants import MONTHS, VERSION
 from src.utils.format_utils import open_file
 
 
@@ -560,7 +560,7 @@ class CoreChartWheel:
         if chtype.endswith(' Single Wheel'):
             chtype = chtype.replace(' Single Wheel', '')
         chart_grid[23][18:51] = center_align(chtype)
-        line = str(chart['day']) + ' ' + month_abrev[chart['month'] - 1] + ' '
+        line = str(chart['day']) + ' ' + MONTHS[chart['month'] - 1] + ' '
         line += (
             f"{chart['year']} "
             if chart['year'] > 0

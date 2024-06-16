@@ -11,8 +11,8 @@ import math
 import os
 from datetime import datetime
 
-from chart_utils import *
-from constants import VERSION
+from src.utils.chart_utils import *
+from constants import MONTHS, VERSION
 from src.utils.format_utils import open_file
 
 
@@ -100,7 +100,7 @@ class Uniwheel:
                 chtype = chtype.replace(' Single Wheel', '')
             chart_grid[23][18:51] = center_align(chtype)
             line = (
-                str(chart['day']) + ' ' + month_abrev[chart['month'] - 1] + ' '
+                str(chart['day']) + ' ' + MONTHS[chart['month'] - 1] + ' '
             )
             line += (
                 f"{chart['year']} "

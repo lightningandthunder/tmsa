@@ -16,7 +16,7 @@ from tkinter.font import Font as tkFont
 from PIL import ImageTk
 
 from src.constants import PLATFORM, VERSION
-from src.init import *
+from src.program_launch import *
 
 main = tk.Tk()
 main.minsize(800, 600)

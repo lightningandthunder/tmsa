@@ -9,7 +9,7 @@
 
 import math
 
-from src.init import *
+from src.program_launch import *
 from src.user_interfaces.widgets import *
 
 SIGNS_SHORT = [

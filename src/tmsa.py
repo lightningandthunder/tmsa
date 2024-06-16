@@ -19,8 +19,8 @@ from src.constants import (
     LABEL_X_COORD,
     VERSION,
 )
-from src.gui_utils import ShowHelp, newline_if_past_breakpoint
-from src.init import *
+from src.utils.gui_utils import ShowHelp, newline_if_past_breakpoint
+from src.program_launch import *
 from src.user_interfaces.chart_options import ChartOptions
 from src.user_interfaces.ingresses import Ingresses
 from src.user_interfaces.new_chart import NewChart

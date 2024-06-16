@@ -19,19 +19,21 @@ import us
 from geopy import Nominatim
 from timezonefinder import TimezoneFinder
 
-from gui_utils import ShowHelp
+from src.utils.gui_utils import ShowHelp
 from src.constants import (
     DQ,
     DS,
     LABEL_HEIGHT_UNIT,
     LABEL_WIDTH,
     LABEL_X_COORD,
+    MONTHS,
     VERSION,
 )
-from src.init import *
+from src.program_launch import *
 from src.user_interfaces.chart import Chart
 from src.user_interfaces.locations import Locations
 from src.user_interfaces.widgets import *
+from src.utils.format_utils import normalize_text
 
 
 class NewChart(Frame):
@@ -243,13 +245,13 @@ class NewChart(Frame):
         if self.old.checked and y > 1582:
             if not tkmessagebox.askyesno(
                 'Are you sure?',
-                f'Is {d} {month_abrev[m -1]} {z} old style (Julian)?',
+                f'Is {d} {MONTHS[m -1]} {z} old style (Julian)?',
             ):
                 return False
         elif not self.old.checked and y <= 1582:
             if not tkmessagebox.askyesno(
                 'Are you sure?',
-                f'Is {d} {month_abrev[m -1]} {z} new style (Gregorian)?',
+                f'Is {d} {MONTHS[m -1]} {z} new style (Gregorian)?',
             ):
                 return False
         time = hour + min / 60 + sec / 3600
@@ -431,7 +433,7 @@ class NewChart(Frame):
         geolocator = Nominatim(
             user_agent=f'Time Matters {VERSION} {random.randrange(0, 100000):05d}'
         )
-        self.loc.text = normalize(self.loc.text)
+        self.loc.text = normalize_text(self.loc.text)
         try:
             location = geolocator.geocode(self.loc.text)
         except Exception:
@@ -725,8 +727,8 @@ class NewChart(Frame):
     def calculate(self, chart):
         self.status.text = ''
         self.findbtn.disabled = False
-        fn = normalize(self.fne.text)
-        ln = normalize(self.lne.text)
+        fn = normalize_text(self.fne.text)
+        ln = normalize_text(self.lne.text)
         if fn and ln:
             name = ln + ', ' + fn
         else:
@@ -736,7 +738,7 @@ class NewChart(Frame):
         if self.suffix:
             name += f';{self.suffix}'
         chart['name'] = name
-        ctype = normalize(self.ctype.text)
+        ctype = normalize_text(self.ctype.text)
         if not ctype:
             return self.status.error(
                 'Chart type must be specified.', self.ctype
@@ -775,13 +777,13 @@ class NewChart(Frame):
         if self.old.checked and y > 1582:
             if not tkmessagebox.askyesno(
                 'Are you sure?',
-                f'Is {d} {month_abrev[m -1]} {z} old style (Julian)?',
+                f'Is {d} {MONTHS[m -1]} {z} old style (Julian)?',
             ):
                 return
         elif not self.old.checked and y <= 1582:
             if not tkmessagebox.askyesno(
                 'Are you sure?',
-                f'Is {d} {month_abrev[m -1]} {z} new style (Gregorian)?',
+                f'Is {d} {MONTHS[m -1]} {z} new style (Gregorian)?',
             ):
                 return
         chart['style'] = 0 if self.old.checked else 1
@@ -821,7 +823,7 @@ class NewChart(Frame):
             if self.tmfmt.value == 1:
                 time += 12
         chart['time'] = time
-        chart['location'] = normalize(self.loc.text)
+        chart['location'] = normalize_text(self.loc.text)
         if not chart['location']:
             return self.status.error('Location must be specified.', self.loc)
         try:
@@ -856,7 +858,7 @@ class NewChart(Frame):
             long = -long
         chart['longitude'] = long
         self.save_location(chart)
-        zone = normalize(self.tz.text) or 'UT'
+        zone = normalize_text(self.tz.text) or 'UT'
         chart['zone'] = zone
         if zone.upper() in ['LMT', 'LAT']:
             value = chart['longitude'] / 15
@@ -896,7 +898,7 @@ class NewChart(Frame):
         if self.tzcdir.value == 0:
             tzcorr = -tzcorr
         chart['correction'] = tzcorr
-        chart['notes'] = normalize(self.notes.text, True)
+        chart['notes'] = normalize_text(self.notes.text, True)
         chart['options'] = self.options.text.strip() or 'Default Natal'
         Chart(chart, self.istemp.value).report.show()
 

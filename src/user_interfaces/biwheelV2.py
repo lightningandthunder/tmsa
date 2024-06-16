@@ -12,7 +12,8 @@ import math
 from copy import deepcopy
 from datetime import datetime
 
-from src.chart_utils import *
+from src.utils.chart_utils import *
+from src.constants import MONTHS
 from src.utils.format_utils import open_file
 
 
@@ -92,7 +93,7 @@ class BiwheelV2:
                 chart_grid[20][18:51] = center_align(parts[0])
             chart_grid[21][18:51] = center_align(chart['type'])
             line = (
-                str(chart['day']) + ' ' + month_abrev[chart['month'] - 1] + ' '
+                str(chart['day']) + ' ' + MONTHS[chart['month'] - 1] + ' '
             )
             line += (
                 f"{chart['year']} "
@@ -136,7 +137,7 @@ class BiwheelV2:
                 chtype = chtype.replace(' Single Wheel', '')
             chart_grid[35][18:51] = center_align(chtype)
             line = (
-                str(radix['day']) + ' ' + month_abrev[radix['month'] - 1] + ' '
+                str(radix['day']) + ' ' + MONTHS[radix['month'] - 1] + ' '
             )
             line += (
                 f"{radix['year']} "

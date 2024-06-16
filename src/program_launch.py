@@ -35,30 +35,15 @@ def copy_file_if_not_exists(expected: str, src: str):
         shutil.copyfile(src, expected)
 
 
-month_abrev = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-]
-
 EPHE_PATH = app_path('ephe')
 HELP_PATH = app_path('help')
 
 if PLATFORM == 'Win32GUI':
-    d1 = os.path.expanduser(r'~\Documents')
+    primary_directory = os.path.expanduser(r'~\Documents')
 elif PLATFORM == 'linux':
-    d1 = os.path.join('/var', 'lib', 'tmsa')
+    primary_directory = os.path.join('/var', 'lib', 'tmsa')
 elif PLATFORM == 'darwin':
-    d1 = os.path.join(os.path.expanduser('~'), 'Documents')
+    primary_directory = os.path.join(os.path.expanduser('~'), 'Documents')
 
 # Originally...
 # DLL_PATH = app_path(r"..\dll\swedll32.dll")
@@ -70,10 +55,10 @@ elif PLATFORM == 'linux':
 elif PLATFORM == 'darwin':
     DLL_PATH = app_path(os.path.join('dll', 'libswe.dylib'))
 
-if os.path.exists(d1):
-    d1 = os.path.expandvars(d1)
+if os.path.exists(primary_directory):
+    primary_directory = os.path.expandvars(primary_directory)
 else:
-    d1 = None
+    primary_directory = None
 
 if PLATFORM == 'Win32GUI':
     import winreg
@@ -86,19 +71,19 @@ if PLATFORM == 'Win32GUI':
         try:
             r = winreg.EnumValue(key, i)
             if r[0] == 'Personal':
-                d2 = r[1]
+                secondary_directory = r[1]
                 break
         except:
-            d2 = None
+            secondary_directory = None
     key.Close()
-    if d2:
-        d2 = os.path.expandvars(d2)
-        if os.path.exists(d2):
-            docpath = d2
+    if secondary_directory:
+        secondary_directory = os.path.expandvars(secondary_directory)
+        if os.path.exists(secondary_directory):
+            docpath = secondary_directory
         else:
-            d2 = None
-    elif d1:
-        docpath = d1
+            secondary_directory = None
+    elif primary_directory:
+        docpath = primary_directory
     else:
         docpath = 'c:\\'
     CHART_PATH = os.path.join(docpath, 'tmsa', 'charts')
@@ -114,6 +99,10 @@ if PLATFORM == 'Win32GUI':
 
 elif PLATFORM == 'linux':
     import shutil
+
+    # Set umask to 0o022 to give 755 permissions for directories 
+    # and 644 for files by default
+    os.umask(0o022)
 
     CHART_PATH = os.path.join('/var', 'lib', 'tmsa', 'charts')
     create_directory(CHART_PATH)
@@ -151,14 +140,14 @@ elif PLATFORM == 'linux':
 elif PLATFORM == 'darwin':
     import shutil
 
-    CHART_PATH = os.path.join(d1, 'tmsa', 'charts')
+    CHART_PATH = os.path.join(primary_directory, 'tmsa', 'charts')
     os.makedirs(CHART_PATH, exist_ok=True)
     TEMP_CHARTS = os.path.join(CHART_PATH, 'temporary')
 
-    ERROR_FILE = os.path.join(d1, 'tmsa', 'logs', 'error.txt')
+    ERROR_FILE = os.path.join(primary_directory, 'tmsa', 'logs', 'error.txt')
     os.makedirs(os.path.dirname(ERROR_FILE), exist_ok=True)
 
-    OPTION_PATH = os.path.join(d1, 'tmsa', 'options')
+    OPTION_PATH = os.path.join(primary_directory, 'tmsa', 'options')
     os.makedirs(OPTION_PATH, exist_ok=True)
 
     copy_file_if_not_exists(
@@ -271,32 +260,6 @@ if os.path.exists(HOME_LOC_FILE):
         HOME_LOC = None
 else:
     HOME_LOC = None
-
-
-def normalize(text, nocap=False, maxlen=33):
-    text = text.strip()
-    cap = True
-    spok = True
-    result = ''
-    for ch in text:
-        if ch.isalpha():
-            if cap and not nocap:
-                result += ch.upper()
-                cap = False
-            else:
-                result += ch
-            spok = True
-        elif ch.isspace() and spok:
-            result += ' '
-            spok = False
-            cap = True
-        elif ch not in ':\\?*"/<>|~;':
-            result += ch
-            cap = True
-            spok = True
-    if len(result) > maxlen:
-        result = result[0 : len(result) - maxlen]
-    return result
 
 
 def make_chart_path(chart, temporary):

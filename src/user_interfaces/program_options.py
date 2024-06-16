@@ -16,10 +16,11 @@ import us
 from geopy import Nominatim
 
 from src.constants import DQ, DS, VERSION
-from src.gui_utils import ShowHelp
-from src.init import *
+from src.utils.gui_utils import ShowHelp
+from src.program_launch import *
 from src.user_interfaces.locations import Locations
 from src.user_interfaces.widgets import *
+from src.utils.format_utils import normalize_text
 
 
 class ProgramOptions(Frame):
@@ -247,7 +248,7 @@ class ProgramOptions(Frame):
         geolocator = Nominatim(
             user_agent=f'Time Matters {VERSION} {random.randrange(0, 100000):05d}'
         )
-        self.loc.text = normalize(self.loc.text)
+        self.loc.text = normalize_text(self.loc.text)
         try:
             location = geolocator.geocode(self.loc.text)
         except Exception:
@@ -411,7 +412,7 @@ class ProgramOptions(Frame):
             )
         if self.longdir.value == 1:
             long = -long
-        loc = [normalize(self.loc.text, True), lat, long]
+        loc = [normalize_text(self.loc.text, True), lat, long]
         try:
             with open(HOME_LOC_FILE, 'w') as datafile:
                 json.dump(loc, datafile, indent=4)

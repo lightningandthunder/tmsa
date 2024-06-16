@@ -1,24 +1,31 @@
 import math
 import os
-import shutil
-import subprocess
-from tkinter.font import Font as tkFont
-
-from src.constants import PLATFORM
-from src.user_interfaces.widgets import base_font
 
 
-
-def get_scaled_font(width: int, breakpoint: int) -> tkFont:
-    font_size = (
-        18 if width > breakpoint else math.floor(18 * (width / breakpoint))
-    )
-
-    return (
-        base_font
-        if font_size == 18
-        else tkFont(family='Lucida Console', size=font_size, weight='normal')
-    )
+def normalize_text(text, nocap=False, maxlen=33):
+    text = text.strip()
+    cap = True
+    spok = True
+    result = ''
+    for ch in text:
+        if ch.isalpha():
+            if cap and not nocap:
+                result += ch.upper()
+                cap = False
+            else:
+                result += ch
+            spok = True
+        elif ch.isspace() and spok:
+            result += ' '
+            spok = False
+            cap = True
+        elif ch not in ':\\?*"/<>|~;':
+            result += ch
+            cap = True
+            spok = True
+    if len(result) > maxlen:
+        result = result[0 : len(result) - maxlen]
+    return result
 
 
 def to360(value):

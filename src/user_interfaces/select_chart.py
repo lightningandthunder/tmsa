@@ -12,8 +12,8 @@ import os
 import shutil
 import tkinter.filedialog as tkfiledialog
 
-from src.gui_utils import ShowHelp
-from src.init import *
+from src.utils.gui_utils import ShowHelp
+from src.program_launch import *
 from src.user_interfaces.chart import Chart
 from src.user_interfaces.more_charts import MoreCharts
 from src.user_interfaces.new_chart import NewChart
