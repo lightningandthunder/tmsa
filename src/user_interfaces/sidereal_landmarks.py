@@ -9,7 +9,7 @@
 
 
 from src.constants import LABEL_HEIGHT_UNIT, LABEL_WIDTH, LABEL_X_COORD
-from src.init import *
+from src.program_launch import *
 from src.user_interfaces.widgets import *
 
 # https://stackoverflow.com/questions/71677889/create-a-scrollbar-to-a-full-window-tkinter-in-python
