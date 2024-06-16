@@ -3,7 +3,9 @@ import os
 import pwd
 import shutil
 import subprocess
+
 from src.constants import PLATFORM
+
 
 def create_directory(path):
     os.makedirs(path, exist_ok=True)
@@ -42,5 +44,5 @@ def drop_privileges():
             os.setgid(target_gid)
             os.setuid(target_uid)
     except Exception as e:
-        print(f"Failed to drop privileges: {e}")
+        print(f'Failed to drop privileges: {e}')
         exit(1)

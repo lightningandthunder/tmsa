@@ -375,7 +375,7 @@ class NewChart(Frame):
                         lng=location.longitude, lat=location.latitude
                     )
                 )
-                t = datetime(y, mo, d, h, mi, s)
+                t = dt(y, mo, d, h, mi, s)
                 if self.tz.text != 'UT':
                     off = tz.utcoffset(t)
                     self.tz.text = tz.localize(t).tzname()
@@ -546,7 +546,7 @@ class NewChart(Frame):
                         lng=location.longitude, lat=location.latitude
                     )
                 )
-                t = datetime(y, mo, d, h, mi, s)
+                t = dt(y, mo, d, h, mi, s)
                 if self.tz.text != 'UT':
                     off = tz.utcoffset(t)
                     self.tz.text = tz.localize(t).tzname()
