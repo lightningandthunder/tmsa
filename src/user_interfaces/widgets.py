@@ -101,12 +101,6 @@ elif PLATFORM == 'darwin':
     title_font = root_font.copy()
     title_font.configure(size=36, weight='bold')
 
-# background = ImageTk.PhotoImage(file=app_path(os.path.join('assets', 'tmsa2.png')), size=1)
-# background_label = tk.Label(main, image=background)
-# background_label.place(x=0, y=0, relwidth=1,relheight=1)
-
-# background_label.image = background
-
 
 def on_exit():
     if tkmessagebox.askyesno('Are you sure?', f'Quit Time Matters {VERSION}?'):

@@ -8,7 +8,9 @@
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
 import json
+import os
 import random
+import sys
 import tkinter.colorchooser as tkcolorchooser
 
 import anglicize

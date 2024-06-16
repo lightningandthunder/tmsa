@@ -45,7 +45,7 @@ GITHUB = 'https://github.com/lightningandthunder/tmsa'
 class StartPage(Frame):
     def __init__(self):
         super().__init__()
-        global startup
+        global STILL_STARTING_UP
 
         self.parent = main
         self.parent.bind('<Configure>', self.resize)
@@ -188,9 +188,9 @@ class StartPage(Frame):
             '<Button-1>', lambda _: delay(main.destroy)
         )
 
-        if not startup:
+        if not STILL_STARTING_UP:
             return
-        startup = False
+        STILL_STARTING_UP = False
 
         try:
             if os.path.exists(TEMP_CHARTS):

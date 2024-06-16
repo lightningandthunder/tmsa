@@ -1,10 +1,19 @@
-import grp
 import os
-import pwd
 import shutil
 import subprocess
 
-from src.constants import PLATFORM
+from src.constants import APP_PATH, PLATFORM
+
+
+def app_path(path=None):
+    if not path:
+        return APP_PATH
+    return os.path.abspath(os.path.join(APP_PATH, path))
+
+
+def copy_file_if_not_exists(expected: str, src: str):
+    if not os.path.exists(expected):
+        shutil.copyfile(src, expected)
 
 
 def create_directory(path):
@@ -28,21 +37,9 @@ def open_file(file: str):
             subprocess.run(['open', '-a', 'TextEdit', file])
 
 
-def drop_privileges():
-    if PLATFORM != 'linux':
-        return
-
-    # Drop privileges if ran with sudo
-    user_name = 'tmsauser'
+def write_to_path(path: str, text: str):
     try:
-        running_uid = os.getuid()
-
-        target_uid = pwd.getpwnam(user_name).pw_uid
-        target_gid = grp.getgrnam(user_name).gr_gid
-
-        if running_uid == 0:  # Only drop privileges if running as root
-            os.setgid(target_gid)
-            os.setuid(target_uid)
-    except Exception as e:
-        print(f'Failed to drop privileges: {e}')
-        exit(1)
+        with open(path, 'w') as file:
+            file.write(text)
+    except:
+        pass

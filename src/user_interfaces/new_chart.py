@@ -11,6 +11,7 @@ import json
 import os
 import random
 import tkinter.filedialog as tkfiledialog
+import tkinter.messagebox as tkmessagebox
 from datetime import datetime as dt
 
 import anglicize
@@ -135,7 +136,7 @@ class NewChart(Frame):
         )
         Button(self, 'Help', 0.5, 0.7, 0.2).bind(
             '<Button-1>',
-            lambda _: delay(ShowHelp, HELP_PATH + r'\newchart.txt'),
+            lambda _: delay(ShowHelp, os.path.join(HELP_PATH, 'newchart.txt')),
         )
         Button(self, 'Back', 0.7, 0.7, 0.20).bind(
             '<Button-1>', lambda _: delay(self.destroy)
@@ -827,7 +828,7 @@ class NewChart(Frame):
             return self.status.error('Latitude must be numeric.', self.latd)
         if lat < 0 or lat > 89.99:
             return self.status.error(
-                f"Latitude must be between 0{DS} and 89{DS}59'59{DQ}.",
+                f'Latitude must be between 0{DS} and 89{DS}59\'59".',
                 self.latd,
             )
         if self.latdir.value == 1:

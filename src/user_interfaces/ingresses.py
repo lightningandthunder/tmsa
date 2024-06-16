@@ -7,8 +7,11 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
+import json
+import os
 import random
 import tkinter.filedialog as tkfiledialog
+import tkinter.messagebox as tkmessagebox
 from copy import deepcopy
 from datetime import datetime as dt
 
@@ -161,7 +164,9 @@ class Ingresses(Frame):
         )
         Button(self, 'Help', 0.5, 0.8, 0.2).bind(
             '<Button-1>',
-            lambda _: delay(ShowHelp, HELP_PATH + r'\ingresses.txt'),
+            lambda _: delay(
+                ShowHelp, os.path.join(HELP_PATH, 'ingresses.txt')
+            ),
         )
         Button(self, 'Back', 0.7, 0.8, 0.20).bind(
             '<Button-1>', lambda _: delay(self.destroy)
