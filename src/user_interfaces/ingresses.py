@@ -17,7 +17,6 @@ import us
 from geopy import Nominatim
 
 from src.constants import DQ, DS, MONTHS, VERSION
-from src.utils.gui_utils import ShowHelp
 from src.program_launch import *
 from src.swe import *
 from src.user_interfaces.chart import Chart
@@ -25,6 +24,7 @@ from src.user_interfaces.locations import Locations
 from src.user_interfaces.more_charts import MoreCharts
 from src.user_interfaces.widgets import *
 from src.utils.format_utils import display_name, normalize_text, open_file
+from src.utils.gui_utils import ShowHelp
 
 
 class Ingresses(Frame):

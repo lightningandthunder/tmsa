@@ -13,7 +13,6 @@ import shutil
 import sys
 
 from src.constants import PLATFORM
-from src.libs import *
 from src.utils.os_utils import create_directory
 
 startup = True
@@ -100,7 +99,7 @@ if PLATFORM == 'Win32GUI':
 elif PLATFORM == 'linux':
     import shutil
 
-    # Set umask to 0o022 to give 755 permissions for directories 
+    # Set umask to 0o022 to give 755 permissions for directories
     # and 644 for files by default
     os.umask(0o022)
 

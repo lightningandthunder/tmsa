@@ -10,9 +10,9 @@
 import math
 from datetime import datetime
 
-from src.utils.chart_utils import *
 from src.classes import ChartObject
 from src.constants import MONTHS, VERSION
+from src.utils.chart_utils import *
 from src.utils.format_utils import open_file
 
 

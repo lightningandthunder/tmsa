@@ -12,7 +12,6 @@ import os
 import shutil
 import tkinter.filedialog as tkfiledialog
 
-from src.utils.gui_utils import ShowHelp
 from src.program_launch import *
 from src.user_interfaces.chart import Chart
 from src.user_interfaces.more_charts import MoreCharts
@@ -20,6 +19,7 @@ from src.user_interfaces.new_chart import NewChart
 from src.user_interfaces.solunars import Solunars
 from src.user_interfaces.widgets import *
 from src.utils.format_utils import display_name, open_file
+from src.utils.gui_utils import ShowHelp
 
 
 class SelectChart(Frame):

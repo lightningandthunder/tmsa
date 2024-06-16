@@ -10,10 +10,10 @@
 import tkinter.filedialog as tkfiledialog
 
 from src.program_launch import *
-from src.utils.gui_utils import ShowHelp
 from src.user_interfaces.midpoint_options import MidpointOptions
 from src.user_interfaces.widgets import *
 from src.utils.format_utils import normalize_text
+from src.utils.gui_utils import ShowHelp
 
 
 class ChartOptions(Frame):

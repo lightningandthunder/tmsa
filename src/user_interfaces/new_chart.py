@@ -19,7 +19,6 @@ import us
 from geopy import Nominatim
 from timezonefinder import TimezoneFinder
 
-from src.utils.gui_utils import ShowHelp
 from src.constants import (
     DQ,
     DS,
@@ -34,6 +33,7 @@ from src.user_interfaces.chart import Chart
 from src.user_interfaces.locations import Locations
 from src.user_interfaces.widgets import *
 from src.utils.format_utils import normalize_text
+from src.utils.gui_utils import ShowHelp
 
 
 class NewChart(Frame):
@@ -384,7 +384,7 @@ class NewChart(Frame):
                         lng=location.longitude, lat=location.latitude
                     )
                 )
-                t = datetime(y, mo, d, h, mi, s)
+                t = dt(y, mo, d, h, mi, s)
                 if self.tz.text != 'UT':
                     off = tz.utcoffset(t)
                     self.tz.text = tz.localize(t).tzname()
@@ -555,7 +555,7 @@ class NewChart(Frame):
                         lng=location.longitude, lat=location.latitude
                     )
                 )
-                t = datetime(y, mo, d, h, mi, s)
+                t = dt(y, mo, d, h, mi, s)
                 if self.tz.text != 'UT':
                     off = tz.utcoffset(t)
                     self.tz.text = tz.localize(t).tzname()

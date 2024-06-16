@@ -9,9 +9,9 @@
 
 import json
 
-from src.utils.chart_utils import *
 from src.program_launch import *
 from src.user_interfaces.widgets import *
+from src.utils.chart_utils import *
 
 
 class Locations(Frame):

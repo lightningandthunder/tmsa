@@ -16,11 +16,11 @@ import us
 from geopy import Nominatim
 
 from src.constants import DQ, DS, VERSION
-from src.utils.gui_utils import ShowHelp
 from src.program_launch import *
 from src.user_interfaces.locations import Locations
 from src.user_interfaces.widgets import *
 from src.utils.format_utils import normalize_text
+from src.utils.gui_utils import ShowHelp
 
 
 class ProgramOptions(Frame):
