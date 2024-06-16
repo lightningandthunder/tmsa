@@ -91,9 +91,7 @@ class BiwheelV2:
                 parts = chart['name'].split(';')
                 chart_grid[20][18:51] = center_align(parts[0])
             chart_grid[21][18:51] = center_align(chart['type'])
-            line = (
-                str(chart['day']) + ' ' + MONTHS[chart['month'] - 1] + ' '
-            )
+            line = str(chart['day']) + ' ' + MONTHS[chart['month'] - 1] + ' '
             line += (
                 f"{chart['year']} "
                 if chart['year'] > 0
@@ -135,9 +133,7 @@ class BiwheelV2:
             if chtype.endswith(' Single Wheel'):
                 chtype = chtype.replace(' Single Wheel', '')
             chart_grid[35][18:51] = center_align(chtype)
-            line = (
-                str(radix['day']) + ' ' + MONTHS[radix['month'] - 1] + ' '
-            )
+            line = str(radix['day']) + ' ' + MONTHS[radix['month'] - 1] + ' '
             line += (
                 f"{radix['year']} "
                 if radix['year'] > 0
