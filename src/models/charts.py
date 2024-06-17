@@ -14,7 +14,8 @@ T = TypeVar('T', bound='ChartObject')
 @dataclass
 class PlanetData:
     name: str
-    body_number: int
+    short_name: str
+    number: int
     longitude: float
     latitude: float
     speed: float
@@ -88,14 +89,39 @@ class PlanetData:
 
 @dataclass
 class ChartType(Enum):
-    NATAL = 'n'
-    SOLAR_RETURN = 'sr'
-    LUNAR_RETURN = 'lr'
-    INGRESS = 'i'
+    NATAL = 'N'
+    SOLAR_RETURN = 'SR'
+    LUNAR_RETURN = 'LR'
+    KINETIC_LUNAR_RETURN = 'KLR'
+    NOVIENIC_SOLAR_RETURN = 'NSR'
+    TEN_DAY_SOLAR_RETURN = '10DAY'
+    NOVIENIC_LUNAR_RETURN = 'NLR'
+    EIGHTEEN_HOUR_LUNAR_RETURN = '18H'
+    ANLUNAR_RETURN = 'SAR'
+    KINETIC_ANULAR_RETURN = 'KSAR'
+    SOLILUNAR_RETURN = 'SOLILUNAR'
+    LUNISOLAR_RETURN = 'LUNISOLAR'
+    # TODO - I'm not sure that these are right
+    ARI_SOLAR = 'Aries Solar Ingress'
+    CAN_SOLAR = 'Cancer Solar Ingress'
+    LIB_SOLAR = 'Libra Solar Ingress'
+    CAP_SOLAR = 'Capricorn Solar Ingress'
+    ARI_LUNAR = 'Aries Lunar Ingress'
+    CAN_LUNAR = 'Cancer Lunar Ingress'
+    LIB_LUNAR = 'Libra Lunar Ingress'
+    CAP_LUNAR = 'Capricorn Lunar Ingress'
 
 
 @dataclass
 class ChartObject:
+    name: str | None
+    year: int
+    month: int
+    day: int
+    location: str
+    time: str
+    zone: str
+    correction: str
     type: ChartType
     julian_day_utc: float
     ayanamsa: float
@@ -107,6 +133,7 @@ class ChartObject:
     planets: dict[str, PlanetData]
     cusps: list[float]
     angles: dict[str, float]
+    notes: str | None = None
 
     def __init__(self, data: dict):
         self.type = ChartType(data['type'])
@@ -151,46 +178,14 @@ class ChartWheelRole(Enum):
     INGRESS = 'i'
 
 
-class Wheel:
-    def __init__(
-        self,
-        charts: dict['role':ChartWheelRole, 'chart':ChartObject],
-        options: Options,
-    ):
-        self.charts = charts
-        self.options = options
-
-        if len(charts) > 1:
-            if (
-                ChartWheelRole.RADIX in charts
-                and ChartWheelRole.TRANSIT in charts
-            ):
-                self.charts[ChartWheelRole.RADIX].precess(
-                    self.charts[ChartWheelRole.TRANSIT]
-                )
-
-            if (
-                ChartWheelRole.PROGRESSED in charts
-                and ChartWheelRole.TRANSIT in charts
-            ):
-                self.charts[ChartWheelRole.PROGRESSED].precess(
-                    self.charts[ChartWheelRole.TRANSIT]
-                )
-
-    def draw(self):
-        pass
-
-    def save(self):
-        pass
-
-
 class AspectType(Enum):
     CONJUNCTION = 'co'
-    OCTILE = 'oc'
+    SEMISQUARE = 'ssq'
     SEXTILE = 'sx'
     SQUARE = 'sq'
     TRINE = 'tr'
     OPPOSITION = 'op'
+    SESQUIQUADRATE = 'sqq'
 
     def __str__(self):
         return self.value
@@ -202,14 +197,16 @@ class AspectType(Enum):
     def from_string(cls, string: str):
         if string == 'co':
             return cls.CONJUNCTION
-        elif string == 'oc':
-            return cls.OCTILE
+        elif string == 'ssq' or string == 'oc':
+            return cls.SEMISQUARE
         elif string == 'sx':
             return cls.SEXTILE
         elif string == 'sq':
             return cls.SQUARE
         elif string == 'tr':
             return cls.TRINE
+        elif string == 'sqq':
+            return cls.SESQUIQUADRATE
         elif string == 'op':
             return cls.OPPOSITION
         else:
@@ -223,15 +220,55 @@ class AspectType(Enum):
         if degrees == 0:
             return cls.CONJUNCTION
         elif degrees == 45:
-            return cls.OCTILE
+            return cls.SEMISQUARE
         elif degrees == 60:
             return cls.SEXTILE
         elif degrees == 90:
             return cls.SQUARE
         elif degrees == 120:
             return cls.TRINE
+        elif degrees == 135:
+            return cls.SESQUIQUADRATE
         elif degrees == 180:
             return cls.OPPOSITION
+        else:
+            return None
+
+    @staticmethod
+    def degrees_from_abbreviation(abbreviation: str):
+        if abbreviation == 'co':
+            return 0
+        elif abbreviation == 'ssq' or abbreviation == 'oc':
+            return 45
+        elif abbreviation == 'sx':
+            return 60
+        elif abbreviation == 'sq':
+            return 90
+        elif abbreviation == 'tr':
+            return 120
+        elif abbreviation == 'sqq':
+            return 135
+        elif abbreviation == 'op':
+            return 180
+        else:
+            return None
+
+    @staticmethod
+    def abbreviation_from_degrees(degrees: int):
+        if degrees == 0:
+            return 'co'
+        elif degrees == 45:
+            return 'ssq'
+        elif degrees == 60:
+            return 'sx'
+        elif degrees == 90:
+            return 'sq'
+        elif degrees == 120:
+            return 'tr'
+        elif degrees == 135:
+            return 'sqq'
+        elif degrees == 180:
+            return 'op'
         else:
             return None
 
