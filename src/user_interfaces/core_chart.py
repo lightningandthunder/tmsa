@@ -11,10 +11,10 @@ import math
 import tkinter.messagebox as tkmessagebox
 from datetime import datetime
 
-from src.classes import ChartObject
 from src.constants import (DEFAULT_ECLIPTICAL_ORBS, DEFAULT_MUNDANE_ORBS,
                            INGRESSES, MONTHS, NEG_SIGN, PLANET_NAMES,
                            PLANET_NAMES_SHORT, POS_SIGN, SIGNS_SHORT, VERSION)
+from src.models.charts import ChartObject
 from src.utils.chart_utils import (
     angularity_activates_ingress, center_align, fmt_dm, fmt_dms, fmt_hms,
     fmt_lat, fmt_long, get_return_class, inrange, left_align,

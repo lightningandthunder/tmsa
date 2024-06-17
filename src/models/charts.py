@@ -4,6 +4,7 @@ from enum import Enum
 from typing import TypeVar
 
 from src import log_error, swe
+from src.models.options import Options
 from src.utils.chart_utils import fmt_dm
 from src.utils.format_utils import to360
 
@@ -23,6 +24,7 @@ class PlanetData:
     altitude: float
     house: float
     meridian_longitude: float
+    treat_as_foreground: bool
 
     def with_ecliptic_and_equatorial_data(
         self,
@@ -53,12 +55,10 @@ class PlanetData:
         return self
 
     def precess(self, to_chart: T):
-        # TODO - check me; not sure I lined up the parameters correctly
-        (speed, right_ascension, declination) = swe.cotrans(
+        (right_ascension, declination) = swe.cotrans(
             [self.longitude + to_chart.ayanamsa, self.latitude, self.speed],
             to_chart.obliquity,
         )
-        self.speed = speed
         self.right_ascension = right_ascension
         self.declination = declination
 
@@ -84,46 +84,6 @@ class PlanetData:
         )
 
         return self
-
-
-@dataclass
-class Options:
-    def __init__(self):
-        pass
-
-    @classmethod
-    def from_file(cls, file_path: str):
-        with open(file_path, 'r') as file:
-            try:
-                data = json.load(file)
-                return cls(data)
-            except json.JSONDecodeError:
-                log_error(f'Error reading {file_path}')
-
-
-@dataclass
-class NatalOptions(Options):
-    pass
-
-
-@dataclass
-class SolunarOptions(Options):
-    pass
-
-
-@dataclass
-class IngressOptions(Options):
-    pass
-
-
-@dataclass
-class MidpointOptions(Options):
-    pass
-
-
-@dataclass
-class CosmobiologyOptions(Options):
-    pass
 
 
 @dataclass
