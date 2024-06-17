@@ -16,6 +16,133 @@ DS = '\N{DEGREE SIGN}'
 DQ = '"'
 SQ = "'"
 
+PLANETS = {
+    'Moon': {
+        'long_name': 'Moon',
+        'short_name': 'Mo',
+        'number': 0,
+    },
+    'Sun': {
+        'long_name': 'Sun',
+        'short_name': 'Su',
+        'number': 1,
+    },
+    'Mercury': {
+        'long_name': 'Mercury',
+        'short_name': 'Me',
+        'number': 2,
+    },
+    'Venus': {
+        'long_name': 'Venus',
+        'short_name': 'Ve',
+        'number': 3,
+    },
+    'Mars': {
+        'long_name': 'Mars',
+        'short_name': 'Ma',
+        'number': 4,
+    },
+    'Jupiter': {
+        'long_name': 'Jupiter',
+        'short_name': 'Ju',
+        'number': 5,
+    },
+    'Saturn': {
+        'long_name': 'Saturn',
+        'short_name': 'Sa',
+        'number': 6,
+    },
+    'Uranus': {
+        'long_name': 'Uranus',
+        'short_name': 'Ur',
+        'number': 7,
+    },
+    'Neptune': {
+        'long_name': 'Neptune',
+        'short_name': 'Ne',
+        'number': 8,
+    },
+    'Pluto': {
+        'long_name': 'Pluto',
+        'short_name': 'Pl',
+        'number': 9,
+    },
+    'Eris': {
+        'long_name': 'Eris',
+        'short_name': 'Er',
+        'number': 146199,
+    },
+    'Sedna': {
+        'long_name': 'Sedna',
+        'short_name': 'Se',
+        'number': 100377,
+    },
+    'Mean Node': {
+        'long_name': 'Mean Node',
+        'short_name': 'No',
+        'number': 10,
+    },
+    'True Node': {
+        'long_name': 'True Node',
+        'short_name': 'No',
+        'number': 11,
+    },
+    'Quaoar': {
+        'short_name': 'Qu',
+        'short_name': 'Qu',
+        'number': 60000,
+    },
+    'Orcus': {
+        'short_name': 'Or',
+        'short_name': 'Or',
+        'number': 100482,
+    },
+    'Haumea': {
+        'long_name': 'Haumea',
+        'short_name': 'Ha',
+        'number': 146108,
+    },
+    'Makemake': {
+        'long_name': 'Makemake',
+        'short_name': 'Mk',
+        'number': 146472,
+    },
+    'Gonggong': {
+        'long_name': 'Gonggong',
+        'short_name': 'Go',
+        'number': 235088,
+    },
+    'Chiron': {
+        'long_name': 'Chiron',
+        'short_name': 'Ch',
+        'number': 15,
+    },
+    'Ceres': {
+        'long_name': 'Ceres',
+        'short_name': 'Ce',
+        'number': 17,
+    },
+    'Pallas': {
+        'long_name': 'Pallas',
+        'short_name': 'Pa',
+        'number': 18,
+    },
+    'Juno': {
+        'long_name': 'Juno',
+        'short_name': 'Jn',
+        'number': 19,
+    },
+    'Vesta': {
+        'long_name': 'Vesta',
+        'short_name': 'Vs',
+        'number': 20,
+    },
+    'Salacia': {
+        'long_name': 'Salacia',
+        'short_name': 'Sl',
+        'number': 130347,
+    },
+}
 
 SIGNS_SHORT = [
     'Ar',

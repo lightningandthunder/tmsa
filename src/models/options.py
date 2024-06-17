@@ -7,14 +7,17 @@ from src import log_error
 
 @dataclass
 class NodeTypes(Enum):
-    TRUE_NODE = 0
-    MEAN_NODE = 1
+    DISABLED = 0
+    TRUE_NODE = 1
+    MEAN_NODE = 2
 
     @staticmethod
     def from_number(number: int):
         if number == 0:
-            return NodeTypes.TRUE_NODE
+            return NodeTypes.DISABLED
         elif number == 1:
+            return NodeTypes.TRUE_NODE
+        elif number == 2:
             return NodeTypes.MEAN_NODE
         else:
             return None
