@@ -17,8 +17,7 @@ import src.utils.chart_utils as chart_utils
 from src.models.angles import ForegroundAngles, NonForegroundAngles
 from src.models.charts import (Aspect, AspectType, ChartObject, ChartWheelRole,
                                PlanetData)
-from src.models.options import (AngularityModel, AngularitySubOptions,
-                                NodeTypes, Options, ShowAspect)
+from src.models.options import AngularityModel, Options, ShowAspect
 from src.utils.os_utils import open_file
 
 
@@ -660,22 +659,9 @@ class ChartReport:
         # Default to true if this is an ingress chart
         whole_chart_is_dormant = True if 'I' in self.cclass else False
 
-        for planet_name, data in constants.PLANETS.items():
-            if (
-                data['number'] > 9
-                and data['short_name'] not in self.options.extra_bodies
-            ):
-                continue
-            if (
-                planet_name == 'True Node'
-                and self.options.node_type != NodeTypes.TRUE_NODE
-            ):
-                continue
-            if (
-                planet_name == 'Mean Node'
-                and self.options.node_type != NodeTypes.MEAN_NODE
-            ):
-                continue
+        for planet_name, _ in chart_utils.iterate_allowed_planets(
+            self.options
+        ):
             planet_data = chart.planets[planet_name]
 
             # TODO - I need to figure out what's up with this index business
@@ -955,9 +941,6 @@ class ChartReport:
                 )
             chartfile.write('-' * self.table_width + '\n')
 
-        # Cosmic State
-        # TODO - extract into own function
-
     def write_cosmic_state(
         self,
         chartfile: TextIOWrapper,
@@ -1065,15 +1048,8 @@ class ChartReport:
 
             plist = []
             for index, (planet_name, planet_info) in enumerate(
-                constants.PLANETS.items()
+                chart_utils.iterate_allowed_planets(self.options)
             ):
-                if (
-                    planet_info['number'] > 9
-                    and planet_info['short_name']
-                    not in self.options.extra_bodies
-                ):
-                    continue
-
                 planet_longitude = chart.planets[planet_name].longitude
                 planet_short_name = planet_info['short_name']
                 if (

@@ -9,9 +9,11 @@
 
 import math
 import os
+from typing import Iterator
 
-from src import CHART_PATH, TEMP_CHARTS
+from src import CHART_PATH, TEMP_CHARTS, constants
 from src.constants import DS, SIGNS_SHORT
+from src.models.options import NodeTypes, Options
 
 
 def major_angularity_curve_cadent_background(orb):
@@ -327,3 +329,26 @@ def make_chart_path(chart, temporary):
         filepath = f'{first[0]}\\{first}\\{filename}'
     path = TEMP_CHARTS if temporary else CHART_PATH
     return os.path.abspath(os.path.join(path, filepath))
+
+
+def iterate_allowed_planets(
+    options: Options,
+) -> Iterator[tuple[str, dict[str, any]]]:
+    for planet_name, data in constants.PLANETS.items():
+        if (
+            data['number'] > 9
+            and data['short_name'] not in options.extra_bodies
+        ):
+            continue
+        if (
+            planet_name == 'True Node'
+            and options.node_type != NodeTypes.TRUE_NODE
+        ):
+            continue
+        if (
+            planet_name == 'Mean Node'
+            and options.node_type != NodeTypes.MEAN_NODE
+        ):
+            continue
+
+        yield planet_name, data
