@@ -63,8 +63,8 @@ class ChartReport:
             return
 
         with chartfile:
-            self.draw_chart(chartfile, options)
-            self.write_info_table(chartfile, options)
+            self.draw_chart(chartfile)
+            self.write_info_table(chartfile)
 
             chartfile.write('\n' + '-' * self.table_width + '\n')
             chartfile.write(
@@ -85,13 +85,13 @@ class ChartReport:
                 self.charts[ChartWheelRole.TRANSIT]
             )
 
-    def sort_house(self, chart: ChartObject, index: int, options: Options):
+    def sort_house(self, chart: ChartObject, index: int):
         house = []
         # TODO - vertex isn't in this list
         for planet_name, planet_info in constants.PLANETS.items():
             if (
                 planet_info['number'] > 9
-                and planet_info['short_name'] not in options.extra_bodies
+                and planet_info['short_name'] not in self.options.extra_bodies
             ):
                 continue
 
@@ -124,14 +124,13 @@ class ChartReport:
         planet_1: PlanetData,
         planet_2: PlanetData,
         ecliptical_orbs: list[float],
-        options: Options,
         foreground_planets: list[str],
         whole_chart_is_dormant: bool,
         chart_is_ingress: bool,
     ):
         if (
-            planet_1.short_name not in options.extra_bodies
-            and planet_2.short_name not in options.extra_bodies
+            planet_1.short_name not in self.options.extra_bodies
+            and planet_2.short_name not in self.options.extra_bodies
         ):
             return ('', 0, 0)
 
@@ -180,7 +179,7 @@ class ChartReport:
                 if chart_is_ingress and whole_chart_is_dormant:
                     return ('', 0, 0)
 
-                if options.show_aspects == ShowAspect.ONE_PLUS_FOREGROUND:
+                if self.options.show_aspects == ShowAspect.ONE_PLUS_FOREGROUND:
                     if (
                         planet_1.name not in foreground_planets
                         and not planet_1.treat_as_foreground
@@ -188,11 +187,11 @@ class ChartReport:
                         planet_2.name not in foreground_planets
                         and not planet_2.treat_as_foreground
                     ):
-                        if raw_orb <= 1 and options.partile_nf:
+                        if raw_orb <= 1 and self.options.partile_nf:
                             aspect = aspect.with_class(4)
                         else:
                             return ('', 0, 0)
-                elif options.show_aspects == ShowAspect.BOTH_FOREGROUND:
+                elif self.options.show_aspects == ShowAspect.BOTH_FOREGROUND:
                     if (
                         planet_1.name not in foreground_planets
                         and not planet_1.treat_as_foreground
@@ -200,7 +199,7 @@ class ChartReport:
                         planet_2.name not in foreground_planets
                         and not planet_2.treat_as_foreground
                     ):
-                        if raw_orb <= 1 and options.partile_nf:
+                        if raw_orb <= 1 and self.options.partile_nf:
                             aspect = aspect.with_class(4)
                         else:
                             return ('', 0, 0)
@@ -226,14 +225,13 @@ class ChartReport:
         planet_1: PlanetData,
         planet_2: PlanetData,
         mundane_orbs: list[float],
-        options: Options,
         foreground_planets: list[str],
         whole_chart_is_dormant: bool,
         chart_is_ingress: bool,
     ):
         if (
-            planet_1.short_name not in options.extra_bodies
-            and planet_2.short_name not in options.extra_bodies
+            planet_1.short_name not in self.options.extra_bodies
+            and planet_2.short_name not in self.options.extra_bodies
         ):
             return ('', 0, 0)
 
@@ -288,7 +286,7 @@ class ChartReport:
                 if chart_is_ingress and whole_chart_is_dormant:
                     return ('', 0, 0)
 
-                if options.show_aspects == ShowAspect.ONE_PLUS_FOREGROUND:
+                if self.show_aspects == ShowAspect.ONE_PLUS_FOREGROUND:
                     if (
                         planet_1.name not in foreground_planets
                         and not planet_1.treat_as_foreground
@@ -296,11 +294,11 @@ class ChartReport:
                         planet_2.name not in foreground_planets
                         and not planet_2.treat_as_foreground
                     ):
-                        if raw_orb <= 1 and options.partile_nf:
+                        if raw_orb <= 1 and self.options.partile_nf:
                             aspect = aspect.with_class(4)
                         else:
                             return ('', 0, 0)
-                elif options.show_aspects == ShowAspect.BOTH_FOREGROUND:
+                elif self.options.show_aspects == ShowAspect.BOTH_FOREGROUND:
                     if (
                         planet_1.name not in foreground_planets
                         and not planet_1.treat_as_foreground
@@ -308,7 +306,7 @@ class ChartReport:
                         planet_2.name not in foreground_planets
                         and not planet_2.treat_as_foreground
                     ):
-                        if raw_orb <= 1 and options.partile_nf:
+                        if raw_orb <= 1 and self.options.partile_nf:
                             aspect = aspect.with_class(4)
                         else:
                             return ('', 0, 0)
@@ -329,7 +327,7 @@ class ChartReport:
             raw_orb,
         )
 
-    def find_pvp_aspect(self, chart, planet_index, options):
+    def find_pvp_aspect(self, chart: ChartObject, planet_index: int):
         # I need to ask Jim more about this, but...
         # Find conjunct/opp in azimuth across horizon - these are conj/opp.
         # Find azimuth squares to planets near meridian (90* of azimuth) - squares.
@@ -345,9 +343,10 @@ class ChartReport:
         self,
         planet: PlanetData,
         chart: ChartObject,
-        angularity_options: AngularitySubOptions,
     ) -> tuple[str, float, bool, bool]:
         # I should be able to rewrite this mostly using self. variables
+
+        angularity_options = self.options.angularity
 
         major_angle_orbs = angularity_options.major_angles
         minor_angle_orbs = angularity_options.minor_angles
@@ -523,7 +522,9 @@ class ChartReport:
         )
 
     def draw_chart(
-        self, chart: ChartObject, chartfile: TextIOWrapper, options: Options
+        self,
+        chart: ChartObject,
+        chartfile: TextIOWrapper,
     ):
         rows = 65
         cols = 69
@@ -619,7 +620,7 @@ class ChartReport:
         y = [33, 49, 49, 49, 49, 33, 17, 1, 1, 1, 1, 17]
         houses = [[] for _ in range(12)]
         for index in range(12):
-            houses[index] = self.sort_house(chart, index, options)
+            houses[index] = self.sort_house(chart, index)
             if index > 3 and index < 9:
                 houses[index].reverse()
             for sub_index in range(15):
@@ -640,12 +641,14 @@ class ChartReport:
         chartfile.write('\n\n' + '-' * self.table_width + '\n')
 
     def write_info_table(
-        self, chart: ChartObject, chartfile: TextIOWrapper, options: Options
+        self,
+        chart: ChartObject,
+        chartfile: TextIOWrapper,
     ):
         chartfile.write(
             'Pl Longitude   Lat   Speed    RA     Decl   Azi     Alt      ML     PVL    Ang G\n'
         )
-        angularity_options = options.angularity
+        angularity_options = self.options.angularity
         planets_foreground = []
         planet_foreground_angles = {}
 
@@ -656,17 +659,17 @@ class ChartReport:
         for planet_name, data in constants.PLANETS.items():
             if (
                 data['number'] > 9
-                and data['short_name'] not in options.extra_bodies
+                and data['short_name'] not in self.options.extra_bodies
             ):
                 continue
             if (
                 planet_name == 'True Node'
-                and options.node_type != NodeTypes.TRUE_NODE
+                and self.options.node_type != NodeTypes.TRUE_NODE
             ):
                 continue
             if (
                 planet_name == 'Mean Node'
-                and options.node_type != NodeTypes.MEAN_NODE
+                and self.options.node_type != NodeTypes.MEAN_NODE
             ):
                 continue
             planet_data = chart.planets[planet_name]
@@ -736,7 +739,6 @@ class ChartReport:
             ) = self.calc_angle_and_strength(
                 planet_data,
                 chart,
-                angularity_options,
             )
 
             if planet_negates_dormancy:
@@ -781,11 +783,11 @@ class ChartReport:
 
         # Aspects
         ecliptical_orbs = (
-            options.ecliptic_aspects or constants.DEFAULT_ECLIPTICAL_ORBS
+            self.options.ecliptic_aspects or constants.DEFAULT_ECLIPTICAL_ORBS
         )
 
         mundane_orbs = (
-            options.mundane_aspects or constants.DEFAULT_MUNDANE_ORBS
+            self.options.mundane_aspects or constants.DEFAULT_MUNDANE_ORBS
         )
         aspects_by_class = [[], [], [], []]
         aspect_class_headers = [
@@ -798,16 +800,16 @@ class ChartReport:
         for primary_index, primary_planet in enumerate(
             constants.PLANETS.values()
         ):
-            for remaining_index, secondary_planet in enumerate(
+            for secondary_index, secondary_planet in enumerate(
                 constants.PLANETS.values()
             ):
-                if remaining_index <= primary_index:
+                if secondary_index <= primary_index:
                     continue
 
                 # If options say to skip one or both planets' aspects outside the foreground,
                 # just skip calculating anything
 
-                show_aspects = options.show_aspects or ShowAspect.ALL
+                show_aspects = self.options.show_aspects or ShowAspect.ALL
 
                 if show_aspects == ShowAspect.ONE_PLUS_FOREGROUND:
                     if (
@@ -815,7 +817,7 @@ class ChartReport:
                         and secondary_planet['long_name']
                         not in planets_foreground
                     ):
-                        if not options.partile_nf:
+                        if not self.options.partile_nf:
                             continue
 
                 if show_aspects == ShowAspect.BOTH_FOREGROUND:
@@ -824,7 +826,7 @@ class ChartReport:
                         or secondary_planet['long_name']
                         not in planets_foreground
                     ):
-                        if not options.partile_nf:
+                        if not self.options.partile_nf:
                             continue
 
                 (
@@ -834,9 +836,8 @@ class ChartReport:
                 ) = self.find_ecliptical_aspect(
                     chart,
                     planet_index,
-                    remaining_planet,
+                    secondary_index,
                     ecliptical_orbs,
-                    options,
                     planets_foreground,
                     whole_chart_is_dormant,
                 )
@@ -847,9 +848,8 @@ class ChartReport:
                 ) = self.find_mundane_aspect(
                     chart,
                     planet_index,
-                    remaining_planet,
+                    secondary_index,
                     mundane_orbs,
-                    options,
                     planets_foreground,
                     whole_chart_is_dormant,
                 )
@@ -857,25 +857,23 @@ class ChartReport:
                 (pvp_aspect, pvp_aspect_class, pvp_orb) = self.find_pvp_aspect(
                     chart,
                     planet_index,
-                    remaining_planet,
-                    options,
+                    secondary_index,
                 )
 
-                if ecliptical_aspect and mundane_aspect:
-                    if mundane_orb < ecliptical_orb:
-                        ecliptical_aspect = ''
-                    else:
-                        mundane_aspect = ''
-
-                if ecliptical_aspect:
+                tightest_orb = [
+                    (ecliptical_orb, ecliptical_aspect),
+                    (mundane_orb, mundane_aspect),
+                    (pvp_orb, pvp_aspect),
+                ].sort(key=lambda x: x[0])[0]
+                if tightest_orb[0] == ecliptical_orb:
                     aspects_by_class[ecliptical_aspect_class - 1].append(
                         ecliptical_aspect
                     )
-                elif mundane_aspect:
+                elif tightest_orb[0] == mundane_orb:
                     aspects_by_class[mundane_aspect_class - 1].append(
                         mundane_aspect
                     )
-                elif pvp_aspect:
+                else:  # pvp orb
                     aspects_by_class[pvp_aspect_class - 1].append(pvp_aspect)
 
         # Remove empty aspect classes
@@ -955,28 +953,45 @@ class ChartReport:
 
         # Cosmic State
         # TODO - extract into own function
+
+    def write_cosmic_state(
+        self,
+        chartfile: TextIOWrapper,
+        chart: ChartObject,
+        planet_foreground_angles: dict[str, str],
+        aspects_by_class: list[list[str]],
+        planets_foreground: list[str],
+    ):
         chartfile.write(
             chart_utils.center_align('Cosmic State', self.table_width) + '\n'
         )
-        moon_sign = constants.SIGNS_SHORT[int(chart['Moon'][0] // 30)]
-        sun_sign = constants.SIGNS_SHORT[int(chart['Sun'][0] // 30)]
+        moon_sign = constants.SIGNS_SHORT[
+            int(chart.planets['Moon'].longitude // 30)
+        ]
+        sun_sign = constants.SIGNS_SHORT[
+            int(chart.planets['Sun'].longitude // 30)
+        ]
         cclass = chart['class']
-        for planet_index in range(14):
-            if planet_index == 10 and not options.get('use_Eris', 1):
+
+        for index, (planet_name, planet_info) in enumerate(
+            constants.PLANETS.items()
+        ):
+            if (
+                planet_info['number'] > 9
+                and planet_info['short_name'] not in self.options.extra_bodies
+            ):
                 continue
-            if planet_index == 11 and not options.get('use_Sedna', 0):
-                continue
-            if planet_index == 12 and options.get('Node', 0) != 1:
-                continue
-            if planet_index == 13 and options.get('Node', 0) != 2:
-                continue
-            planet_short_name = constants.PLANET_NAMES_SHORT[planet_index]
-            planet_name = constants.PLANET_NAMES[planet_index]
-            planet_data = chart[planet_name]
-            if planet_short_name != 'Mo':
+
+            planet_short_name = planet_info['short_name']
+            planet_data = chart.planets[planet_name]
+
+            if index != 0:
                 chartfile.write('\n')
+
             chartfile.write(planet_short_name + ' ')
-            sign = constants.SIGNS_SHORT[int(planet_data[0] // 30)]
+
+            sign = constants.SIGNS_SHORT[int(planet_data.longitude // 30)]
+
             if sign in constants.POS_SIGN[planet_short_name]:
                 plus_minus = '+'
             elif sign in constants.NEG_SIGN[planet_short_name]:
@@ -984,82 +999,92 @@ class ChartReport:
             else:
                 plus_minus = ' '
             chartfile.write(f'{sign}{plus_minus} ')
-            angle = planet_foreground_angles.get(planet_short_name, '')
+
+            # TODO - I think this is right but I'm not positive
+            angle = planet_foreground_angles.get(
+                planet_short_name, NonForegroundAngles.BLANK
+            )
             if angle.strip() == '':
                 angle = ' '
-            elif angle.strip() == 'b':
-                angle = 'B'
-            else:
+            elif angle.strip() in [a.value.strip() for a in ForegroundAngles]:
                 angle = 'F'
+            else:
+                angle = 'B'
             chartfile.write(angle + ' |')
 
-            # This has something to do with what row we're on
-            cr = False
+            need_another_row = False
 
             if cclass != 'I':
                 if planet_short_name != 'Mo':
                     if moon_sign in constants.POS_SIGN[planet_short_name]:
                         chartfile.write(f' Mo {moon_sign}+')
-                        cr = True
+                        need_another_row = True
                     elif moon_sign in constants.NEG_SIGN[planet_short_name]:
                         chartfile.write(f' Mo {moon_sign}-')
-                        cr = True
+                        need_another_row = True
                 if planet_short_name != 'Su':
                     if sun_sign in constants.POS_SIGN[planet_short_name]:
                         chartfile.write(f' Su {sun_sign}+')
-                        cr = True
+                        need_another_row = True
                     elif sun_sign in constants.NEG_SIGN[planet_short_name]:
                         chartfile.write(f' Su {sun_sign}-')
-                        cr = True
+                        need_another_row = True
+
             aspect_list = []
-            for index_class in range(3):
-                for entry in aspects_by_class[index_class]:
+            # TODO - I'd like to split this out
+            for class_index in range(3):
+                for entry in aspects_by_class[class_index]:
                     if planet_short_name in entry:
-                        pct = str(200 - int(entry[15:18]))
+                        percent = str(200 - int(entry[15:18]))
                         entry = entry[0:15] + entry[20:]
                         if entry[0:2] == planet_short_name:
                             entry = entry[3:]
                         else:
                             entry = f'{entry[3:5]} {entry[0:2]}{entry[8:]}'
-                        aspect_list.append([entry, pct])
+                        aspect_list.append([entry, percent])
+
             aspect_list.sort(key=lambda p: p[1] + p[0][6:11])
             if aspect_list:
-                if cr:
+                if need_another_row:
                     chartfile.write('\n' + (' ' * 9) + '| ')
-                    cr = False
+                    need_another_row = False
                 else:
                     chartfile.write(' ')
-            for remaining_planet, aspect in enumerate(aspect_list):
+
+            for aspect_index, aspect in enumerate(aspect_list):
                 chartfile.write(aspect[0] + '   ')
                 if (
-                    remaining_planet % 4 == 3
-                    and remaining_planet != len(aspect_list) - 1
+                    aspect_index % 4 == 3
+                    and aspect_index != len(aspect_list) - 1
                 ):
                     chartfile.write('\n' + (' ' * 9) + '| ')
+
             plist = []
-            for remaining_planet in range(14):
-                if remaining_planet == planet_index:
-                    continue
-                if remaining_planet == 10 and not options.get('use_Eris', 1):
-                    continue
-                if remaining_planet == 11 and not options.get('use_Sedna', 0):
-                    continue
-                if remaining_planet == 12 and options.get('Node', 0) != 1:
-                    continue
-                if remaining_planet == 13 and options.get('Node', 0) != 2:
-                    continue
-                plna = constants.PLANET_NAMES[remaining_planet]
-                plong = chart[plna][0]
-                plab = constants.PLANET_NAMES_SHORT[remaining_planet]
+            for index, (planet_name, planet_info) in enumerate(
+                constants.PLANETS.items()
+            ):
                 if (
-                    options.get('show_aspects', 0) == 0
-                    or plna in planets_foreground
+                    planet_info['number'] > 9
+                    and planet_info['short_name']
+                    not in self.options.extra_bodies
                 ):
-                    plist.append([plab, plong])
+                    continue
+
+                planet_longitude = chart.planets[planet_name].longitude
+                planet_short_name = planet_info['short_name']
+                if (
+                    (self.options.show_aspects or ShowAspect.ALL)
+                    == ShowAspect.ALL
+                    or planet_short_name in planets_foreground
+                ):
+                    plist.append([planet_short_name, planet_longitude])
+
+            # Left off here
+
             plist.append(['As', chart['cusps'][1]])
             plist.append(['Mc', chart['cusps'][10]])
             if len(plist) > 1 and (
-                options.get('show_aspects', 0) == 0
+                (self.options.show_aspects or ShowAspect.ALL) == ShowAspect.ALL
                 or planet_name in planets_foreground
             ):
                 # ecliptic midpoints?
@@ -1071,13 +1096,13 @@ class ChartReport:
                             plist,
                             remaining_planet,
                             k,
-                            options,
+                            self.options,
                         )
                         if mp:
                             emp.append(mp)
                 if emp:
                     emp.sort(key=lambda p: p[6:8])
-                    if cr or aspect_list:
+                    if need_another_row or aspect_list:
                         chartfile.write('\n' + (' ' * 9) + '| ')
                     else:
                         chartfile.write(' ')
@@ -1092,24 +1117,26 @@ class ChartReport:
         sign = constants.SIGNS_SHORT[int(chart['cusps'][1] // 30)]
         plist = []
         for planet_index in range(14):
-            if planet_index == 10 and not options.get('use_Eris', 1):
+            if planet_index == 10 and not self.options.get('use_Eris', 1):
                 continue
-            if planet_index == 11 and not options.get('use_Sedna', 0):
+            if planet_index == 11 and not self.options.get('use_Sedna', 0):
                 continue
-            if planet_index == 12 and options.get('Node', 0) != 1:
+            if planet_index == 12 and self.options.get('Node', 0) != 1:
                 continue
-            if planet_index == 13 and options.get('Node', 0) != 2:
+            if planet_index == 13 and self.options.get('Node', 0) != 2:
                 continue
             plna = constants.PLANET_NAMES[planet_index]
-            plong = chart[plna][0]
+            planet_longitude = chart[plna][0]
             plra = chart[plna][3]
             plpvl = chart[plna][7]
-            plab = constants.PLANET_NAMES_SHORT[planet_index]
+            planet_short_name = constants.PLANET_NAMES_SHORT[planet_index]
             if (
-                options.get('show_aspects', 0) == 0
+                self.options.get('show_aspects', 0) == 0
                 or plna in planets_foreground
             ):
-                plist.append([plab, plong, plra, plpvl])
+                plist.append(
+                    [planet_short_name, planet_longitude, plra, plpvl]
+                )
         plist.append(['Mc', chart['cusps'][10]])
         if len(plist) > 1:
             emp = []
@@ -1120,7 +1147,7 @@ class ChartReport:
                         plist,
                         remaining_planet,
                         k,
-                        options,
+                        self.options,
                     )
                     if mp:
                         emp.append(mp)
@@ -1145,7 +1172,7 @@ class ChartReport:
                         plist,
                         remaining_planet,
                         k,
-                        options,
+                        self.options,
                     )
                     if mp:
                         emp.append(mp)
@@ -1171,7 +1198,7 @@ class ChartReport:
             for remaining_planet in range(len(plist) - 1):
                 for k in range(remaining_planet + 1, len(plist)):
                     mp = self.mmp_all(
-                        ep, ze, plist, remaining_planet, k, options
+                        ep, ze, plist, remaining_planet, k, self.options
                     )
                     if mp:
                         emp.append(mp)
