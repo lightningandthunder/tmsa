@@ -180,12 +180,11 @@ class ChartWheelRole(Enum):
 
 class AspectType(Enum):
     CONJUNCTION = 'co'
-    SEMISQUARE = 'ssq'
+    OCTILE = 'oc'
     SEXTILE = 'sx'
     SQUARE = 'sq'
     TRINE = 'tr'
     OPPOSITION = 'op'
-    SESQUIQUADRATE = 'sqq'
 
     def __str__(self):
         return self.value
@@ -197,16 +196,14 @@ class AspectType(Enum):
     def from_string(cls, string: str):
         if string == 'co':
             return cls.CONJUNCTION
-        elif string == 'ssq' or string == 'oc':
-            return cls.SEMISQUARE
+        elif string == 'oc':
+            return cls.OCTILE
         elif string == 'sx':
             return cls.SEXTILE
         elif string == 'sq':
             return cls.SQUARE
         elif string == 'tr':
             return cls.TRINE
-        elif string == 'sqq':
-            return cls.SESQUIQUADRATE
         elif string == 'op':
             return cls.OPPOSITION
         else:
@@ -220,7 +217,7 @@ class AspectType(Enum):
         if degrees == 0:
             return cls.CONJUNCTION
         elif degrees == 45:
-            return cls.SEMISQUARE
+            return cls.OCTILE
         elif degrees == 60:
             return cls.SEXTILE
         elif degrees == 90:
@@ -228,7 +225,7 @@ class AspectType(Enum):
         elif degrees == 120:
             return cls.TRINE
         elif degrees == 135:
-            return cls.SESQUIQUADRATE
+            return cls.OCTILE
         elif degrees == 180:
             return cls.OPPOSITION
         else:
@@ -238,7 +235,7 @@ class AspectType(Enum):
     def degrees_from_abbreviation(abbreviation: str):
         if abbreviation == 'co':
             return 0
-        elif abbreviation == 'ssq' or abbreviation == 'oc':
+        elif abbreviation == 'oc':
             return 45
         elif abbreviation == 'sx':
             return 60
@@ -246,8 +243,6 @@ class AspectType(Enum):
             return 90
         elif abbreviation == 'tr':
             return 120
-        elif abbreviation == 'sqq':
-            return 135
         elif abbreviation == 'op':
             return 180
         else:
@@ -258,7 +253,7 @@ class AspectType(Enum):
         if degrees == 0:
             return 'co'
         elif degrees == 45:
-            return 'ssq'
+            return 'oc'
         elif degrees == 60:
             return 'sx'
         elif degrees == 90:
@@ -266,7 +261,7 @@ class AspectType(Enum):
         elif degrees == 120:
             return 'tr'
         elif degrees == 135:
-            return 'sqq'
+            return 'oc'
         elif degrees == 180:
             return 'op'
         else:
@@ -285,11 +280,11 @@ class Aspect:
     aspect_class: int
     strength: float
     orb: float
-    planet1_short_name: str
-    planet1_role: ChartWheelRole = ''
-    planet2_short_name: str
-    planet2_role: ChartWheelRole = ''
     framework: AspectFramework
+    planet1_short_name: str
+    planet2_short_name: str
+    planet1_role: ChartWheelRole = ''
+    planet2_role: ChartWheelRole = ''
 
     def as_ecliptical(self):
         self.framework = AspectFramework.ECLIPTICAL

@@ -438,9 +438,9 @@ def make_chart_path(chart, temporary):
         third = chart['type']
     filename = f'{first}~{second}~{third}.dat'
     if ingress:
-        filepath = f"{chart['year']}\\{filename}"
+        filepath = os.path.join(str(chart['year']), filename)
     else:
-        filepath = f'{first[0]}\\{first}\\{filename}'
+        filepath = os.path.join(f'{first[0]}', first, filename)
     path = TEMP_CHARTS if temporary else CHART_PATH
     return os.path.abspath(os.path.join(path, filepath))
 
