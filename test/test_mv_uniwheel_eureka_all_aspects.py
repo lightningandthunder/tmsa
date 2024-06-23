@@ -1,12 +1,13 @@
+from src.models.charts import AspectFramework, AspectType
 from test.fixtures.base_chart import base_chart
 from test.fixtures.natal_options import natal_options
 from test.mocks.mockfile import MockFile
 from test.fixtures.tk_fixtures import mock_tk_main
-from test.utils import assert_line_contains
+from test.utils import FixtureAspect, assert_aspect, assert_line_contains, assert_aspects_of_class
 
 
 class TestUniwheelDisplay:
-    def test_chart_center_info(
+    def init_test(
         self, monkeypatch, base_chart, natal_options, mock_tk_main
     ):
         from src.user_interfaces.uniwheelV2 import UniwheelV2
@@ -17,6 +18,11 @@ class TestUniwheelDisplay:
         UniwheelV2(chart=base_chart, temporary=False, options=natal_options)
 
         lines = mockfile.file.split('\n')
+
+        return lines
+
+    def test_chart_center_info(self, monkeypatch, base_chart, natal_options, mock_tk_main):
+        lines = self.init_test(monkeypatch, base_chart, natal_options, mock_tk_main)
 
         assert_line_contains(lines[22], base_chart['name'], any_position=True)
         assert_line_contains(lines[24], base_chart['type'], any_position=True)
@@ -36,14 +42,7 @@ class TestUniwheelDisplay:
         assert_line_contains(lines[38], 'SVP  5Pi23\'48"', any_position=True)
 
     def test_moon(self, monkeypatch, base_chart, natal_options, mock_tk_main):
-        from src.user_interfaces.uniwheelV2 import UniwheelV2
-
-        mockfile = MockFile()
-        monkeypatch.setattr('builtins.open', lambda _, __: mockfile)
-
-        UniwheelV2(chart=base_chart, temporary=False, options=natal_options)
-
-        lines = mockfile.file.split('\n')
+        lines = self.init_test(monkeypatch, base_chart, natal_options, mock_tk_main)
 
         assert_line_contains(
             lines[70].strip(),
@@ -68,14 +67,7 @@ class TestUniwheelDisplay:
     def test_mercury(
         self, monkeypatch, base_chart, natal_options, mock_tk_main
     ):
-        from src.user_interfaces.uniwheelV2 import UniwheelV2
-
-        mockfile = MockFile()
-        monkeypatch.setattr('builtins.open', lambda _, __: mockfile)
-
-        UniwheelV2(chart=base_chart, temporary=False, options=natal_options)
-
-        lines = mockfile.file.split('\n')
+        lines = self.init_test(monkeypatch, base_chart, natal_options, mock_tk_main)
 
         assert_line_contains(
             lines[72].strip(),
@@ -83,14 +75,7 @@ class TestUniwheelDisplay:
         )
 
     def test_venus(self, monkeypatch, base_chart, natal_options, mock_tk_main):
-        from src.user_interfaces.uniwheelV2 import UniwheelV2
-
-        mockfile = MockFile()
-        monkeypatch.setattr('builtins.open', lambda _, __: mockfile)
-
-        UniwheelV2(chart=base_chart, temporary=False, options=natal_options)
-
-        lines = mockfile.file.split('\n')
+        lines = self.init_test(monkeypatch, base_chart, natal_options, mock_tk_main)
 
         assert_line_contains(
             lines[73].strip(),
@@ -98,14 +83,7 @@ class TestUniwheelDisplay:
         )
 
     def test_mars(self, monkeypatch, base_chart, natal_options, mock_tk_main):
-        from src.user_interfaces.uniwheelV2 import UniwheelV2
-
-        mockfile = MockFile()
-        monkeypatch.setattr('builtins.open', lambda _, __: mockfile)
-
-        UniwheelV2(chart=base_chart, temporary=False, options=natal_options)
-
-        lines = mockfile.file.split('\n')
+        lines = self.init_test(monkeypatch, base_chart, natal_options, mock_tk_main)
 
         assert_line_contains(
             lines[74].strip(),
@@ -115,14 +93,7 @@ class TestUniwheelDisplay:
     def test_jupiter(
         self, monkeypatch, base_chart, natal_options, mock_tk_main
     ):
-        from src.user_interfaces.uniwheelV2 import UniwheelV2
-
-        mockfile = MockFile()
-        monkeypatch.setattr('builtins.open', lambda _, __: mockfile)
-
-        UniwheelV2(chart=base_chart, temporary=False, options=natal_options)
-
-        lines = mockfile.file.split('\n')
+        lines = self.init_test(monkeypatch, base_chart, natal_options, mock_tk_main)
 
         assert_line_contains(
             lines[75].strip(),
@@ -132,14 +103,7 @@ class TestUniwheelDisplay:
     def test_saturn(
         self, monkeypatch, base_chart, natal_options, mock_tk_main
     ):
-        from src.user_interfaces.uniwheelV2 import UniwheelV2
-
-        mockfile = MockFile()
-        monkeypatch.setattr('builtins.open', lambda _, __: mockfile)
-
-        UniwheelV2(chart=base_chart, temporary=False, options=natal_options)
-
-        lines = mockfile.file.split('\n')
+        lines = self.init_test(monkeypatch, base_chart, natal_options, mock_tk_main)
 
         assert_line_contains(
             lines[76].strip(),
@@ -149,14 +113,7 @@ class TestUniwheelDisplay:
     def test_uranus(
         self, monkeypatch, base_chart, natal_options, mock_tk_main
     ):
-        from src.user_interfaces.uniwheelV2 import UniwheelV2
-
-        mockfile = MockFile()
-        monkeypatch.setattr('builtins.open', lambda _, __: mockfile)
-
-        UniwheelV2(chart=base_chart, temporary=False, options=natal_options)
-
-        lines = mockfile.file.split('\n')
+        lines = self.init_test(monkeypatch, base_chart, natal_options, mock_tk_main)
 
         assert_line_contains(
             lines[77].strip(),
@@ -166,14 +123,7 @@ class TestUniwheelDisplay:
     def test_neptune(
         self, monkeypatch, base_chart, natal_options, mock_tk_main
     ):
-        from src.user_interfaces.uniwheelV2 import UniwheelV2
-
-        mockfile = MockFile()
-        monkeypatch.setattr('builtins.open', lambda _, __: mockfile)
-
-        UniwheelV2(chart=base_chart, temporary=False, options=natal_options)
-
-        lines = mockfile.file.split('\n')
+        lines = self.init_test(monkeypatch, base_chart, natal_options, mock_tk_main)
 
         assert_line_contains(
             lines[78].strip(),
@@ -181,14 +131,7 @@ class TestUniwheelDisplay:
         )
 
     def test_pluto(self, monkeypatch, base_chart, natal_options, mock_tk_main):
-        from src.user_interfaces.uniwheelV2 import UniwheelV2
-
-        mockfile = MockFile()
-        monkeypatch.setattr('builtins.open', lambda _, __: mockfile)
-
-        UniwheelV2(chart=base_chart, temporary=False, options=natal_options)
-
-        lines = mockfile.file.split('\n')
+        lines = self.init_test(monkeypatch, base_chart, natal_options, mock_tk_main)
 
         assert_line_contains(
             lines[79].strip(),
@@ -196,16 +139,65 @@ class TestUniwheelDisplay:
         )
 
     def test_eris(self, monkeypatch, base_chart, natal_options, mock_tk_main):
-        from src.user_interfaces.uniwheelV2 import UniwheelV2
-
-        mockfile = MockFile()
-        monkeypatch.setattr('builtins.open', lambda _, __: mockfile)
-
-        UniwheelV2(chart=base_chart, temporary=False, options=natal_options)
-
-        lines = mockfile.file.split('\n')
+        lines = self.init_test(monkeypatch, base_chart, natal_options, mock_tk_main)
 
         assert_line_contains(
             lines[80].strip(),
             "Er 21Pi39'39\" 17S30 - 0' 9\"  21°43'  9S46 228°58' +25°10'  17° 9' 211°56'  50%",
         )
+
+
+    def test_aspects_class_1(self, monkeypatch, base_chart, natal_options, mock_tk_main):
+        lines = self.init_test(monkeypatch, base_chart, natal_options, mock_tk_main)
+        lines = lines[83:96]
+
+        aspects = [
+            FixtureAspect('Mo', 'Ju', AspectType.SQUARE, 2, 4, 92, AspectFramework.MUNDANE),
+            FixtureAspect('Mo', 'Sa', AspectType.SQUARE, 2, 35, 87),
+            FixtureAspect('Mo', 'Ne', AspectType.SQUARE, 0, 8, 100),
+            FixtureAspect('Mo', 'Er', AspectType.OPPOSITION, 0, 11, 100, AspectFramework.MUNDANE),
+            FixtureAspect('Me', 'Pl', AspectType.SEXTILE, 2, 14, 90),
+            FixtureAspect('Me', 'Er', AspectType.SQUARE, 2, 43, 86),
+            FixtureAspect('Ma', 'Er', AspectType.OCTILE, 0, 47, 89),
+            FixtureAspect('Ju', 'Ur', AspectType.OPPOSITION, 1, 35, 97),
+            FixtureAspect('Ju', 'Er', AspectType.SQUARE, 2, 15, 90, AspectFramework.MUNDANE),
+            FixtureAspect('Sa', 'Ne', AspectType.CONJUNCTION, 2, 26, 89, AspectFramework.MUNDANE),
+            FixtureAspect('Sa', 'Pl', AspectType.SEXTILE, 2, 26, 89),
+            FixtureAspect('Sa', 'Er', AspectType.SQUARE, 1, 56, 93),
+            FixtureAspect('Ne', 'Er', AspectType.SQUARE, 2, 46, 85, AspectFramework.MUNDANE),
+        ]
+
+        assert_aspects_of_class(lines, 1, aspects)
+
+    
+    def test_aspects_class_2(self, monkeypatch, base_chart, natal_options, mock_tk_main):
+        lines = self.init_test(monkeypatch, base_chart, natal_options, mock_tk_main)
+        lines = lines[83:90]
+
+        aspects = [
+            FixtureAspect('Su', 'Ur', AspectType.CONJUNCTION, 5, 52, 63),
+            FixtureAspect('Me', 'Ma', AspectType.OCTILE, 1, 57, 37),
+            FixtureAspect('Me', 'Sa', AspectType.CONJUNCTION, 4, 40, 77),
+            FixtureAspect('Ve', 'Ma', AspectType.SEXTILE, 3, 5, 82),
+            FixtureAspect('Ju', 'Ne', AspectType.OPPOSITION, 4, 55, 74),
+            FixtureAspect('Ur', 'Ne', AspectType.CONJUNCTION, 6, 30, 55),
+            FixtureAspect('Ne', 'Pl', AspectType.SEXTILE, 5, 9, 51),
+        ]
+
+        assert_aspects_of_class(lines, 2, aspects)
+
+    def test_aspects_class_3(self, monkeypatch, base_chart, natal_options, mock_tk_main):
+        lines = self.init_test(monkeypatch, base_chart, natal_options, mock_tk_main)
+        lines = lines[83:90]
+
+        aspects = [
+            FixtureAspect('Mo', 'Me', AspectType.SQUARE, 7, 15, 6),
+            FixtureAspect('Mo', 'Ve', AspectType.TRINE, 6, 37, 20),
+            FixtureAspect('Mo', 'Ur', AspectType.SQUARE, 6, 38, 20),
+            FixtureAspect('Su', 'Ju', AspectType.OPPOSITION, 7, 27, 42),
+            FixtureAspect('Me', 'Ne', AspectType.CONJUNCTION, 7, 22, 43),
+            FixtureAspect('Ju', 'Sa', AspectType.OPPOSITION, 7, 38, 39),
+            FixtureAspect('Sa', 'Ur', AspectType.CONJUNCTION, 9, 13, 14),
+        ]
+
+        assert_aspects_of_class(lines, 3, aspects)

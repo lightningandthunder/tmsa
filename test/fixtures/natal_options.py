@@ -8,7 +8,7 @@ def natal_options():
         'use_Sedna': 0,
         'use_Vertex': 1,
         'Node': 0,
-        'show_aspects': 1,
+        'show_aspects': 0,
         'partile_nf': 1,
         'angularity': {
             'model': 2,

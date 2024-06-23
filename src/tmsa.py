@@ -207,7 +207,7 @@ class StartPage(Frame):
         except:
             return
 
-        recs = [rec for rec in recs if '\\temporary\\' not in rec]
+        recs = [rec for rec in recs if 'temporary' not in rec]
         if len(recs) > 100:
             recs = recs[0:100]
         try:

@@ -47,6 +47,7 @@ class BiwheelV2:
         chart_grid = [[' ' for _ in range(cols)] for _ in range(rows)]
         filename = make_chart_path(chart, temporary)
         filename = filename[0:-3] + 'txt'
+        self.chart = chart
         try:
             chartfile = open(filename, 'w')
         except Exception as e:
