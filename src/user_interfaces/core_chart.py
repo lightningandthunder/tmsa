@@ -1043,7 +1043,7 @@ class ChartReport:
                 ):
                     chartfile.write('\n' + (' ' * 9) + '| ')
 
-            plist = []
+            points_to_show_midpoint_aspects_to = []
             for index, (planet_name, planet_info) in enumerate(
                 chart_utils.iterate_allowed_planets(self.options)
             ):
@@ -1054,23 +1054,34 @@ class ChartReport:
                     == ShowAspect.ALL
                     or planet_short_name in planets_foreground
                 ):
-                    plist.append([planet_short_name, planet_longitude])
+                    points_to_show_midpoint_aspects_to.append(
+                        [planet_short_name, planet_longitude]
+                    )
 
             # Left off here
 
-            plist.append(['As', chart['cusps'][1]])
-            plist.append(['Mc', chart['cusps'][10]])
-            if len(plist) > 1 and (
+            points_to_show_midpoint_aspects_to.append(
+                ['As', chart['cusps'][1]]
+            )
+            points_to_show_midpoint_aspects_to.append(
+                ['Mc', chart['cusps'][10]]
+            )
+            if len(points_to_show_midpoint_aspects_to) > 1 and (
                 (self.options.show_aspects or ShowAspect.ALL) == ShowAspect.ALL
                 or planet_name in planets_foreground
             ):
                 # ecliptic midpoints?
                 emp = []
-                for remaining_planet in range(len(plist) - 1):
-                    for k in range(remaining_planet + 1, len(plist)):
+                for remaining_planet in range(
+                    len(points_to_show_midpoint_aspects_to) - 1
+                ):
+                    for k in range(
+                        remaining_planet + 1,
+                        len(points_to_show_midpoint_aspects_to),
+                    ):
                         mp = self.find_midpoint(
                             [planet_short_name, planet_data[0]],
-                            plist,
+                            points_to_show_midpoint_aspects_to,
                             remaining_planet,
                             k,
                             self.options,
@@ -1092,7 +1103,7 @@ class ChartReport:
                             chartfile.write('\n' + (' ' * 9) + '| ')
 
         sign = constants.SIGNS_SHORT[int(chart['cusps'][1] // 30)]
-        plist = []
+        points_to_show_midpoint_aspects_to = []
         for planet_index in range(14):
             if planet_index == 10 and not self.options.get('use_Eris', 1):
                 continue
@@ -1111,17 +1122,22 @@ class ChartReport:
                 self.options.get('show_aspects', 0) == 0
                 or plna in planets_foreground
             ):
-                plist.append(
+                points_to_show_midpoint_aspects_to.append(
                     [planet_short_name, planet_longitude, plra, plpvl]
                 )
-        plist.append(['Mc', chart['cusps'][10]])
-        if len(plist) > 1:
+        points_to_show_midpoint_aspects_to.append(['Mc', chart['cusps'][10]])
+        if len(points_to_show_midpoint_aspects_to) > 1:
             emp = []
-            for remaining_planet in range(len(plist) - 1):
-                for k in range(remaining_planet + 1, len(plist)):
+            for remaining_planet in range(
+                len(points_to_show_midpoint_aspects_to) - 1
+            ):
+                for k in range(
+                    remaining_planet + 1,
+                    len(points_to_show_midpoint_aspects_to),
+                ):
                     mp = self.find_midpoint(
                         ['As', chart['cusps'][1]],
-                        plist,
+                        points_to_show_midpoint_aspects_to,
                         remaining_planet,
                         k,
                         self.options,
@@ -1139,14 +1155,19 @@ class ChartReport:
                     ):
                         chartfile.write('\n' + (' ' * 9) + '| ')
         sign = constants.SIGNS_SHORT[int(chart['cusps'][10] // 30)]
-        plist[-1] = ['As', chart['cusps'][1]]
-        if len(plist) > 1:
+        points_to_show_midpoint_aspects_to[-1] = ['As', chart['cusps'][1]]
+        if len(points_to_show_midpoint_aspects_to) > 1:
             emp = []
-            for remaining_planet in range(len(plist) - 1):
-                for k in range(remaining_planet + 1, len(plist)):
+            for remaining_planet in range(
+                len(points_to_show_midpoint_aspects_to) - 1
+            ):
+                for k in range(
+                    remaining_planet + 1,
+                    len(points_to_show_midpoint_aspects_to),
+                ):
                     mp = self.find_midpoint(
                         ['Mc', chart['cusps'][10]],
-                        plist,
+                        points_to_show_midpoint_aspects_to,
                         remaining_planet,
                         k,
                         self.options,
@@ -1163,8 +1184,8 @@ class ChartReport:
                         and remaining_planet != len(emp) - 1
                     ):
                         chartfile.write('\n' + (' ' * 9) + '| ')
-        del plist[-1]
-        if len(plist) > 1:
+        del points_to_show_midpoint_aspects_to[-1]
+        if len(points_to_show_midpoint_aspects_to) > 1:
             emp = []
             ep = [
                 'Ep',
@@ -1172,10 +1193,20 @@ class ChartReport:
                 (chart['ramc'] + 90) % 360,
             ]
             ze = ['Ze', (chart['cusps'][1] - 90) % 360]
-            for remaining_planet in range(len(plist) - 1):
-                for k in range(remaining_planet + 1, len(plist)):
+            for remaining_planet in range(
+                len(points_to_show_midpoint_aspects_to) - 1
+            ):
+                for k in range(
+                    remaining_planet + 1,
+                    len(points_to_show_midpoint_aspects_to),
+                ):
                     mp = self.mmp_all(
-                        ep, ze, plist, remaining_planet, k, self.options
+                        ep,
+                        ze,
+                        points_to_show_midpoint_aspects_to,
+                        remaining_planet,
+                        k,
+                        self.options,
                     )
                     if mp:
                         emp.append(mp)
