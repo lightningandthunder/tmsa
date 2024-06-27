@@ -7,12 +7,12 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
+from biwheelV2 import BiwheelV2
 from init import *
 from swe import *
 from uniwheelV2 import UniwheelV2
-from biwheelV2 import BiwheelV2
-from widgets import *
 from utils import to360
+from widgets import *
 
 planet_names = [
     'Moon',

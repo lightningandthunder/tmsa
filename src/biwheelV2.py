@@ -8,9 +8,10 @@
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
 
+import math
 from copy import deepcopy
 from datetime import datetime
-import math
+
 from chart_utils import *
 from utils import open_file
 
@@ -310,9 +311,7 @@ class BiwheelV2:
                 angularity_is_background = angularity.strip().lower() == 'b'
 
                 if (
-                    not angularity_is_empty
-                    and not angularity_is_background
-                    and not is_mundanely_background
+                    not angularity_is_empty and not angularity_is_background
                 ) or (planet_name == 'Moon' and 'I' in self.cclass):
                     planets_foreground.append('t' + planet_name)
 
@@ -398,9 +397,7 @@ class BiwheelV2:
                 angularity_is_background = angularity.strip().lower() == 'b'
 
                 if (
-                    not angularity_is_empty
-                    and not angularity_is_background
-                    and not is_mundanely_background
+                    not angularity_is_empty and not angularity_is_background
                 ) or (planet_name == 'Moon' and 'I' in self.cclass):
                     planets_foreground.append('r' + planet_name)
 
@@ -462,6 +459,7 @@ class BiwheelV2:
                         planets_foreground,
                         0,
                     )
+
                     if ecliptic_aspect and mundane_aspect:
                         if mundane_orb < ecliptic_orb:
                             ecliptic_aspect = ''
@@ -563,6 +561,7 @@ class BiwheelV2:
                         planets_foreground,
                         2,
                     )
+
                     if ecliptic_aspect and mundane_aspect:
                         if mundane_orb < ecliptic_orb:
                             ecliptic_aspect = ''

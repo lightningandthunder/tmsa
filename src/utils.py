@@ -1,10 +1,11 @@
 import math
-from widgets import base_font
-from tkinter.font import Font as tkFont
 import os
-from constants import PLATFORM
 import shutil
 import subprocess
+from tkinter.font import Font as tkFont
+
+from constants import PLATFORM
+from widgets import base_font
 
 
 def open_file(file: str):

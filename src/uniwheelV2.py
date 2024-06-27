@@ -7,8 +7,9 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
-from datetime import datetime
 import math
+from datetime import datetime
+
 from chart_utils import *
 from constants import VERSION
 from utils import open_file
@@ -811,7 +812,6 @@ class UniwheelV2:
             if (
                 not angularity_is_empty
                 and not angularity_is_background
-                and not is_mundanely_background
             ) or (planet_name == 'Moon' and 'I' in self.cclass):
                 planets_foreground.append(planet_name)
 

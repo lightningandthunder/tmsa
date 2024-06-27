@@ -7,23 +7,21 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
+import json
 import math
-from init import *
+import os
+import shutil
+import webbrowser
+
 from chart_options import ChartOptions
+from constants import VERSION
+from gui_utils import ShowHelp, newline_if_past_breakpoint
 from ingresses import Ingresses
+from init import *
 from new_chart import NewChart
 from program_options import ProgramOptions
 from select_chart import SelectChart
 from widgets import *
-import webbrowser
-import os
-import shutil
-import json
-from constants import VERSION
-from gui_utils import (
-    ShowHelp,
-    newline_if_past_breakpoint,
-)
 
 TITLE = f'Time Matters {VERSION}'
 INTRO = f"""A freeware program for calculating geometrically

@@ -7,13 +7,15 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
-from init import *
 import tkinter as tk
 import tkinter.messagebox as tkmessagebox
-from tkinter.font import Font as tkFont
 import traceback
-from constants import VERSION, PLATFORM
+from tkinter.font import Font as tkFont
+
 from PIL import ImageTk
+
+from constants import PLATFORM, VERSION
+from init import *
 
 main = tk.Tk()
 main.minsize(800, 600)
