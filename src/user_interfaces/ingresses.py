@@ -19,16 +19,16 @@ import anglicize
 import us
 from geopy import Nominatim
 
-from chart import Chart
+from src.user_interfaces.chart import Chart
 from src.constants import DQ, DS, MONTHS, VERSION
 from src.utils.format_utils import normalize_text
 from src.utils.gui_utils import ShowHelp, open_file
-from src.program_launch import *
-from locations import Locations
-from more_charts import MoreCharts
-from swe import *
+from src import *
+from src.user_interfaces.locations import Locations
+from src.user_interfaces.more_charts import MoreCharts
+from src.swe import *
 from src.utils.format_utils import display_name
-from widgets import *
+from src.user_interfaces.widgets import *
 
 
 class Ingresses(Frame):

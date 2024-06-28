@@ -13,7 +13,7 @@ import traceback
 from tkinter.font import Font as tkFont
 
 from src.constants import PLATFORM, VERSION
-from src.program_launch import *
+from src import *
 
 main = tk.Tk()
 main.minsize(800, 600)

@@ -7,12 +7,13 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
-from biwheelV2 import BiwheelV2
-from src.program_launch import *
-from swe import *
-from uniwheelV2 import UniwheelV2
+from src.user_interfaces.biwheelV2 import BiwheelV2
+from src import *
+from src.swe import *
+from src.user_interfaces.uniwheelV2 import UniwheelV2
+from src.utils.chart_utils import make_chart_path
 from src.utils.format_utils import to360
-from widgets import *
+from src.user_interfaces.widgets import *
 
 planet_names = [
     'Moon',

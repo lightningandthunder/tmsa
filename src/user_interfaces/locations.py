@@ -10,8 +10,8 @@
 import json
 
 from src.utils.chart_utils import *
-from src.program_launch import *
-from widgets import *
+from src import *
+from src.user_interfaces.widgets import *
 
 
 class Locations(Frame):

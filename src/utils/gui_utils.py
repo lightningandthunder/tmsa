@@ -1,6 +1,6 @@
 import tkinter.messagebox as tkmessagebox
 
-from os_utils import open_file
+from .os_utils import open_file
 
 
 class ShowHelp:

@@ -15,8 +15,6 @@ VERSION = '0.6.0a0'
 DS = '\N{DEGREE SIGN}'
 DQ = '"'
 SQ = "'"
-VERSION = '0.5.6'
-
 
 PLATFORM = None
 

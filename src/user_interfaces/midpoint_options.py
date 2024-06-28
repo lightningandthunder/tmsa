@@ -8,8 +8,8 @@
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
 from src.utils.gui_utils import ShowHelp
-from src.program_launch import *
-from widgets import *
+from src import *
+from src.user_interfaces.widgets import *
 
 
 class MidpointOptions(Frame):
