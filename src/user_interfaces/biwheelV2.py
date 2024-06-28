@@ -12,8 +12,9 @@ import math
 import tkinter.messagebox as tkmessagebox
 from datetime import datetime
 
-from chart_utils import *
-from utils import open_file
+from src.constants import MONTHS
+from src.utils.chart_utils import *
+from src.utils.os_utils import open_file
 
 
 def write_to_file(chart, planet, prefix, pa_only=False):

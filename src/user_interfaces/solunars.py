@@ -20,13 +20,14 @@ import us
 from geopy import Nominatim
 
 from chart import Chart
-from constants import DQ, DS, VERSION
-from gui_utils import ShowHelp
-from init import *
+from src.constants import DQ, DS, MONTHS, VERSION
+from src.utils.format_utils import display_name, normalize_text, toDMS
+from src.utils.os_utils import open_file
+from src.utils.gui_utils import ShowHelp
+from src.program_launch import *
 from locations import Locations
 from more_charts import MoreCharts
 from swe import *
-from utils import display_name, open_file, toDMS
 from widgets import *
 
 
@@ -193,7 +194,7 @@ class Solunars(Frame):
 
     def back(self):
         self.destroy()
-        from user_interfaces.select_chart import SelectChart
+        from src.user_interfaces.select_chart import SelectChart
 
         SelectChart()
 
@@ -476,7 +477,7 @@ class Solunars(Frame):
         self.options.text = text[1:-4]
 
     def temp_options(self):
-        from user_interfaces.chart_options import ChartOptions
+        from src.user_interfaces.chart_options import ChartOptions
 
         ChartOptions(self.options.text, True, self.options)
 

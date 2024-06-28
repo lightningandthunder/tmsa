@@ -17,9 +17,9 @@ import anglicize
 import us
 from geopy import Nominatim
 
-from constants import DQ, DS, VERSION
-from gui_utils import ShowHelp
-from init import *
+from src.constants import DQ, DS, VERSION
+from src.utils.gui_utils import ShowHelp
+from src.program_launch import *
 from locations import Locations
 from widgets import *
 

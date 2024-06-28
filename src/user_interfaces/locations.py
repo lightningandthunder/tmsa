@@ -9,8 +9,8 @@
 
 import json
 
-from chart_utils import *
-from init import *
+from src.utils.chart_utils import *
+from src.program_launch import *
 from widgets import *
 
 

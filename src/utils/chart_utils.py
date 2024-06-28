@@ -11,8 +11,10 @@ import math
 import os
 from typing import Iterator
 
-from init import *
-from user_interfaces.widgets import *
+from src import constants
+from src.models.options import NodeTypes, Options
+from src.program_launch import *
+from src.user_interfaces.widgets import *
 
 SIGNS_SHORT = [
     'Ar',

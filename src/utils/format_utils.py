@@ -1,11 +1,5 @@
 import math
 import os
-import shutil
-import subprocess
-from tkinter.font import Font as tkFont
-
-from constants import PLATFORM
-from widgets import base_font
 
 
 def normalize_text(text, nocap=False, maxlen=33):

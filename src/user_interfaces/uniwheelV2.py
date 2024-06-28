@@ -11,9 +11,9 @@ import math
 import tkinter.messagebox as tkmessagebox
 from datetime import datetime
 
-from chart_utils import *
-from constants import VERSION
-from utils import open_file
+from src.utils.chart_utils import *
+from src.constants import MONTHS, VERSION
+from src.utils.os_utils import open_file
 
 
 def write_to_file(chart, planet):
@@ -810,10 +810,9 @@ class UniwheelV2:
             angularity_is_empty = angularity.strip() == ''
             angularity_is_background = angularity.strip().lower() == 'b'
 
-            if (
-                not angularity_is_empty
-                and not angularity_is_background
-            ) or (planet_name == 'Moon' and 'I' in self.cclass):
+            if (not angularity_is_empty and not angularity_is_background) or (
+                planet_name == 'Moon' and 'I' in self.cclass
+            ):
                 planets_foreground.append(planet_name)
 
             if angularity_is_background or is_mundanely_background:
