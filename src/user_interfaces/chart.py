@@ -8,10 +8,10 @@
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
 from biwheelV2 import BiwheelV2
-from init import *
+from src.program_launch import *
 from swe import *
 from uniwheelV2 import UniwheelV2
-from utils import to360
+from src.utils.format_utils import to360
 from widgets import *
 
 planet_names = [

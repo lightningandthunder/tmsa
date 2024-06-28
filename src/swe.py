@@ -20,9 +20,9 @@ from ctypes import (
     create_string_buffer,
 )
 
-from constants import PLATFORM
-from init import *
-from utils import (
+from src.constants import PLATFORM
+from src.program_launch import *
+from src.utils.format_utils import (
     add_360_if_negative,
     arccotangent,
     cotangent,

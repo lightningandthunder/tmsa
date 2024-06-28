@@ -12,8 +12,8 @@ import os
 import shutil
 import sys
 
-from constants import PLATFORM
-from libs import *
+from src.constants import PLATFORM
+from src.utils.os_utils import create_directory
 
 startup = True
 

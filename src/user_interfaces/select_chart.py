@@ -13,13 +13,13 @@ import shutil
 import tkinter.filedialog as tkfiledialog
 import tkinter.messagebox as tkmessagebox
 
-from chart import Chart
-from gui_utils import ShowHelp
-from init import *
+from src.utils.format_utils import display_name
+from src.utils.os_utils import open_file
+from src.utils.gui_utils import ShowHelp
+from src.program_launch import *
 from more_charts import MoreCharts
 from new_chart import NewChart
 from solunars import Solunars
-from utils import display_name, open_file
 from widgets import *
 
 

@@ -1,7 +1,6 @@
 import tkinter.messagebox as tkmessagebox
 
-from utils import open_file
-from user_interfaces.widgets import base_font
+from os_utils import open_file
 
 
 class ShowHelp:

@@ -21,9 +21,9 @@ from geopy import Nominatim
 from timezonefinder import TimezoneFinder
 
 from chart import Chart
-from constants import DQ, DS, VERSION
-from gui_utils import ShowHelp
-from init import *
+from src.constants import DQ, DS, VERSION
+from src.utils.gui_utils import ShowHelp
+from src.program_launch import *
 from locations import Locations
 from widgets import *
 
@@ -708,7 +708,7 @@ class NewChart(Frame):
         self.options.text = text[1:-4]
 
     def temp_options(self):
-        from user_interfaces.chart_options import ChartOptions
+        from src.user_interfaces.chart_options import ChartOptions
 
         ChartOptions(self.options.text, True, self.options)
 

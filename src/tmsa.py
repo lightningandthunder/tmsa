@@ -13,15 +13,15 @@ import os
 import shutil
 import webbrowser
 
-from chart_options import ChartOptions
-from constants import VERSION
-from gui_utils import ShowHelp, newline_if_past_breakpoint
-from ingresses import Ingresses
-from init import *
-from new_chart import NewChart
-from program_options import ProgramOptions
-from select_chart import SelectChart
-from widgets import *
+from src.user_interfaces.chart_options import ChartOptions
+from src.constants import VERSION
+from src.utils.gui_utils import ShowHelp, newline_if_past_breakpoint
+from src.user_interfaces.ingresses import Ingresses
+from src.program_launch import *
+from src.user_interfaces.new_chart import NewChart
+from src.user_interfaces.program_options import ProgramOptions
+from src.user_interfaces.select_chart import SelectChart
+from src.user_interfaces.widgets import *
 
 from src.constants import LABEL_X_COORD, LABEL_HEIGHT_UNIT, LABEL_WIDTH
 

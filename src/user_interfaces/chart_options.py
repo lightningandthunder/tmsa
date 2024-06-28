@@ -12,8 +12,9 @@ import os
 import tkinter.filedialog as tkfiledialog
 import tkinter.messagebox as tkmessagebox
 
-from gui_utils import ShowHelp
-from init import *
+from src.utils.format_utils import normalize_text
+from src.utils.gui_utils import ShowHelp
+from src.program_launch import *
 from midpoint_options import MidpointOptions
 from widgets import *
 
