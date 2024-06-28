@@ -20,12 +20,13 @@ import us
 from geopy import Nominatim
 from timezonefinder import TimezoneFinder
 
-from chart import Chart
-from src.constants import DQ, DS, VERSION
+from src.user_interfaces.chart import Chart
+from src.constants import DQ, DS, MONTHS, VERSION
+from src.utils.format_utils import normalize_text
 from src.utils.gui_utils import ShowHelp
-from src.program_launch import *
-from locations import Locations
-from widgets import *
+from src import *
+from src.user_interfaces.locations import Locations
+from src.user_interfaces.widgets import *
 
 
 class NewChart(Frame):

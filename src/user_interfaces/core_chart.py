@@ -351,17 +351,29 @@ class ChartReport:
         )
 
     def find_pvp_aspect(
-        self, chart: chart_models.ChartObject, planet_index: int
+        self, chart: chart_models.ChartObject,
+        planet_1: chart_models.PlanetData,
+        planet_2: chart_models.PlanetData,
+        minor_orbs: list[float],
     ):
-        # I need to ask Jim more about this, but...
-        # Find conjunct/opp in azimuth across horizon - these are conj/opp.
-        # Find azimuth squares to planets near meridian (90* of azimuth) - squares.
-        # That is still measured in azimuth.
-        # Find ML squares of one planet on horizon and one on PV measured in ML;
-        # what that actually means is planet co horizon in PVL
-        # plus planet co Vx/Av in azimuth...? Those should be affected by
-        # "class 3 orbs for minor angles," which i'll need to default down to
-        # class 2 and class 1 if any are absent
+        # since both planets need to be close to the prime vertical for this,
+        # i.e. on vertex or antivertex, we need to check their orbs first
+        if not chart_utils.inrange(planet_1.azimuth, 90, minor_orbs[-1]) and not chart_utils.inrange(planet_1.azimuth, 270, minor_orbs[-1]):
+            return ('', 0, 0)
+        
+        if not chart_utils.inrange(planet_2.azimuth, 90, minor_orbs[-1]) and not chart_utils.inrange(planet_2.azimuth, 270, minor_orbs[-1]):
+            return ('', 0, 0)
+
+        # check meridian to prime vertical in azimuth
+
+
+        # check prime vertical to prime vertical in azimuth
+    
+
+        # check horizon to prime vertical in meridian longitude
+
+
+
         return ('', 0, 0)
 
     def calc_angle_and_strength(
@@ -888,16 +900,24 @@ class ChartReport:
                     (mundane_orb, mundane_aspect),
                     (pvp_orb, pvp_aspect),
                 ].sort(key=lambda x: x[0])[0]
+
+                # Even if the PVP aspect is the closest, if there is any other aspect, use that instead
+                if pvp_aspect and not ecliptical_aspect and not mundane_aspect:
+                    aspects_by_class[pvp_aspect_class - 1].append(pvp_aspect)
+                else:
+                    # If the pvp aspect is the closest, but other aspects exist, remove the pvp orb
+                    # so the next closest aspect can be used
+                    if tightest_orb[0] == pvp_orb:
+                        tightest_orb.pop(0)
+
                 if tightest_orb[0] == ecliptical_orb:
                     aspects_by_class[ecliptical_aspect_class - 1].append(
                         ecliptical_aspect
                     )
-                elif tightest_orb[0] == mundane_orb:
+                else: # mundane orb
                     aspects_by_class[mundane_aspect_class - 1].append(
                         mundane_aspect
                     )
-                else:  # pvp orb
-                    aspects_by_class[pvp_aspect_class - 1].append(pvp_aspect)
 
         # Remove empty aspect classes
         if len(aspects_by_class[3]) == 0 or whole_chart_is_dormant:

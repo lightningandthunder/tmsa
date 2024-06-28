@@ -21,7 +21,7 @@ from ctypes import (
 )
 
 from src.constants import PLATFORM
-from src.program_launch import *
+from src import *
 from src.utils.format_utils import (
     add_360_if_negative,
     arccotangent,

@@ -18,15 +18,15 @@ class TestBiwheelDisplay:
 
         lines = mockfile.file.split('\n')
 
-        assert_line_contains(lines[20], 'Transiting (t) Chart', any_position=True)
+        assert_line_contains(
+            lines[20], 'Transiting (t) Chart', any_position=True
+        )
         assert_line_contains(lines[21], ssr['name'], any_position=True)
         assert_line_contains(lines[22], ssr['type'], any_position=True)
         assert_line_contains(
             lines[23], '21 Dec 2023 20:29:58 UT', any_position=True
         )
-        assert_line_contains(
-            lines[24], ssr['location'], any_position=True
-        )
+        assert_line_contains(lines[24], ssr['location'], any_position=True)
         assert_line_contains(lines[25], '35N 8\'46"', any_position=True)
         assert_line_contains(lines[25], '90W 3\' 6"', any_position=True)
 
@@ -34,18 +34,28 @@ class TestBiwheelDisplay:
         assert_line_contains(lines[28], 'OE 23°26\'18"', any_position=True)
         assert_line_contains(lines[29], 'SVP  4Pi55\'36"', any_position=True)
 
-
         assert_line_contains(lines[34], 'Radical (r) Chart', any_position=True)
-        assert_line_contains(lines[35], ssr['base_chart']['name'], any_position=True)
-        assert_line_contains(lines[36], ssr['base_chart']['type'], any_position=True)
-        assert_line_contains(lines[37], '20 Dec 1989 22:20:00 EST', any_position=True)
-        assert_line_contains(lines[38], ssr['base_chart']['location'], any_position=True)
-        assert_line_contains(lines[39], '40N58\'47"  74W 7\'10"', any_position=True)
-        assert_line_contains(lines[40], 'UT  3:20:00 +1 day', any_position=True)
+        assert_line_contains(
+            lines[35], ssr['base_chart']['name'], any_position=True
+        )
+        assert_line_contains(
+            lines[36], ssr['base_chart']['type'], any_position=True
+        )
+        assert_line_contains(
+            lines[37], '20 Dec 1989 22:20:00 EST', any_position=True
+        )
+        assert_line_contains(
+            lines[38], ssr['base_chart']['location'], any_position=True
+        )
+        assert_line_contains(
+            lines[39], '40N58\'47"  74W 7\'10"', any_position=True
+        )
+        assert_line_contains(
+            lines[40], 'UT  3:20:00 +1 day', any_position=True
+        )
         assert_line_contains(lines[41], 'RAMC 65°33\'42"', any_position=True)
         assert_line_contains(lines[42], 'OE 23°26\'33"', any_position=True)
         assert_line_contains(lines[43], 'SVP  5Pi23\'48"', any_position=True)
-
 
     # def test_moon(self, monkeypatch, ssr, natal_options, mock_tk_main):
     #     from src.user_interfaces.biwheelV2 import BiwheelV2

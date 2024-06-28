@@ -13,7 +13,7 @@ from typing import Iterator
 
 from src import constants
 from src.models.options import NodeTypes, Options
-from src.program_launch import *
+from src import *
 from src.user_interfaces.widgets import *
 
 SIGNS_SHORT = [

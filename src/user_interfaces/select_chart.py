@@ -13,14 +13,15 @@ import shutil
 import tkinter.filedialog as tkfiledialog
 import tkinter.messagebox as tkmessagebox
 
+from src.utils.chart_utils import make_chart_path
 from src.utils.format_utils import display_name
 from src.utils.os_utils import open_file
 from src.utils.gui_utils import ShowHelp
-from src.program_launch import *
-from more_charts import MoreCharts
-from new_chart import NewChart
-from solunars import Solunars
-from widgets import *
+from src import *
+from src.user_interfaces.more_charts import MoreCharts
+from src.user_interfaces.new_chart import NewChart
+from src.user_interfaces.solunars import Solunars
+from src.user_interfaces.widgets import *
 
 
 class SelectChart(Frame):
