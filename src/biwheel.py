@@ -8,10 +8,11 @@
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
 
-from copy import deepcopy
-from datetime import datetime
 import math
 import os
+from copy import deepcopy
+from datetime import datetime
+
 from chart_utils import *
 from utils import open_file
 

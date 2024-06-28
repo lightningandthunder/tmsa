@@ -1,3 +1,6 @@
+### 0.5.5
+- Fix bug where planets mundanely background wouldn't be considered for aspects even if they were on a minor angle
+
 ### 0.5.0
 - Change strength calculation for minor angles
 - Add calculations for meridian longitude

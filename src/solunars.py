@@ -7,24 +7,26 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
-from copy import deepcopy
+import json
+import os
 import random
-from init import *
+import tkinter.filedialog as tkfiledialog
+from copy import deepcopy
+from datetime import datetime as dt
+
+import anglicize
+import us
+from geopy import Nominatim
+
 from chart import Chart
+from constants import DQ, DS, VERSION
+from gui_utils import ShowHelp
+from init import *
 from locations import Locations
 from more_charts import MoreCharts
 from swe import *
+from utils import display_name, open_file, toDMS
 from widgets import *
-from datetime import datetime as dt
-import tkinter.filedialog as tkfiledialog
-import json
-import os
-from geopy import Nominatim
-import anglicize
-from constants import DS, DQ, VERSION
-import us
-from utils import toDMS, open_file, display_name
-from gui_utils import ShowHelp
 
 
 class Solunars(Frame):

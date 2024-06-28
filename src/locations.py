@@ -8,8 +8,9 @@
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
 import json
-from init import *
+
 from chart_utils import *
+from init import *
 from widgets import *
 
 
