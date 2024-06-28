@@ -24,6 +24,7 @@ class PlanetData:
     azimuth: float
     altitude: float
     house: float
+    prime_vertical_longitude: float
     meridian_longitude: float
     treat_as_foreground: bool
 
@@ -49,6 +50,11 @@ class PlanetData:
 
     def with_house_position(self, house: float):
         self.house = house
+        zero_index_house = house - 1
+        pvl = (int(zero_index_house) * 30) + (
+            ((zero_index_house) - int(zero_index_house)) * 30
+        )
+        self.prime_vertical_longitude = pvl
         return self
 
     def with_meridian_longitude(self, meridian_longitude: float):

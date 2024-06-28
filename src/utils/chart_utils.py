@@ -468,3 +468,10 @@ def iterate_allowed_planets(
             continue
 
         yield planet_name, data
+
+
+def calc_aspect_strength_percent(max_orb: int, raw_orb: float) -> str:
+    strength = 60 / max_orb
+    strength_percent = math.cos(math.radians(raw_orb * strength))
+    strength_percent = round((strength_percent - 0.5) * 200)
+    return f'{strength_percent:3d}'

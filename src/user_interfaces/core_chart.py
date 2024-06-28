@@ -351,30 +351,168 @@ class ChartReport:
         )
 
     def find_pvp_aspect(
-        self, chart: chart_models.ChartObject,
+        self,
         planet_1: chart_models.PlanetData,
         planet_2: chart_models.PlanetData,
         minor_orbs: list[float],
     ):
-        # since both planets need to be close to the prime vertical for this,
-        # i.e. on vertex or antivertex, we need to check their orbs first
-        if not chart_utils.inrange(planet_1.azimuth, 90, minor_orbs[-1]) and not chart_utils.inrange(planet_1.azimuth, 270, minor_orbs[-1]):
-            return ('', 0, 0)
-        
-        if not chart_utils.inrange(planet_2.azimuth, 90, minor_orbs[-1]) and not chart_utils.inrange(planet_2.azimuth, 270, minor_orbs[-1]):
-            return ('', 0, 0)
+        max_orb = minor_orbs[-1]
 
-        # check meridian to prime vertical in azimuth
+        planet_1_on_prime_vertical = chart_utils.inrange(
+            planet_1.azimuth, 90, max_orb
+        ) or chart_utils.inrange(planet_1.azimuth, 270, max_orb)
 
+        planet_2_on_prime_vertical = chart_utils.inrange(
+            planet_2.azimuth, 90, max_orb
+        ) or chart_utils.inrange(planet_2.azimuth, 270, max_orb)
 
-        # check prime vertical to prime vertical in azimuth
-    
+        default_return = (None, 0, 0)
 
-        # check horizon to prime vertical in meridian longitude
+        if planet_1_on_prime_vertical and planet_2_on_prime_vertical:
+            # check prime vertical to prime vertical in azimuth
+            raw_orb = abs(planet_1.azimuth - planet_2.azimuth)
+            is_conjunction = chart_utils.inrange(raw_orb, 0, max_orb)
 
+            if is_conjunction or chart_utils.inrange(raw_orb, 180, max_orb):
+                aspect = (
+                    chart_models.Aspect()
+                    .as_prime_vertical_paran()
+                    .from_planet(planet_1)
+                    .to_planet(planet_2)
+                    .as_type(
+                        chart_models.AspectType.CONJUNCTION
+                        if is_conjunction
+                        else chart_models.AspectType.OPPOSITION
+                    )
+                    .with_class(1)
+                )
+                aspect_strength = chart_utils.calc_aspect_strength_percent(
+                    max_orb, raw_orb
+                )
+                aspect = aspect.with_strength(aspect_strength).with_orb(
+                    chart_utils.fmt_dm(abs(raw_orb), True)
+                )
 
+                return (
+                    str(aspect),
+                    aspect.aspect_class,
+                    raw_orb,
+                )
 
-        return ('', 0, 0)
+        if planet_1_on_prime_vertical or planet_2_on_prime_vertical:
+            # check meridian to prime vertical in azimuth
+            planet_on_meridian = (
+                planet_1
+                if chart_utils.inrange(
+                    planet_1.prime_vertical_longitude, 90, max_orb
+                )
+                or chart_utils.inrange(
+                    planet_1.prime_vertical_longitude, 270, max_orb
+                )
+                else planet_2
+                if chart_utils.inrange(
+                    planet_2.prime_vertical_longitude, 90, max_orb
+                )
+                or chart_utils.inrange(
+                    planet_2.prime_vertical_longitude, 270, max_orb
+                )
+                else None
+            )
+
+            if planet_on_meridian is not None:
+
+                planet_on_prime_vertical = (
+                    planet_1 if planet_1_on_prime_vertical else planet_2
+                )
+                if planet_on_meridian.name != planet_on_prime_vertical.name:
+
+                    raw_orb = abs(
+                        planet_on_meridian.azimuth
+                        - planet_on_prime_vertical.azimuth
+                    )
+                    if (
+                        chart_utils.inrange(raw_orb, 0, max_orb)
+                        or chart_utils.inrange(raw_orb, 90, max_orb)
+                        or chart_utils.inrange(raw_orb, 180, max_orb)
+                    ):
+                        # These are squares no matter what
+                        aspect = (
+                            chart_models.Aspect()
+                            .as_prime_vertical_paran()
+                            .from_planet(planet_on_meridian)
+                            .to_planet(planet_on_prime_vertical)
+                            .as_type(chart_models.AspectType.SQUARE)
+                            .with_class(1)
+                        )
+                        aspect_strength = (
+                            chart_utils.calc_aspect_strength_percent(
+                                max_orb, raw_orb
+                            )
+                        )
+                        aspect = aspect.with_strength(
+                            aspect_strength
+                        ).with_orb(chart_utils.fmt_dm(abs(raw_orb), True))
+                        return (
+                            str(aspect),
+                            aspect.aspect_class,
+                            raw_orb,
+                        )
+            # check horizon to prime vertical in meridian longitude
+            planet_on_horizon = (
+                planet_1
+                if chart_utils.inrange(
+                    planet_1.prime_vertical_longitude, 0, max_orb
+                )
+                or chart_utils.inrange(
+                    planet_1.prime_vertical_longitude, 180, max_orb
+                )
+                else planet_2
+                if chart_utils.inrange(
+                    planet_2.prime_vertical_longitude, 0, max_orb
+                )
+                or chart_utils.inrange(
+                    planet_2.prime_vertical_longitude, 180, max_orb
+                )
+                else None
+            )
+            if planet_on_horizon is not None:
+                planet_on_prime_vertical = (
+                    planet_1 if planet_1_on_prime_vertical else planet_2
+                )
+                if planet_on_horizon.name != planet_on_prime_vertical.name:
+                    raw_orb = abs(
+                        planet_on_horizon.meridian_longitude
+                        - planet_on_prime_vertical.meridian_longitude
+                    )
+                    if (
+                        chart_utils.inrange(raw_orb, 0, max_orb)
+                        or chart_utils.inrange(raw_orb, 90, max_orb)
+                        or chart_utils.inrange(raw_orb, 180, max_orb)
+                    ):
+                        # These are squares no matter what
+                        aspect = (
+                            chart_models.Aspect()
+                            .as_prime_vertical_paran()
+                            .from_planet(planet_on_horizon)
+                            .to_planet(planet_on_prime_vertical)
+                            .as_type(chart_models.AspectType.SQUARE)
+                            .with_class(1)
+                        )
+                        aspect_strength = (
+                            chart_utils.calc_aspect_strength_percent(
+                                max_orb, raw_orb
+                            )
+                        )
+                        aspect = aspect.with_strength(
+                            aspect_strength
+                        ).with_orb(chart_utils.fmt_dm(abs(raw_orb), True))
+                        return (
+                            str(aspect),
+                            aspect.aspect_class,
+                            raw_orb,
+                        )
+
+        return default_return
 
     def calc_angle_and_strength(
         self,
@@ -776,7 +914,11 @@ class ChartReport:
 
             planet_foreground_angles[planet_data.short_name] = angularity
 
-            if not angularity == angles_models.NonForegroundAngles.BLANK:
+            if (
+                not angularity == angles_models.NonForegroundAngles.BLANK
+                and not angularity
+                == angles_models.NonForegroundAngles.BACKGROUND
+            ):
                 planets_foreground.append(planet_name)
 
             elif planet_name == 'Moon' and 'I' in self.cclass:
@@ -813,11 +955,12 @@ class ChartReport:
 
         # Aspects
         ecliptical_orbs = (
-            self.options.ecliptic_aspects or constants.DEFAULT_ECLIPTICAL_ORBS
+            self.options.ecliptic_aspects
+            or chart_utils.DEFAULT_ECLIPTICAL_ORBS
         )
 
         mundane_orbs = (
-            self.options.mundane_aspects or constants.DEFAULT_MUNDANE_ORBS
+            self.options.mundane_aspects or chart_utils.DEFAULT_MUNDANE_ORBS
         )
         aspects_by_class = [[], [], [], []]
         aspect_class_headers = [
@@ -870,8 +1013,8 @@ class ChartReport:
                     ecliptical_orb,
                 ) = self.find_ecliptical_aspect(
                     chart,
-                    planet_index,
-                    secondary_index,
+                    primary_planet,
+                    secondary_planet,
                     ecliptical_orbs,
                     planets_foreground,
                     whole_chart_is_dormant,
@@ -882,17 +1025,17 @@ class ChartReport:
                     mundane_orb,
                 ) = self.find_mundane_aspect(
                     chart,
-                    planet_index,
-                    secondary_index,
+                    primary_planet,
+                    secondary_planet,
                     mundane_orbs,
                     planets_foreground,
                     whole_chart_is_dormant,
                 )
 
                 (pvp_aspect, pvp_aspect_class, pvp_orb) = self.find_pvp_aspect(
-                    chart,
-                    planet_index,
-                    secondary_index,
+                    primary_planet,
+                    secondary_planet,
+                    self.options.angularity.minor_angles,
                 )
 
                 tightest_orb = [
@@ -914,7 +1057,7 @@ class ChartReport:
                     aspects_by_class[ecliptical_aspect_class - 1].append(
                         ecliptical_aspect
                     )
-                else: # mundane orb
+                else:   # mundane orb
                     aspects_by_class[mundane_aspect_class - 1].append(
                         mundane_aspect
                     )
