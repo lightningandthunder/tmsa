@@ -238,22 +238,14 @@ class ChartObject:
                 planet.declination = planet_data[4]
                 planet.azimuth = planet_data[5]
                 planet.altitude = planet_data[6]
-                planet.house = planet_data[7]
-                planet.prime_vertical_longitude = convert_house_to_pvl(
-                    planet.house
-                )
 
                 if len(planet_data) >= 9:
                     planet.meridian_longitude = planet_data[7]
                     planet.house = planet_data[8]
-                    planet.prime_vertical_longitude = convert_house_to_pvl(
-                        planet.house
-                    )
+                    planet.prime_vertical_longitude = planet_data[8]
                 else:
                     planet.house = planet_data[7]
-                    planet.prime_vertical_longitude = convert_house_to_pvl(
-                        planet.house
-                    )
+                    planet.prime_vertical_longitude = planet_data[7]
                     planet.meridian_longitude = swe.calc_meridian_longitude(
                         planet.azimuth, planet.altitude
                     )

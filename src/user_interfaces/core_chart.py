@@ -193,18 +193,6 @@ class ChartReport:
         whole_chart_is_dormant: bool,
         aspect_framework: chart_models.AspectFramework,
     ) -> chart_models.Aspect:
-        if (
-            planet_1.short_name not in self.options.extra_bodies
-            and planet_2.short_name not in self.options.extra_bodies
-        ):
-            return None
-
-        if (
-            whole_chart_is_dormant
-            and self.core_chart.type in chart_utils.INGRESSES
-        ):
-            return None
-
         raw_orb = None
         if aspect_framework == chart_models.AspectFramework.ECLIPTICAL:
             raw_orb = abs(planet_1.longitude - planet_2.longitude) % 360
@@ -216,6 +204,8 @@ class ChartReport:
                 )
                 % 360
             )
+            print(planet_1.prime_vertical_longitude, planet_2.prime_vertical_longitude)
+            print("Raw mundane orb: ", raw_orb)
 
         if raw_orb > 180:
             raw_orb = 360 - raw_orb
@@ -228,7 +218,7 @@ class ChartReport:
             test_orb = None
 
             if aspect_framework == chart_models.AspectFramework.ECLIPTICAL:
-                test_orb = self.options.ecliptic_aspects[str(aspect_degrees)]
+                test_orb = self.options.mundane_aspects[str(aspect_degrees)]
             elif aspect_framework == chart_models.AspectFramework.MUNDANE:
                 test_orb = self.options.mundane_aspects[str(aspect_degrees)]
 
@@ -976,28 +966,33 @@ class ChartReport:
 
                 ecliptical_aspect = self.find_ecliptical_aspect(
                     primary_planet_data,
-                    chart_models.ChartWheelRole.RADIX,
+                    None,
                     secondary_planet_data,
-                    chart_models.ChartWheelRole.RADIX,
+                    None,
                     planets_foreground,
                     whole_chart_is_dormant,
                 )
                 mundane_aspect = self.find_mundane_aspect(
                     primary_planet_data,
-                    chart_models.ChartWheelRole.RADIX,
+                    None,
                     secondary_planet_data,
-                    chart_models.ChartWheelRole.RADIX,
+                    None,
                     planets_foreground,
                     whole_chart_is_dormant,
                 )
 
-                pvp_aspect = self.find_pvp_aspect(
-                    primary_planet_data,
-                    chart_models.ChartWheelRole.RADIX,
-                    secondary_planet_data,
-                    chart_models.ChartWheelRole.RADIX,
-                    self.options.angularity.minor_angles[-1],
-                )
+                pvp_aspect = None
+                if self.options.allow_pvp_aspects:
+                    pvp_aspect = self.find_pvp_aspect(
+                        primary_planet_data,
+                        None,
+                        secondary_planet_data,
+                        None,
+                        chart_utils.greatest_nonzero_class_orb(self.options.angularity.minor_angles),
+                    )
+                print(f'aspects for {primary_planet_long_name} and {secondary_planet_long_name}:')
+                print(f'ecliptical: {ecliptical_aspect}')
+                print(f'mundane: {mundane_aspect}')
 
                 if (
                     not ecliptical_aspect
