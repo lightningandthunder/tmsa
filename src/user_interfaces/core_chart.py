@@ -336,7 +336,11 @@ class ChartReport:
             is_conjunction = chart_utils.inrange(raw_orb, 0, max_orb)
 
             if is_conjunction or chart_utils.inrange(raw_orb, 180, max_orb):
-                t =  chart_models.AspectType.CONJUNCTION if is_conjunction else chart_models.AspectType.OPPOSITION
+                t = (
+                    chart_models.AspectType.CONJUNCTION
+                    if is_conjunction
+                    else chart_models.AspectType.OPPOSITION
+                )
                 aspect = (
                     chart_models.Aspect()
                     .as_prime_vertical_paran()
@@ -352,7 +356,9 @@ class ChartReport:
                 aspect_strength = chart_utils.calc_aspect_strength_percent(
                     max_orb, raw_orb
                 )
-                aspect = aspect.with_strength(aspect_strength).with_orb(raw_orb)
+                aspect = aspect.with_strength(aspect_strength).with_orb(
+                    raw_orb
+                )
 
                 return aspect
 
@@ -396,8 +402,14 @@ class ChartReport:
                         aspect = (
                             chart_models.Aspect()
                             .as_prime_vertical_paran()
-                            .from_planet(planet_on_meridian.short_name, role=planet_1_role)
-                            .to_planet(planet_on_prime_vertical.short_name, role=planet_2_role)
+                            .from_planet(
+                                planet_on_meridian.short_name,
+                                role=planet_1_role,
+                            )
+                            .to_planet(
+                                planet_on_prime_vertical.short_name,
+                                role=planet_2_role,
+                            )
                             .as_type(chart_models.AspectType.SQUARE)
                             .with_class(1)
                         )
@@ -447,8 +459,14 @@ class ChartReport:
                         aspect = (
                             chart_models.Aspect()
                             .as_prime_vertical_paran()
-                            .from_planet(planet_on_horizon.short_name, role=planet_1_role)
-                            .to_planet(planet_on_prime_vertical.short_name, role=planet_2_role)
+                            .from_planet(
+                                planet_on_horizon.short_name,
+                                role=planet_1_role,
+                            )
+                            .to_planet(
+                                planet_on_prime_vertical.short_name,
+                                role=planet_2_role,
+                            )
                             .as_type(chart_models.AspectType.SQUARE)
                             .with_class(1)
                         )
@@ -704,12 +722,7 @@ class ChartReport:
         if chtype.endswith(' Single Wheel'):
             chtype = chtype.replace(' Single Wheel', '')
         chart_grid[23][18:51] = chart_utils.center_align(chtype)
-        line = (
-            str(chart.day)
-            + ' '
-            + constants.MONTHS[chart.month - 1]
-            + ' '
-        )
+        line = str(chart.day) + ' ' + constants.MONTHS[chart.month - 1] + ' '
         line += (
             f'{chart.year} ' if chart.year > 0 else f'{-chart.year + 1} BCE '
         )
@@ -882,9 +895,13 @@ class ChartReport:
                 angularity == angles_models.NonForegroundAngles.BLANK
                 or is_mundanely_background
             ):
-                if chart_utils.inrange(planet_data.azimuth, 270, minor_limit[2]):
+                if chart_utils.inrange(
+                    planet_data.azimuth, 270, minor_limit[2]
+                ):
                     angularity = angles_models.NonForegroundAngles.VERTEX
-                elif chart_utils.inrange(planet_data.azimuth, 90, minor_limit[2]):
+                elif chart_utils.inrange(
+                    planet_data.azimuth, 90, minor_limit[2]
+                ):
                     angularity = angles_models.NonForegroundAngles.ANTIVERTEX
 
             chartfile.write(f'{strength_percent:3d}% {angularity}')
@@ -914,12 +931,14 @@ class ChartReport:
             'Other Partile',
         ]
 
-        for (primary_index, (primary_planet_long_name, primary_planet_info)) in enumerate(
-            chart_utils.iterate_allowed_planets(self.options)
-        ):
-            for (secondary_index, (secondary_planet_long_name, secondary_planet_info)) in enumerate(
-                chart_utils.iterate_allowed_planets(self.options)
-            ):
+        for (
+            primary_index,
+            (primary_planet_long_name, primary_planet_info),
+        ) in enumerate(chart_utils.iterate_allowed_planets(self.options)):
+            for (
+                secondary_index,
+                (secondary_planet_long_name, secondary_planet_info),
+            ) in enumerate(chart_utils.iterate_allowed_planets(self.options)):
                 if secondary_index <= primary_index:
                     continue
 
@@ -945,14 +964,15 @@ class ChartReport:
                 if show_aspects == option_models.ShowAspect.BOTH_FOREGROUND:
                     if (
                         primary_planet_long_name not in planets_foreground
-                        or secondary_planet_long_name
-                        not in planets_foreground
+                        or secondary_planet_long_name not in planets_foreground
                     ):
                         if not self.options.partile_nf:
                             continue
-                
+
                 primary_planet_data = chart.planets[primary_planet_long_name]
-                secondary_planet_data = chart.planets[secondary_planet_long_name]
+                secondary_planet_data = chart.planets[
+                    secondary_planet_long_name
+                ]
 
                 ecliptical_aspect = self.find_ecliptical_aspect(
                     primary_planet_data,
@@ -979,12 +999,18 @@ class ChartReport:
                     self.options.angularity.minor_angles[-1],
                 )
 
-                if not ecliptical_aspect and not mundane_aspect and not pvp_aspect:
+                if (
+                    not ecliptical_aspect
+                    and not mundane_aspect
+                    and not pvp_aspect
+                ):
                     continue
 
                 tightest_orb = []
                 if ecliptical_aspect:
-                    tightest_orb.append((ecliptical_aspect.orb, ecliptical_aspect))
+                    tightest_orb.append(
+                        (ecliptical_aspect.orb, ecliptical_aspect)
+                    )
 
                 if mundane_aspect:
                     tightest_orb.append((mundane_aspect.orb, mundane_aspect))
@@ -998,18 +1024,22 @@ class ChartReport:
 
                 # Even if the PVP aspect is the closest, if there is any other aspect, use that instead
                 if pvp_aspect and not ecliptical_aspect and not mundane_aspect:
-                    aspects_by_class[pvp_aspect.aspect_class - 1].append(pvp_aspect)
+                    aspects_by_class[pvp_aspect.aspect_class - 1].append(
+                        pvp_aspect
+                    )
                 else:
                     # If the pvp aspect is the closest, but other aspects exist, remove the pvp orb
                     # so the next closest aspect can be used
                     if pvp_aspect and tightest_orb[0] == pvp_aspect.orb:
                         tightest_orb.pop(0)
 
-
-                if ecliptical_aspect and tightest_orb[0] == ecliptical_aspect.orb:
-                    aspects_by_class[ecliptical_aspect.aspect_class - 1].append(
-                        ecliptical_aspect
-                    )
+                if (
+                    ecliptical_aspect
+                    and tightest_orb[0] == ecliptical_aspect.orb
+                ):
+                    aspects_by_class[
+                        ecliptical_aspect.aspect_class - 1
+                    ].append(ecliptical_aspect)
                 elif mundane_aspect:   # mundane orb
                     aspects_by_class[mundane_aspect.aspect_class - 1].append(
                         mundane_aspect
