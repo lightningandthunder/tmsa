@@ -686,8 +686,7 @@ class ChartReport:
         if angularity.strip() == '' and is_mundanely_background:
             angularity = angles_models.NonForegroundAngles.BACKGROUND
 
-        # TODO - not sure how to handle this
-        if 'I' not in self.cclass:
+        if self.chart.type not in chart_utils.INGRESSES:
             # It's not an ingress; dormancy is always negated
             planet_negates_dormancy = True
         else:
@@ -710,11 +709,6 @@ class ChartReport:
         rows = 65
         cols = 69
         chart_grid = [[' ' for _ in range(cols)] for _ in range(rows)]
-
-        # TODO - I don't really understand the difference between these two
-        self.cclass = chart.type
-        if not self.cclass:
-            self.cclass = chart_utils.get_return_class(chart['type'])
 
         chartfile.write('\n')
         for column_index in range(cols):
@@ -751,7 +745,7 @@ class ChartReport:
         chart_grid[64][31:37] = cusps[4]
         chart_grid[64][48:54] = cusps[5]
 
-        if chart['type'] not in constants.INGRESSES:
+        if chart['type'] not in chart_utils.INGRESSES:
             name = chart['name']
             if ';' in name:
                 name = name.split(';')[0]
@@ -835,7 +829,7 @@ class ChartReport:
 
         # TODO - I don't understand this
         # Default to true if this is an ingress chart
-        whole_chart_is_dormant = True if 'I' in self.cclass else False
+        whole_chart_is_dormant = True if self.chart.type in chart_utils.INGRESSES else False
 
         for planet_name, _ in chart_utils.iterate_allowed_planets(
             self.options
@@ -921,7 +915,8 @@ class ChartReport:
             ):
                 planets_foreground.append(planet_name)
 
-            elif planet_name == 'Moon' and 'I' in self.cclass:
+            # Special case for Moon in ingress charts - always treat it as foreground
+            elif planet_name == 'Moon' and self.chart.type in chart_utils.INGRESSES:
                 planet_data.treat_as_foreground = True
 
             if is_mundanely_background:
