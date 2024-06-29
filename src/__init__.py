@@ -11,12 +11,8 @@ import json
 import os
 
 from src.constants import PLATFORM
-from src.utils.os_utils import (
-    app_path,
-    copy_file_if_not_exists,
-    create_directory,
-    write_to_path,
-)
+from src.utils.os_utils import (app_path, copy_file_if_not_exists,
+                                create_directory, write_to_path)
 
 STILL_STARTING_UP = True
 

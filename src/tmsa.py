@@ -13,18 +13,17 @@ import os
 import shutil
 import webbrowser
 
-from src.user_interfaces.chart_options import ChartOptions
-from src.constants import VERSION
-from src.utils.gui_utils import ShowHelp, newline_if_past_breakpoint
-from src.user_interfaces.ingresses import Ingresses
 from src import *
+from src import STILL_STARTING_UP
+from src.constants import (LABEL_HEIGHT_UNIT, LABEL_WIDTH, LABEL_X_COORD,
+                           VERSION)
+from src.user_interfaces.chart_options import ChartOptions
+from src.user_interfaces.ingresses import Ingresses
 from src.user_interfaces.new_chart import NewChart
 from src.user_interfaces.program_options import ProgramOptions
 from src.user_interfaces.select_chart import SelectChart
 from src.user_interfaces.widgets import *
-from src import STILL_STARTING_UP
-
-from src.constants import LABEL_X_COORD, LABEL_HEIGHT_UNIT, LABEL_WIDTH
+from src.utils.gui_utils import ShowHelp, newline_if_past_breakpoint
 
 TITLE = f'Time Matters {VERSION}'
 INTRO = f"""A freeware program for calculating geometrically

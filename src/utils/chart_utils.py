@@ -11,9 +11,9 @@ import math
 import os
 from typing import Iterator
 
+from src import *
 from src import constants
 from src.models.options import NodeTypes, Options
-from src import *
 from src.user_interfaces.widgets import *
 
 SIGNS_SHORT = [
@@ -91,6 +91,16 @@ INGRESSES = [
     'Canlunar',
     'Arilunar',
     'Liblunar',
+]
+
+SOLAR_RETURNS = [
+    'Solar Return'
+    'Kinetic Solar Return'
+    'Novienic Solar Return'
+    '10-Day Solar Return'
+    'Anlunar Return'
+    'Kinetic Anlunar Return'
+    'Solilunar Return'
 ]
 
 POS_SIGN = {
@@ -475,3 +485,10 @@ def calc_aspect_strength_percent(max_orb: int, raw_orb: float) -> str:
     strength_percent = math.cos(math.radians(raw_orb * strength))
     strength_percent = round((strength_percent - 0.5) * 200)
     return f'{strength_percent:3d}'
+
+
+def convert_house_to_pvl(house: float) -> float:
+    zero_index_house = house - 1
+    return (int(zero_index_house) * 30) + (
+        ((zero_index_house) - int(zero_index_house)) * 30
+    )
