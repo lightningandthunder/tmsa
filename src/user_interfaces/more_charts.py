@@ -8,8 +8,8 @@
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
 from src import *
-from src.utils.format_utils import display_name
 from src.user_interfaces.widgets import *
+from src.utils.format_utils import display_name
 
 
 class MoreCharts(Frame):

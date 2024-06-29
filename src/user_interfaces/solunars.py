@@ -19,16 +19,16 @@ import anglicize
 import us
 from geopy import Nominatim
 
-from src.user_interfaces.chart import Chart
-from src.constants import DQ, DS, MONTHS, VERSION
-from src.utils.format_utils import display_name, normalize_text, toDMS
-from src.utils.os_utils import open_file
-from src.utils.gui_utils import ShowHelp
 from src import *
+from src.constants import DQ, DS, MONTHS, VERSION
+from src.swe import *
+from src.user_interfaces.chart import Chart
 from src.user_interfaces.locations import Locations
 from src.user_interfaces.more_charts import MoreCharts
-from src.swe import *
 from src.user_interfaces.widgets import *
+from src.utils.format_utils import display_name, normalize_text, toDMS
+from src.utils.gui_utils import ShowHelp
+from src.utils.os_utils import open_file
 
 
 class Solunars(Frame):

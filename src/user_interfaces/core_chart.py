@@ -12,12 +12,12 @@ import tkinter.messagebox as tkmessagebox
 from datetime import datetime
 from io import TextIOWrapper
 
+import models.angles as angles_models
 import models.charts as chart_models
 import models.options as option_models
-import models.angles as angles_models
 import src.constants as constants
-from src.utils.os_utils import open_file
 import utils.chart_utils as chart_utils
+from src.utils.os_utils import open_file
 
 
 def write_to_file(chart, planet):
@@ -41,7 +41,7 @@ class ChartReport:
 
     def __init__(
         self,
-        charts: dict[str : chart_models.ChartObject],
+        charts: dict[chart_models.ChartWheelRole : chart_models.ChartObject],
         temporary: bool,
         options: option_models.Options,
     ):
@@ -50,11 +50,17 @@ class ChartReport:
 
         self.try_precess_to_transit_chart(charts)
 
-        core_chart = (
-            charts[charts.ChartWheelRole.TRANSIT]
-            if charts.ChartWheelRole.TRANSIT in charts
-            else charts[charts.ChartWheelRole.RADIX]
-        )
+        core_chart = None
+        if chart_models.ChartWheelRole.TRANSIT in charts:
+            core_chart = charts[chart_models.ChartWheelRole.TRANSIT]
+
+        elif chart_models.ChartWheelRole.INGRESS in charts:
+            core_chart = charts[chart_models.ChartWheelRole.INGRESS]
+
+        else:
+            core_chart = charts[chart_models.ChartWheelRole.RADIX]
+
+        self.core_chart = core_chart
 
         filename = chart_utils.make_chart_path(core_chart, temporary)
         filename = filename[0:-3] + 'txt'
@@ -76,31 +82,43 @@ class ChartReport:
     def try_precess_to_transit_chart(
         self, charts: dict[str : chart_models.ChartObject]
     ):
+        if len(charts) == 1:
+            return
+
+        # Precess radix to transit
         if (
-            charts.ChartWheelRole.RADIX in charts
-            and charts.ChartWheelRole.TRANSIT in charts
+            chart_models.ChartWheelRole.RADIX in charts
+            and chart_models.ChartWheelRole.TRANSIT in charts
         ):
-            self.charts[charts.ChartWheelRole.RADIX].precess(
-                self.charts[charts.ChartWheelRole.TRANSIT]
+            self.charts[chart_models.ChartWheelRole.RADIX].precess_to(
+                self.charts[chart_models.ChartWheelRole.TRANSIT]
             )
 
+        # Precess progressed to transit
         if (
-            charts.ChartWheelRole.PROGRESSED in charts
-            and charts.ChartWheelRole.TRANSIT in charts
+            chart_models.ChartWheelRole.PROGRESSED in charts
+            and chart_models.ChartWheelRole.TRANSIT in charts
         ):
-            self.charts[charts.ChartWheelRole.PROGRESSED].precess(
-                self.charts[charts.ChartWheelRole.TRANSIT]
+            self.charts[chart_models.ChartWheelRole.PROGRESSED].precess_to(
+                self.charts[chart_models.ChartWheelRole.TRANSIT]
+            )
+
+        # If only radix and progressed are present,
+        # precess radix to progressed
+        if (
+            chart_models.ChartWheelRole.RADIX in charts
+            and chart_models.ChartWheelRole.PROGRESSED in charts
+            and not chart_models.ChartWheelRole.TRANSIT in charts
+        ):
+            self.charts[chart_models.ChartWheelRole.RADIX].precess_to(
+                self.charts[chart_models.ChartWheelRole.PROGRESSED]
             )
 
     def sort_house(self, chart: chart_models.ChartObject, index: int):
         house = []
-        # TODO - vertex isn't in this list
-        for planet_name, planet_info in constants.PLANETS.items():
-            if (
-                planet_info['number'] > 9
-                and planet_info['short_name'] not in self.options.extra_bodies
-            ):
-                continue
+        for planet_name, planet_data in chart_utils.iterate_allowed_planets(
+            self.options
+        ):
 
             planet_data = chart.planets[planet_name]
             if planet_data[-1] // 30 == index:
@@ -129,140 +147,90 @@ class ChartReport:
     def find_ecliptical_aspect(
         self,
         planet_1: chart_models.PlanetData,
+        planet_1_role: str | None,
         planet_2: chart_models.PlanetData,
-        ecliptical_orbs: list[float],
+        planet_2_role: str | None,
         foreground_planets: list[str],
         whole_chart_is_dormant: bool,
-        chart_is_ingress: bool,
-    ):
-        if (
-            planet_1.short_name not in self.options.extra_bodies
-            and planet_2.short_name not in self.options.extra_bodies
-        ):
-            return ('', 0, 0)
-
-        raw_orb = abs(planet_1.longitude - planet_2.longitude) % 360
-        if raw_orb > 180:
-            raw_orb = 360 - raw_orb
-
-        for aspect_string in chart_models.AspectType:
-            aspect_degrees = chart_models.AspectType.degrees_from_abbreviation(
-                aspect_string
-            )
-            test_orb = ecliptical_orbs[str(aspect_degrees)]
-            if test_orb[2]:
-                maxorb = test_orb[2]
-            elif test_orb[1]:
-                maxorb = test_orb[1] * 1.25
-            elif test_orb[0]:
-                maxorb = test_orb[0] * 2.5
-            else:
-                maxorb = -1
-            if (
-                raw_orb >= aspect_degrees - maxorb
-                and raw_orb <= aspect_degrees + maxorb
-            ):
-                aspect = (
-                    chart_models.Aspect()
-                    .as_ecliptical()
-                    .from_planet(planet_1)
-                    .to_planet(planet_2)
-                    .as_type(
-                        chart_models.AspectType.from_string(aspect_string)
-                    )
-                )
-                if maxorb <= 0:
-                    return ('', 0, 0)
-                raw_orb = abs(raw_orb - aspect_degrees)
-                if raw_orb <= test_orb[0]:
-                    aspect = aspect.with_class(1)
-                elif raw_orb <= test_orb[1]:
-                    aspect = aspect.with_class(2)
-                elif raw_orb <= test_orb[2]:
-                    aspect = aspect.with_class(3)
-                else:
-                    return ('', 0, 0)
-
-                if planet_1.name == 'Moon' and chart_is_ingress:
-                    break
-                if chart_is_ingress and whole_chart_is_dormant:
-                    return ('', 0, 0)
-
-                if (
-                    self.options.show_aspects
-                    == option_models.ShowAspect.ONE_PLUS_FOREGROUND
-                ):
-                    if (
-                        planet_1.name not in foreground_planets
-                        and not planet_1.treat_as_foreground
-                    ) and (
-                        planet_2.name not in foreground_planets
-                        and not planet_2.treat_as_foreground
-                    ):
-                        if raw_orb <= 1 and self.options.partile_nf:
-                            aspect = aspect.with_class(4)
-                        else:
-                            return ('', 0, 0)
-                elif (
-                    self.options.show_aspects
-                    == option_models.ShowAspect.BOTH_FOREGROUND
-                ):
-                    if (
-                        planet_1.name not in foreground_planets
-                        and not planet_1.treat_as_foreground
-                    ) or (
-                        planet_2.name not in foreground_planets
-                        and not planet_2.treat_as_foreground
-                    ):
-                        if raw_orb <= 1 and self.options.partile_nf:
-                            aspect = aspect.with_class(4)
-                        else:
-                            return ('', 0, 0)
-                break
-        else:
-            return ('', 0, 0)
-
-        strength = 60 / maxorb
-        strength_percent = math.cos(math.radians(raw_orb * strength))
-        strength_percent = round((strength_percent - 0.5) * 200)
-        strength_percent = f'{strength_percent:3d}'
-        aspect = aspect.with_strength(strength_percent).with_orb(
-            chart_utils.fmt_dm(abs(raw_orb), True)
-        )
-        return (
-            str(aspect),
-            aspect.aspect_class,
-            raw_orb,
+    ) -> chart_models.Aspect:
+        return self._find_non_pvp_aspect(
+            planet_1,
+            planet_1_role,
+            planet_2,
+            planet_2_role,
+            foreground_planets,
+            whole_chart_is_dormant,
+            chart_models.AspectFramework.ECLIPTICAL,
         )
 
     def find_mundane_aspect(
         self,
         planet_1: chart_models.PlanetData,
+        planet_1_role: str | None,
         planet_2: chart_models.PlanetData,
-        mundane_orbs: list[float],
+        planet_2_role: str | None,
         foreground_planets: list[str],
         whole_chart_is_dormant: bool,
-        chart_is_ingress: bool,
-    ):
+    ) -> chart_models.Aspect:
+        return self._find_non_pvp_aspect(
+            planet_1,
+            planet_1_role,
+            planet_2,
+            planet_2_role,
+            foreground_planets,
+            whole_chart_is_dormant,
+            chart_models.AspectFramework.MUNDANE,
+        )
+
+    def _find_non_pvp_aspect(
+        self,
+        planet_1: chart_models.PlanetData,
+        planet_1_role: str | None,
+        planet_2: chart_models.PlanetData,
+        planet_2_role: str | None,
+        foreground_planets: list[str],
+        whole_chart_is_dormant: bool,
+        aspect_framework: chart_models.AspectFramework,
+    ) -> chart_models.Aspect:
         if (
             planet_1.short_name not in self.options.extra_bodies
             and planet_2.short_name not in self.options.extra_bodies
         ):
-            return ('', 0, 0)
+            return None
 
-        raw_orb = abs(planet_1.house - planet_2.house) % 360
+        if (
+            whole_chart_is_dormant
+            and self.core_chart.type in chart_utils.INGRESSES
+        ):
+            return None
+
+        raw_orb = None
+        if aspect_framework == chart_models.AspectFramework.ECLIPTICAL:
+            raw_orb = abs(planet_1.longitude - planet_2.longitude) % 360
+        elif aspect_framework == chart_models.AspectFramework.MUNDANE:
+            raw_orb = (
+                abs(
+                    planet_1.prime_vertical_longitude
+                    - planet_2.prime_vertical_longitude
+                )
+                % 360
+            )
+
         if raw_orb > 180:
             raw_orb = 360 - raw_orb
-        allowed_mundane_aspects = [0, 180, 90, 45, 135]
 
         for aspect_string in chart_models.AspectType:
             aspect_degrees = chart_models.AspectType.degrees_from_abbreviation(
                 aspect_string
             )
-            if aspect_degrees not in allowed_mundane_aspects:
-                continue
 
-            test_orb = mundane_orbs[str(aspect_degrees)]
+            test_orb = None
+
+            if aspect_framework == chart_models.AspectFramework.ECLIPTICAL:
+                test_orb = self.options.orbs.ecliptical[str(aspect_degrees)]
+            elif aspect_framework == chart_models.AspectFramework.MUNDANE:
+                test_orb = self.options.orbs.mundane[str(aspect_degrees)]
+
             if test_orb[2]:
                 maxorb = test_orb[2]
             elif test_orb[1]:
@@ -270,25 +238,23 @@ class ChartReport:
             elif test_orb[0]:
                 maxorb = test_orb[0] * 2.5
             else:
-                maxorb = -1
+                return None
+
             if (
                 raw_orb >= aspect_degrees - maxorb
                 and raw_orb <= aspect_degrees + maxorb
             ):
                 aspect = (
                     chart_models.Aspect()
-                    .as_mundane()
-                    .from_planet(planet_1)
-                    .to_planet(planet_2)
+                    .from_planet(planet_1, role=planet_1_role)
+                    .to_planet(planet_2, role=planet_2_role)
                     .as_type(
                         chart_models.AspectType.from_string(aspect_string)
                     )
                 )
-
-                if maxorb <= 0:
-                    return ('', 0, 0)
-
+                aspect.framework = aspect_framework
                 raw_orb = abs(raw_orb - aspect_degrees)
+
                 if raw_orb <= test_orb[0]:
                     aspect = aspect.with_class(1)
                 elif raw_orb <= test_orb[1]:
@@ -296,15 +262,16 @@ class ChartReport:
                 elif raw_orb <= test_orb[2]:
                     aspect = aspect.with_class(3)
                 else:
-                    return ('', 0, 0)
+                    return None
 
-                if planet_1.name == 'Moon' and chart_is_ingress:
-                    break
-                if chart_is_ingress and whole_chart_is_dormant:
-                    return ('', 0, 0)
+                if planet_1.name == 'Moon' and (
+                    self.core_chart.type in chart_utils.INGRESSES
+                    or self.core_chart.type in chart_utils.SOLAR_RETURNS
+                ):
+                    break  # i.e. consider transiting Moon aspects always
 
                 if (
-                    self.show_aspects
+                    self.options.show_aspects
                     == option_models.ShowAspect.ONE_PLUS_FOREGROUND
                 ):
                     if (
@@ -317,7 +284,7 @@ class ChartReport:
                         if raw_orb <= 1 and self.options.partile_nf:
                             aspect = aspect.with_class(4)
                         else:
-                            return ('', 0, 0)
+                            return None
                 elif (
                     self.options.show_aspects
                     == option_models.ShowAspect.BOTH_FOREGROUND
@@ -332,31 +299,25 @@ class ChartReport:
                         if raw_orb <= 1 and self.options.partile_nf:
                             aspect = aspect.with_class(4)
                         else:
-                            return ('', 0, 0)
+                            return None
                 break
         else:
-            return ('', 0, 0)
+            return None
 
         strength = 60 / maxorb
         strength_percent = math.cos(math.radians(raw_orb * strength))
         strength_percent = round((strength_percent - 0.5) * 200)
-        strength_percent = f'{strength_percent:3d}'
-        aspect = aspect.with_strength(strength_percent).with_orb(
-            chart_utils.fmt_dm(abs(raw_orb), True)
-        )
-        return (
-            str(aspect),
-            aspect.aspect_class,
-            raw_orb,
-        )
+        aspect = aspect.with_strength(strength_percent).with_orb(raw_orb)
+
+        return aspect
 
     def find_pvp_aspect(
         self,
         planet_1: chart_models.PlanetData,
         planet_2: chart_models.PlanetData,
-        minor_orbs: list[float],
+        max_orb: float,
     ):
-        max_orb = minor_orbs[-1]
+        # One or the other planet must be on the prime vertical
 
         planet_1_on_prime_vertical = chart_utils.inrange(
             planet_1.azimuth, 90, max_orb
@@ -365,8 +326,6 @@ class ChartReport:
         planet_2_on_prime_vertical = chart_utils.inrange(
             planet_2.azimuth, 90, max_orb
         ) or chart_utils.inrange(planet_2.azimuth, 270, max_orb)
-
-        default_return = (None, 0, 0)
 
         if planet_1_on_prime_vertical and planet_2_on_prime_vertical:
             # check prime vertical to prime vertical in azimuth
@@ -393,11 +352,7 @@ class ChartReport:
                     chart_utils.fmt_dm(abs(raw_orb), True)
                 )
 
-                return (
-                    str(aspect),
-                    aspect.aspect_class,
-                    raw_orb,
-                )
+                return aspect
 
         if planet_1_on_prime_vertical or planet_2_on_prime_vertical:
             # check meridian to prime vertical in azimuth
@@ -452,11 +407,8 @@ class ChartReport:
                         aspect = aspect.with_strength(
                             aspect_strength
                         ).with_orb(chart_utils.fmt_dm(abs(raw_orb), True))
-                        return (
-                            str(aspect),
-                            aspect.aspect_class,
-                            raw_orb,
-                        )
+                        return aspect
+
             # check horizon to prime vertical in meridian longitude
             planet_on_horizon = (
                 planet_1
@@ -506,13 +458,9 @@ class ChartReport:
                         aspect = aspect.with_strength(
                             aspect_strength
                         ).with_orb(chart_utils.fmt_dm(abs(raw_orb), True))
-                        return (
-                            str(aspect),
-                            aspect.aspect_class,
-                            raw_orb,
-                        )
+                        return aspect
 
-        return default_return
+        return None
 
     def calc_angle_and_strength(
         self,
@@ -827,21 +775,19 @@ class ChartReport:
         planets_foreground = []
         planet_foreground_angles = {}
 
-        # TODO - I don't understand this
         # Default to true if this is an ingress chart
-        whole_chart_is_dormant = True if self.chart.type in chart_utils.INGRESSES else False
+        whole_chart_is_dormant = (
+            True if self.chart.type in chart_utils.INGRESSES else False
+        )
 
         for planet_name, _ in chart_utils.iterate_allowed_planets(
             self.options
         ):
             planet_data = chart.planets[planet_name]
 
-            # TODO - I need to figure out what's up with this index business
-            planet_index = constants.PLANET_NAMES.index(planet_name)
             chartfile.write(chart_utils.left_align(planet_data.short_name, 3))
 
             # Write planet data to info table
-            # TODO - I feel like I can add all of these trailing spaces to the functions
             chartfile.write(chart_utils.zod_sec(planet_data.longitude) + ' ')
             chartfile.write(
                 chart_utils.fmt_lat(planet_data.latitude, True) + ' '
@@ -915,8 +861,11 @@ class ChartReport:
             ):
                 planets_foreground.append(planet_name)
 
-            # Special case for Moon in ingress charts - always treat it as foreground
-            elif planet_name == 'Moon' and self.chart.type in chart_utils.INGRESSES:
+            # Special case for Moon - always treat it as foreground
+            elif planet_name == 'Moon' and (
+                self.chart.type in chart_utils.INGRESSES
+                or self.chart.type in chart_utils.SOLAR_RETURNS
+            ):
                 planet_data.treat_as_foreground = True
 
             if is_mundanely_background:
@@ -1149,17 +1098,10 @@ class ChartReport:
         sun_sign = constants.SIGNS_SHORT[
             int(chart.planets['Sun'].longitude // 30)
         ]
-        cclass = chart['class']
 
         for index, (planet_name, planet_info) in enumerate(
-            constants.PLANETS.items()
+            chart_utils.iterate_allowed_planets()
         ):
-            if (
-                planet_info['number'] > 9
-                and planet_info['short_name'] not in self.options.extra_bodies
-            ):
-                continue
-
             planet_short_name = planet_info['short_name']
             planet_data = chart.planets[planet_name]
 
@@ -1185,7 +1127,7 @@ class ChartReport:
             if angle.strip() == '':
                 angle = ' '
             elif angle.strip() in [
-                a.value.strip() for a in angles_models.ForegroundAngles
+                a.value.strip().upper() for a in angles_models.ForegroundAngles
             ]:
                 angle = 'F'
             else:
@@ -1194,7 +1136,7 @@ class ChartReport:
 
             need_another_row = False
 
-            if cclass != 'I':
+            if self.chart.type not in chart_utils.INGRESSES:
                 if planet_short_name != 'Mo':
                     if moon_sign in constants.POS_SIGN[planet_short_name]:
                         chartfile.write(f' Mo {moon_sign}+')
@@ -1211,7 +1153,7 @@ class ChartReport:
                         need_another_row = True
 
             aspect_list = []
-            # TODO - I'd like to split this out
+
             for class_index in range(3):
                 for entry in aspects_by_class[class_index]:
                     if planet_short_name in entry:
@@ -1254,14 +1196,8 @@ class ChartReport:
                         [planet_short_name, planet_longitude]
                     )
 
-            # Left off here
-
-            points_to_show_midpoint_aspects_to.append(
-                ['As', chart['cusps'][1]]
-            )
-            points_to_show_midpoint_aspects_to.append(
-                ['Mc', chart['cusps'][10]]
-            )
+            points_to_show_midpoint_aspects_to.append(['As', chart.cusps[1]])
+            points_to_show_midpoint_aspects_to.append(['Mc', chart.cusps[10]])
             if len(points_to_show_midpoint_aspects_to) > 1 and (
                 (self.options.show_aspects or option_models.ShowAspect.ALL)
                 == option_models.ShowAspect.ALL
@@ -1277,7 +1213,7 @@ class ChartReport:
                         len(points_to_show_midpoint_aspects_to),
                     ):
                         mp = self.find_midpoint(
-                            [planet_short_name, planet_data[0]],
+                            [planet_short_name, planet_data.longitude],
                             points_to_show_midpoint_aspects_to,
                             remaining_planet,
                             k,
@@ -1312,8 +1248,8 @@ class ChartReport:
                 continue
             plna = constants.PLANET_NAMES[planet_index]
             planet_longitude = chart[plna][0]
-            plra = chart[plna][3]
-            plpvl = chart[plna][7]
+            plra = chart[plna].right_ascension
+            plpvl = chart[plna].house
             planet_short_name = constants.PLANET_NAMES_SHORT[planet_index]
             if (
                 self.options.get('show_aspects', 0) == 0
@@ -1322,7 +1258,7 @@ class ChartReport:
                 points_to_show_midpoint_aspects_to.append(
                     [planet_short_name, planet_longitude, plra, plpvl]
                 )
-        points_to_show_midpoint_aspects_to.append(['Mc', chart['cusps'][10]])
+        points_to_show_midpoint_aspects_to.append(['Mc', chart.cusps[10]])
         if len(points_to_show_midpoint_aspects_to) > 1:
             emp = []
             for remaining_planet in range(
@@ -1333,7 +1269,7 @@ class ChartReport:
                     len(points_to_show_midpoint_aspects_to),
                 ):
                     mp = self.find_midpoint(
-                        ['As', chart['cusps'][1]],
+                        ['As', chart.cusps[1]],
                         points_to_show_midpoint_aspects_to,
                         remaining_planet,
                         k,
@@ -1351,8 +1287,8 @@ class ChartReport:
                         and remaining_planet != len(emp) - 1
                     ):
                         chartfile.write('\n' + (' ' * 9) + '| ')
-        sign = constants.SIGNS_SHORT[int(chart['cusps'][10] // 30)]
-        points_to_show_midpoint_aspects_to[-1] = ['As', chart['cusps'][1]]
+        sign = constants.SIGNS_SHORT[int(chart.cusps[10] // 30)]
+        points_to_show_midpoint_aspects_to[-1] = ['As', chart.cusps[1]]
         if len(points_to_show_midpoint_aspects_to) > 1:
             emp = []
             for remaining_planet in range(
@@ -1363,7 +1299,7 @@ class ChartReport:
                     len(points_to_show_midpoint_aspects_to),
                 ):
                     mp = self.find_midpoint(
-                        ['Mc', chart['cusps'][10]],
+                        ['Mc', chart.cusps[10]],
                         points_to_show_midpoint_aspects_to,
                         remaining_planet,
                         k,
@@ -1386,10 +1322,10 @@ class ChartReport:
             emp = []
             ep = [
                 'Ep',
-                (chart['cusps'][10] + 90) % 360,
-                (chart['ramc'] + 90) % 360,
+                (chart.cusps[10] + 90) % 360,
+                (chart.ramc + 90) % 360,
             ]
-            ze = ['Ze', (chart['cusps'][1] - 90) % 360]
+            ze = ['Ze', (chart.cusps[1] - 90) % 360]
             for remaining_planet in range(
                 len(points_to_show_midpoint_aspects_to) - 1
             ):

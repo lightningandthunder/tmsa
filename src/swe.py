@@ -8,27 +8,13 @@
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
 import math
-from ctypes import (
-    CDLL,
-    POINTER,
-    byref,
-    c_char,
-    c_char_p,
-    c_double,
-    c_int,
-    c_void_p,
-    create_string_buffer,
-)
+from ctypes import (CDLL, POINTER, byref, c_char, c_char_p, c_double, c_int,
+                    c_void_p, create_string_buffer)
 
-from src.constants import PLATFORM
 from src import *
-from src.utils.format_utils import (
-    add_360_if_negative,
-    arccotangent,
-    cotangent,
-    north_azimuth,
-    southern_azimuth,
-)
+from src.constants import PLATFORM
+from src.utils.format_utils import (add_360_if_negative, arccotangent,
+                                    cotangent, north_azimuth, southern_azimuth)
 
 dll = CDLL(DLL_PATH)
 

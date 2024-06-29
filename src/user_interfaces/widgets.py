@@ -12,8 +12,8 @@ import tkinter.messagebox as tkmessagebox
 import traceback
 from tkinter.font import Font as tkFont
 
-from src.constants import PLATFORM, VERSION
 from src import *
+from src.constants import PLATFORM, VERSION
 
 main = tk.Tk()
 main.minsize(800, 600)

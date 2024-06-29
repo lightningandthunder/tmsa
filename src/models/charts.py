@@ -5,7 +5,7 @@ from typing import TypeVar
 
 from src import log_error, swe
 from src.models.options import Options
-from src.utils.chart_utils import fmt_dm
+from src.utils.chart_utils import convert_house_to_pvl, fmt_dm
 from src.utils.format_utils import to360
 
 T = TypeVar('T', bound='ChartObject')
@@ -50,18 +50,14 @@ class PlanetData:
 
     def with_house_position(self, house: float):
         self.house = house
-        zero_index_house = house - 1
-        pvl = (int(zero_index_house) * 30) + (
-            ((zero_index_house) - int(zero_index_house)) * 30
-        )
-        self.prime_vertical_longitude = pvl
+        self.prime_vertical_longitude = convert_house_to_pvl(house)
         return self
 
     def with_meridian_longitude(self, meridian_longitude: float):
         self.meridian_longitude = meridian_longitude
         return self
 
-    def precess(self, to_chart: T):
+    def precess_to(self, to_chart: T):
         (right_ascension, declination) = swe.cotrans(
             [self.longitude + to_chart.ayanamsa, self.latitude, self.speed],
             to_chart.obliquity,
@@ -89,6 +85,8 @@ class PlanetData:
             to360(self.longitude + to_chart.ayanamsa),
             self.latitude,
         )
+
+        self.prime_vertical_longitude = convert_house_to_pvl(self.house)
 
         return self
 
@@ -170,9 +168,9 @@ class ChartObject:
         with open(file_path, 'w') as file:
             json.dump(self.__dict__, file, indent=4)
 
-    def precess(self, to_chart: T):
+    def precess_to(self, to_chart: T):
         for planet in self.planets:
-            self.planets[planet].precess(to_chart)
+            self.planets[planet].precess_to(to_chart)
 
         return self
 
@@ -284,7 +282,7 @@ class AspectFramework(Enum):
 class Aspect:
     type: AspectType
     aspect_class: int
-    strength: float
+    strength: int
     orb: float
     framework: AspectFramework
     planet1_short_name: str
@@ -324,7 +322,7 @@ class Aspect:
         self.aspect_class = aspect_class
         return self
 
-    def with_strength(self, strength: float):
+    def with_strength(self, strength: int):
         self.strength = strength
         return self
 
@@ -332,11 +330,16 @@ class Aspect:
         self.type = type
         return self
 
+    def get_formatted_orb(self):
+        return fmt_dm(abs(self.orb), True)
+
     def __str__(self):
         # This will read something like this:
         # t.Ur co r.Su 1°23' 95% M
-        return (
+        text = (
             f'{self.planet1_role}{self.planet1_short_name} '
             f'{self.type.value} {self.planet2_role}{self.planet2_short_name} '
-            f'{fmt_dm(abs(self.orb))} {self.strength:.2f} {self.framework.value}'
-        ).strip()
+            f"{self.get_formatted_orb()} {self.strength:.2f}{(' ' + self.framework.value) if self.framework.value != '' else ''}"
+        )
+
+        return text.strip
