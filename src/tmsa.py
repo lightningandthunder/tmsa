@@ -15,8 +15,12 @@ import webbrowser
 
 from src import *
 from src import STILL_STARTING_UP
-from src.constants import (LABEL_HEIGHT_UNIT, LABEL_WIDTH, LABEL_X_COORD,
-                           VERSION)
+from src.constants import (
+    LABEL_HEIGHT_UNIT,
+    LABEL_WIDTH,
+    LABEL_X_COORD,
+    VERSION,
+)
 from src.user_interfaces.chart_options import ChartOptions
 from src.user_interfaces.ingresses import Ingresses
 from src.user_interfaces.new_chart import NewChart

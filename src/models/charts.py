@@ -4,6 +4,7 @@ from enum import Enum
 from typing import TypeVar
 
 from src import log_error, swe
+from src.constants import PLANETS
 from src.models.options import Options
 from src.utils.chart_utils import convert_house_to_pvl, fmt_dm
 from src.utils.format_utils import to360
@@ -13,20 +14,20 @@ T = TypeVar('T', bound='ChartObject')
 
 @dataclass
 class PlanetData:
-    name: str
-    short_name: str
-    number: int
-    longitude: float
-    latitude: float
-    speed: float
-    right_ascension: float
-    declination: float
-    azimuth: float
-    altitude: float
-    house: float
-    prime_vertical_longitude: float
-    meridian_longitude: float
-    treat_as_foreground: bool
+    name: str = ''
+    short_name: str = ''
+    number: int = -1
+    longitude: float = 0
+    latitude: float = 0
+    speed: float = 0
+    right_ascension: float = 0
+    declination: float = 0
+    azimuth: float = 0
+    altitude: float = 0
+    house: float = 0
+    prime_vertical_longitude: float = 0
+    meridian_longitude: float = 0
+    treat_as_foreground: bool = False
 
     def with_ecliptic_and_equatorial_data(
         self,
@@ -137,23 +138,112 @@ class ChartObject:
     planets: dict[str, PlanetData]
     cusps: list[float]
     angles: dict[str, float]
+    vertex: list[float]
+    eastpoint: list[float]
     notes: str | None = None
+    style: int = 1
 
     def __init__(self, data: dict):
         self.type = ChartType(data['type'])
-        self.julian_day_utc = data['julian_day_utc']
-        self.ayanamsa = data['ayanamsa']
-        self.obliquity = data['obliquity']
-        self.geo_longitude = data['geo_longitude']
-        self.geo_latitude = data['geo_latitude']
-        self.lst = data['lst']
-        self.ramc = data['ramc']
-        self.planets = {
-            planet: PlanetData(**data['planets'][planet])
-            for planet in data['planets']
-        }
-        self.cusps = data['cusps']
-        self.angles = data['angles']
+        self.name = data.get('name', None)
+        self.year = data['year']
+        self.month = data['month']
+        self.day = data['day']
+        self.location = data['location']
+        self.time = data['time']
+        self.zone = data['zone']
+        self.correction = data['correction']
+
+        self.julian_day_utc = swe.julday(
+            data['year'],
+            data['month'],
+            data['day'],
+            data['time'] + data['correction'],
+            data.get('style', 1),
+        )
+        if data['zone'] == 'LAT':
+            self.julian_day_utc = swe.calc_lat_to_lmt(self.jd, data['longitude'])
+        self.ayanamsa = data['ayan']
+        self.obliquity = data.get('oe', swe.calc_obliquity(self.julian_day_utc))
+        self.geo_longitude = data['longitude']
+        self.geo_latitude = data['latitude']
+
+        (cusps, angles) = swe.calc_cusps(self.julian_day_utc, self.geo_latitude, self.geo_longitude)
+        if data.get('ramc', None):
+            self.ramc = data['ramc']
+        else:
+            self.ramc = angles[0]
+
+        if data.get('lst', None):
+            self.lst = data['lst']
+        else:
+            self.lst = self.ramc / 15
+
+        if data.get('Vertex'):
+            self.vertex = data['Vertex']
+        else:
+            self.vertex = [
+                angles[1],
+                swe.calc_house_pos(
+                    self.ramc, self.geo_latitude, self.obliquity, to360(angles[1] + self.ayanamsa), 0
+                ),
+            ]
+
+        if data.get('Eastpoint'):
+            self.eastpoint = data['Eastpoint']
+        else:
+            self.eastpoint = [
+                angles[2],
+                swe.calc_house_pos(
+                    self.ramc, self.geo_latitude, self.obliquity, to360(angles[2] + self.ayanamsa), 0
+                ),
+            ]
+        if data.get('planets'):
+            self.planets = {
+                planet: PlanetData(**data['planets'][planet])
+                for planet in data['planets']
+            }
+
+        else:
+            self.planets = {}
+
+            for long_name in PLANETS:
+                if long_name not in data:
+                    continue
+                planet_data = data[long_name]
+                planet = PlanetData()
+
+                planet.name = long_name
+                planet.short_name = PLANETS[long_name]['short_name']
+                planet.number = PLANETS[long_name]['number']
+
+                planet.longitude = planet_data[0]
+                planet.latitude = planet_data[1]
+                planet.speed = planet_data[2]
+                planet.right_ascension = planet_data[3]
+                planet.declination = planet_data[4]
+                planet.azimuth = planet_data[5]
+                planet.altitude = planet_data[6]
+                planet.house = planet_data[7]
+                planet.prime_vertical_longitude = convert_house_to_pvl(planet.house)
+
+                if len(planet_data) >= 9:
+                    planet.meridian_longitude = planet_data[7]
+                    planet.house = planet_data[8]
+                    planet.prime_vertical_longitude = convert_house_to_pvl(planet.house)
+                else:
+                    planet.house = planet_data[7]
+                    planet.prime_vertical_longitude = convert_house_to_pvl(planet.house)
+                    planet.meridian_longitude = swe.calc_meridian_longitude(
+                        planet.azimuth, planet.altitude
+                    )
+
+                self.planets[long_name] = planet
+
+        self.cusps = cusps
+        self.angles = angles
+
+        self.notes = data.get('notes', None)
 
     @staticmethod
     def from_file(file_path: str):
@@ -236,7 +326,7 @@ class AspectType(Enum):
             return None
 
     @staticmethod
-    def degrees_from_abbreviation(abbreviation: str):
+    def degrees_from_abbreviation(abbreviation: str) -> int | None:
         if abbreviation == 'co':
             return 0
         elif abbreviation == 'oc':
@@ -280,13 +370,13 @@ class AspectFramework(Enum):
 
 @dataclass
 class Aspect:
-    type: AspectType
-    aspect_class: int
-    strength: int
-    orb: float
-    framework: AspectFramework
-    planet1_short_name: str
-    planet2_short_name: str
+    type: AspectType = AspectType.CONJUNCTION
+    aspect_class: int = 0
+    strength: int = 0
+    orb: float = 0
+    framework: AspectFramework = AspectFramework.ECLIPTICAL
+    planet1_short_name: str = ''
+    planet2_short_name: str = ''
     planet1_role: ChartWheelRole = ''
     planet2_role: ChartWheelRole = ''
 
@@ -336,10 +426,12 @@ class Aspect:
     def __str__(self):
         # This will read something like this:
         # t.Ur co r.Su 1°23' 95% M
+        planet_1_role = self.planet1_role.value if self.planet1_role else ''
+        planet_2_role = self.planet2_role.value if self.planet2_role else ''
         text = (
-            f'{self.planet1_role}{self.planet1_short_name} '
-            f'{self.type.value} {self.planet2_role}{self.planet2_short_name} '
-            f"{self.get_formatted_orb()} {self.strength:.2f}{(' ' + self.framework.value) if self.framework.value != '' else ''}"
+            f'{planet_1_role}{self.planet1_short_name} '
+            f'{self.type.value} {planet_2_role}{self.planet2_short_name} '
+            f"{self.get_formatted_orb()} {self.strength}%{(' ' + self.framework.value.upper()) if self.framework else ''}"
         )
 
-        return text.strip
+        return text.strip()
