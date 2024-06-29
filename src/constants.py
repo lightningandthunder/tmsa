@@ -120,7 +120,7 @@ PLANETS = {
         "number": 146199,
     },
 
-    # Exeprimental bodies
+    # Experimental bodies
     "Sedna": {
         "short_name": "Se",
         "long_name": "Sedna",
