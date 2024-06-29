@@ -452,7 +452,7 @@ def iterate_allowed_planets(
 ) -> Iterator[tuple[str, dict[str, any]]]:
     for planet_name, data in constants.PLANETS.items():
         if (
-            data['number'] > 9
+            data['number'] > 11
             and data['short_name'] not in options.extra_bodies
         ):
             continue
