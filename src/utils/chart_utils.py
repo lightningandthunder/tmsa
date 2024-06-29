@@ -508,3 +508,9 @@ def convert_house_to_pvl(house: float) -> float:
     return (int(zero_index_house) * 30) + (
         ((zero_index_house) - int(zero_index_house)) * 30
     )
+
+def greatest_nonzero_class_orb(orbs: list[float]) -> float:
+    for i in range(len(orbs) - 1, -1, -1):
+        if orbs[i] > 0:
+            return orbs[i]
+    return 0
