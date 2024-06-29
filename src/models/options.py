@@ -73,7 +73,9 @@ class Options:
     show_aspects: ShowAspect = ShowAspect.ALL
     partile_nf: bool = False
     angularity: AngularitySubOptions = None
-    ecliptic_aspects: dict[str, list[float]] = field(default_factory=lambda: {})
+    ecliptic_aspects: dict[str, list[float]] = field(
+        default_factory=lambda: {}
+    )
     mundane_aspects: dict[str, list[float]] = field(default_factory=lambda: {})
     midpoints: dict[str, list[float]] = field(default_factory=lambda: {})
 

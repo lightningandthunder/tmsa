@@ -162,13 +162,19 @@ class ChartObject:
             data.get('style', 1),
         )
         if data['zone'] == 'LAT':
-            self.julian_day_utc = swe.calc_lat_to_lmt(self.jd, data['longitude'])
+            self.julian_day_utc = swe.calc_lat_to_lmt(
+                self.jd, data['longitude']
+            )
         self.ayanamsa = data['ayan']
-        self.obliquity = data.get('oe', swe.calc_obliquity(self.julian_day_utc))
+        self.obliquity = data.get(
+            'oe', swe.calc_obliquity(self.julian_day_utc)
+        )
         self.geo_longitude = data['longitude']
         self.geo_latitude = data['latitude']
 
-        (cusps, angles) = swe.calc_cusps(self.julian_day_utc, self.geo_latitude, self.geo_longitude)
+        (cusps, angles) = swe.calc_cusps(
+            self.julian_day_utc, self.geo_latitude, self.geo_longitude
+        )
         if data.get('ramc', None):
             self.ramc = data['ramc']
         else:
@@ -185,7 +191,11 @@ class ChartObject:
             self.vertex = [
                 angles[1],
                 swe.calc_house_pos(
-                    self.ramc, self.geo_latitude, self.obliquity, to360(angles[1] + self.ayanamsa), 0
+                    self.ramc,
+                    self.geo_latitude,
+                    self.obliquity,
+                    to360(angles[1] + self.ayanamsa),
+                    0,
                 ),
             ]
 
@@ -195,7 +205,11 @@ class ChartObject:
             self.eastpoint = [
                 angles[2],
                 swe.calc_house_pos(
-                    self.ramc, self.geo_latitude, self.obliquity, to360(angles[2] + self.ayanamsa), 0
+                    self.ramc,
+                    self.geo_latitude,
+                    self.obliquity,
+                    to360(angles[2] + self.ayanamsa),
+                    0,
                 ),
             ]
         if data.get('planets'):
@@ -225,15 +239,21 @@ class ChartObject:
                 planet.azimuth = planet_data[5]
                 planet.altitude = planet_data[6]
                 planet.house = planet_data[7]
-                planet.prime_vertical_longitude = convert_house_to_pvl(planet.house)
+                planet.prime_vertical_longitude = convert_house_to_pvl(
+                    planet.house
+                )
 
                 if len(planet_data) >= 9:
                     planet.meridian_longitude = planet_data[7]
                     planet.house = planet_data[8]
-                    planet.prime_vertical_longitude = convert_house_to_pvl(planet.house)
+                    planet.prime_vertical_longitude = convert_house_to_pvl(
+                        planet.house
+                    )
                 else:
                     planet.house = planet_data[7]
-                    planet.prime_vertical_longitude = convert_house_to_pvl(planet.house)
+                    planet.prime_vertical_longitude = convert_house_to_pvl(
+                        planet.house
+                    )
                     planet.meridian_longitude = swe.calc_meridian_longitude(
                         planet.azimuth, planet.altitude
                     )

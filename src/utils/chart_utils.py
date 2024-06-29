@@ -439,12 +439,7 @@ def make_chart_path(chart, temporary):
             else False
         )
     else:
-        ingress = (
-            True
-            if chart.type in INGRESSES
-            or not chart.name
-            else False
-        )
+        ingress = True if chart.type in INGRESSES or not chart.name else False
     if isinstance(chart, dict):
         if ingress:
             first = f"{chart['year']}-{chart['month']}-{chart['day']}"
@@ -459,7 +454,7 @@ def make_chart_path(chart, temporary):
             third = chart['type']
     else:
         if ingress:
-            first = f"{chart.year}-{chart.month}-{chart.day}"
+            first = f'{chart.year}-{chart.month}-{chart.day}'
             second = chart.location
             third = chart.type
         else:
@@ -467,7 +462,7 @@ def make_chart_path(chart, temporary):
             index = first.find(';')
             if index > -1:
                 first = first[0:index]
-            second = f"{chart.year}-{chart.month:02d}-{chart.day:02d}"
+            second = f'{chart.year}-{chart.month:02d}-{chart.day:02d}'
             third = chart.type
     filename = f'{first}~{second}~{third}.dat'
     if ingress:
@@ -476,7 +471,6 @@ def make_chart_path(chart, temporary):
         filepath = f'{first[0]}\\{first}\\{filename}'
     path = TEMP_CHARTS if temporary else CHART_PATH
     return os.path.abspath(os.path.join(path, filepath))
-
 
 
 def iterate_allowed_planets(
