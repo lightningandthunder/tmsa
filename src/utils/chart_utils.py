@@ -431,30 +431,52 @@ def angularity_activates_ingress(orb: float, angle: str) -> bool:
 
 
 def make_chart_path(chart, temporary):
-    ingress = (
-        True
-        if chart['type'][0:3] in ['Ari', 'Can', 'Lib', 'Cap']
-        or not chart['name']
-        else False
-    )
-    if ingress:
-        first = f"{chart['year']}-{chart['month']}-{chart['day']}"
-        second = chart['location']
-        third = chart['type']
+    if isinstance(chart, dict):
+        ingress = (
+            True
+            if chart['type'][0:3] in ['Ari', 'Can', 'Lib', 'Cap']
+            or not chart['name']
+            else False
+        )
     else:
-        first = chart['name']
-        index = first.find(';')
-        if index > -1:
-            first = first[0:index]
-        second = f"{chart['year']}-{chart['month']:02d}-{chart['day']:02d}"
-        third = chart['type']
+        ingress = (
+            True
+            if chart.type in INGRESSES
+            or not chart.name
+            else False
+        )
+    if isinstance(chart, dict):
+        if ingress:
+            first = f"{chart['year']}-{chart['month']}-{chart['day']}"
+            second = chart['location']
+            third = chart['type']
+        else:
+            first = chart['name']
+            index = first.find(';')
+            if index > -1:
+                first = first[0:index]
+            second = f"{chart['year']}-{chart['month']:02d}-{chart['day']:02d}"
+            third = chart['type']
+    else:
+        if ingress:
+            first = f"{chart.year}-{chart.month}-{chart.day}"
+            second = chart.location
+            third = chart.type
+        else:
+            first = chart.name
+            index = first.find(';')
+            if index > -1:
+                first = first[0:index]
+            second = f"{chart.year}-{chart.month:02d}-{chart.day:02d}"
+            third = chart.type
     filename = f'{first}~{second}~{third}.dat'
     if ingress:
-        filepath = os.path.join(str(chart['year']), filename)
+        filepath = f"{chart['year'] if isinstance(chart, dict) else chart.year}\\{filename}"
     else:
-        filepath = os.path.join(f'{first[0]}', first, filename)
+        filepath = f'{first[0]}\\{first}\\{filename}'
     path = TEMP_CHARTS if temporary else CHART_PATH
     return os.path.abspath(os.path.join(path, filepath))
+
 
 
 def iterate_allowed_planets(

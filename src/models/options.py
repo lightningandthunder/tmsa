@@ -1,5 +1,5 @@
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 
 from src import log_error
@@ -67,15 +67,15 @@ class AngularitySubOptions:
 
 @dataclass
 class Options:
-    extra_bodies: list[str]
-    use_vertex: bool
-    node_type: NodeTypes
-    show_aspects: ShowAspect
-    partile_nf: bool
-    angularity: AngularitySubOptions
-    ecliptic_aspects: dict[str, list[float]]
-    mundane_aspects: dict[str, list[float]]
-    midpoints: dict[str, list[float]]
+    extra_bodies: list[str] = field(default_factory=lambda: [])
+    use_vertex: bool = False
+    node_type: NodeTypes = NodeTypes.DISABLED
+    show_aspects: ShowAspect = ShowAspect.ALL
+    partile_nf: bool = False
+    angularity: AngularitySubOptions = None
+    ecliptic_aspects: dict[str, list[float]] = field(default_factory=lambda: {})
+    mundane_aspects: dict[str, list[float]] = field(default_factory=lambda: {})
+    midpoints: dict[str, list[float]] = field(default_factory=lambda: {})
 
     @staticmethod
     def from_file(file_path: str):
@@ -87,6 +87,7 @@ class Options:
                 log_error(f'Error reading {file_path}')
 
     def __init__(self, data: dict[str, any]):
+        self.extra_bodies = []
         if data.get('use_Eris', False):
             self.extra_bodies.append('Er')
         if data.get('use_Sedna', False):

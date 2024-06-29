@@ -13,6 +13,7 @@ import shutil
 import sys
 
 from src.constants import PLATFORM
+from src.utils.chart_utils import INGRESSES
 from src.utils.os_utils import create_directory
 
 startup = True
@@ -259,30 +260,3 @@ if os.path.exists(HOME_LOC_FILE):
         HOME_LOC = None
 else:
     HOME_LOC = None
-
-
-def make_chart_path(chart, temporary):
-    ingress = (
-        True
-        if chart['type'][0:3] in ['Ari', 'Can', 'Lib', 'Cap']
-        or not chart['name']
-        else False
-    )
-    if ingress:
-        first = f"{chart['year']}-{chart['month']}-{chart['day']}"
-        second = chart['location']
-        third = chart['type']
-    else:
-        first = chart['name']
-        index = first.find(';')
-        if index > -1:
-            first = first[0:index]
-        second = f"{chart['year']}-{chart['month']:02d}-{chart['day']:02d}"
-        third = chart['type']
-    filename = f'{first}~{second}~{third}.dat'
-    if ingress:
-        filepath = f"{chart['year']}\\{filename}"
-    else:
-        filepath = f'{first[0]}\\{first}\\{filename}'
-    path = TEMP_CHARTS if temporary else CHART_PATH
-    return os.path.abspath(os.path.join(path, filepath))

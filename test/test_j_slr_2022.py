@@ -17,8 +17,6 @@ class TestBiwheelDisplay:
         BiwheelV2(chart=j_slr, temporary=True, options=return_options)
 
         lines = mockfile.file.split('\n')
-        for idx, line in enumerate(lines):
-            print(f'{idx}: {line}')
 
         assert_line_contains(
             lines[20], 'Transiting (t) Chart', any_position=True
