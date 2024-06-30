@@ -218,27 +218,27 @@ class ChartReport:
             )
             print("Checking aspect: ", aspect_degrees)
 
-            test_orb = None
+            test_orbs = None
 
             if aspect_framework == chart_models.AspectFramework.ECLIPTICAL:
                 if str(aspect_degrees) in self.options.ecliptic_aspects:
-                    test_orb = self.options.ecliptic_aspects[str(aspect_degrees)]
+                    test_orbs = self.options.ecliptic_aspects[str(aspect_degrees)]
                 else:
                     continue
             elif aspect_framework == chart_models.AspectFramework.MUNDANE:
                 if str(aspect_degrees) in self.options.mundane_aspects:
-                    test_orb = self.options.mundane_aspects[str(aspect_degrees)]
+                    test_orbs = self.options.mundane_aspects[str(aspect_degrees)]
                 else:
                     continue
 
-            print(f"Test orb: {test_orb}")
+            print(f"Test orb: {test_orbs}")
 
-            if test_orb[2]:
-                maxorb = test_orb[2]
-            elif test_orb[1]:
-                maxorb = test_orb[1] * 1.25
-            elif test_orb[0]:
-                maxorb = test_orb[0] * 2.5
+            if test_orbs[2]:
+                maxorb = test_orbs[2]
+            elif test_orbs[1]:
+                maxorb = test_orbs[1] * 1.25
+            elif test_orbs[0]:
+                maxorb = test_orbs[0] * 2.5
             else:
                 continue
             
@@ -259,11 +259,11 @@ class ChartReport:
                 aspect.framework = aspect_framework
                 raw_orb = abs(raw_orb - aspect_degrees)
 
-                if raw_orb <= test_orb[0]:
+                if raw_orb <= test_orbs[0]:
                     aspect = aspect.with_class(1)
-                elif raw_orb <= test_orb[1]:
+                elif raw_orb <= test_orbs[1]:
                     aspect = aspect.with_class(2)
-                elif raw_orb <= test_orb[2]:
+                elif raw_orb <= test_orbs[2]:
                     aspect = aspect.with_class(3)
                 else:
                     continue
