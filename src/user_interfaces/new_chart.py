@@ -703,7 +703,7 @@ class NewChart(Frame):
         )
         if not name:
             return
-        name = name.replace('/', '\\')
+        name = name.replace('/', os.path.sep)
         if not name.startswith(OPTION_PATH):
             return
         text = name.replace(OPTION_PATH, '').replace('_', ' ')

@@ -466,9 +466,9 @@ def make_chart_path(chart, temporary):
             third = chart.type
     filename = f'{first}~{second}~{third}.dat'
     if ingress:
-        filepath = f"{chart['year'] if isinstance(chart, dict) else chart.year}\\{filename}"
-    else:
-        filepath = f'{first[0]}\\{first}\\{filename}'
+        filepath = os.path.join(f"{chart['year'] if isinstance(chart, dict) else chart.year}",filename)
+    else: 
+        filepath = os.path.join(first[0],first, filename)
     path = TEMP_CHARTS if temporary else CHART_PATH
     return os.path.abspath(os.path.join(path, filepath))
 
@@ -482,18 +482,19 @@ def iterate_allowed_planets(
             and data['short_name'] not in options.extra_bodies
         ):
             continue
-        if (
+        elif (
             planet_name == 'True Node'
-            and options.node_type != NodeTypes.TRUE_NODE
+            and options.node_type.value != NodeTypes.TRUE_NODE.value
         ):
             continue
-        if (
+        elif (
             planet_name == 'Mean Node'
-            and options.node_type != NodeTypes.MEAN_NODE
+            and options.node_type.value != NodeTypes.MEAN_NODE.value
         ):
             continue
 
-        yield planet_name, data
+        else:  
+            yield planet_name, data
 
 
 def calc_aspect_strength_percent(max_orb: int, raw_orb: float) -> str:

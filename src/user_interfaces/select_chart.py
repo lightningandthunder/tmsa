@@ -188,7 +188,7 @@ class SelectChart(Frame):
             initialdir=CHART_PATH, filetypes=[('Chart Files', '*.dat')]
         )
         if name:
-            name = name.replace('/', '\\')
+            name = name.replace('/', os.path.sep)
             self.filename = name
             self.fnlbl.text = display_name(name)
             self.sort_recent()
@@ -231,12 +231,12 @@ class SelectChart(Frame):
             return
         name = tkfiledialog.asksaveasfilename(
             initialfile=os.path.basename(self.filename),
-            initialdir=CHART_PATH + '\\..\\..',
+            initialdir=CHART_PATH + os.path.join('..', '..'),
         )
         if not name:
             self.status.error('No export location chosen.')
             return
-        name = name.replace('/', '\\')
+        name = name.replace('/', os.path.sep)
         try:
             shutil.copyfile(self.filename, name)
             self.status.text = f'{self.fnlbl.text} exported.'

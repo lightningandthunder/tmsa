@@ -250,7 +250,7 @@ class Ingresses(Frame):
             )
             if not filename:
                 return
-            filename = filename.replace('/', '\\')
+            filename = filename.replace('/', os.path.sep)
         self.status.text = f' Event Chart: {display_name(filename)}'
         self.event = filename
         try:
@@ -502,7 +502,7 @@ class Ingresses(Frame):
         )
         if not name:
             return
-        name = name.replace('/', '\\')
+        name = name.replace('/', os.path.sep)
         if not name.startswith(OPTION_PATH):
             return
         text = name.replace(OPTION_PATH, '').replace('_', ' ')

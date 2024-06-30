@@ -194,18 +194,20 @@ class ChartReport:
         aspect_framework: chart_models.AspectFramework,
     ) -> chart_models.Aspect:
         raw_orb = None
+        aspect = None
+
         if aspect_framework == chart_models.AspectFramework.ECLIPTICAL:
             raw_orb = abs(planet_1.longitude - planet_2.longitude) % 360
         elif aspect_framework == chart_models.AspectFramework.MUNDANE:
             raw_orb = (
                 abs(
-                    planet_1.prime_vertical_longitude
-                    - planet_2.prime_vertical_longitude
+                    planet_1.house
+                    - planet_2.house
                 )
                 % 360
             )
-            print(planet_1.prime_vertical_longitude, planet_2.prime_vertical_longitude)
-            print("Raw mundane orb: ", raw_orb)
+
+        print(f"Raw orb: {'ECLIPTICAL' if aspect_framework == chart_models.AspectFramework.ECLIPTICAL else 'MUNDANE'}", raw_orb)
 
         if raw_orb > 180:
             raw_orb = 360 - raw_orb
@@ -214,13 +216,22 @@ class ChartReport:
             aspect_degrees = chart_models.AspectType.degrees_from_abbreviation(
                 aspect_type.value
             )
+            print("Checking aspect: ", aspect_degrees)
 
             test_orb = None
 
             if aspect_framework == chart_models.AspectFramework.ECLIPTICAL:
-                test_orb = self.options.mundane_aspects[str(aspect_degrees)]
+                if str(aspect_degrees) in self.options.ecliptic_aspects:
+                    test_orb = self.options.ecliptic_aspects[str(aspect_degrees)]
+                else:
+                    continue
             elif aspect_framework == chart_models.AspectFramework.MUNDANE:
-                test_orb = self.options.mundane_aspects[str(aspect_degrees)]
+                if str(aspect_degrees) in self.options.mundane_aspects:
+                    test_orb = self.options.mundane_aspects[str(aspect_degrees)]
+                else:
+                    continue
+
+            print(f"Test orb: {test_orb}")
 
             if test_orb[2]:
                 maxorb = test_orb[2]
@@ -229,7 +240,9 @@ class ChartReport:
             elif test_orb[0]:
                 maxorb = test_orb[0] * 2.5
             else:
-                return None
+                continue
+            
+            print(f"Max orb: {maxorb}")
 
             if (
                 raw_orb >= aspect_degrees - maxorb
@@ -253,7 +266,7 @@ class ChartReport:
                 elif raw_orb <= test_orb[2]:
                     aspect = aspect.with_class(3)
                 else:
-                    return None
+                    continue
 
                 if planet_1.name == 'Moon' and (
                     self.core_chart.type in chart_utils.INGRESSES
@@ -261,6 +274,8 @@ class ChartReport:
                 ):
                     break  # i.e. consider transiting Moon aspects always
 
+                # Otherwise, make sure the aspect should be considered at all
+                # TODO - this should probably be checked way earlier
                 if (
                     self.options.show_aspects
                     == option_models.ShowAspect.ONE_PLUS_FOREGROUND
@@ -275,7 +290,7 @@ class ChartReport:
                         if raw_orb <= 1 and self.options.partile_nf:
                             aspect = aspect.with_class(4)
                         else:
-                            return None
+                            continue
                 elif (
                     self.options.show_aspects
                     == option_models.ShowAspect.BOTH_FOREGROUND
@@ -290,9 +305,9 @@ class ChartReport:
                         if raw_orb <= 1 and self.options.partile_nf:
                             aspect = aspect.with_class(4)
                         else:
-                            return None
-                break
-        else:
+                            continue
+
+        if not aspect:
             return None
 
         aspect_strength = chart_utils.calc_aspect_strength_percent(
@@ -990,9 +1005,9 @@ class ChartReport:
                         None,
                         chart_utils.greatest_nonzero_class_orb(self.options.angularity.minor_angles),
                     )
-                print(f'aspects for {primary_planet_long_name} and {secondary_planet_long_name}:')
-                print(f'ecliptical: {ecliptical_aspect}')
-                print(f'mundane: {mundane_aspect}')
+                print(f'aspects for {primary_planet_long_name} - {secondary_planet_long_name}:')
+                print(f'ecliptical aspect: {ecliptical_aspect}')
+                print(f'mundane aspects: {mundane_aspect}')
 
                 if (
                     not ecliptical_aspect
@@ -1111,7 +1126,7 @@ class ChartReport:
             )
             for aspect in aspects_by_class[3]:
                 chartfile.write(
-                    chart_utils.center_align(aspect, self.table_width) + '\n'
+                    chart_utils.center_align(str(aspect), self.table_width) + '\n'
                 )
             chartfile.write('-' * self.table_width + '\n')
 
