@@ -443,7 +443,7 @@ class Aspect:
         text = (
             f'{planet_1_role}{self.planet1_short_name} '
             f'{self.type.value} {planet_2_role}{self.planet2_short_name} '
-            f"{self.get_formatted_orb()} {self.strength}%{(' ' + self.framework.value.upper()) if self.framework else ''}"
+            f"{self.get_formatted_orb()}{self.strength}%{(' ' + self.framework.value.upper()) if self.framework else ''}"
         )
 
         return text.strip()
