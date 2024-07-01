@@ -200,30 +200,31 @@ class ChartReport:
         if whole_chart_is_dormant:
             if planet_1.name != 'Moon':
                 return None
-        
+
         if aspect_framework == chart_models.AspectFramework.ECLIPTICAL:
             raw_orb = abs(planet_1.longitude - planet_2.longitude) % 360
         elif aspect_framework == chart_models.AspectFramework.MUNDANE:
-            raw_orb = (
-                abs(
-                    planet_1.house
-                    - planet_2.house
-                )
-                % 360
-            )
+            raw_orb = abs(planet_1.house - planet_2.house) % 360
 
         if raw_orb > 180:
             raw_orb = 360 - raw_orb
 
-        ecliptic_orbs = self.options.ecliptic_aspects or chart_utils.DEFAULT_ECLIPTICAL_ORBS
-        mundane_orbs = self.options.mundane_aspects or chart_utils.DEFAULT_MUNDANE_ORBS
+        ecliptic_orbs = (
+            self.options.ecliptic_aspects
+            or chart_utils.DEFAULT_ECLIPTICAL_ORBS
+        )
+        mundane_orbs = (
+            self.options.mundane_aspects or chart_utils.DEFAULT_MUNDANE_ORBS
+        )
 
         for (aspect_type, aspect_degrees) in chart_models.AspectType.iterate():
             test_orbs = None
 
             # If the aspect is a sesquisquare, we need to use the orb for semisquare,
             # as it's the only orb in options
-            aspect_degrees_for_options = 45 if aspect_degrees == 135 else aspect_degrees
+            aspect_degrees_for_options = (
+                45 if aspect_degrees == 135 else aspect_degrees
+            )
 
             if aspect_framework == chart_models.AspectFramework.ECLIPTICAL:
                 if str(aspect_degrees_for_options) in ecliptic_orbs:
@@ -275,7 +276,7 @@ class ChartReport:
                 or self.core_chart.type in chart_utils.SOLAR_RETURNS
             ):
                 # Always consider transiting Moon aspects, as long as they're in orb
-                break  
+                break
 
             # Otherwise, make sure the aspect should be considered at all
             # TODO - this should probably be checked way earlier
@@ -283,9 +284,7 @@ class ChartReport:
             show_aspects = option_models.ShowAspect.from_number(
                 self.options.show_aspects
             )
-            if (
-                show_aspects == option_models.ShowAspect.ONE_PLUS_FOREGROUND
-            ):
+            if show_aspects == option_models.ShowAspect.ONE_PLUS_FOREGROUND:
                 if (
                     planet_1.name not in foreground_planets
                     and not planet_1.treat_as_foreground
@@ -297,9 +296,7 @@ class ChartReport:
                         aspect = aspect.with_class(4)
                     else:
                         continue
-            elif (
-                show_aspects == option_models.ShowAspect.BOTH_FOREGROUND
-            ):
+            elif show_aspects == option_models.ShowAspect.BOTH_FOREGROUND:
                 if (
                     planet_1.name not in foreground_planets
                     and not planet_1.treat_as_foreground
@@ -1011,22 +1008,27 @@ class ChartReport:
                         None,
                         secondary_planet_data,
                         None,
-                        chart_utils.greatest_nonzero_class_orb(self.options.angularity.minor_angles),
+                        chart_utils.greatest_nonzero_class_orb(
+                            self.options.angularity.minor_angles
+                        ),
                     )
-
 
                 # This will get overwritten if there are any other aspects,
                 # i.e. if there are any other aspects, the PVP aspect will not be used
                 tightest_aspect = pvp_aspect
 
                 if ecliptical_aspect or mundane_aspect:
-                    tightest_aspect = min(ecliptical_aspect, mundane_aspect, key=lambda x: x.orb if x else 1000)
-  
+                    tightest_aspect = min(
+                        ecliptical_aspect,
+                        mundane_aspect,
+                        key=lambda x: x.orb if x else 1000,
+                    )
+
                 if tightest_aspect:
-                    aspects_by_class[
-                            tightest_aspect.aspect_class - 1
-                        ].append(tightest_aspect)
-                
+                    aspects_by_class[tightest_aspect.aspect_class - 1].append(
+                        tightest_aspect
+                    )
+
         # Remove empty aspect classes
         if len(aspects_by_class[3]) == 0 or whole_chart_is_dormant:
             del aspects_by_class[3]
@@ -1098,7 +1100,8 @@ class ChartReport:
             )
             for aspect in aspects_by_class[3]:
                 chartfile.write(
-                    chart_utils.center_align(str(aspect), self.table_width) + '\n'
+                    chart_utils.center_align(str(aspect), self.table_width)
+                    + '\n'
                 )
             chartfile.write('-' * self.table_width + '\n')
 

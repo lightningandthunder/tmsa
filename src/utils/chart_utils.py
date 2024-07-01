@@ -466,9 +466,12 @@ def make_chart_path(chart, temporary):
             third = chart.type
     filename = f'{first}~{second}~{third}.dat'
     if ingress:
-        filepath = os.path.join(f"{chart['year'] if isinstance(chart, dict) else chart.year}",filename)
-    else: 
-        filepath = os.path.join(first[0],first, filename)
+        filepath = os.path.join(
+            f"{chart['year'] if isinstance(chart, dict) else chart.year}",
+            filename,
+        )
+    else:
+        filepath = os.path.join(first[0], first, filename)
     path = TEMP_CHARTS if temporary else CHART_PATH
     return os.path.abspath(os.path.join(path, filepath))
 
@@ -493,7 +496,7 @@ def iterate_allowed_planets(
         ):
             continue
 
-        else:  
+        else:
             yield planet_name, data
 
 
@@ -509,6 +512,7 @@ def convert_house_to_pvl(house: float) -> float:
     return (int(zero_index_house) * 30) + (
         ((zero_index_house) - int(zero_index_house)) * 30
     )
+
 
 def greatest_nonzero_class_orb(orbs: list[float]) -> float:
     for i in range(len(orbs) - 1, -1, -1):

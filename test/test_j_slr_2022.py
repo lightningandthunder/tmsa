@@ -50,9 +50,7 @@ class TestBiwheelDisplay:
         assert_line_contains(
             lines[39], '41N 3\'54"  86W12\'58"', any_position=True
         )
-        assert_line_contains(
-            lines[40], 'UT 10:13:00', any_position=True
-        )
+        assert_line_contains(lines[40], 'UT 10:13:00', any_position=True)
         assert_line_contains(lines[41], 'RAMC 85°31\' 0"', any_position=True)
         assert_line_contains(lines[42], 'OE 23°26\'45"', any_position=True)
         assert_line_contains(lines[43], 'SVP  5Pi53\'13"', any_position=True)
