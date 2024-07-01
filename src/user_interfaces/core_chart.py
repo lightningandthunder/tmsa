@@ -196,6 +196,10 @@ class ChartReport:
         raw_orb = None
         aspect = None
 
+        if whole_chart_is_dormant:
+            if planet_1.name != 'Moon':
+                return None
+        
         if aspect_framework == chart_models.AspectFramework.ECLIPTICAL:
             raw_orb = abs(planet_1.longitude - planet_2.longitude) % 360
         elif aspect_framework == chart_models.AspectFramework.MUNDANE:
@@ -207,8 +211,6 @@ class ChartReport:
                 % 360
             )
 
-        print(f"Raw orb: {'ECLIPTICAL' if aspect_framework == chart_models.AspectFramework.ECLIPTICAL else 'MUNDANE'}", raw_orb)
-
         if raw_orb > 180:
             raw_orb = 360 - raw_orb
 
@@ -216,7 +218,6 @@ class ChartReport:
             aspect_degrees = chart_models.AspectType.degrees_from_abbreviation(
                 aspect_type.value
             )
-            print("Checking aspect: ", aspect_degrees)
 
             test_orbs = None
 
@@ -231,8 +232,6 @@ class ChartReport:
                 else:
                     continue
 
-            print(f"Test orb: {test_orbs}")
-
             if test_orbs[2]:
                 maxorb = test_orbs[2]
             elif test_orbs[1]:
@@ -241,79 +240,102 @@ class ChartReport:
                 maxorb = test_orbs[0] * 2.5
             else:
                 continue
-            
-            print(f"Max orb: {maxorb}")
 
-            if (
+            print("Max ", aspect_framework,  " orb for ", planet_1.name, " and ", planet_2.name, " is ", maxorb)
+
+            if not (
                 raw_orb >= aspect_degrees - maxorb
                 and raw_orb <= aspect_degrees + maxorb
             ):
-                aspect = (
-                    chart_models.Aspect()
-                    .from_planet(planet_1.short_name, role=planet_1_role)
-                    .to_planet(planet_2.short_name, role=planet_2_role)
-                    .as_type(
-                        chart_models.AspectType.from_string(aspect_type.value)
-                    )
-                )
-                aspect.framework = aspect_framework
-                raw_orb = abs(raw_orb - aspect_degrees)
+                # If this is a semisquare, also check sesquisquare,
+                # Which does not have its own entry as an aspect type anywhere
+                if aspect_degrees != 45:
+                    continue
 
-                if raw_orb <= test_orbs[0]:
-                    aspect = aspect.with_class(1)
-                elif raw_orb <= test_orbs[1]:
-                    aspect = aspect.with_class(2)
-                elif raw_orb <= test_orbs[2]:
-                    aspect = aspect.with_class(3)
+                # If an semisquare isn't in orb, check for sesquisquare
+                if (
+                    raw_orb >= 135 - maxorb
+                    and raw_orb <= 135 + maxorb
+                ):
+                    aspect_degrees = 135
                 else:
                     continue
 
-                if planet_1.name == 'Moon' and (
-                    self.core_chart.type in chart_utils.INGRESSES
-                    or self.core_chart.type in chart_utils.SOLAR_RETURNS
-                ):
-                    break  # i.e. consider transiting Moon aspects always
+                # If we get here, we have a sesquisquare
 
-                # Otherwise, make sure the aspect should be considered at all
-                # TODO - this should probably be checked way earlier
+            aspect = (
+                chart_models.Aspect()
+                .from_planet(planet_1.short_name, role=planet_1_role)
+                .to_planet(planet_2.short_name, role=planet_2_role)
+                .as_type(
+                    chart_models.AspectType.from_string(aspect_type.value)
+                )
+            )
+            aspect.framework = aspect_framework
+            aspect_orb = abs(raw_orb - aspect_degrees)
+
+            if aspect_orb <= test_orbs[0]:
+                aspect = aspect.with_class(1)
+            elif aspect_orb <= test_orbs[1]:
+                aspect = aspect.with_class(2)
+            elif aspect_orb <= test_orbs[2]:
+                aspect = aspect.with_class(3)
+            else:
+                continue
+
+            if planet_1.name == 'Moon' and (
+                self.core_chart.type in chart_utils.INGRESSES
+                or self.core_chart.type in chart_utils.SOLAR_RETURNS
+            ):
+                break  # i.e. consider transiting Moon aspects always
+
+            # Otherwise, make sure the aspect should be considered at all
+            # TODO - this should probably be checked way earlier
+
+            show_aspects = option_models.ShowAspect.from_number(
+                self.options.show_aspects
+            )
+            if (
+                show_aspects == option_models.ShowAspect.ONE_PLUS_FOREGROUND
+            ):
                 if (
-                    self.options.show_aspects
-                    == option_models.ShowAspect.ONE_PLUS_FOREGROUND
+                    planet_1.name not in foreground_planets
+                    and not planet_1.treat_as_foreground
+                ) and (
+                    planet_2.name not in foreground_planets
+                    and not planet_2.treat_as_foreground
                 ):
-                    if (
-                        planet_1.name not in foreground_planets
-                        and not planet_1.treat_as_foreground
-                    ) and (
-                        planet_2.name not in foreground_planets
-                        and not planet_2.treat_as_foreground
-                    ):
-                        if raw_orb <= 1 and self.options.partile_nf:
-                            aspect = aspect.with_class(4)
-                        else:
-                            continue
-                elif (
-                    self.options.show_aspects
-                    == option_models.ShowAspect.BOTH_FOREGROUND
+                    if aspect_orb <= 1 and self.options.partile_nf:
+                        print("Adding to class 4 from 1+fg: ", aspect)
+                        aspect = aspect.with_class(4)
+                    else:
+                        continue
+            elif (
+                show_aspects == option_models.ShowAspect.BOTH_FOREGROUND
+            ):
+                if (
+                    planet_1.name not in foreground_planets
+                    and not planet_1.treat_as_foreground
+                ) or (
+                    planet_2.name not in foreground_planets
+                    and not planet_2.treat_as_foreground
                 ):
-                    if (
-                        planet_1.name not in foreground_planets
-                        and not planet_1.treat_as_foreground
-                    ) or (
-                        planet_2.name not in foreground_planets
-                        and not planet_2.treat_as_foreground
-                    ):
-                        if raw_orb <= 1 and self.options.partile_nf:
-                            aspect = aspect.with_class(4)
-                        else:
-                            continue
+                    if aspect_orb <= 1 and self.options.partile_nf:
+                        print("Adding to class 4 from both fg: ", aspect)
+                        aspect = aspect.with_class(4)
+                    else:
+                        continue
+
+            # We have found a valid aspect; stop checking for more aspects
+            break
 
         if not aspect:
             return None
 
         aspect_strength = chart_utils.calc_aspect_strength_percent(
-            maxorb, raw_orb
+            maxorb, aspect_orb
         )
-        aspect = aspect.with_strength(aspect_strength).with_orb(raw_orb)
+        aspect = aspect.with_strength(aspect_strength).with_orb(aspect_orb)
 
         return aspect
 
@@ -928,6 +950,7 @@ class ChartReport:
         mundane_orbs = (
             self.options.mundane_aspects or chart_utils.DEFAULT_MUNDANE_ORBS
         )
+
         aspects_by_class = [[], [], [], []]
         aspect_class_headers = [
             'Class 1',
@@ -938,18 +961,17 @@ class ChartReport:
 
         for (
             primary_index,
-            (primary_planet_long_name, primary_planet_info),
+            (primary_planet_long_name, _),
         ) in enumerate(chart_utils.iterate_allowed_planets(self.options)):
             for (
                 secondary_index,
-                (secondary_planet_long_name, secondary_planet_info),
+                (secondary_planet_long_name, _),
             ) in enumerate(chart_utils.iterate_allowed_planets(self.options)):
                 if secondary_index <= primary_index:
                     continue
 
                 # If options say to skip one or both planets' aspects outside the foreground,
                 # just skip calculating anything
-
                 show_aspects = (
                     self.options.show_aspects or option_models.ShowAspect.ALL
                 )
@@ -1005,9 +1027,6 @@ class ChartReport:
                         None,
                         chart_utils.greatest_nonzero_class_orb(self.options.angularity.minor_angles),
                     )
-                print(f'aspects for {primary_planet_long_name} - {secondary_planet_long_name}:')
-                print(f'ecliptical aspect: {ecliptical_aspect}')
-                print(f'mundane aspects: {mundane_aspect}')
 
                 if (
                     not ecliptical_aspect
@@ -1030,7 +1049,9 @@ class ChartReport:
 
                 tightest_orb.sort(key=lambda x: x[0])
 
-                tightest_orb = tightest_orb[0]
+                if (ecliptical_aspect and mundane_aspect):
+                    print('Ecliptical aspect: ', ecliptical_aspect)
+                    print('Mundane aspect: ', mundane_aspect)
 
                 # Even if the PVP aspect is the closest, if there is any other aspect, use that instead
                 if pvp_aspect and not ecliptical_aspect and not mundane_aspect:
@@ -1040,17 +1061,19 @@ class ChartReport:
                 else:
                     # If the pvp aspect is the closest, but other aspects exist, remove the pvp orb
                     # so the next closest aspect can be used
-                    if pvp_aspect and tightest_orb[0] == pvp_aspect.orb:
+                    if pvp_aspect and tightest_orb[0][0] == pvp_aspect.orb:
                         tightest_orb.pop(0)
 
                 if (
                     ecliptical_aspect
-                    and tightest_orb[0] == ecliptical_aspect.orb
+                    and tightest_orb[0][0] == ecliptical_aspect.orb
                 ):
+                    print('Adding ecliptical aspect for ', ecliptical_aspect)
                     aspects_by_class[
                         ecliptical_aspect.aspect_class - 1
                     ].append(ecliptical_aspect)
-                elif mundane_aspect:   # mundane orb
+                elif mundane_aspect:
+                    print('Adding mundane aspect for ', mundane_aspect)
                     aspects_by_class[mundane_aspect.aspect_class - 1].append(
                         mundane_aspect
                     )
