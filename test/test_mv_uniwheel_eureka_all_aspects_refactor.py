@@ -1,4 +1,9 @@
-from src.models.charts import AspectFramework, AspectType, ChartObject, ChartWheelRole
+from src.models.charts import (
+    AspectFramework,
+    AspectType,
+    ChartObject,
+    ChartWheelRole,
+)
 from test.fixtures.base_chart import base_chart
 from test.fixtures.natal_options import natal_options
 import src.models.options as model_option
@@ -22,7 +27,11 @@ class TestUniwheelDisplay:
         chart = ChartObject(base_chart)
         options = model_option.Options(natal_options)
 
-        ChartReport(charts={ChartWheelRole.RADIX : chart}, temporary=False, options=options)
+        ChartReport(
+            charts={ChartWheelRole.RADIX: chart},
+            temporary=False,
+            options=options,
+        )
 
         lines = mockfile.file.split('\n')
 
