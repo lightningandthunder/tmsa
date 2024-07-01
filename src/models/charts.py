@@ -1,7 +1,7 @@
 import json
 from dataclasses import dataclass
-from enum import Enum
-from typing import TypeVar
+from enum import Enum, EnumMeta
+from typing import Iterator, TypeVar
 
 from src import log_error, swe
 from src.constants import PLANETS
@@ -372,6 +372,13 @@ class AspectType(Enum):
             return 'op'
         else:
             return None
+
+    @classmethod
+    def iterate(cls) -> Iterator[tuple['AspectType', str, int]]:
+        for member in AspectType:
+            yield (member, member.value, cls.degrees_from_abbreviation(member.value))
+            if member == AspectType.OCTILE:
+                yield (member, member.value, 135)
 
 
 class AspectFramework(Enum):
