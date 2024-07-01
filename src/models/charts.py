@@ -374,11 +374,11 @@ class AspectType(Enum):
             return None
 
     @classmethod
-    def iterate(cls) -> Iterator[tuple['AspectType', str, int]]:
+    def iterate(cls) -> Iterator[tuple['AspectType', int]]:
         for member in AspectType:
-            yield (member, member.value, cls.degrees_from_abbreviation(member.value))
+            yield (member, cls.degrees_from_abbreviation(member.value))
             if member == AspectType.OCTILE:
-                yield (member, member.value, 135)
+                yield (member, 135)
 
 
 class AspectFramework(Enum):
