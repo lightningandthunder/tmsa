@@ -183,7 +183,8 @@ class TestUniwheelDisplay:
         lines = self.init_test(
             monkeypatch, base_chart, natal_options, mock_tk_main
         )
-
+        for index, line in enumerate(lines):
+            print(index, line)
         lines = lines[83:96]
 
         aspects = [
@@ -250,9 +251,6 @@ class TestUniwheelDisplay:
         lines = self.init_test(
             monkeypatch, base_chart, natal_options, mock_tk_main
         )
-
-        for index, line in enumerate(lines):
-            print(index, line)
 
         lines = lines[83:90]
 
