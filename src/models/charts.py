@@ -423,6 +423,7 @@ class AspectFramework(Enum):
     ECLIPTICAL = ''
     MUNDANE = 'M'
     PRIME_VERTICAL_PARAN = 'p'
+    POTENTIAL_PARAN = 'P'
 
 
 @dataclass
