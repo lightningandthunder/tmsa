@@ -42,28 +42,20 @@ class ChartReport:
 
     def __init__(
         self,
-        charts: dict[chart_models.ChartWheelRole : chart_models.ChartObject],
+        charts: list[chart_models.ChartObject],
         temporary: bool,
         options: option_models.Options,
     ):
-        self.charts = charts
         self.options = options
 
-        self.try_precess_to_transit_chart(charts)
+        self.charts = sorted(charts, key=lambda c: c.role, reverse=True)
 
-        core_chart = None
-        if chart_models.ChartWheelRole.TRANSIT in charts:
-            core_chart = charts[chart_models.ChartWheelRole.TRANSIT]
+        if len(self.charts) > 1:
+            self.try_precess_to_transit_chart(self.charts)
 
-        elif chart_models.ChartWheelRole.INGRESS in charts:
-            core_chart = charts[chart_models.ChartWheelRole.INGRESS]
+        self.core_chart = self.charts[0]
 
-        else:
-            core_chart = charts[chart_models.ChartWheelRole.RADIX]
-
-        self.core_chart = core_chart
-
-        filename = chart_utils.make_chart_path(core_chart, temporary)
+        filename = chart_utils.make_chart_path(self.core_chart, temporary)
         filename = filename[0:-3] + 'txt'
         try:
             chartfile = open(filename, 'w')
@@ -80,6 +72,7 @@ class ChartReport:
                 f"Created by Time Matters {constants.VERSION}  ({datetime.now().strftime('%d %b %Y')})"
             )
 
+    # TODO - this doesn't work yet
     def try_precess_to_transit_chart(
         self, charts: dict[str : chart_models.ChartObject]
     ):
@@ -328,29 +321,37 @@ class ChartReport:
         planet_1_role: str | None,
         planet_2: chart_models.PlanetData,
         planet_2_role: str | None,
-        max_orb: float,
     ):
+        max_prime_vertical_orb = (
+            chart_utils.greatest_nonzero_class_orb(
+                self.options.angularity.minor_angles
+            )
+            or 3
+        )
+
         # One or the other planet must be on the prime vertical
 
         planet_1_on_prime_vertical = chart_utils.inrange(
-            planet_1.azimuth, 90, max_orb
-        ) or chart_utils.inrange(planet_1.azimuth, 270, max_orb)
+            planet_1.azimuth, 90, max_prime_vertical_orb
+        ) or chart_utils.inrange(planet_1.azimuth, 270, max_prime_vertical_orb)
 
         planet_2_on_prime_vertical = chart_utils.inrange(
-            planet_2.azimuth, 90, max_orb
-        ) or chart_utils.inrange(planet_2.azimuth, 270, max_orb)
+            planet_2.azimuth, 90, max_prime_vertical_orb
+        ) or chart_utils.inrange(planet_2.azimuth, 270, max_prime_vertical_orb)
+
+        if not planet_1_on_prime_vertical and not planet_2_on_prime_vertical:
+            return None
 
         if planet_1_on_prime_vertical and planet_2_on_prime_vertical:
             # check prime vertical to prime vertical in azimuth
             raw_orb = abs(planet_1.azimuth - planet_2.azimuth)
-            is_conjunction = chart_utils.inrange(raw_orb, 0, max_orb)
+            conjunction_orb = self.options.ecliptic_aspects['0'][0]
+            opposition_orb = self.options.ecliptic_aspects['180'][0]
+            is_conjunction = chart_utils.inrange(raw_orb, 0, conjunction_orb)
 
-            if is_conjunction or chart_utils.inrange(raw_orb, 180, max_orb):
-                t = (
-                    chart_models.AspectType.CONJUNCTION
-                    if is_conjunction
-                    else chart_models.AspectType.OPPOSITION
-                )
+            if is_conjunction or chart_utils.inrange(
+                raw_orb, 180, opposition_orb
+            ):
                 aspect = (
                     chart_models.Aspect()
                     .as_prime_vertical_paran()
@@ -364,133 +365,142 @@ class ChartReport:
                     .with_class(1)
                 )
                 aspect_strength = chart_utils.calc_aspect_strength_percent(
-                    max_orb, raw_orb
+                    conjunction_orb if is_conjunction else opposition_orb,
+                    raw_orb,
                 )
+
                 aspect = aspect.with_strength(aspect_strength).with_orb(
-                    raw_orb
+                    raw_orb,
                 )
 
                 return aspect
 
-        if planet_1_on_prime_vertical or planet_2_on_prime_vertical:
-            # check meridian to prime vertical in azimuth
-            planet_on_meridian = (
-                planet_1
-                if chart_utils.inrange(
-                    planet_1.prime_vertical_longitude, 90, max_orb
-                )
-                or chart_utils.inrange(
-                    planet_1.prime_vertical_longitude, 270, max_orb
-                )
-                else planet_2
-                if chart_utils.inrange(
-                    planet_2.prime_vertical_longitude, 90, max_orb
-                )
-                or chart_utils.inrange(
-                    planet_2.prime_vertical_longitude, 270, max_orb
-                )
-                else None
+        (planet_on_prime_vertical, prime_vertical_role) = (
+            (planet_1, planet_1_role)
+            if planet_1_on_prime_vertical
+            else (planet_2, planet_2_role)
+        )
+
+        (planet_on_other_axis, other_planet_role) = (
+            (planet_2, planet_2_role)
+            if planet_1_on_prime_vertical
+            else (planet_1, planet_1_role)
+        )
+
+        (greater_planet, greater_role) = (
+            (planet_on_prime_vertical, prime_vertical_role)
+            if prime_vertical_role >= other_planet_role
+            else (planet_on_other_axis, other_planet_role)
+        )
+
+        (lesser_planet, lesser_role) = (
+            (planet_on_prime_vertical, prime_vertical_role)
+            if prime_vertical_role < other_planet_role
+            else (planet_on_other_axis, other_planet_role)
+        )
+
+        # check meridian to prime vertical in azimuth
+        max_major_angle_orb = (
+            chart_utils.greatest_nonzero_class_orb(
+                self.options.angularity.major_angles
             )
+            or 10
+        )
 
-            if planet_on_meridian is not None:
+        planet_is_on_meridian = chart_utils.inrange(
+            planet_on_other_axis.prime_vertical_longitude,
+            90,
+            max_major_angle_orb,
+        ) or chart_utils.inrange(
+            planet_on_other_axis.prime_vertical_longitude,
+            270,
+            max_major_angle_orb,
+        )
 
-                planet_on_prime_vertical = (
-                    planet_1 if planet_1_on_prime_vertical else planet_2
+        square_orb = self.options.ecliptic_aspects['90'][0]
+
+        if planet_is_on_meridian:
+
+            # TODO - I'm not sure this will cover everything
+            if planet_on_other_axis.name != planet_on_prime_vertical.name:
+
+                raw_orb = abs(
+                    planet_on_other_axis.azimuth
+                    - planet_on_prime_vertical.azimuth
                 )
-                if planet_on_meridian.name != planet_on_prime_vertical.name:
-
-                    raw_orb = abs(
-                        planet_on_meridian.azimuth
-                        - planet_on_prime_vertical.azimuth
+                if (
+                    chart_utils.inrange(raw_orb, 0, square_orb)
+                    or chart_utils.inrange(raw_orb, 90, square_orb)
+                    or chart_utils.inrange(raw_orb, 180, square_orb)
+                ):
+                    # These are squares no matter what
+                    aspect = (
+                        chart_models.Aspect()
+                        .as_prime_vertical_paran()
+                        .from_planet(
+                            greater_planet.short_name,
+                            role=greater_role,
+                        )
+                        .to_planet(
+                            lesser_planet.short_name,
+                            role=lesser_role,
+                        )
+                        .as_type(chart_models.AspectType.SQUARE)
+                        .with_class(1)
                     )
-                    if (
-                        chart_utils.inrange(raw_orb, 0, max_orb)
-                        or chart_utils.inrange(raw_orb, 90, max_orb)
-                        or chart_utils.inrange(raw_orb, 180, max_orb)
-                    ):
-                        # These are squares no matter what
-                        aspect = (
-                            chart_models.Aspect()
-                            .as_prime_vertical_paran()
-                            .from_planet(
-                                planet_on_meridian.short_name,
-                                role=planet_1_role,
-                            )
-                            .to_planet(
-                                planet_on_prime_vertical.short_name,
-                                role=planet_2_role,
-                            )
-                            .as_type(chart_models.AspectType.SQUARE)
-                            .with_class(1)
-                        )
-                        aspect_strength = (
-                            chart_utils.calc_aspect_strength_percent(
-                                max_orb, raw_orb
-                            )
-                        )
-                        aspect = aspect.with_strength(
-                            aspect_strength
-                        ).with_orb(raw_orb)
-                        return aspect
-
-            # check horizon to prime vertical in meridian longitude
-            planet_on_horizon = (
-                planet_1
-                if chart_utils.inrange(
-                    planet_1.prime_vertical_longitude, 0, max_orb
-                )
-                or chart_utils.inrange(
-                    planet_1.prime_vertical_longitude, 180, max_orb
-                )
-                else planet_2
-                if chart_utils.inrange(
-                    planet_2.prime_vertical_longitude, 0, max_orb
-                )
-                or chart_utils.inrange(
-                    planet_2.prime_vertical_longitude, 180, max_orb
-                )
-                else None
-            )
-            if planet_on_horizon is not None:
-                planet_on_prime_vertical = (
-                    planet_1 if planet_1_on_prime_vertical else planet_2
-                )
-                if planet_on_horizon.name != planet_on_prime_vertical.name:
-                    raw_orb = abs(
-                        planet_on_horizon.meridian_longitude
-                        - planet_on_prime_vertical.meridian_longitude
+                    aspect_strength = chart_utils.calc_aspect_strength_percent(
+                        square_orb, raw_orb
                     )
-                    if (
-                        chart_utils.inrange(raw_orb, 0, max_orb)
-                        or chart_utils.inrange(raw_orb, 90, max_orb)
-                        or chart_utils.inrange(raw_orb, 180, max_orb)
-                    ):
-                        # These are squares no matter what
-                        aspect = (
-                            chart_models.Aspect()
-                            .as_prime_vertical_paran()
-                            .from_planet(
-                                planet_on_horizon.short_name,
-                                role=planet_1_role,
-                            )
-                            .to_planet(
-                                planet_on_prime_vertical.short_name,
-                                role=planet_2_role,
-                            )
-                            .as_type(chart_models.AspectType.SQUARE)
-                            .with_class(1)
-                        )
-                        aspect_strength = (
-                            chart_utils.calc_aspect_strength_percent(
-                                max_orb, raw_orb
-                            )
-                        )
-                        aspect = aspect.with_strength(
-                            aspect_strength
-                        ).with_orb(raw_orb)
-                        return aspect
+                    aspect = aspect.with_strength(aspect_strength).with_orb(
+                        raw_orb
+                    )
+                    return aspect
 
-        return None
+        # check horizon to prime vertical in meridian longitude
+        planet_is_on_horizon = chart_utils.inrange(
+            planet_on_other_axis.prime_vertical_longitude,
+            0,
+            max_major_angle_orb,
+        ) or chart_utils.inrange(
+            planet_on_other_axis.prime_vertical_longitude,
+            180,
+            max_major_angle_orb,
+        )
+        if planet_is_on_horizon:
+            if planet_on_other_axis.name != planet_on_prime_vertical.name:
+                raw_orb = abs(
+                    planet_on_other_axis.meridian_longitude
+                    - planet_on_prime_vertical.meridian_longitude
+                )
+                is_conjunction = chart_utils.inrange(
+                    raw_orb, 0, conjunction_orb
+                )
+                if is_conjunction or chart_utils.inrange(
+                    raw_orb, 180, opposition_orb
+                ):
+                    # These are squares no matter what
+                    aspect = (
+                        chart_models.Aspect()
+                        .as_prime_vertical_paran()
+                        .from_planet(
+                            greater_planet.short_name,
+                            role=greater_planet,
+                        )
+                        .to_planet(
+                            lesser_planet.short_name,
+                            role=lesser_role,
+                        )
+                        .as_type(chart_models.AspectType.SQUARE)
+                        .with_class(1)
+                    )
+                    aspect_strength = chart_utils.calc_aspect_strength_percent(
+                        conjunction_orb if is_conjunction else opposition_orb,
+                        raw_orb,
+                    )
+                    aspect = aspect.with_strength(aspect_strength).with_orb(
+                        raw_orb
+                    )
+                    return aspect
 
     def calc_angle_and_strength(
         self,
@@ -1001,16 +1011,15 @@ class ChartReport:
                     whole_chart_is_dormant,
                 )
 
+                # TODO - the code below forces roles, when there doesn't need to be any.
                 pvp_aspect = None
-                if self.options.allow_pvp_aspects:
+                # TODO - this is a temporary change to allow PVP aspects to be shown
+                if self.options.allow_pvp_aspects or False:
                     pvp_aspect = self.find_pvp_aspect(
                         primary_planet_data,
-                        None,
+                        self.core_chart.role,
                         secondary_planet_data,
-                        None,
-                        chart_utils.greatest_nonzero_class_orb(
-                            self.options.angularity.minor_angles
-                        ),
+                        self.core_chart.role,
                     )
 
                 # This will get overwritten if there are any other aspects,

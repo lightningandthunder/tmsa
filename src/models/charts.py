@@ -1,15 +1,15 @@
 import json
 from dataclasses import dataclass
-from enum import Enum, EnumMeta
+from enum import Enum
 from typing import Iterator, TypeVar
 
 from src import log_error, swe
 from src.constants import PLANETS
-from src.models.options import Options
 from src.utils.chart_utils import convert_house_to_pvl, fmt_dm
 from src.utils.format_utils import to360
 
 T = TypeVar('T', bound='ChartObject')
+R = TypeVar('R', bound='ChartWheelRole')
 
 
 @dataclass
@@ -140,6 +140,7 @@ class ChartObject:
     angles: dict[str, float]
     vertex: list[float]
     eastpoint: list[float]
+    role: R
     notes: str | None = None
     style: int = 1
 
@@ -270,6 +271,10 @@ class ChartObject:
         with open(file_path, 'w') as file:
             json.dump(self.__dict__, file, indent=4)
 
+    def with_role(self, role: R):
+        self.role = role
+        return self
+
     def precess_to(self, to_chart: T):
         for planet in self.planets:
             self.planets[planet].precess_to(to_chart)
@@ -278,10 +283,43 @@ class ChartObject:
 
 
 class ChartWheelRole(Enum):
-    RADIX = 'r'
     TRANSIT = 't'
     PROGRESSED = 'p'
+    SOLAR = 's'
+    RADIX = 'r'
     INGRESS = 'i'
+
+    def __eq__(self, other):
+        if isinstance(other, ChartWheelRole):
+            return self.value == other.value
+        return NotImplemented
+
+    def __lt__(self, other):
+        if isinstance(other, ChartWheelRole):
+            order = {
+                'i': 1,
+                'r': 2,
+                's': 3,
+                'p': 4,
+                't': 5,
+            }
+            return order[self.value] < order[other.value]
+        return NotImplemented
+
+    def __le__(self, other):
+        if isinstance(other, ChartWheelRole):
+            return self < other or self == other
+        return NotImplemented
+
+    def __gt__(self, other):
+        if isinstance(other, ChartWheelRole):
+            return not self < other and self != other
+        return NotImplemented
+
+    def __ge__(self, other):
+        if isinstance(other, ChartWheelRole):
+            return self > other or self == other
+        return NotImplemented
 
 
 class AspectType(Enum):
@@ -383,7 +421,7 @@ class AspectType(Enum):
 
 class AspectFramework(Enum):
     ECLIPTICAL = ''
-    MUNDANE = 'm'
+    MUNDANE = 'M'
     PRIME_VERTICAL_PARAN = 'p'
 
 
@@ -450,7 +488,7 @@ class Aspect:
         text = (
             f'{planet_1_role}{self.planet1_short_name} '
             f'{self.type.value} {planet_2_role}{self.planet2_short_name} '
-            f"{self.get_formatted_orb()}{self.strength}%{(' ' + self.framework.value.upper()) if self.framework else ''}"
+            f"{self.get_formatted_orb()}{self.strength}%{(' ' + self.framework.value) if self.framework else ''}"
         )
 
         return text.strip()

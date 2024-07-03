@@ -54,7 +54,7 @@ def assert_aspect(
     expected = f"{planet_1} {aspect_type.value} {planet_2} {degrees:2d}°{minutes:2}'{strength:3d}%"
 
     if type != AspectFramework.ECLIPTICAL:
-        expected += f' {type.value.upper()}'
+        expected += f' {type.value}'
 
     if not aspect == expected:
         raise AssertionError(

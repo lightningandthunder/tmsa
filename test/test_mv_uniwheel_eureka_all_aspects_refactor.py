@@ -24,11 +24,11 @@ class TestUniwheelDisplay:
         mockfile = MockFile()
         monkeypatch.setattr('builtins.open', lambda _, __: mockfile)
 
-        chart = ChartObject(base_chart)
+        chart = ChartObject(base_chart).with_role(ChartWheelRole.RADIX)
         options = model_option.Options(natal_options)
 
         ChartReport(
-            charts={ChartWheelRole.RADIX: chart},
+            charts=[chart],
             temporary=False,
             options=options,
         )
