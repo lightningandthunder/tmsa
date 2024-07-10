@@ -1012,6 +1012,7 @@ class UniwheelV2:
             else:
                 plus_minus = ' '
             chartfile.write(f'{sign}{plus_minus} ')
+            print(planet_foreground_angles)
             angle = planet_foreground_angles.get(planet_short_name, '')
             if angle.strip() == '':
                 angle = ' '
