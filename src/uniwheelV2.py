@@ -809,10 +809,9 @@ class UniwheelV2:
             angularity_is_empty = angularity.strip() == ''
             angularity_is_background = angularity.strip().lower() == 'b'
 
-            if (
-                not angularity_is_empty
-                and not angularity_is_background
-            ) or (planet_name == 'Moon' and 'I' in self.cclass):
+            if (not angularity_is_empty and not angularity_is_background) or (
+                planet_name == 'Moon' and 'I' in self.cclass
+            ):
                 planets_foreground.append(planet_name)
 
             if angularity_is_background or is_mundanely_background:
@@ -1012,10 +1011,11 @@ class UniwheelV2:
             else:
                 plus_minus = ' '
             chartfile.write(f'{sign}{plus_minus} ')
+
             angle = planet_foreground_angles.get(planet_short_name, '')
             if angle.strip() == '':
                 angle = ' '
-            elif angle.strip() == 'b':
+            elif angle.strip().lower() == 'b':
                 angle = 'B'
             else:
                 angle = 'F'
