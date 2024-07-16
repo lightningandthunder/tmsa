@@ -10,7 +10,7 @@ class ShowHelp:
 
 def show_not_implemented():
     tkmessagebox.showinfo(
-        'Not Implemented', 'This functionality not yet implemented.'
+        'Not Implemented', 'This functionality is not yet implemented.'
     )
 
 
