@@ -13,7 +13,7 @@ import shutil
 import tkinter.filedialog as tkfiledialog
 
 from chart import Chart
-from gui_utils import ShowHelp
+from gui_utils import ShowHelp, show_not_implemented
 from init import *
 from more_charts import MoreCharts
 from new_chart import NewChart
@@ -49,7 +49,7 @@ class SelectChart(Frame):
             '<Button-1>', lambda _: delay(self.clear_history)
         )
         Button(self, 'Predictive Methods', 0.5, 0.2, 0.2).bind(
-            '<Button-1>', lambda _: delay(NotImplemented)
+            '<Button-1>', lambda _: delay(show_not_implemented)
         )
         Button(self, 'Help', 0.3, 0.25, 0.2).bind(
             '<Button-1>',
