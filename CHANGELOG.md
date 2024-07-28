@@ -1,3 +1,13 @@
+### 0.5.7
+- Fix bug where mundane midpoints were using meridian longitude instead of prime vertical longitude
+- Better error message when clicking predictive options
+
+### O.5.6
+- Fix background planets showing as foreground in cosmic state
+
+### 0.5.5
+- Fix bug where planets mundanely background wouldn't be considered for aspects even if they were on a minor angle
+
 ### 0.5.0
 - Change strength calculation for minor angles
 - Add calculations for meridian longitude

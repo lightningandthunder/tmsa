@@ -8,20 +8,11 @@
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
 import math
-import tkinter.messagebox as tkmessagebox
 from datetime import datetime
 
-from src.constants import (DEFAULT_ECLIPTICAL_ORBS, DEFAULT_MUNDANE_ORBS,
-                           INGRESSES, MONTHS, NEG_SIGN, PLANET_NAMES,
-                           PLANET_NAMES_SHORT, POS_SIGN, SIGNS_SHORT, VERSION)
-from src.utils.chart_utils import (
-    angularity_activates_ingress, center_align, fmt_dm, fmt_dms, fmt_hms,
-    fmt_lat, fmt_long, get_return_class, inrange, left_align,
-    major_angularity_curve_cadent_background,
-    major_angularity_curve_eureka_formula,
-    major_angularity_curve_midquadrant_background, make_chart_path,
-    minor_angularity_curve, right_align, s_dm, s_ms, zod_min, zod_sec)
-from src.utils.os_utils import open_file
+from chart_utils import *
+from constants import VERSION
+from utils import open_file
 
 
 def write_to_file(chart, planet):
@@ -698,7 +689,7 @@ class UniwheelV2:
         if chtype.endswith(' Single Wheel'):
             chtype = chtype.replace(' Single Wheel', '')
         chart_grid[23][18:51] = center_align(chtype)
-        line = str(chart['day']) + ' ' + MONTHS[chart['month'] - 1] + ' '
+        line = str(chart['day']) + ' ' + month_abrev[chart['month'] - 1] + ' '
         line += (
             f"{chart['year']} "
             if chart['year'] > 0

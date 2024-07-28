@@ -17,6 +17,9 @@ from src import BG_COLOR, BTN_COLOR, ERR_COLOR, ERROR_FILE, TXT_COLOR
 from src.constants import PLATFORM, VERSION
 from src.utils.os_utils import app_path
 
+from constants import PLATFORM, VERSION
+from init import *
+
 main = tk.Tk()
 main.minsize(800, 600)
 
