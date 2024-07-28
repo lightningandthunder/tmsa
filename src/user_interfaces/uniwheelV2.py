@@ -1094,12 +1094,12 @@ class UniwheelV2:
                 # ecliptic midpoints?
                 emp = []
                 for remaining_planet in range(len(plist) - 1):
-                    for k in range(remaining_planet + 1, len(plist)):
+                    for secondary_planet_index in range(remaining_planet + 1, len(plist)):
                         mp = self.find_midpoint(
                             [planet_short_name, planet_data[0]],
                             plist,
                             remaining_planet,
-                            k,
+                            secondary_planet_index,
                             options,
                         )
                         if mp:
@@ -1131,7 +1131,7 @@ class UniwheelV2:
             plna = PLANET_NAMES[planet_index]
             plong = chart[plna][0]
             plra = chart[plna][3]
-            plpvl = chart[plna][7]
+            plpvl = chart[plna][8]
             plab = PLANET_NAMES_SHORT[planet_index]
             if (
                 options.get('show_aspects', 0) == 0
@@ -1141,13 +1141,13 @@ class UniwheelV2:
         plist.append(['Mc', chart['cusps'][10]])
         if len(plist) > 1:
             emp = []
-            for remaining_planet in range(len(plist) - 1):
-                for k in range(remaining_planet + 1, len(plist)):
+            for planet_index in range(len(plist) - 1):
+                for secondary_planet_index in range(planet_index + 1, len(plist)):
                     mp = self.find_midpoint(
                         ['As', chart['cusps'][1]],
                         plist,
-                        remaining_planet,
-                        k,
+                        planet_index,
+                        secondary_planet_index,
                         options,
                     )
                     if mp:
@@ -1167,12 +1167,12 @@ class UniwheelV2:
         if len(plist) > 1:
             emp = []
             for remaining_planet in range(len(plist) - 1):
-                for k in range(remaining_planet + 1, len(plist)):
+                for secondary_planet_index in range(remaining_planet + 1, len(plist)):
                     mp = self.find_midpoint(
                         ['Mc', chart['cusps'][10]],
                         plist,
                         remaining_planet,
-                        k,
+                        secondary_planet_index,
                         options,
                     )
                     if mp:
@@ -1197,9 +1197,9 @@ class UniwheelV2:
             ]
             ze = ['Ze', (chart['cusps'][1] - 90) % 360]
             for remaining_planet in range(len(plist) - 1):
-                for k in range(remaining_planet + 1, len(plist)):
+                for secondary_planet_index in range(remaining_planet + 1, len(plist)):
                     mp = self.mmp_all(
-                        ep, ze, plist, remaining_planet, k, options
+                        ep, ze, plist, remaining_planet, secondary_planet_index, options
                     )
                     if mp:
                         emp.append(mp)
@@ -1219,29 +1219,29 @@ class UniwheelV2:
                 empz.sort(key=lambda p: p[6:8])
                 if empa:
                     chartfile.write(f'\nAngle    | ')
-                    for remaining_planet, a in enumerate(empa):
+                    for index, a in enumerate(empa):
                         chartfile.write('   ' + a + '   ')
                         if (
-                            remaining_planet % 4 == 3
-                            and remaining_planet != len(empa) - 1
+                            index % 4 == 3
+                            and index != len(empa) - 1
                         ):
                             chartfile.write('\n' + (' ' * 9) + '| ')
                 if empe:
                     chartfile.write(f'\nEp       | ')
-                    for remaining_planet, a in enumerate(empe):
+                    for index, a in enumerate(empe):
                         chartfile.write('   ' + a + '   ')
                         if (
-                            remaining_planet % 4 == 3
-                            and remaining_planet != len(empe) - 1
+                            index % 4 == 3
+                            and index != len(empe) - 1
                         ):
                             chartfile.write('\n' + (' ' * 9) + '| ')
                 if empz:
                     chartfile.write(f'\nZe       | ')
-                    for remaining_planet, a in enumerate(empz):
+                    for index, a in enumerate(empz):
                         chartfile.write('   ' + a + '   ')
                         if (
-                            remaining_planet % 4 == 3
-                            and remaining_planet != len(empz) - 1
+                            index % 4 == 3
+                            and index != len(empz) - 1
                         ):
                             chartfile.write('\n' + (' ' * 9) + '| ')
 

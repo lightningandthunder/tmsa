@@ -8,11 +8,10 @@ class ShowHelp:
         open_file(filename)
 
 
-class NotImplemented:
-    def __init__(self):
-        tkmessagebox.showinfo(
-            'Not Implemented', 'This functionality not yet implemented.'
-        )
+def show_not_implemented():
+    tkmessagebox.showinfo(
+        'Not Implemented', 'This functionality is not yet implemented.'
+    )
 
 
 def newline_if_past_breakpoint(

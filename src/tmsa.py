@@ -175,7 +175,7 @@ class StartPage(Frame):
             self, 'Predictive Options', 0.6, 0.45, 0.2, font=base_font
         )
         self.predictive_options.bind(
-            '<Button-1>', lambda _: delay(NotImplemented)
+            '<Button-1>', lambda _: delay(show_not_implemented)
         )
 
         Button(self, 'Help', 0.2, 0.5, 0.2).bind(

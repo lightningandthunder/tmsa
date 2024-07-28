@@ -51,7 +51,7 @@ class SelectChart(Frame):
             '<Button-1>', lambda _: delay(self.clear_history)
         )
         Button(self, 'Predictive Methods', 0.5, 0.2, 0.2).bind(
-            '<Button-1>', lambda _: delay(NotImplemented)
+            '<Button-1>', lambda _: delay(show_not_implemented)
         )
         Button(self, 'Help', 0.3, 0.25, 0.2).bind(
             '<Button-1>',
