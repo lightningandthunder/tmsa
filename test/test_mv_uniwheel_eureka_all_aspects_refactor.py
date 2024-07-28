@@ -19,7 +19,7 @@ from test.utils import (
 
 class TestUniwheelDisplay:
     def init_test(self, monkeypatch, base_chart, natal_options, mock_tk_main):
-        from src.user_interfaces.core_chart import ChartReport
+        from src.user_interfaces.uniwheelV3 import Uniwheel
 
         mockfile = MockFile()
         monkeypatch.setattr('builtins.open', lambda _, __: mockfile)
@@ -27,7 +27,7 @@ class TestUniwheelDisplay:
         chart = ChartObject(base_chart).with_role(ChartWheelRole.RADIX)
         options = model_option.Options(natal_options)
 
-        ChartReport(
+        Uniwheel(
             charts=[chart],
             temporary=False,
             options=options,

@@ -1094,7 +1094,9 @@ class UniwheelV2:
                 # ecliptic midpoints?
                 emp = []
                 for remaining_planet in range(len(plist) - 1):
-                    for secondary_planet_index in range(remaining_planet + 1, len(plist)):
+                    for secondary_planet_index in range(
+                        remaining_planet + 1, len(plist)
+                    ):
                         mp = self.find_midpoint(
                             [planet_short_name, planet_data[0]],
                             plist,
@@ -1142,7 +1144,9 @@ class UniwheelV2:
         if len(plist) > 1:
             emp = []
             for planet_index in range(len(plist) - 1):
-                for secondary_planet_index in range(planet_index + 1, len(plist)):
+                for secondary_planet_index in range(
+                    planet_index + 1, len(plist)
+                ):
                     mp = self.find_midpoint(
                         ['As', chart['cusps'][1]],
                         plist,
@@ -1167,7 +1171,9 @@ class UniwheelV2:
         if len(plist) > 1:
             emp = []
             for remaining_planet in range(len(plist) - 1):
-                for secondary_planet_index in range(remaining_planet + 1, len(plist)):
+                for secondary_planet_index in range(
+                    remaining_planet + 1, len(plist)
+                ):
                     mp = self.find_midpoint(
                         ['Mc', chart['cusps'][10]],
                         plist,
@@ -1197,9 +1203,16 @@ class UniwheelV2:
             ]
             ze = ['Ze', (chart['cusps'][1] - 90) % 360]
             for remaining_planet in range(len(plist) - 1):
-                for secondary_planet_index in range(remaining_planet + 1, len(plist)):
+                for secondary_planet_index in range(
+                    remaining_planet + 1, len(plist)
+                ):
                     mp = self.mmp_all(
-                        ep, ze, plist, remaining_planet, secondary_planet_index, options
+                        ep,
+                        ze,
+                        plist,
+                        remaining_planet,
+                        secondary_planet_index,
+                        options,
                     )
                     if mp:
                         emp.append(mp)
@@ -1221,28 +1234,19 @@ class UniwheelV2:
                     chartfile.write(f'\nAngle    | ')
                     for index, a in enumerate(empa):
                         chartfile.write('   ' + a + '   ')
-                        if (
-                            index % 4 == 3
-                            and index != len(empa) - 1
-                        ):
+                        if index % 4 == 3 and index != len(empa) - 1:
                             chartfile.write('\n' + (' ' * 9) + '| ')
                 if empe:
                     chartfile.write(f'\nEp       | ')
                     for index, a in enumerate(empe):
                         chartfile.write('   ' + a + '   ')
-                        if (
-                            index % 4 == 3
-                            and index != len(empe) - 1
-                        ):
+                        if index % 4 == 3 and index != len(empe) - 1:
                             chartfile.write('\n' + (' ' * 9) + '| ')
                 if empz:
                     chartfile.write(f'\nZe       | ')
                     for index, a in enumerate(empz):
                         chartfile.write('   ' + a + '   ')
-                        if (
-                            index % 4 == 3
-                            and index != len(empz) - 1
-                        ):
+                        if index % 4 == 3 and index != len(empz) - 1:
                             chartfile.write('\n' + (' ' * 9) + '| ')
 
     def show(self):

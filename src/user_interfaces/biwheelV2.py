@@ -103,6 +103,7 @@ class BiwheelV2:
             if not chart['style']:
                 line += 'OS '
             line += fmt_hms(chart['time']) + ' ' + chart['zone']
+
             chart_grid[22][18:51] = center_align(line)
             chart_grid[23][18:51] = center_align(chart['location'])
             chart_grid[24][18:51] = center_align(

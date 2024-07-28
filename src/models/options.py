@@ -77,6 +77,7 @@ class Options:
         default_factory=lambda: {}
     )
     mundane_aspects: dict[str, list[float]] = field(default_factory=lambda: {})
+    pvp_aspects: dict[str, list[float]] = field(default_factory=lambda: {})
     allow_pvp_aspects: bool = False
     midpoints: dict[str, list[float]] = field(default_factory=lambda: {})
 
@@ -113,6 +114,8 @@ class Options:
             self.ecliptic_aspects = data['ecliptic_aspects']
         if 'mundane_aspects' in data:
             self.mundane_aspects = data['mundane_aspects']
+        if 'pvp_aspects' in data:
+            self.pvp_aspects = data['pvp_aspects']
         if 'midpoints' in data:
             self.midpoints = data['midpoints']
 
