@@ -12,9 +12,7 @@ def write_cosmic_state(
     moon_sign = constants.SIGNS_SHORT[
         int(chart.planets['Moon'].longitude // 30)
     ]
-    sun_sign = constants.SIGNS_SHORT[
-        int(chart.planets['Sun'].longitude // 30)
-    ]
+    sun_sign = constants.SIGNS_SHORT[int(chart.planets['Sun'].longitude // 30)]
 
     for index, (planet_name, planet_info) in enumerate(
         chart_utils.iterate_allowed_planets()
@@ -92,10 +90,7 @@ def write_cosmic_state(
 
         for aspect_index, aspect in enumerate(aspect_list):
             chartfile.write(aspect[0] + '   ')
-            if (
-                aspect_index % 4 == 3
-                and aspect_index != len(aspect_list) - 1
-            ):
+            if aspect_index % 4 == 3 and aspect_index != len(aspect_list) - 1:
                 chartfile.write('\n' + (' ' * 9) + '| ')
 
         points_to_show_midpoint_aspects_to = []

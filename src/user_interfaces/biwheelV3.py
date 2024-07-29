@@ -505,7 +505,7 @@ class Biwheel(CoreChart):
         ]
 
         for index, (planet_name, planet_info) in enumerate(
-            chart_utils.iterate_allowed_planets()
+            chart_utils.iterate_allowed_planets(self.options)
         ):
             planet_short_name = planet_info['short_name']
             planet_data = chart.planets[planet_name]

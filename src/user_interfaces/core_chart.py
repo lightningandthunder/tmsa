@@ -751,7 +751,7 @@ class CoreChart(object, metaclass=ABCMeta):
         chartfile: TextIOWrapper,
         whole_chart_is_dormant: bool,
         planets_foreground: list[str],
-    ):
+    ) -> list[list[chart_models.Aspect]]:
         chart = self.core_chart
 
         aspects_by_class = [[], [], [], []]
@@ -973,7 +973,6 @@ class CoreChart(object, metaclass=ABCMeta):
             chartfile,
             planet_foreground_angles,
             aspects_by_class,
-            planets_foreground,
         )
 
     def write_info_table_section(
@@ -1103,33 +1102,51 @@ class CoreChart(object, metaclass=ABCMeta):
         self,
         chartfile: TextIOWrapper,
         planet_foreground_angles: dict[str, str],
-        aspects_by_class: list[list[str]],
+        aspects_by_class: list[list[chart_models.Aspect]],
     ):
+
         chartfile.write(
             chart_utils.center_align('Cosmic State', self.table_width) + '\n'
         )
 
         # Iterate from transiting chart to radix
-        for chart in reversed(self.charts):
+        for (index, chart) in enumerate(reversed(self.charts)):
+            if index != 0:
+                chartfile.write('-' * self.table_width + '\n')
             if len(self.charts) > 1:
                 if chart.role == chart_models.ChartWheelRole.TRANSIT:
-                    chartfile.write(chart_utils.center_align('Transiting Planets', self.table_width) + '\n')
+                    chartfile.write(
+                        chart_utils.center_align(
+                            'Transiting Planets', self.table_width
+                        )
+                        + '\n'
+                    )
 
                 elif chart.role == chart_models.ChartWheelRole.PROGRESSED:
-                    chartfile.write(chart_utils.center_align('Progressed Planets', self.table_width) + '\n')
-                
-                elif chart.role == chart_models.ChartWheelRole.RADIX:
-                    chartfile.write(chart_utils.center_align('Radical Planets', self.table_width) + '\n')
+                    chartfile.write(
+                        chart_utils.center_align(
+                            'Progressed Planets', self.table_width
+                        )
+                        + '\n'
+                    )
 
-            moon_sign = constants.SIGNS_SHORT[
+                elif chart.role == chart_models.ChartWheelRole.RADIX:
+                    chartfile.write(
+                        chart_utils.center_align(
+                            'Radical Planets', self.table_width
+                        )
+                        + '\n'
+                    )
+
+            moon_sign = chart_utils.SIGNS_SHORT[
                 int(chart.planets['Moon'].longitude // 30)
             ]
-            sun_sign = constants.SIGNS_SHORT[
+            sun_sign = chart_utils.SIGNS_SHORT[
                 int(chart.planets['Sun'].longitude // 30)
             ]
 
             for index, (planet_name, planet_info) in enumerate(
-                chart_utils.iterate_allowed_planets()
+                chart_utils.iterate_allowed_planets(self.options)
             ):
                 planet_short_name = planet_info['short_name']
                 planet_data = chart.planets[planet_name]
@@ -1139,11 +1156,13 @@ class CoreChart(object, metaclass=ABCMeta):
 
                 chartfile.write(planet_short_name + ' ')
 
-                sign = constants.SIGNS_SHORT[int(planet_data.longitude // 30)]
+                sign = chart_utils.SIGNS_SHORT[
+                    int(planet_data.longitude // 30)
+                ]
 
-                if sign in constants.POS_SIGN[planet_short_name]:
+                if sign in chart_utils.POS_SIGN[planet_short_name]:
                     plus_minus = '+'
-                elif sign in constants.NEG_SIGN[planet_short_name]:
+                elif sign in chart_utils.NEG_SIGN[planet_short_name]:
                     plus_minus = '-'
                 else:
                     plus_minus = ' '
@@ -1152,10 +1171,11 @@ class CoreChart(object, metaclass=ABCMeta):
                 angle = planet_foreground_angles.get(
                     planet_short_name, angles_models.NonForegroundAngles.BLANK
                 )
-                if angle.strip() == '':
+                if str(angle).strip() == '':
                     angle = ' '
-                elif angle.strip() in [
-                    a.value.strip().upper() for a in angles_models.ForegroundAngles
+                elif str(angle).strip() in [
+                    a.value.strip().upper()
+                    for a in angles_models.ForegroundAngles
                 ]:
                     angle = 'F'
                 else:
@@ -1164,26 +1184,35 @@ class CoreChart(object, metaclass=ABCMeta):
 
                 need_another_row = False
 
-                if self.chart.type not in chart_utils.INGRESSES:
+                if chart.type not in chart_utils.INGRESSES:
                     if planet_short_name != 'Mo':
-                        if moon_sign in constants.POS_SIGN[planet_short_name]:
+                        if (
+                            moon_sign
+                            in chart_utils.POS_SIGN[planet_short_name]
+                        ):
                             chartfile.write(f' Mo {moon_sign}+')
                             need_another_row = True
-                        elif moon_sign in constants.NEG_SIGN[planet_short_name]:
+                        elif (
+                            moon_sign
+                            in chart_utils.NEG_SIGN[planet_short_name]
+                        ):
                             chartfile.write(f' Mo {moon_sign}-')
                             need_another_row = True
                     if planet_short_name != 'Su':
-                        if sun_sign in constants.POS_SIGN[planet_short_name]:
+                        if sun_sign in chart_utils.POS_SIGN[planet_short_name]:
                             chartfile.write(f' Su {sun_sign}+')
                             need_another_row = True
-                        elif sun_sign in constants.NEG_SIGN[planet_short_name]:
+                        elif (
+                            sun_sign in chart_utils.NEG_SIGN[planet_short_name]
+                        ):
                             chartfile.write(f' Su {sun_sign}-')
                             need_another_row = True
 
                 aspect_list = []
 
                 for class_index in range(3):
-                    for entry in aspects_by_class[class_index]:
+                    for aspect in aspects_by_class[class_index]:
+                        entry = str(aspect)
                         if planet_short_name in entry:
                             percent = str(200 - int(entry[15:18]))
                             entry = entry[0:15] + entry[20:]
@@ -1209,22 +1238,10 @@ class CoreChart(object, metaclass=ABCMeta):
                     ):
                         chartfile.write('\n' + (' ' * 9) + '| ')
 
-                
-
     @abstractmethod
     def draw_chart(
         self,
         chartfile: TextIOWrapper,
-    ):
-        pass
-
-    @abstractmethod
-    def write_cosmic_state(
-        self,
-        chartfile: TextIOWrapper,
-        planet_foreground_angles: dict[str, str],
-        aspects_by_class: list[list[str]],
-        planets_foreground: list[str],
     ):
         pass
 
