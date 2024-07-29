@@ -18,7 +18,7 @@ from src.user_interfaces.core_chart import CoreChart
 import src.utils.chart_utils as chart_utils
 import src.models.angles as angles_models
 
-# TODO - I just copied Uniwheel with no changes
+
 class Biwheel(CoreChart):
     table_width = 81
 
@@ -30,8 +30,20 @@ class Biwheel(CoreChart):
     ):
         super().__init__(charts, temporary, options)
         self.core_chart = charts[0]
-        filename = chart_utils.make_chart_path(charts[0], temporary)
+        for chart in charts:
+            if chart.type == chart_models.ChartWheelRole.RADIX:
+                self.core_chart = chart
+                break
+
+        self.outer_chart = charts[1]
+        for chart in charts:
+            if chart.type == chart_models.ChartWheelRole.TRANSIT:
+                self.outer_chart = chart
+                break
+
+        filename = chart_utils.make_chart_path(self.outer_chart, temporary)
         filename = filename[0:-3] + 'txt'
+
         try:
             chartfile = open(filename, 'w')
         except Exception as e:

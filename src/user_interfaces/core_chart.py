@@ -35,6 +35,8 @@ class CoreChart(object, metaclass=ABCMeta):
         self.charts = sorted(charts, key=lambda c: c.role, reverse=True)
         self.temporary = temporary
 
+        self.try_precess_charts()
+
     def insert_planet_into_line(
         self,
         chart,
@@ -97,39 +99,37 @@ class CoreChart(object, metaclass=ABCMeta):
             placed += 1
         return new
 
-    # TODO - this doesn't actually precess things yet
-    def try_precess_to_transit_chart(self):
+    def try_precess_charts(self):
         if len(self.charts) == 1:
             return
 
-        # Precess radix to transit
-        if (
-            chart_models.ChartWheelRole.RADIX in self.charts
-            and chart_models.ChartWheelRole.TRANSIT in self.charts
-        ):
-            self.charts[chart_models.ChartWheelRole.RADIX].precess_to(
-                self.charts[chart_models.ChartWheelRole.TRANSIT]
-            )
+        radix = None
+        for chart in self.charts:
+            if chart.role == chart_models.ChartWheelRole.RADIX:
+                radix = chart
+                break
 
-        # Precess progressed to transit
-        if (
-            chart_models.ChartWheelRole.PROGRESSED in self.charts
-            and chart_models.ChartWheelRole.TRANSIT in self.charts
-        ):
-            self.charts[chart_models.ChartWheelRole.PROGRESSED].precess_to(
-                self.charts[chart_models.ChartWheelRole.TRANSIT]
-            )
+        transit = None
+        for chart in self.charts:
+            if chart.role == chart_models.ChartWheelRole.TRANSIT:
+                transit = chart
+                break
 
-        # If only radix and progressed are present,
-        # precess radix to progressed
-        if (
-            chart_models.ChartWheelRole.RADIX in self.charts
-            and chart_models.ChartWheelRole.PROGRESSED in self.charts
-            and not chart_models.ChartWheelRole.TRANSIT in self.charts
-        ):
-            self.charts[chart_models.ChartWheelRole.RADIX].precess_to(
-                self.charts[chart_models.ChartWheelRole.PROGRESSED]
-            )
+        progressed = None
+        for chart in self.charts:
+            if chart.role == chart_models.ChartWheelRole.PROGRESSED:
+                progressed = chart
+                break
+
+        if transit:
+            if radix:
+                radix.precess_to(transit)
+
+            if progressed:
+                progressed.precess_to(transit)
+        else:
+            if radix and progressed:
+                radix.precess_to(progressed)
 
     def spread_planets_within_house(self, old, start=0):
         new = [[] for _ in range(15)]
@@ -699,15 +699,520 @@ class CoreChart(object, metaclass=ABCMeta):
             is_mundanely_background,
         )
 
-    @abstractmethod
-    def draw_chart(
+    def find_outermost_chart(self):
+        outermost_chart = self.charts[0]
+        for chart in self.charts:
+            if chart.role < outermost_chart.role:
+                outermost_chart = chart
+        return outermost_chart
+
+    def make_chart_grid(self, rows: int, cols: int):
+        chart_grid = [[' ' for _ in range(cols)] for _ in range(rows)]
+
+        chart = self.find_outermost_chart()
+
+        for column_index in range(cols):
+            chart_grid[0][column_index] = '-'
+            chart_grid[16][column_index] = '-'
+            if column_index <= 17 or column_index >= 51:
+                chart_grid[32][column_index] = '-'
+            chart_grid[48][column_index] = '-'
+            chart_grid[64][column_index] = '-'
+        for row_index in range(rows):
+            chart_grid[row_index][0] = '|'
+            chart_grid[row_index][17] = '|'
+            if row_index <= 16 or row_index >= 48:
+                chart_grid[row_index][34] = '|'
+            chart_grid[row_index][51] = '|'
+            chart_grid[row_index][68] = '|'
+        for index in range(0, rows, 16):
+            for sub_index in range(0, cols, 17):
+                if index == 32 and sub_index == 34:
+                    continue
+                chart_grid[index][sub_index] = '+'
+        cusps = [chart_utils.zod_min(c) for c in chart.cusps]
+        chart_grid[0][14:20] = cusps[11]
+        chart_grid[0][31:37] = cusps[10]
+        chart_grid[0][48:54] = cusps[9]
+        chart_grid[16][0:6] = cusps[12]
+        chart_grid[16][63:69] = cusps[8]
+        chart_grid[32][0:6] = cusps[1]
+        chart_grid[32][63:69] = cusps[7]
+        chart_grid[48][0:6] = cusps[2]
+        chart_grid[48][63:69] = cusps[6]
+        chart_grid[64][14:20] = cusps[3]
+        chart_grid[64][31:37] = cusps[4]
+        chart_grid[64][48:54] = cusps[5]
+
+        return chart_grid
+
+    def write_aspects(
         self,
         chartfile: TextIOWrapper,
+        whole_chart_is_dormant: bool,
+        planets_foreground: list[str],
     ):
-        pass
+        chart = self.core_chart
+
+        aspects_by_class = [[], [], [], []]
+        aspect_class_headers = [
+            'Class 1',
+            'Class 2',
+            'Class 3',
+            'Other Partile',
+        ]
+
+        for (
+            primary_index,
+            (primary_planet_long_name, _),
+        ) in enumerate(chart_utils.iterate_allowed_planets(self.options)):
+            for (
+                secondary_index,
+                (secondary_planet_long_name, _),
+            ) in enumerate(chart_utils.iterate_allowed_planets(self.options)):
+                if secondary_index <= primary_index:
+                    continue
+
+                # If options say to skip one or both planets' aspects outside the foreground,
+                # just skip calculating anything
+                show_aspects = (
+                    self.options.show_aspects or option_models.ShowAspect.ALL
+                )
+
+                if (
+                    show_aspects
+                    == option_models.ShowAspect.ONE_PLUS_FOREGROUND
+                ):
+                    if (
+                        primary_planet_long_name not in planets_foreground
+                        and secondary_planet_long_name
+                        not in planets_foreground
+                    ):
+                        if not self.options.partile_nf:
+                            continue
+
+                if show_aspects == option_models.ShowAspect.BOTH_FOREGROUND:
+                    if (
+                        primary_planet_long_name not in planets_foreground
+                        or secondary_planet_long_name not in planets_foreground
+                    ):
+                        if not self.options.partile_nf:
+                            continue
+
+                primary_planet_data = chart.planets[primary_planet_long_name]
+                secondary_planet_data = chart.planets[
+                    secondary_planet_long_name
+                ]
+
+                ecliptical_aspect = self.find_ecliptical_aspect(
+                    primary_planet_data,
+                    None,
+                    secondary_planet_data,
+                    None,
+                    planets_foreground,
+                    whole_chart_is_dormant,
+                )
+                mundane_aspect = self.find_mundane_aspect(
+                    primary_planet_data,
+                    None,
+                    secondary_planet_data,
+                    None,
+                    planets_foreground,
+                    whole_chart_is_dormant,
+                )
+
+                # TODO - the code below forces roles, when there doesn't need to be any.
+                pvp_aspect = None
+                # TODO - this is a temporary change to allow PVP aspects to be shown
+                if self.options.allow_pvp_aspects or False:
+                    pvp_aspect = self.find_pvp_aspect(
+                        primary_planet_data,
+                        self.core_chart.role,
+                        secondary_planet_data,
+                        self.core_chart.role,
+                    )
+
+                # This will get overwritten if there are any other aspects,
+                # i.e. if there are any other aspects, the PVP aspect will not be used
+                tightest_aspect = pvp_aspect
+
+                if ecliptical_aspect or mundane_aspect:
+                    tightest_aspect = min(
+                        ecliptical_aspect,
+                        mundane_aspect,
+                        key=lambda x: x.orb if x else 1000,
+                    )
+
+                if tightest_aspect:
+                    aspects_by_class[tightest_aspect.aspect_class - 1].append(
+                        tightest_aspect
+                    )
+
+        # Remove empty aspect classes
+        if len(aspects_by_class[3]) == 0 or whole_chart_is_dormant:
+            del aspects_by_class[3]
+            del aspect_class_headers[3]
+            aspects_by_class.append([])
+            aspect_class_headers.append('')
+        for class_index in range(2, -1, -1):
+            if len(aspects_by_class[class_index]) == 0:
+                del aspects_by_class[class_index]
+                del aspect_class_headers[class_index]
+                aspects_by_class.append([])
+                aspect_class_headers.append('')
+
+        if any(aspect_class_headers):
+            chartfile.write('-' * self.table_width + '\n')
+            for class_index in range(0, 3):
+                chartfile.write(
+                    chart_utils.center_align(
+                        f'{aspect_class_headers[class_index]} Aspects'
+                        if aspect_class_headers[class_index]
+                        else '',
+                        24,
+                    )
+                )
+            chartfile.write('\n')
+
+        # Write aspects from all classes to file
+        for aspect_index in range(
+            max(
+                len(aspects_by_class[0]),
+                len(aspects_by_class[1]),
+                len(aspects_by_class[2]),
+            )
+        ):
+            if aspect_index < len(aspects_by_class[0]):
+                chartfile.write(
+                    chart_utils.left_align(
+                        str(aspects_by_class[0][aspect_index]), width=24
+                    )
+                )
+            else:
+                chartfile.write(' ' * 24)
+            if aspect_index < len(aspects_by_class[1]):
+                chartfile.write(
+                    chart_utils.center_align(
+                        str(aspects_by_class[1][aspect_index]), width=24
+                    )
+                )
+            else:
+                chartfile.write(' ' * 24)
+            if aspect_index < len(aspects_by_class[2]):
+                chartfile.write(
+                    chart_utils.right_align(
+                        str(aspects_by_class[2][aspect_index]), width=24
+                    )
+                )
+            else:
+                chartfile.write(' ' * 24)
+            chartfile.write('\n')
+
+        chartfile.write('-' * self.table_width + '\n')
+        if aspects_by_class[3]:
+            chartfile.write(
+                chart_utils.center_align(
+                    f'{aspect_class_headers[3]} Aspects',
+                    width=self.table_width,
+                )
+                + '\n'
+            )
+            for aspect in aspects_by_class[3]:
+                chartfile.write(
+                    chart_utils.center_align(str(aspect), self.table_width)
+                    + '\n'
+                )
+            chartfile.write('-' * self.table_width + '\n')
+
+        return aspects_by_class
+
+    def write_info_table(self, chartfile: TextIOWrapper):
+        chartfile.write(
+            'Pl Longitude   Lat   Speed    RA     Decl   Azi     Alt      ML     PVL    Ang G\n'
+        )
+
+        planets_foreground = []
+        planet_foreground_angles = {}
+
+        # Default to true if this is an ingress chart
+        whole_chart_is_dormant = (
+            True
+            if len(self.charts) == 0
+            and self.charts[0].type in chart_utils.INGRESSES
+            else False
+        )
+
+        for (chart_index, chart) in enumerate(self.charts):
+            if chart_index > 0:
+                chartfile.write('-' * self.table_width + '\n')
+
+            chart_is_dormant = self.write_info_table_section(
+                chartfile,
+                chart,
+                planets_foreground,
+                planet_foreground_angles,
+            )
+            if not chart_is_dormant:
+                whole_chart_is_dormant = False
+
+        if whole_chart_is_dormant:
+            chartfile.write('-' * self.table_width + '\n')
+            chartfile.write(
+                chart_utils.center_align('Dormant Ingress', self.table_width)
+                + '\n'
+            )
+            return
+
+        aspects_by_class = self.write_aspects(
+            chartfile,
+            whole_chart_is_dormant,
+            planets_foreground,
+        )
+
+        self.write_cosmic_state(
+            chartfile,
+            planet_foreground_angles,
+            aspects_by_class,
+            planets_foreground,
+        )
+
+    def write_info_table_section(
+        self,
+        chartfile: TextIOWrapper,
+        chart: chart_models.ChartObject,
+        planets_foreground: list[str],
+        planet_foreground_angles: dict[str, str],
+    ):
+        angularity_options = self.options.angularity
+
+        for planet_name, _ in chart_utils.iterate_allowed_planets(
+            self.options
+        ):
+            planet_data = chart.planets[planet_name]
+
+            chartfile.write(chart_utils.left_align(planet_data.short_name, 3))
+
+            # Write planet data to info table
+            chartfile.write(chart_utils.zod_sec(planet_data.longitude) + ' ')
+            chartfile.write(
+                chart_utils.fmt_lat(planet_data.latitude, True) + ' '
+            )
+            if abs(planet_data.speed) >= 1:
+                chartfile.write(chart_utils.s_dm(planet_data.speed) + ' ')
+            else:
+                chartfile.write(chart_utils.s_ms(planet_data.speed) + ' ')
+            chartfile.write(
+                chart_utils.right_align(
+                    chart_utils.fmt_dm(planet_data.right_ascension, True), 7
+                )
+                + ' '
+            )
+            chartfile.write(
+                chart_utils.fmt_lat(planet_data.declination, True) + ' '
+            )
+
+            # Azimuth
+            chartfile.write(
+                chart_utils.right_align(
+                    chart_utils.fmt_dm(planet_data.azimuth, True), 7
+                )
+                + ' '
+            )
+
+            # Altitude
+            chartfile.write(
+                chart_utils.right_align(
+                    chart_utils.s_dm(planet_data.altitude), 7
+                )
+                + ' '
+            )
+
+            # Meridian Longitude
+            chartfile.write(
+                chart_utils.fmt_dm(
+                    planet_data.meridian_longitude, degree_digits=3, noz=True
+                )
+                + ' '
+            )
+
+            # House position
+            chartfile.write(
+                chart_utils.right_align(
+                    chart_utils.fmt_dm(planet_data.house, True), 7
+                )
+                + ' '
+            )
+
+            # Angularity
+            (
+                angularity,
+                strength_percent,
+                planet_negates_dormancy,
+                is_mundanely_background,
+            ) = self.calc_angle_and_strength(
+                planet_data,
+                chart,
+            )
+
+            if planet_negates_dormancy:
+                whole_chart_is_dormant = False
+
+            planet_foreground_angles[planet_data.short_name] = angularity
+
+            if (
+                not angularity == angles_models.NonForegroundAngles.BLANK
+                and not angularity
+                == angles_models.NonForegroundAngles.BACKGROUND
+            ):
+                planets_foreground.append(planet_name)
+
+            # Special case for Moon - always treat it as foreground
+            elif planet_name == 'Moon' and (
+                chart.type in chart_utils.INGRESSES
+                or chart.type in chart_utils.SOLAR_RETURNS
+            ):
+                planet_data.treat_as_foreground = True
+
+            if is_mundanely_background:
+                planet_foreground_angles[
+                    planet_data.short_name
+                ] = angles_models.NonForegroundAngles.BACKGROUND
+
+            # Conjunctions to Vertex/Antivertex
+            minor_limit = angularity_options.minor_angles or [1.0, 2.0, 3.0]
+
+            if (
+                angularity == angles_models.NonForegroundAngles.BLANK
+                or is_mundanely_background
+            ):
+                if chart_utils.inrange(
+                    planet_data.azimuth, 270, minor_limit[2]
+                ):
+                    angularity = angles_models.NonForegroundAngles.VERTEX
+                elif chart_utils.inrange(
+                    planet_data.azimuth, 90, minor_limit[2]
+                ):
+                    angularity = angles_models.NonForegroundAngles.ANTIVERTEX
+
+            chartfile.write(f'{strength_percent:3d}% {angularity}')
+            chartfile.write('\n')
+
+        return whole_chart_is_dormant
+
+    def write_cosmic_state(
+        self,
+        chartfile: TextIOWrapper,
+        planet_foreground_angles: dict[str, str],
+        aspects_by_class: list[list[str]],
+    ):
+        chartfile.write(
+            chart_utils.center_align('Cosmic State', self.table_width) + '\n'
+        )
+
+        # Iterate from transiting chart to radix
+        for chart in reversed(self.charts):
+            if len(self.charts) > 1:
+                if chart.role == chart_models.ChartWheelRole.TRANSIT:
+                    chartfile.write(chart_utils.center_align('Transiting Planets', self.table_width) + '\n')
+
+                elif chart.role == chart_models.ChartWheelRole.PROGRESSED:
+                    chartfile.write(chart_utils.center_align('Progressed Planets', self.table_width) + '\n')
+                
+                elif chart.role == chart_models.ChartWheelRole.RADIX:
+                    chartfile.write(chart_utils.center_align('Radical Planets', self.table_width) + '\n')
+
+            moon_sign = constants.SIGNS_SHORT[
+                int(chart.planets['Moon'].longitude // 30)
+            ]
+            sun_sign = constants.SIGNS_SHORT[
+                int(chart.planets['Sun'].longitude // 30)
+            ]
+
+            for index, (planet_name, planet_info) in enumerate(
+                chart_utils.iterate_allowed_planets()
+            ):
+                planet_short_name = planet_info['short_name']
+                planet_data = chart.planets[planet_name]
+
+                if index != 0:
+                    chartfile.write('\n')
+
+                chartfile.write(planet_short_name + ' ')
+
+                sign = constants.SIGNS_SHORT[int(planet_data.longitude // 30)]
+
+                if sign in constants.POS_SIGN[planet_short_name]:
+                    plus_minus = '+'
+                elif sign in constants.NEG_SIGN[planet_short_name]:
+                    plus_minus = '-'
+                else:
+                    plus_minus = ' '
+                chartfile.write(f'{sign}{plus_minus} ')
+
+                angle = planet_foreground_angles.get(
+                    planet_short_name, angles_models.NonForegroundAngles.BLANK
+                )
+                if angle.strip() == '':
+                    angle = ' '
+                elif angle.strip() in [
+                    a.value.strip().upper() for a in angles_models.ForegroundAngles
+                ]:
+                    angle = 'F'
+                else:
+                    angle = 'B'
+                chartfile.write(angle + ' |')
+
+                need_another_row = False
+
+                if self.chart.type not in chart_utils.INGRESSES:
+                    if planet_short_name != 'Mo':
+                        if moon_sign in constants.POS_SIGN[planet_short_name]:
+                            chartfile.write(f' Mo {moon_sign}+')
+                            need_another_row = True
+                        elif moon_sign in constants.NEG_SIGN[planet_short_name]:
+                            chartfile.write(f' Mo {moon_sign}-')
+                            need_another_row = True
+                    if planet_short_name != 'Su':
+                        if sun_sign in constants.POS_SIGN[planet_short_name]:
+                            chartfile.write(f' Su {sun_sign}+')
+                            need_another_row = True
+                        elif sun_sign in constants.NEG_SIGN[planet_short_name]:
+                            chartfile.write(f' Su {sun_sign}-')
+                            need_another_row = True
+
+                aspect_list = []
+
+                for class_index in range(3):
+                    for entry in aspects_by_class[class_index]:
+                        if planet_short_name in entry:
+                            percent = str(200 - int(entry[15:18]))
+                            entry = entry[0:15] + entry[20:]
+                            if entry[0:2] == planet_short_name:
+                                entry = entry[3:]
+                            else:
+                                entry = f'{entry[3:5]} {entry[0:2]}{entry[8:]}'
+                            aspect_list.append([entry, percent])
+
+                aspect_list.sort(key=lambda p: p[1] + p[0][6:11])
+                if aspect_list:
+                    if need_another_row:
+                        chartfile.write('\n' + (' ' * 9) + '| ')
+                        need_another_row = False
+                    else:
+                        chartfile.write(' ')
+
+                for aspect_index, aspect in enumerate(aspect_list):
+                    chartfile.write(aspect[0] + '   ')
+                    if (
+                        aspect_index % 4 == 3
+                        and aspect_index != len(aspect_list) - 1
+                    ):
+                        chartfile.write('\n' + (' ' * 9) + '| ')
+
+                
 
     @abstractmethod
-    def write_info_table(
+    def draw_chart(
         self,
         chartfile: TextIOWrapper,
     ):

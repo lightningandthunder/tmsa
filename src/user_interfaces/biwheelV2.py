@@ -645,6 +645,7 @@ class BiwheelV2:
                 for a in aspect_classes[3]:
                     chartfile.write(center_align(a, 81) + '\n')
                 chartfile.write('-' * 81 + '\n')
+
             chartfile.write(center_align('Cosmic State', 81) + '\n')
             chartfile.write(center_align('Transiting Planets', 81) + '\n')
             cclass = chart['class']
