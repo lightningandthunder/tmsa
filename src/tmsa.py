@@ -27,7 +27,7 @@ from src.user_interfaces.new_chart import NewChart
 from src.user_interfaces.program_options import ProgramOptions
 from src.user_interfaces.select_chart import SelectChart
 from src.user_interfaces.widgets import *
-from src.utils.gui_utils import ShowHelp, newline_if_past_breakpoint
+from src.utils.gui_utils import ShowHelp, newline_if_past_breakpoint, show_not_implemented
 
 TITLE = f'Time Matters {VERSION}'
 INTRO = f"""A freeware program for calculating geometrically
