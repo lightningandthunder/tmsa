@@ -746,107 +746,129 @@ class CoreChart(object, metaclass=ABCMeta):
 
         return chart_grid
 
+    def parse_aspect(
+        self,
+        planets_foreground: list[str],
+        from_chart: chart_models.ChartObject,
+        to_chart: chart_models.ChartObject,
+        primary_planet_long_name: str,
+        secondary_planet_long_name: str,
+        whole_chart_is_dormant: bool,
+        skip_prefix: bool,
+    ) -> chart_models.Aspect | None:
+        # If options say to skip one or both planets' aspects outside the foreground,
+        # just skip calculating anything
+        show_aspects = (
+            self.options.show_aspects or option_models.ShowAspect.ALL
+        )
+
+        if show_aspects == option_models.ShowAspect.ONE_PLUS_FOREGROUND:
+            if (
+                primary_planet_long_name not in planets_foreground
+                and secondary_planet_long_name not in planets_foreground
+            ):
+                if not self.options.partile_nf:
+                    return None
+
+        if show_aspects == option_models.ShowAspect.BOTH_FOREGROUND:
+            if (
+                primary_planet_long_name not in planets_foreground
+                or secondary_planet_long_name not in planets_foreground
+            ):
+                if not self.options.partile_nf:
+                    return None
+
+        primary_planet_data = from_chart.planets[primary_planet_long_name]
+        secondary_planet_data = to_chart.planets[secondary_planet_long_name]
+
+        ecliptical_aspect = self.find_ecliptical_aspect(
+            primary_planet_data,
+            None,
+            secondary_planet_data,
+            None,
+            planets_foreground,
+            whole_chart_is_dormant,
+        )
+        mundane_aspect = self.find_mundane_aspect(
+            primary_planet_data,
+            None,
+            secondary_planet_data,
+            None,
+            planets_foreground,
+            whole_chart_is_dormant,
+        )
+
+        # TODO - the code below forces roles, when there doesn't need to be any.
+        pvp_aspect = None
+        # TODO - this is a temporary change to allow PVP aspects to be shown
+        if self.options.allow_pvp_aspects or False:
+            pvp_aspect = self.find_pvp_aspect(
+                primary_planet_data,
+                self.core_chart.role,
+                secondary_planet_data,
+                self.core_chart.role,
+            )
+
+        # This will get overwritten if there are any other aspects,
+        # i.e. if there are any other aspects, the PVP aspect will not be used
+        tightest_aspect = pvp_aspect
+
+        if ecliptical_aspect or mundane_aspect:
+            tightest_aspect = min(
+                ecliptical_aspect,
+                mundane_aspect,
+                key=lambda x: x.orb if x else 1000,
+            )
+
+        return tightest_aspect
+
     def write_aspects(
         self,
         chartfile: TextIOWrapper,
         whole_chart_is_dormant: bool,
         planets_foreground: list[str],
     ) -> list[list[chart_models.Aspect]]:
-        chart = self.core_chart
 
         aspects_by_class = [[], [], [], []]
+
+        for from_chart in self.charts:
+            for to_chart in self.charts:
+                for (
+                    primary_index,
+                    (primary_planet_long_name, _),
+                ) in enumerate(
+                    chart_utils.iterate_allowed_planets(self.options)
+                ):
+                    for (
+                        secondary_index,
+                        (secondary_planet_long_name, _),
+                    ) in enumerate(
+                        chart_utils.iterate_allowed_planets(self.options)
+                    ):
+                        if secondary_index <= primary_index:
+                            continue
+
+                        maybe_aspect = self.parse_aspect(
+                            planets_foreground,
+                            from_chart,
+                            to_chart,
+                            primary_planet_long_name,
+                            secondary_planet_long_name,
+                            whole_chart_is_dormant,
+                            skip_prefix=len(self.charts) == 1,
+                        )
+
+                        if maybe_aspect:
+                            aspects_by_class[
+                                maybe_aspect.aspect_class - 1
+                            ].append(maybe_aspect)
+
         aspect_class_headers = [
             'Class 1',
             'Class 2',
             'Class 3',
             'Other Partile',
         ]
-
-        for (
-            primary_index,
-            (primary_planet_long_name, _),
-        ) in enumerate(chart_utils.iterate_allowed_planets(self.options)):
-            for (
-                secondary_index,
-                (secondary_planet_long_name, _),
-            ) in enumerate(chart_utils.iterate_allowed_planets(self.options)):
-                if secondary_index <= primary_index:
-                    continue
-
-                # If options say to skip one or both planets' aspects outside the foreground,
-                # just skip calculating anything
-                show_aspects = (
-                    self.options.show_aspects or option_models.ShowAspect.ALL
-                )
-
-                if (
-                    show_aspects
-                    == option_models.ShowAspect.ONE_PLUS_FOREGROUND
-                ):
-                    if (
-                        primary_planet_long_name not in planets_foreground
-                        and secondary_planet_long_name
-                        not in planets_foreground
-                    ):
-                        if not self.options.partile_nf:
-                            continue
-
-                if show_aspects == option_models.ShowAspect.BOTH_FOREGROUND:
-                    if (
-                        primary_planet_long_name not in planets_foreground
-                        or secondary_planet_long_name not in planets_foreground
-                    ):
-                        if not self.options.partile_nf:
-                            continue
-
-                primary_planet_data = chart.planets[primary_planet_long_name]
-                secondary_planet_data = chart.planets[
-                    secondary_planet_long_name
-                ]
-
-                ecliptical_aspect = self.find_ecliptical_aspect(
-                    primary_planet_data,
-                    None,
-                    secondary_planet_data,
-                    None,
-                    planets_foreground,
-                    whole_chart_is_dormant,
-                )
-                mundane_aspect = self.find_mundane_aspect(
-                    primary_planet_data,
-                    None,
-                    secondary_planet_data,
-                    None,
-                    planets_foreground,
-                    whole_chart_is_dormant,
-                )
-
-                # TODO - the code below forces roles, when there doesn't need to be any.
-                pvp_aspect = None
-                # TODO - this is a temporary change to allow PVP aspects to be shown
-                if self.options.allow_pvp_aspects or False:
-                    pvp_aspect = self.find_pvp_aspect(
-                        primary_planet_data,
-                        self.core_chart.role,
-                        secondary_planet_data,
-                        self.core_chart.role,
-                    )
-
-                # This will get overwritten if there are any other aspects,
-                # i.e. if there are any other aspects, the PVP aspect will not be used
-                tightest_aspect = pvp_aspect
-
-                if ecliptical_aspect or mundane_aspect:
-                    tightest_aspect = min(
-                        ecliptical_aspect,
-                        mundane_aspect,
-                        key=lambda x: x.orb if x else 1000,
-                    )
-
-                if tightest_aspect:
-                    aspects_by_class[tightest_aspect.aspect_class - 1].append(
-                        tightest_aspect
-                    )
 
         # Remove empty aspect classes
         if len(aspects_by_class[3]) == 0 or whole_chart_is_dormant:

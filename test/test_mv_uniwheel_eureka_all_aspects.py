@@ -10,7 +10,6 @@ from test.utils import (
     assert_aspects_of_class,
 )
 
-
 class TestUniwheelDisplay:
     def init_test(self, monkeypatch, base_chart, natal_options, mock_tk_main):
         from src.user_interfaces.uniwheelV2 import UniwheelV2
@@ -59,14 +58,9 @@ class TestUniwheelDisplay:
         )
 
     def test_sun(self, monkeypatch, base_chart, natal_options, mock_tk_main):
-        from src.user_interfaces.uniwheelV2 import UniwheelV2
-
-        mockfile = MockFile()
-        monkeypatch.setattr('builtins.open', lambda _, __: mockfile)
-
-        UniwheelV2(chart=base_chart, temporary=False, options=natal_options)
-
-        lines = mockfile.file.split('\n')
+        lines = self.init_test(
+            monkeypatch, base_chart, natal_options, mock_tk_main
+        )
 
         assert_line_contains(
             lines[71].strip(),
