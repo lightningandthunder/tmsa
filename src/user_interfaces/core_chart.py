@@ -299,7 +299,7 @@ class CoreChart(object, metaclass=ABCMeta):
 
             if planet_1.name == 'Moon' and (
                 planet_1_role == chart_utils.INGRESSES
-                or planet_1_role == chart_utils.SOLAR_RETURNS
+                or planet_1_role == chart_utils.SOLUNAR_RETURNS
             ):
                 # Always consider transiting Moon aspects, as long as they're in orb
                 break
@@ -1109,7 +1109,7 @@ class CoreChart(object, metaclass=ABCMeta):
             # Special case for Moon - always treat it as foreground
             elif planet_name == 'Moon' and (
                 chart.type in chart_utils.INGRESSES
-                or chart.type in chart_utils.SOLAR_RETURNS
+                or chart.type in chart_utils.SOLUNAR_RETURNS
             ):
                 planet_data.treat_as_foreground = True
 
@@ -1167,6 +1167,14 @@ class CoreChart(object, metaclass=ABCMeta):
                     chartfile.write(
                         chart_utils.center_align(
                             'Progressed Planets', self.table_width
+                        )
+                        + '\n'
+                    )
+
+                elif chart.role == chart_models.ChartWheelRole.SOLAR:
+                    chartfile.write(
+                        chart_utils.center_align(
+                            'Solar Return Planets', self.table_width
                         )
                         + '\n'
                     )

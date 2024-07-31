@@ -271,7 +271,7 @@ class Biwheel(CoreChart):
             # Special case for Moon - always treat it as foreground
             elif planet_name == 'Moon' and (
                 chart.type in chart_utils.INGRESSES
-                or chart.type in chart_utils.SOLAR_RETURNS
+                or chart.type in chart_utils.SOLUNAR_RETURNS
             ):
                 planet_data.treat_as_foreground = True
 

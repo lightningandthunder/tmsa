@@ -94,14 +94,19 @@ INGRESSES = [
     'Liblunar',
 ]
 
-SOLAR_RETURNS = [
-    'Solar Return'
-    'Kinetic Solar Return'
-    'Novienic Solar Return'
-    '10-Day Solar Return'
-    'Anlunar Return'
-    'Kinetic Anlunar Return'
-    'Solilunar Return'
+SOLUNAR_RETURNS = [
+    'Lunar Return',
+    'Kinetic Lunar Return',
+    'Novienic Lunar Return',
+    '18-Hour Lunar Return',
+    'Solar Return',
+    'Kinetic Solar Return',
+    'Novienic Solar Return',
+    '10-Day Solar Return',
+    'Anlunar Return',
+    'Kinetic Anlunar Return',
+    'Solilunar Return',
+    'Lunisolar Return',
 ]
 
 POS_SIGN = {
@@ -118,6 +123,19 @@ POS_SIGN = {
     'Er': [],
     'Se': [],
     'No': [],
+    'MN': [],
+    'TN': [],
+    'Ch': [],
+    'Ce': [],
+    'Pa': [],
+    'Jn': [],
+    'Vs': [],
+    'Or': [],
+    'Ha': [],
+    'Mk': [],
+    'Go': [],
+    'Qu': [],
+    'Sl': [],
 }
 
 NEG_SIGN = {
@@ -134,11 +152,23 @@ NEG_SIGN = {
     'Er': [],
     'Se': [],
     'No': [],
+    'MN': [],
+    'TN': [],
+    'Ch': [],
+    'Ce': [],
+    'Pa': [],
+    'Jn': [],
+    'Vs': [],
+    'Or': [],
+    'Ha': [],
+    'Mk': [],
+    'Go': [],
+    'Qu': [],
+    'Sl': [],
 }
 
 DS = '\N{DEGREE SIGN}'
 
-DS = '\N{DEGREE SIGN}'
 DQ = '"'
 SQ = "'"
 
