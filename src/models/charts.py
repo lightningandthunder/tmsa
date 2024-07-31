@@ -435,10 +435,10 @@ class Aspect:
     strength: int = 0
     orb: float = 0
     framework: AspectFramework = AspectFramework.ECLIPTICAL
-    planet1_short_name: str = ''
-    planet2_short_name: str = ''
-    planet1_role: ChartWheelRole = ''
-    planet2_role: ChartWheelRole = ''
+    from_planet_short_name: str = ''
+    to_planet_short_name: str = ''
+    from_planet_role: ChartWheelRole = ''
+    to_planet_role: ChartWheelRole = ''
 
     def as_ecliptical(self):
         self.framework = AspectFramework.ECLIPTICAL
@@ -453,27 +453,27 @@ class Aspect:
         return self
 
     def from_planet(self, planet: str, role: ChartWheelRole = None):
-        self.planet1_short_name = planet
+        self.from_planet_short_name = planet
         if role:
-            self.planet1_role = role
+            self.from_planet_role = role
         return self
 
     def to_planet(self, planet: str, role: ChartWheelRole = None):
-        self.planet2_short_name = planet
+        self.to_planet_short_name = planet
         if role:
-            self.planet2_role = role
+            self.to_planet_role = role
         return self
 
     def with_orb(self, orb: float):
-        self.orb = orb
+        self.orb = float(orb)
         return self
 
     def with_class(self, aspect_class: int):
-        self.aspect_class = aspect_class
+        self.aspect_class = int(aspect_class)
         return self
 
     def with_strength(self, strength: int):
-        self.strength = strength
+        self.strength = int(strength)
         return self
 
     def as_type(self, type: AspectType):
@@ -486,12 +486,31 @@ class Aspect:
     def __str__(self):
         # This will read something like this:
         # t.Ur co r.Su 1°23' 95% M
-        planet_1_role = self.planet1_role.value
-        planet_2_role = self.planet2_role.value
+        planet_1_role = self.from_planet_role.value
+        planet_2_role = self.to_planet_role.value
         text = (
-            f'{planet_1_role}{self.planet1_short_name} '
-            f'{self.type.value} {planet_2_role}{self.planet2_short_name} '
+            f'{planet_1_role}{self.from_planet_short_name} '
+            f'{self.type.value} {planet_2_role}{self.to_planet_short_name} '
             f"{self.get_formatted_orb()}{self.strength}%{(' ' + self.framework.value) if self.framework else ''}"
         )
 
         return text.strip()
+
+    def cosmic_state_format(self, planet_short_name: str):
+        # Exclude the given planet name from the aspect.
+        # This will read: "aspect_type other_planet dm_orb framework"
+        if (self.from_planet_short_name == planet_short_name):
+            return f'{self.type.value} {self.to_planet_short_name} {self.get_formatted_orb()}{self.framework.value}'
+        return f'{self.type.value} {self.from_planet_short_name} {self.get_formatted_orb()}{self.framework.value}'
+    
+    def includes_planet(self, planet_name: str) -> bool:
+        # This would be short name
+        if self.from_planet_short_name == planet_name or self.to_planet_short_name == planet_name:
+            return True
+
+        # Otherwise, it might be long name
+        if planet_name in PLANETS:
+            planet_short_name = PLANETS[planet_name]['short_name']
+            return self.from_planet_short_name == planet_short_name or self.to_planet_short_name == planet_short_name
+
+        return False

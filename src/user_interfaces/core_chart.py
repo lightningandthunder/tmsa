@@ -777,7 +777,6 @@ class CoreChart(object, metaclass=ABCMeta):
         primary_planet_long_name: str,
         secondary_planet_long_name: str,
         whole_chart_is_dormant: bool,
-        skip_prefix: bool,
     ) -> chart_models.Aspect | None:
         # If options say to skip one or both planets' aspects outside the foreground,
         # just skip calculating anything
@@ -852,8 +851,6 @@ class CoreChart(object, metaclass=ABCMeta):
 
         aspects_by_class = [[], [], [], []]
 
-        skip_prefix = len(self.charts) == 1
-
         for from_chart in self.charts:
             for to_chart in self.charts:
                 for (
@@ -878,7 +875,6 @@ class CoreChart(object, metaclass=ABCMeta):
                             primary_planet_long_name,
                             secondary_planet_long_name,
                             whole_chart_is_dormant,
-                            skip_prefix=skip_prefix,
                         )
 
                         if maybe_aspect:
@@ -1257,17 +1253,15 @@ class CoreChart(object, metaclass=ABCMeta):
 
                 for class_index in range(3):
                     for aspect in aspects_by_class[class_index]:
-                        entry = str(aspect)
-                        if planet_short_name in entry:
-                            percent = str(200 - int(entry[15:18]))
-                            entry = entry[0:15] + entry[20:]
-                            if entry[0:2] == planet_short_name:
-                                entry = entry[3:]
-                            else:
-                                entry = f'{entry[3:5]} {entry[0:2]}{entry[8:]}'
-                            aspect_list.append([entry, percent])
+                        if aspect.includes_planet(planet_short_name):
+                            # This lets us sort by strength descending, basically;
+                            # The sort is still ascending, but the strength is inverted.
+                            percent = str(200 - aspect.strength)
+                            aspect_list.append([aspect.cosmic_state_format(planet_short_name), percent, aspect.orb])
 
-                aspect_list.sort(key=lambda p: p[1] + p[0][6:11])
+                print('Before sorting: ', aspect_list)
+                aspect_list.sort(key=lambda p: p[1] + str(p[2]))
+                print('After sorting: ', aspect_list)
                 if aspect_list:
                     if need_another_row:
                         chartfile.write('\n' + (' ' * 9) + '| ')
