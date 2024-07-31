@@ -1267,9 +1267,8 @@ class CoreChart(object, metaclass=ABCMeta):
                                 ]
                             )
 
-                print('Before sorting: ', aspect_list)
                 aspect_list.sort(key=lambda p: p[1] + str(p[2]))
-                print('After sorting: ', aspect_list)
+
                 if aspect_list:
                     if need_another_row:
                         chartfile.write('\n' + (' ' * 9) + '| ')
