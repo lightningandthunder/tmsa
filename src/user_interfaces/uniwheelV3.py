@@ -16,11 +16,12 @@ import src.models.options as option_models
 import src.constants as constants
 from src.user_interfaces.core_chart import CoreChart
 import src.utils.chart_utils as chart_utils
-import src.models.angles as angles_models
 
 
 class Uniwheel(CoreChart):
     table_width = 81
+    rows = 65
+    columns = 69
 
     def __init__(
         self,
@@ -29,30 +30,12 @@ class Uniwheel(CoreChart):
         options: option_models.Options,
     ):
         super().__init__(charts, temporary, options)
-        self.core_chart = charts[0]
-        filename = chart_utils.make_chart_path(charts[0], temporary)
-        filename = filename[0:-3] + 'txt'
-        try:
-            chartfile = open(filename, 'w')
-        except Exception as e:
-            tkmessagebox.showerror(f'Unable to open file:', f'{e}')
-            return
-
-        with chartfile:
-            self.draw_chart(chartfile)
-            self.write_info_table(chartfile)
-
-            chartfile.write('\n' + '-' * self.table_width + '\n')
-            chartfile.write(
-                f"Created by Time Matters {constants.VERSION}  ({datetime.now().strftime('%d %b %Y')})"
-            )
 
     def draw_chart(
         self,
         chartfile: TextIOWrapper,
     ):
-        chart_grid = self.make_chart_grid(rows=65, cols=69)
-
+        chart_grid = self.make_chart_grid(rows=self.rows, cols=self.columns)
         chart = self.charts[0]
 
         chartfile.write('\n')

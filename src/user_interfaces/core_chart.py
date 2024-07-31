@@ -16,10 +16,14 @@ import src.models.options as option_models
 import src.constants as constants
 import src.utils.chart_utils as chart_utils
 from src.utils.os_utils import open_file
+import tkinter.messagebox as tkmessagebox
+from datetime import datetime
 
 
 class CoreChart(object, metaclass=ABCMeta):
     table_width: int = 81
+    rows = 69
+    columns = 69
     filename: str = ''
     options: option_models.Options
     charts: list[chart_models.ChartObject]
@@ -36,6 +40,25 @@ class CoreChart(object, metaclass=ABCMeta):
         self.temporary = temporary
 
         self.try_precess_charts()
+
+        filename = chart_utils.make_chart_path(
+            self.find_outermost_chart(), temporary
+        )
+        filename = filename[0:-3] + 'txt'
+        try:
+            chartfile = open(filename, 'w')
+        except Exception as e:
+            tkmessagebox.showerror(f'Unable to open file:', f'{e}')
+            return
+
+        with chartfile:
+            self.draw_chart(chartfile)
+            self.write_info_table(chartfile)
+
+            chartfile.write('\n' + '-' * self.table_width + '\n')
+            chartfile.write(
+                f"Created by Time Matters {constants.VERSION}  ({datetime.now().strftime('%d %b %Y')})"
+            )
 
     def insert_planet_into_line(
         self,
@@ -189,9 +212,9 @@ class CoreChart(object, metaclass=ABCMeta):
     def __find_non_pvp_aspect(
         self,
         planet_1: chart_models.PlanetData,
-        planet_1_role: str | None,
+        planet_1_role: chart_models.ChartWheelRole,
         planet_2: chart_models.PlanetData,
-        planet_2_role: str | None,
+        planet_2_role: chart_models.ChartWheelRole,
         foreground_planets: list[str],
         whole_chart_is_dormant: bool,
         aspect_framework: chart_models.AspectFramework,
@@ -275,8 +298,8 @@ class CoreChart(object, metaclass=ABCMeta):
                 continue
 
             if planet_1.name == 'Moon' and (
-                self.core_chart.type in chart_utils.INGRESSES
-                or self.core_chart.type in chart_utils.SOLAR_RETURNS
+                planet_1_role == chart_utils.INGRESSES
+                or planet_1_role == chart_utils.SOLAR_RETURNS
             ):
                 # Always consider transiting Moon aspects, as long as they're in orb
                 break
@@ -328,9 +351,9 @@ class CoreChart(object, metaclass=ABCMeta):
     def find_pvp_aspect(
         self,
         planet_1: chart_models.PlanetData,
-        planet_1_role: str | None,
+        planet_1_role: chart_models.ChartWheelRole,
         planet_2: chart_models.PlanetData,
-        planet_2_role: str | None,
+        planet_2_role: chart_models.ChartWheelRole,
     ):
         max_prime_vertical_orb = (
             chart_utils.greatest_nonzero_class_orb(
@@ -783,30 +806,28 @@ class CoreChart(object, metaclass=ABCMeta):
 
         ecliptical_aspect = self.find_ecliptical_aspect(
             primary_planet_data,
-            None,
+            from_chart.role,
             secondary_planet_data,
-            None,
+            to_chart.role,
             planets_foreground,
             whole_chart_is_dormant,
         )
         mundane_aspect = self.find_mundane_aspect(
             primary_planet_data,
-            None,
+            from_chart.role,
             secondary_planet_data,
-            None,
+            to_chart.role,
             planets_foreground,
             whole_chart_is_dormant,
         )
 
-        # TODO - the code below forces roles, when there doesn't need to be any.
         pvp_aspect = None
-        # TODO - this is a temporary change to allow PVP aspects to be shown
         if self.options.allow_pvp_aspects or False:
             pvp_aspect = self.find_pvp_aspect(
                 primary_planet_data,
-                self.core_chart.role,
+                from_chart.role,
                 secondary_planet_data,
-                self.core_chart.role,
+                to_chart.role,
             )
 
         # This will get overwritten if there are any other aspects,
@@ -830,6 +851,8 @@ class CoreChart(object, metaclass=ABCMeta):
     ) -> list[list[chart_models.Aspect]]:
 
         aspects_by_class = [[], [], [], []]
+
+        skip_prefix = len(self.charts) == 1
 
         for from_chart in self.charts:
             for to_chart in self.charts:
@@ -855,7 +878,7 @@ class CoreChart(object, metaclass=ABCMeta):
                             primary_planet_long_name,
                             secondary_planet_long_name,
                             whole_chart_is_dormant,
-                            skip_prefix=len(self.charts) == 1,
+                            skip_prefix=skip_prefix,
                         )
 
                         if maybe_aspect:

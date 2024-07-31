@@ -283,6 +283,7 @@ class ChartObject:
 
 
 class ChartWheelRole(Enum):
+    NATAL = ''
     TRANSIT = 't'
     PROGRESSED = 'p'
     SOLAR = 's'
@@ -302,6 +303,7 @@ class ChartWheelRole(Enum):
                 's': 3,
                 'p': 4,
                 't': 5,
+                '': 6,
             }
             return order[self.value] < order[other.value]
         return NotImplemented
@@ -484,8 +486,8 @@ class Aspect:
     def __str__(self):
         # This will read something like this:
         # t.Ur co r.Su 1°23' 95% M
-        planet_1_role = self.planet1_role.value if self.planet1_role else ''
-        planet_2_role = self.planet2_role.value if self.planet2_role else ''
+        planet_1_role = self.planet1_role.value
+        planet_2_role = self.planet2_role.value
         text = (
             f'{planet_1_role}{self.planet1_short_name} '
             f'{self.type.value} {planet_2_role}{self.planet2_short_name} '
