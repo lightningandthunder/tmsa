@@ -1257,7 +1257,15 @@ class CoreChart(object, metaclass=ABCMeta):
                             # This lets us sort by strength descending, basically;
                             # The sort is still ascending, but the strength is inverted.
                             percent = str(200 - aspect.strength)
-                            aspect_list.append([aspect.cosmic_state_format(planet_short_name), percent, aspect.orb])
+                            aspect_list.append(
+                                [
+                                    aspect.cosmic_state_format(
+                                        planet_short_name
+                                    ),
+                                    percent,
+                                    aspect.orb,
+                                ]
+                            )
 
                 print('Before sorting: ', aspect_list)
                 aspect_list.sort(key=lambda p: p[1] + str(p[2]))

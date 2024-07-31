@@ -499,18 +499,24 @@ class Aspect:
     def cosmic_state_format(self, planet_short_name: str):
         # Exclude the given planet name from the aspect.
         # This will read: "aspect_type other_planet dm_orb framework"
-        if (self.from_planet_short_name == planet_short_name):
+        if self.from_planet_short_name == planet_short_name:
             return f'{self.type.value} {self.to_planet_short_name} {self.get_formatted_orb()}{self.framework.value}'
         return f'{self.type.value} {self.from_planet_short_name} {self.get_formatted_orb()}{self.framework.value}'
-    
+
     def includes_planet(self, planet_name: str) -> bool:
         # This would be short name
-        if self.from_planet_short_name == planet_name or self.to_planet_short_name == planet_name:
+        if (
+            self.from_planet_short_name == planet_name
+            or self.to_planet_short_name == planet_name
+        ):
             return True
 
         # Otherwise, it might be long name
         if planet_name in PLANETS:
             planet_short_name = PLANETS[planet_name]['short_name']
-            return self.from_planet_short_name == planet_short_name or self.to_planet_short_name == planet_short_name
+            return (
+                self.from_planet_short_name == planet_short_name
+                or self.to_planet_short_name == planet_short_name
+            )
 
         return False
