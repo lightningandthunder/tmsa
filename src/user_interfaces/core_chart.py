@@ -378,8 +378,8 @@ class CoreChart(object, metaclass=ABCMeta):
         if planet_1_on_prime_vertical and planet_2_on_prime_vertical:
             # check prime vertical to prime vertical in azimuth
             raw_orb = abs(planet_1.azimuth - planet_2.azimuth)
-            conjunction_orb = self.options.ecliptic_aspects['0'][0]
-            opposition_orb = self.options.ecliptic_aspects['180'][0]
+            conjunction_orb = self.options.pvp_aspects['0'][0]
+            opposition_orb = self.options.pvp_aspects['180'][0]
             is_conjunction = chart_utils.inrange(raw_orb, 0, conjunction_orb)
 
             if is_conjunction or chart_utils.inrange(
@@ -1145,7 +1145,6 @@ class CoreChart(object, metaclass=ABCMeta):
         planet_foreground_angles: dict[str, str],
         aspects_by_class: list[list[chart_models.Aspect]],
     ):
-
         chartfile.write(
             chart_utils.center_align('Cosmic State', self.table_width) + '\n'
         )
