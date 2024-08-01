@@ -14,6 +14,7 @@ from typing import Iterator
 
 from src import *
 from src import constants
+from src.models.charts import ChartType
 from src.models.options import NodeTypes, Options
 from src.user_interfaces.widgets import *
 
@@ -443,12 +444,12 @@ def s_ms(value):
     return f'{s}{min:2}\'{sec:2}"'
 
 
-def get_return_class(value):
-    value = value.lower()
-    if value[0:3] in ['cap', 'can', 'ari', 'lib']:
-        return 'SI' if 'solar' in value else 'LI'
-    if 'return' in value:
-        return 'SR' if 'solar' in value else 'LR'
+def get_return_class(t: ChartType) -> str:
+    t = t.value.lower()
+    if t[0:3] in ['cap', 'can', 'ari', 'lib']:
+        return 'SI' if 'solar' in t else 'LI'
+    if 'return' in t:
+        return 'SR' if 'solar' in t else 'LR'
     return 'N'
 
 

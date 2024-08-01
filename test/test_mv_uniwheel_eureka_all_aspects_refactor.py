@@ -19,7 +19,7 @@ from test.utils import (
 
 class TestUniwheelDisplay:
     def init_test(self, monkeypatch, base_chart, natal_options, mock_tk_main):
-        from src.user_interfaces.uniwheelV3 import Uniwheel
+        from src.user_interfaces.uniwheelV3 import UniwheelV3
 
         mockfile = MockFile()
         monkeypatch.setattr('builtins.open', lambda _, __: mockfile)
@@ -27,7 +27,7 @@ class TestUniwheelDisplay:
         chart = ChartObject(base_chart).with_role(ChartWheelRole.NATAL)
         options = model_option.Options(natal_options)
 
-        Uniwheel(
+        UniwheelV3(
             charts=[chart],
             temporary=False,
             options=options,
@@ -65,8 +65,6 @@ class TestUniwheelDisplay:
         lines = self.init_test(
             monkeypatch, base_chart, natal_options, mock_tk_main
         )
-        for index, line in enumerate(lines):
-            print(index, line)
 
         assert_line_contains(
             lines[70].strip(),

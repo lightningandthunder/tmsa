@@ -729,6 +729,13 @@ class CoreChart(object, metaclass=ABCMeta):
                 outermost_chart = chart
         return outermost_chart
 
+    def find_innermost_chart(self):
+        innermost_chart = self.charts[-1]
+        for chart in self.charts:
+            if chart.role > innermost_chart.role:
+                innermost_chart = chart
+        return innermost_chart
+
     def make_chart_grid(self, rows: int, cols: int):
         chart_grid = [[' ' for _ in range(cols)] for _ in range(rows)]
 
@@ -1132,7 +1139,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 elif chart_utils.inrange(
                     planet_data.azimuth, 90, minor_limit[2]
                 ):
-                    angularity = angles_models.NonForegroundAngles.ANTIVERTEX
+                    angularity = angles_models.NonForegroundAngles.ANTI_VERTEX
 
             chartfile.write(f'{strength_percent:3d}% {angularity}')
             chartfile.write('\n')

@@ -18,7 +18,7 @@ from src.user_interfaces.core_chart import CoreChart
 import src.utils.chart_utils as chart_utils
 
 
-class Uniwheel(CoreChart):
+class UniwheelV3(CoreChart):
     table_width = 81
     rows = 65
     columns = 69

@@ -1,3 +1,5 @@
+from src.models.charts import ChartObject, ChartWheelRole
+import src.models.options as model_option
 from test.fixtures.ssr import ssr
 from test.mocks.mockfile import MockFile
 from test.fixtures.tk_fixtures import mock_tk_main
@@ -9,14 +11,22 @@ class TestBiwheelDisplay:
     def test_chart_center_info(
         self, monkeypatch, ssr, return_options, mock_tk_main
     ):
-        from src.user_interfaces.biwheelV2 import BiwheelV2
+        from src.user_interfaces.biwheelV3 import BiwheelV3
 
         mockfile = MockFile()
         monkeypatch.setattr('builtins.open', lambda _, __: mockfile)
 
-        BiwheelV2(chart=ssr, temporary=True, options=return_options)
+        ssr_chart = ChartObject(ssr).with_role(ChartWheelRole.TRANSIT)
+        radix = ChartObject(ssr['base_chart']).with_role(ChartWheelRole.RADIX)
+        opts = return_options
+        options = model_option.Options(opts)
+
+        BiwheelV3(charts=[radix, ssr_chart], temporary=True, options=options)
 
         lines = mockfile.file.split('\n')
+
+        for index, line in enumerate(lines):
+            print(index, line)
 
         assert_line_contains(
             lines[20], 'Transiting (t) Chart', any_position=True
@@ -58,12 +68,17 @@ class TestBiwheelDisplay:
         assert_line_contains(lines[43], 'SVP  5Pi23\'48"', any_position=True)
 
     # def test_moon(self, monkeypatch, ssr, natal_options, mock_tk_main):
-    #     from src.user_interfaces.biwheelV2 import BiwheelV2
+    #     from src.user_interfaces.biwheelV3 import BiwheelV3
 
     #     mockfile = MockFile()
     #     monkeypatch.setattr('builtins.open', lambda _, __: mockfile)
 
-    #     BiwheelV2(chart=ssr, temporary=True, options=return_options)
+    #     ssr_chart = ChartObject(ssr).with_role(ChartWheelRole.TRANSIT)
+    #     radix = ChartObject(ssr['base_chart']).with_role(ChartWheelRole.RADIX)
+    #     options = model_option.Options(return_options)
+
+    #     BiwheelV3(charts=[radix, ssr], temporary=True, options=options)
+
 
     #     lines = mockfile.file.split('\n')
 
