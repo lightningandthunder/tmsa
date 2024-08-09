@@ -1,22 +1,30 @@
+from src.models.charts import ChartObject, ChartWheelRole
 from test.fixtures.ssr import ssr
 from test.mocks.mockfile import MockFile
 from test.fixtures.tk_fixtures import mock_tk_main
 from test.utils import assert_line_contains
 from test.fixtures.return_options import return_options
-
+import src.models.options as model_option
 
 class TestBiwheelDisplay:
     def test_chart_center_info(
         self, monkeypatch, ssr, return_options, mock_tk_main
     ):
-        from src.user_interfaces.biwheelV2 import BiwheelV2
+        from src.user_interfaces.biwheelV3 import Biwheel
 
         mockfile = MockFile()
         monkeypatch.setattr('builtins.open', lambda _, __: mockfile)
-
-        BiwheelV2(chart=ssr, temporary=True, options=return_options)
+        
+        options = model_option.Options(return_options)
+        
+        radix = ChartObject(ssr['base_chart']).with_role(ChartWheelRole.RADIX)
+        return_chart = ChartObject(ssr).with_role(ChartWheelRole.TRANSIT)
+        
+        Biwheel([return_chart, radix], temporary=True, options=options)
 
         lines = mockfile.file.split('\n')
+        for index, line in enumerate(lines):
+            print(f'{index: <3}: {line}')
 
         assert_line_contains(
             lines[20], 'Transiting (t) Chart', any_position=True
@@ -57,7 +65,7 @@ class TestBiwheelDisplay:
         assert_line_contains(lines[42], 'OE 23°26\'33"', any_position=True)
         assert_line_contains(lines[43], 'SVP  5Pi23\'48"', any_position=True)
 
-    # def test_moon(self, monkeypatch, ssr, natal_options, mock_tk_main):
+    # def test_moon(self, monkeypatch, ssr, return_options, mock_tk_main):
     #     from src.user_interfaces.biwheelV2 import BiwheelV2
 
     #     mockfile = MockFile()
@@ -66,6 +74,9 @@ class TestBiwheelDisplay:
     #     BiwheelV2(chart=ssr, temporary=True, options=return_options)
 
     #     lines = mockfile.file.split('\n')
+        
+    #     for index, line in enumerate(lines):
+    #         print(f'{index: <3}: {line}')
 
     #     assert_line_contains(
     #         lines[70].strip(),

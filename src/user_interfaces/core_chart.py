@@ -31,8 +31,12 @@ class CoreChart(object, metaclass=ABCMeta):
         temporary: bool,
         options: option_models.Options,
     ):
+        def s(c):
+            return c.role
+
         self.options = options
-        self.charts = sorted(charts, key=lambda c: c.role, reverse=True)
+
+        self.charts = sorted(charts, key=s, reverse=True)
         self.temporary = temporary
 
         self.try_precess_charts()
@@ -75,10 +79,12 @@ class CoreChart(object, metaclass=ABCMeta):
                 planet_data = chart.planets[planet_name]
                 if planet_data.house // 30 == index:
                     pos = (planet_data.house % 30) / 2
-                    house.append([planet_name, planet_data.house, pos])
+                    house.append(
+                        [planet_name, planet_data.house, pos, chart.role.value]
+                    )
             house.sort(key=lambda h: h[1])
 
-        return self.spread_planets_within_house(house, len(charts))
+        return self.spread_planets_within_house(house, 0, len(charts))
 
     def spread_planets_within_house(
         self, old, start=0, number_of_charts: int = 1
@@ -86,7 +92,7 @@ class CoreChart(object, metaclass=ABCMeta):
         new = [[] for _ in range(15)]
         placed = 0
         for i in range(len(old)):
-            x = int(old[i][-number_of_charts]) + start
+            x = int(old[i][-(number_of_charts)]) + start
             limit = 15 - len(old) + placed
             if x > limit:
                 x = limit
@@ -130,23 +136,6 @@ class CoreChart(object, metaclass=ABCMeta):
         else:
             if radix and progressed:
                 radix.precess_to(progressed)
-
-    def spread_planets_within_house(self, old, start=0):
-        new = [[] for _ in range(15)]
-        placed = 0
-        for i in range(len(old)):
-            x = int(old[i][-1]) + start
-            limit = 15 - len(old) + placed
-            if x > limit:
-                x = limit
-            while True:
-                if len(new[x]):
-                    x += 1
-                else:
-                    break
-            new[x] = old[i]
-            placed += 1
-        return new
 
     def find_ecliptical_aspect(
         self,
@@ -284,9 +273,11 @@ class CoreChart(object, metaclass=ABCMeta):
             # Otherwise, make sure the aspect should be considered at all
             # TODO - this should probably be checked way earlier
 
-            show_aspects = option_models.ShowAspect.from_number(
-                self.options.show_aspects
+            show_aspects = (
+                option_models.ShowAspect.from_number(self.options.show_aspects)
+                or self.options.show_aspects
             )
+
             if show_aspects == option_models.ShowAspect.ONE_PLUS_FOREGROUND:
                 if (
                     planet_1.name not in foreground_planets
@@ -299,6 +290,7 @@ class CoreChart(object, metaclass=ABCMeta):
                         aspect = aspect.with_class(4)
                     else:
                         continue
+
             elif show_aspects == option_models.ShowAspect.BOTH_FOREGROUND:
                 if (
                     planet_1.name not in foreground_planets
@@ -705,6 +697,13 @@ class CoreChart(object, metaclass=ABCMeta):
             if chart.role < outermost_chart.role:
                 outermost_chart = chart
         return outermost_chart
+
+    def find_innermost_chart(self):
+        innermost_chart = self.charts[0]
+        for chart in self.charts:
+            if chart.role > innermost_chart.role:
+                innermost_chart = chart
+        return innermost_chart
 
     def make_chart_grid(self, rows: int, cols: int):
         chart_grid = [[' ' for _ in range(cols)] for _ in range(rows)]
@@ -1113,7 +1112,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 elif chart_utils.inrange(
                     planet_data.azimuth, 90, minor_limit[2]
                 ):
-                    angularity = angles_models.NonForegroundAngles.ANTIVERTEX
+                    angularity = angles_models.NonForegroundAngles.ANTI_VERTEX
 
             chartfile.write(f'{strength_percent:3d}% {angularity}')
             chartfile.write('\n')
