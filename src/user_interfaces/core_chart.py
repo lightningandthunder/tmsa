@@ -42,6 +42,17 @@ class CoreChart(object, metaclass=ABCMeta):
 
         self.charts = sorted(charts, key=s, reverse=True)
         self.temporary = temporary
+        
+        for chart in self.charts:
+            for (
+                planet_name,
+                _,
+            ) in chart_utils.iterate_allowed_planets(self.options):
+                if planet_name == 'Moon' and (
+                    chart.type.value in chart_utils.INGRESSES
+                    or chart.type.value in chart_utils.RETURNS_WHERE_MOON_ALWAYS_FOREGROUND
+                ):
+                    chart.planets[planet_name].treat_as_foreground = True
 
         self.try_precess_charts()
 
@@ -208,6 +219,40 @@ class CoreChart(object, metaclass=ABCMeta):
         whole_chart_is_dormant: bool,
         aspect_framework: chart_models.AspectFramework,
     ) -> chart_models.Aspect:
+        # If options say to skip one or both planets' aspects outside the foreground,
+        # just skip calculating anything
+        show_aspects = (
+            self.options.show_aspects or option_models.ShowAspect.ALL
+        )
+        
+        primary_planet_name = f'{planet_1_role.value}{planet_1.name}'
+        secondary_planet_name = f'{planet_2_role.value}{planet_2.name}'
+        
+        print(primary_planet_name, secondary_planet_name)
+        
+        aspect_is_not_foreground = False
+
+        if show_aspects == option_models.ShowAspect.ONE_PLUS_FOREGROUND:
+            if (
+                primary_planet_name not in foreground_planets
+                and not planet_1.treat_as_foreground
+                and secondary_planet_name not in foreground_planets
+                and not planet_2.treat_as_foreground
+            ):
+                if not self.options.partile_nf:
+                    return None
+                else:
+                    aspect_is_not_foreground = True
+
+        if show_aspects == option_models.ShowAspect.BOTH_FOREGROUND:
+            if (
+                (primary_planet_name not in foreground_planets and not planet_1.treat_as_foreground)
+                or (secondary_planet_name not in foreground_planets and not planet_2.treat_as_foreground)
+            ):
+                if not self.options.partile_nf:
+                    return None
+                else:
+                    aspect_is_not_foreground = True
 
         raw_orb = None
         aspect = None
@@ -294,34 +339,16 @@ class CoreChart(object, metaclass=ABCMeta):
                 break
 
             # Otherwise, make sure the aspect should be considered at all
-            # TODO - this should probably be checked way earlier
 
             show_aspects = (
                 option_models.ShowAspect.from_number(self.options.show_aspects)
                 or self.options.show_aspects
             )
 
-            if show_aspects == option_models.ShowAspect.ONE_PLUS_FOREGROUND:
-                if (
-                    planet_1.name not in foreground_planets
-                    and not planet_1.treat_as_foreground
-                ) and (
-                    planet_2.name not in foreground_planets
-                    and not planet_2.treat_as_foreground
-                ):
-                    if aspect_orb <= 1 and self.options.partile_nf:
-                        aspect = aspect.with_class(4)
-                    else:
-                        continue
+            print(aspect_is_not_foreground, aspect)
 
-            elif show_aspects == option_models.ShowAspect.BOTH_FOREGROUND:
-                if (
-                    planet_1.name not in foreground_planets
-                    and not planet_1.treat_as_foreground
-                ) or (
-                    planet_2.name not in foreground_planets
-                    and not planet_2.treat_as_foreground
-                ):
+            if show_aspects == option_models.ShowAspect.ONE_PLUS_FOREGROUND or show_aspects == option_models.ShowAspect.BOTH_FOREGROUND:
+                if aspect_is_not_foreground:
                     if aspect_orb <= 1 and self.options.partile_nf:
                         aspect = aspect.with_class(4)
                     else:
@@ -717,14 +744,14 @@ class CoreChart(object, metaclass=ABCMeta):
     def find_outermost_chart(self):
         outermost_chart = self.charts[0]
         for chart in self.charts:
-            if chart.role < outermost_chart.role:
+            if chart.role > outermost_chart.role:
                 outermost_chart = chart
         return outermost_chart
 
     def find_innermost_chart(self):
         innermost_chart = self.charts[0]
         for chart in self.charts:
-            if chart.role > innermost_chart.role:
+            if chart.role < innermost_chart.role:
                 innermost_chart = chart
         return innermost_chart
 
@@ -776,32 +803,10 @@ class CoreChart(object, metaclass=ABCMeta):
         primary_planet_long_name: str,
         secondary_planet_long_name: str,
         whole_chart_is_dormant: bool,
-    ) -> chart_models.Aspect | None:
-        # If options say to skip one or both planets' aspects outside the foreground,
-        # just skip calculating anything
-        show_aspects = (
-            self.options.show_aspects or option_models.ShowAspect.ALL
-        )
-
-        if show_aspects == option_models.ShowAspect.ONE_PLUS_FOREGROUND:
-            if (
-                primary_planet_long_name not in planets_foreground
-                and secondary_planet_long_name not in planets_foreground
-            ):
-                if not self.options.partile_nf:
-                    return None
-
-        if show_aspects == option_models.ShowAspect.BOTH_FOREGROUND:
-            if (
-                primary_planet_long_name not in planets_foreground
-                or secondary_planet_long_name not in planets_foreground
-            ):
-                if not self.options.partile_nf:
-                    return None
-
+    ) -> chart_models.Aspect | None:   
         primary_planet_data = from_chart.planets[primary_planet_long_name]
         secondary_planet_data = to_chart.planets[secondary_planet_long_name]
-
+        
         ecliptical_aspect = self.find_ecliptical_aspect(
             primary_planet_data,
             from_chart.role,
@@ -849,6 +854,8 @@ class CoreChart(object, metaclass=ABCMeta):
     ) -> list[list[chart_models.Aspect]]:
 
         aspects_by_class = [[], [], [], []]
+
+        print(planets_foreground)
 
         for from_chart in self.charts:
             for to_chart in self.charts:
@@ -1023,7 +1030,6 @@ class CoreChart(object, metaclass=ABCMeta):
         planet_foreground_angles: dict[str, str],
     ):
         angularity_options = self.options.angularity
-
         for planet_name, _ in chart_utils.iterate_allowed_planets(
             self.options
         ):
@@ -1103,7 +1109,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 and not angularity
                 == angles_models.NonForegroundAngles.BACKGROUND
             ):
-                planets_foreground.append(planet_name)
+                planets_foreground.append(f'{chart.role.value}{planet_data.name}')
 
             # Special case for Moon - always treat it as foreground
             elif planet_name == 'Moon' and (
@@ -1111,6 +1117,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 or chart.type in chart_utils.SOLUNAR_RETURNS
             ):
                 planet_data.treat_as_foreground = True
+                planets_foreground.append(f'{chart.role.value}{planet_data.name}')
 
             if is_mundanely_background:
                 planet_foreground_angles[
@@ -1151,7 +1158,7 @@ class CoreChart(object, metaclass=ABCMeta):
         # Iterate from transiting chart to radix
         for (index, chart) in enumerate(reversed(self.charts)):
             if index != 0:
-                chartfile.write('-' * self.table_width + '\n')
+                chartfile.write(f'\n{"-" * self.table_width} \n')
             if len(self.charts) > 1:
                 if chart.role == chart_models.ChartWheelRole.TRANSIT:
                     chartfile.write(
@@ -1289,6 +1296,14 @@ class CoreChart(object, metaclass=ABCMeta):
                         and aspect_index != len(aspect_list) - 1
                     ):
                         chartfile.write('\n' + (' ' * 9) + '| ')
+
+    def get_return_class(self, t: chart_models.ChartType) -> str:
+        t = t.type.value.lower()
+        if t[0:3] in ['cap', 'can', 'ari', 'lib']:
+            return 'SI' if 'solar' in t else 'LI'
+        if 'return' in t:
+            return 'SR' if 'solar' in t else 'LR'
+        return 'N'
 
     @abstractmethod
     def draw_chart(

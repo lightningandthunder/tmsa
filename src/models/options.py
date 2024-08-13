@@ -65,7 +65,6 @@ class AngularitySubOptions:
     minor_angles: list[float]
 
 
-@dataclass
 class Options:
     extra_bodies: list[str] = field(default_factory=lambda: [])
     use_vertex: bool = False

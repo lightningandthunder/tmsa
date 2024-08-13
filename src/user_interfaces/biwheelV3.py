@@ -69,9 +69,8 @@ class BiwheelV3(CoreChart):
         chart_grid = [[' ' for _ in range(cols)] for _ in range(rows)]
 
         return_chart = self.find_outermost_chart()
-        self.cclass = chart_utils.get_return_class(return_chart.type.value)
+        self.cclass = self.get_return_class(return_chart)
 
-        self.cclass = chart_utils.get_return_class(chart.type)
         chartfile.write('\n')
         for column_index in range(cols):
             chart_grid[0][column_index] = '-'

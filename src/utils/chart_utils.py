@@ -7,14 +7,12 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
-from io import TextIOWrapper
 import math
 import os
 from typing import Iterator
 
 from src import *
 from src import constants
-from src.models.charts import ChartType
 from src.models.options import NodeTypes, Options
 from src.user_interfaces.widgets import *
 
@@ -108,6 +106,16 @@ SOLUNAR_RETURNS = [
     'Kinetic Anlunar Return',
     'Solilunar Return',
     'Lunisolar Return',
+]
+
+RETURNS_WHERE_MOON_ALWAYS_FOREGROUND = [
+    'Novienic Lunar Return',
+    '18-Hour Lunar Return',
+    'Solar Return',
+    'Kinetic Solar Return',
+    'Novienic Solar Return',
+    '10-Day Solar Return',
+    'Solilunar Return',
 ]
 
 POS_SIGN = {
@@ -442,16 +450,6 @@ def s_ms(value):
         sec = 0
         min += 1
     return f'{s}{min:2}\'{sec:2}"'
-
-
-def get_return_class(t: ChartType) -> str:
-    t = t.value.lower()
-    if t[0:3] in ['cap', 'can', 'ari', 'lib']:
-        return 'SI' if 'solar' in t else 'LI'
-    if 'return' in t:
-        return 'SR' if 'solar' in t else 'LR'
-    return 'N'
-
 
 def angularity_activates_ingress(orb: float, angle: str) -> bool:
     if orb < 0:

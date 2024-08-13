@@ -10,7 +10,7 @@ class TestBiwheelDisplay:
     def test_chart_center_info(
         self, monkeypatch, ssr, return_options, mock_tk_main
     ):
-        from src.user_interfaces.biwheelV3 import Biwheel
+        from src.user_interfaces.biwheelV3 import BiwheelV3
 
         mockfile = MockFile()
         monkeypatch.setattr('builtins.open', lambda _, __: mockfile)
@@ -20,14 +20,11 @@ class TestBiwheelDisplay:
         radix = ChartObject(ssr['base_chart']).with_role(ChartWheelRole.RADIX)
         return_chart = ChartObject(ssr).with_role(ChartWheelRole.TRANSIT)
         
-        Biwheel([return_chart, radix], temporary=True, options=options)
+        BiwheelV3([return_chart, radix], temporary=True, options=options)
 
         lines = mockfile.file.split('\n')
         for index, line in enumerate(lines):
             print(f'{index: <3}: {line}')
-
-        for index, line in enumerate(lines):
-            print(index, line)
 
         assert_line_contains(
             lines[20], 'Transiting (t) Chart', any_position=True

@@ -91,9 +91,12 @@ class PlanetData:
 
         return self
 
+    def __str__(self):
+        return self.name
 
 @dataclass
 class ChartType(Enum):
+    RADIX = 'Radix'
     NATAL = 'Natal'
     SOLAR_RETURN = 'Solar Return'
     LUNAR_RETURN = 'Lunar Return'
