@@ -28,8 +28,10 @@ from src.utils.chart_utils import (
 import src.models.angles as angles_models
 
 
-class Biwheel(CoreChart):
+class BiwheelV3(CoreChart):
     table_width = 81
+    rows = 65
+    columns = 69
 
     def __init__(
         self,
@@ -38,19 +40,9 @@ class Biwheel(CoreChart):
         options: option_models.Options,
     ):
         super().__init__(charts, temporary, options)
-        self.core_chart = charts[0]
-        for chart in charts:
-            if chart.type == chart_models.ChartWheelRole.RADIX:
-                self.core_chart = chart
-                break
-
-        self.outer_chart = charts[1]
-        for chart in charts:
-            if chart.type == chart_models.ChartWheelRole.TRANSIT:
-                self.outer_chart = chart
-                break
-
-        filename = chart_utils.make_chart_path(self.outer_chart, temporary)
+        filename = chart_utils.make_chart_path(
+            self.find_outermost_chart(), temporary
+        )
         filename = filename[0:-3] + 'txt'
 
         try:
@@ -79,6 +71,7 @@ class Biwheel(CoreChart):
         return_chart = self.find_outermost_chart()
         self.cclass = chart_utils.get_return_class(return_chart.type.value)
 
+        self.cclass = chart_utils.get_return_class(chart.type)
         chartfile.write('\n')
         for column_index in range(cols):
             chart_grid[0][column_index] = '-'

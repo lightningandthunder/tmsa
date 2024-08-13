@@ -91,10 +91,10 @@ class Options:
                 log_error(f'Error reading {file_path}')
 
     def __init__(self, data: dict[str, any]):
-        self.extra_bodies = []
-        if data.get('use_Eris', False):
+        self.extra_bodies = data.get('extra_bodies', [])
+        if data.get('use_Eris', False) and 'Er' not in self.extra_bodies:
             self.extra_bodies.append('Er')
-        if data.get('use_Sedna', False):
+        if data.get('use_Sedna', False) and 'Se' not in self.extra_bodies:
             self.extra_bodies.append('Se')
         self.use_vertex = True if data.get('use_Vertex') else False
 

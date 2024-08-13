@@ -26,6 +26,9 @@ class TestBiwheelDisplay:
         for index, line in enumerate(lines):
             print(f'{index: <3}: {line}')
 
+        for index, line in enumerate(lines):
+            print(index, line)
+
         assert_line_contains(
             lines[20], 'Transiting (t) Chart', any_position=True
         )
@@ -71,7 +74,12 @@ class TestBiwheelDisplay:
     #     mockfile = MockFile()
     #     monkeypatch.setattr('builtins.open', lambda _, __: mockfile)
 
-    #     BiwheelV2(chart=ssr, temporary=True, options=return_options)
+    #     ssr_chart = ChartObject(ssr).with_role(ChartWheelRole.TRANSIT)
+    #     radix = ChartObject(ssr['base_chart']).with_role(ChartWheelRole.RADIX)
+    #     options = model_option.Options(return_options)
+
+    #     BiwheelV3(charts=[radix, ssr], temporary=True, options=options)
+
 
     #     lines = mockfile.file.split('\n')
         
