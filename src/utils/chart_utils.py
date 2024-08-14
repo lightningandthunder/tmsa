@@ -66,6 +66,18 @@ PLANET_NAMES_SHORT = [
     'Ep',
     'Vx',
 ]
+
+
+def convert_long_name_to_short(name: str) -> str:
+    return constants.PLANETS[name]['short_name']
+
+
+def convert_short_name_to_long(name: str) -> str:
+    for planet in constants.PLANETS:
+        if constants.PLANETS[planet]['short_name'] == name:
+            return planet
+
+
 DEFAULT_ECLIPTICAL_ORBS = {
     '0': [3.0, 7.0, 10.0],
     '180': [3.0, 7.0, 10.0],
@@ -450,6 +462,7 @@ def s_ms(value):
         sec = 0
         min += 1
     return f'{s}{min:2}\'{sec:2}"'
+
 
 def angularity_activates_ingress(orb: float, angle: str) -> bool:
     if orb < 0:

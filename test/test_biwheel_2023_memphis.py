@@ -23,8 +23,8 @@ class TestBiwheelDisplay:
         BiwheelV3([return_chart, radix], temporary=True, options=options)
 
         lines = mockfile.file.split('\n')
-        for index, line in enumerate(lines):
-            print(f'{index: <3}: {line}')
+        # for index, line in enumerate(lines):
+        #     print(f'{index: <3}: {line}')
 
         assert_line_contains(
             lines[20], 'Transiting (t) Chart', any_position=True
