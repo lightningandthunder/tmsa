@@ -87,7 +87,7 @@ class PlanetData:
             self.latitude,
         )
 
-        self.prime_vertical_longitude = convert_house_to_pvl(self.house)
+        self.prime_vertical_longitude = self.house
 
         return self
 
@@ -495,7 +495,7 @@ class Aspect:
         text = (
             f'{planet_1_role}{self.from_planet_short_name} '
             f'{self.type.value} {planet_2_role}{self.to_planet_short_name} '
-            f"{self.get_formatted_orb()}{self.strength}%{(' ' + self.framework.value) if self.framework else ''}"
+            f"{self.get_formatted_orb()} {self.strength}%{(' ' + self.framework.value) if self.framework else ''}"
         )
 
         return text.strip()

@@ -9,6 +9,7 @@
 
 from abc import ABCMeta, abstractmethod
 from io import TextIOWrapper
+from math import fabs
 
 import src.models.angles as angles_models
 import src.models.charts as chart_models
@@ -18,9 +19,6 @@ import src.utils.chart_utils as chart_utils
 from src.utils.os_utils import open_file
 import tkinter.messagebox as tkmessagebox
 from datetime import datetime
-from typing import Dict, TypedDict
-
-from src.utils.planet_state_lookup import PlanetStateLookup
 
 
 class CoreChart(object, metaclass=ABCMeta):
@@ -69,6 +67,10 @@ class CoreChart(object, metaclass=ABCMeta):
         except Exception as e:
             tkmessagebox.showerror(f'Unable to open file:', f'{e}')
             return
+
+        self.planets_foreground: set[str] = set()
+        self.planets_treated_as_foreground: set[str] = set()
+        self.planet_angles: dict[str, str] = {}
 
         with chartfile:
             self.draw_chart(chartfile)
@@ -181,7 +183,6 @@ class CoreChart(object, metaclass=ABCMeta):
         planet_1_role: str | None,
         planet_2: chart_models.PlanetData,
         planet_2_role: str | None,
-        planet_lookup: PlanetStateLookup,
         whole_chart_is_dormant: bool,
     ) -> chart_models.Aspect:
         return self.__find_non_pvp_aspect(
@@ -189,7 +190,6 @@ class CoreChart(object, metaclass=ABCMeta):
             planet_1_role,
             planet_2,
             planet_2_role,
-            planet_lookup,
             whole_chart_is_dormant,
             chart_models.AspectFramework.ECLIPTICAL,
         )
@@ -200,7 +200,6 @@ class CoreChart(object, metaclass=ABCMeta):
         planet_1_role: str | None,
         planet_2: chart_models.PlanetData,
         planet_2_role: str | None,
-        planet_lookup: PlanetStateLookup,
         whole_chart_is_dormant: bool,
     ) -> chart_models.Aspect:
         return self.__find_non_pvp_aspect(
@@ -208,7 +207,6 @@ class CoreChart(object, metaclass=ABCMeta):
             planet_1_role,
             planet_2,
             planet_2_role,
-            planet_lookup,
             whole_chart_is_dormant,
             chart_models.AspectFramework.MUNDANE,
         )
@@ -219,7 +217,6 @@ class CoreChart(object, metaclass=ABCMeta):
         planet_1_role: chart_models.ChartWheelRole,
         planet_2: chart_models.PlanetData,
         planet_2_role: chart_models.ChartWheelRole,
-        planet_lookup: PlanetStateLookup,
         whole_chart_is_dormant: bool,
         aspect_framework: chart_models.AspectFramework,
     ) -> chart_models.Aspect:
@@ -229,38 +226,38 @@ class CoreChart(object, metaclass=ABCMeta):
             self.options.show_aspects or option_models.ShowAspect.ALL
         )
 
-        primary_planet_name = f'{planet_1_role.value}{planet_1.name}'
-        secondary_planet_name = f'{planet_2_role.value}{planet_2.name}'
+        primary_planet_name = self.planet_name_with_role(
+            planet_1.name, planet_1_role
+        )
+        secondary_planet_name = self.planet_name_with_role(
+            planet_2.name, planet_2_role
+        )
 
         aspect_is_not_foreground = False
 
         if show_aspects == option_models.ShowAspect.ONE_PLUS_FOREGROUND:
             if (
-                not planet_lookup.lookup(
-                    primary_planet_name, planet_1_role
-                ).is_foreground
-                and not planet_1.treat_as_foreground
-                and not planet_lookup.lookup(
-                    secondary_planet_name, planet_2_role
-                ).is_foreground
-                and not planet_2.treat_as_foreground
+                primary_planet_name not in self.planets_foreground
+                and primary_planet_name
+                not in self.planets_treated_as_foreground
+                and secondary_planet_name not in self.planets_foreground
+                and secondary_planet_name
+                not in self.planets_treated_as_foreground
             ):
                 if not self.options.partile_nf:
                     return None
                 else:
                     aspect_is_not_foreground = True
 
-        if show_aspects == option_models.ShowAspect.BOTH_FOREGROUND:
+        elif show_aspects == option_models.ShowAspect.BOTH_FOREGROUND:
             if (
-                not planet_lookup.lookup(
-                    primary_planet_name, planet_1_role
-                ).is_foreground
-                and not planet_1.treat_as_foreground
+                primary_planet_name not in self.planets_foreground
+                and primary_planet_name
+                not in self.planets_treated_as_foreground
             ) or (
-                not planet_lookup.lookup(
-                    secondary_planet_name, planet_2_role
-                ).is_foreground
-                and not planet_2.treat_as_foreground
+                secondary_planet_name not in self.planets_foreground
+                and secondary_planet_name
+                not in self.planets_treated_as_foreground
             ):
                 if not self.options.partile_nf:
                     return None
@@ -325,10 +322,21 @@ class CoreChart(object, metaclass=ABCMeta):
             ):
                 continue
 
+            (greater_planet, greater_role) = (
+                (planet_1.short_name, planet_1_role)
+                if planet_1_role >= planet_2_role
+                else (planet_2.short_name, planet_2_role)
+            )
+            (lesser_planet, lesser_role) = (
+                (planet_1.short_name, planet_1_role)
+                if planet_1_role < planet_2_role
+                else (planet_2.short_name, planet_2_role)
+            )
+
             aspect = (
                 chart_models.Aspect()
-                .from_planet(planet_1.short_name, role=planet_1_role)
-                .to_planet(planet_2.short_name, role=planet_2_role)
+                .from_planet(greater_planet, role=greater_role)
+                .to_planet(lesser_planet, role=lesser_role)
                 .as_type(aspect_type)
             )
             aspect.framework = aspect_framework
@@ -358,8 +366,6 @@ class CoreChart(object, metaclass=ABCMeta):
                 or self.options.show_aspects
             )
 
-            print(aspect_is_not_foreground, aspect)
-
             if (
                 show_aspects == option_models.ShowAspect.ONE_PLUS_FOREGROUND
                 or show_aspects == option_models.ShowAspect.BOTH_FOREGROUND
@@ -368,9 +374,10 @@ class CoreChart(object, metaclass=ABCMeta):
                     if aspect_orb <= 1 and self.options.partile_nf:
                         aspect = aspect.with_class(4)
                     else:
-                        continue
+                        # We may have found an aspect, but it's neither foreground nor partile
+                        aspect = None
 
-            # We have found a valid aspect; stop checking for more aspects
+            # We have found a valid aspect (or run out of aspects to try)
             break
 
         if not aspect:
@@ -485,90 +492,119 @@ class CoreChart(object, metaclass=ABCMeta):
             max_major_angle_orb,
         )
 
-        square_orb = self.options.ecliptic_aspects['90'][0]
+        if self.options.pvp_aspects:
+            square_orb = self.options.pvp_aspects['90'][0] or 3
+        else:
+            square_orb = 3
 
         if planet_is_on_meridian:
-
-            # TODO - I'm not sure this will cover everything
-            if planet_on_other_axis.name != planet_on_prime_vertical.name:
+            if self.planet_name_with_role(
+                planet_on_other_axis.name, other_planet_role
+            ) != self.planet_name_with_role(
+                planet_on_prime_vertical.name, prime_vertical_role
+            ):
 
                 raw_orb = abs(
                     planet_on_other_axis.azimuth
                     - planet_on_prime_vertical.azimuth
                 )
-                if (
-                    chart_utils.inrange(raw_orb, 0, square_orb)
-                    or chart_utils.inrange(raw_orb, 90, square_orb)
-                    or chart_utils.inrange(raw_orb, 180, square_orb)
-                ):
-                    # These are squares no matter what
-                    aspect = (
-                        chart_models.Aspect()
-                        .as_prime_vertical_paran()
-                        .from_planet(
-                            greater_planet.short_name,
-                            role=greater_role,
-                        )
-                        .to_planet(
-                            lesser_planet.short_name,
-                            role=lesser_role,
-                        )
-                        .as_type(chart_models.AspectType.SQUARE)
-                        .with_class(1)
+
+                normalized_orb = None
+                if chart_utils.inrange(raw_orb, 0, square_orb):
+                    normalized_orb = raw_orb
+                if chart_utils.inrange(raw_orb, 90, square_orb):
+                    normalized_orb = abs(90 - raw_orb)
+                if chart_utils.inrange(raw_orb, 180, square_orb):
+                    normalized_orb = abs(180 - raw_orb)
+
+                if not normalized_orb:
+                    return None
+                # These are squares no matter what
+                aspect = (
+                    chart_models.Aspect()
+                    .as_prime_vertical_paran()
+                    .from_planet(
+                        greater_planet.short_name,
+                        role=greater_role,
                     )
-                    aspect_strength = chart_utils.calc_aspect_strength_percent(
-                        square_orb, raw_orb
+                    .to_planet(
+                        lesser_planet.short_name,
+                        role=lesser_role,
                     )
-                    aspect = aspect.with_strength(aspect_strength).with_orb(
-                        raw_orb
-                    )
-                    return aspect
+                    .as_type(chart_models.AspectType.SQUARE)
+                    .with_class(1)
+                )
+                aspect_strength = chart_utils.calc_aspect_strength_percent(
+                    square_orb, normalized_orb
+                )
+                aspect = aspect.with_strength(aspect_strength).with_orb(
+                    normalized_orb
+                )
+                return aspect
 
         # check horizon to prime vertical in meridian longitude
-        planet_is_on_horizon = chart_utils.inrange(
-            planet_on_other_axis.prime_vertical_longitude,
-            0,
-            max_major_angle_orb,
-        ) or chart_utils.inrange(
-            planet_on_other_axis.prime_vertical_longitude,
-            180,
-            max_major_angle_orb,
+        planet_is_on_horizon = (
+            chart_utils.inrange(
+                planet_on_other_axis.prime_vertical_longitude,
+                0,
+                max_major_angle_orb,
+            )
+            or chart_utils.inrange(
+                planet_on_other_axis.prime_vertical_longitude,
+                180,
+                max_major_angle_orb,
+            )
+            or chart_utils.inrange(
+                planet_on_other_axis.prime_vertical_longitude,
+                360,
+                max_major_angle_orb,
+            )
         )
+
         if planet_is_on_horizon:
-            if planet_on_other_axis.name != planet_on_prime_vertical.name:
+            if self.planet_name_with_role(
+                planet_on_other_axis.name, other_planet_role
+            ) != self.planet_name_with_role(
+                planet_on_prime_vertical.name, prime_vertical_role
+            ):
                 raw_orb = abs(
                     planet_on_other_axis.meridian_longitude
                     - planet_on_prime_vertical.meridian_longitude
                 )
-                is_conjunction = chart_utils.inrange(
-                    raw_orb, 0, conjunction_orb
+
+                is_conjunction = chart_utils.inrange(raw_orb, 0, square_orb)
+                is_opposition = chart_utils.inrange(raw_orb, 180, square_orb)
+
+                if not is_conjunction and not is_opposition:
+                    return None
+
+                normalized_orb = (
+                    raw_orb if is_conjunction else abs(180 - raw_orb)
                 )
-                if is_conjunction or chart_utils.inrange(
-                    raw_orb, 180, opposition_orb
-                ):
-                    # These are squares no matter what
-                    aspect = (
-                        chart_models.Aspect()
-                        .as_prime_vertical_paran()
-                        .from_planet(
-                            greater_planet.short_name,
-                            role=greater_planet,
-                        )
-                        .to_planet(
-                            lesser_planet.short_name,
-                            role=lesser_role,
-                        )
-                        .as_type(chart_models.AspectType.SQUARE)
-                        .with_class(1)
+
+                # These are squares no matter what
+                aspect = (
+                    chart_models.Aspect()
+                    .as_prime_vertical_paran()
+                    .from_planet(
+                        greater_planet.short_name,
+                        role=greater_role,
                     )
-                    aspect_strength = chart_utils.calc_aspect_strength_percent(
-                        conjunction_orb if is_conjunction else opposition_orb,
-                        raw_orb,
+                    .to_planet(
+                        lesser_planet.short_name,
+                        role=lesser_role,
                     )
-                    aspect = aspect.with_strength(aspect_strength).with_orb(
-                        raw_orb
-                    )
-                    return aspect
+                    .as_type(chart_models.AspectType.SQUARE)
+                    .with_class(1)
+                )
+                aspect_strength = chart_utils.calc_aspect_strength_percent(
+                    square_orb,
+                    normalized_orb,
+                )
+                aspect = aspect.with_strength(aspect_strength).with_orb(
+                    normalized_orb
+                )
+                return aspect
 
     def calc_angle_and_strength(
         self,
@@ -813,7 +849,6 @@ class CoreChart(object, metaclass=ABCMeta):
 
     def parse_aspect(
         self,
-        planet_lookup: PlanetStateLookup,
         from_chart: chart_models.ChartObject,
         to_chart: chart_models.ChartObject,
         primary_planet_long_name: str,
@@ -828,7 +863,6 @@ class CoreChart(object, metaclass=ABCMeta):
             from_chart.role,
             secondary_planet_data,
             to_chart.role,
-            planet_lookup,
             whole_chart_is_dormant,
         )
         mundane_aspect = self.find_mundane_aspect(
@@ -836,7 +870,6 @@ class CoreChart(object, metaclass=ABCMeta):
             from_chart.role,
             secondary_planet_data,
             to_chart.role,
-            planet_lookup,
             whole_chart_is_dormant,
         )
 
@@ -866,12 +899,9 @@ class CoreChart(object, metaclass=ABCMeta):
         self,
         chartfile: TextIOWrapper,
         whole_chart_is_dormant: bool,
-        planet_lookup: PlanetStateLookup,
     ) -> list[list[chart_models.Aspect]]:
 
         aspects_by_class = [[], [], [], []]
-
-        print(planet_lookup)
 
         for from_chart in self.charts:
             for to_chart in self.charts:
@@ -891,7 +921,6 @@ class CoreChart(object, metaclass=ABCMeta):
                             continue
 
                         maybe_aspect = self.parse_aspect(
-                            planet_lookup,
                             from_chart,
                             to_chart,
                             primary_planet_long_name,
@@ -994,8 +1023,6 @@ class CoreChart(object, metaclass=ABCMeta):
             'Pl Longitude   Lat   Speed    RA     Decl   Azi     Alt      ML     PVL    Ang G\n'
         )
 
-        planet_lookup = PlanetStateLookup()
-
         # Default to true if this is an ingress chart
         whole_chart_is_dormant = (
             True
@@ -1011,7 +1038,6 @@ class CoreChart(object, metaclass=ABCMeta):
             chart_is_dormant = self.write_info_table_section(
                 chartfile,
                 chart,
-                planet_lookup,
             )
             if not chart_is_dormant:
                 whole_chart_is_dormant = False
@@ -1027,12 +1053,10 @@ class CoreChart(object, metaclass=ABCMeta):
         aspects_by_class = self.write_aspects(
             chartfile,
             whole_chart_is_dormant,
-            planet_lookup,
         )
 
         self.write_cosmic_state(
             chartfile,
-            planet_lookup,
             aspects_by_class,
         )
 
@@ -1040,7 +1064,6 @@ class CoreChart(object, metaclass=ABCMeta):
         self,
         chartfile: TextIOWrapper,
         chart: chart_models.ChartObject,
-        planet_lookup: PlanetStateLookup,
     ):
         angularity_options = self.options.angularity
         for planet_name, _ in chart_utils.iterate_allowed_planets(
@@ -1115,25 +1138,26 @@ class CoreChart(object, metaclass=ABCMeta):
             if planet_negates_dormancy:
                 whole_chart_is_dormant = False
 
+            normalized_name = self.planet_name_with_role(
+                planet_name, chart.role
+            )
+
+            # This will not include vertex/antivertex, which we calculate shortly after
+            self.planet_angles[normalized_name] = angularity
+
             if (
                 not angularity == angles_models.NonForegroundAngles.BLANK
                 and not angularity
                 == angles_models.NonForegroundAngles.BACKGROUND
             ):
-                planet_lookup.register(
-                    planet_data.name,
-                    planet_data.short_name,
-                    angle=angularity,
-                    is_background=is_mundanely_background,
-                    role=chart.role,
-                )
+                self.planets_foreground.add(normalized_name)
 
             # Special case for Moon - always treat it as foreground
             if planet_name == 'Moon' and (
                 chart.type in chart_utils.INGRESSES
                 or chart.type in chart_utils.SOLUNAR_RETURNS
             ):
-                planet_data.treat_as_foreground = True
+                self.planets_treated_as_foreground.add(normalized_name)
 
             # Conjunctions to Vertex/Antivertex
             minor_limit = angularity_options.minor_angles or [1.0, 2.0, 3.0]
@@ -1143,11 +1167,11 @@ class CoreChart(object, metaclass=ABCMeta):
                 or is_mundanely_background
             ):
                 if chart_utils.inrange(
-                    planet_data.azimuth, 270, minor_limit[2]
+                    planet_data.azimuth, 270, minor_limit[-1]
                 ):
                     angularity = angles_models.NonForegroundAngles.VERTEX
                 elif chart_utils.inrange(
-                    planet_data.azimuth, 90, minor_limit[2]
+                    planet_data.azimuth, 90, minor_limit[-1]
                 ):
                     angularity = angles_models.NonForegroundAngles.ANTI_VERTEX
 
@@ -1159,7 +1183,6 @@ class CoreChart(object, metaclass=ABCMeta):
     def write_cosmic_state(
         self,
         chartfile: TextIOWrapper,
-        planet_lookup: PlanetStateLookup,
         aspects_by_class: list[list[chart_models.Aspect]],
     ):
         chartfile.write(
@@ -1233,10 +1256,11 @@ class CoreChart(object, metaclass=ABCMeta):
                     plus_minus = ' '
                 chartfile.write(f'{sign}{plus_minus} ')
 
-                angle = (
-                    planet_lookup.lookup(planet_name, chart.role).angle
-                    or angles_models.NonForegroundAngles.BLANK
+                normalized_name = self.planet_name_with_role(
+                    planet_name, chart.role
                 )
+
+                angle = self.planet_angles[normalized_name]
 
                 if str(angle).strip() == '':
                     angle = ' '
@@ -1324,6 +1348,14 @@ class CoreChart(object, metaclass=ABCMeta):
         chartfile: TextIOWrapper,
     ):
         pass
+
+    def planet_name_with_role(
+        self, planet: str, role: chart_models.ChartWheelRole
+    ) -> str:
+        name = planet
+        if len(name) == 2:
+            name = chart_utils.convert_short_name_to_long(name)
+        return f'{role.value}{name}'
 
     def show(self):
         open_file(self.filename)
