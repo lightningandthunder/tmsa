@@ -22,7 +22,7 @@ class ForegroundAngles(Enum):
 @dataclass
 class NonForegroundAngles(Enum):
     VERTEX = 'Vx'
-    ANTI_VERTEX = 'Av'
+    ANTIVERTEX = 'Av'
     BACKGROUND = ' b'
     BLANK = '  '
 

@@ -5,11 +5,53 @@ from typing import Iterator, TypeVar
 
 from src import log_error, swe
 from src.constants import PLANETS
+from src.models.angles import ForegroundAngles, NonForegroundAngles
 from src.utils.chart_utils import convert_house_to_pvl, fmt_dm
 from src.utils.format_utils import to360
 
 T = TypeVar('T', bound='ChartObject')
-R = TypeVar('R', bound='ChartWheelRole')
+
+
+class ChartWheelRole(Enum):
+    NATAL = ''
+    TRANSIT = 't'
+    PROGRESSED = 'p'
+    SOLAR = 's'
+    RADIX = 'r'
+    INGRESS = 'i'
+
+    def __eq__(self, other):
+        if isinstance(other, ChartWheelRole):
+            return self.value == other.value
+        return NotImplemented
+
+    def __lt__(self, other):
+        if isinstance(other, ChartWheelRole):
+            order = {
+                'i': 1,
+                'r': 2,
+                's': 3,
+                'p': 4,
+                't': 5,
+                '': 6,
+            }
+            return order[self.value] < order[other.value]
+        return NotImplemented
+
+    def __le__(self, other):
+        if isinstance(other, ChartWheelRole):
+            return self < other or self == other
+        return NotImplemented
+
+    def __gt__(self, other):
+        if isinstance(other, ChartWheelRole):
+            return not self < other and self != other
+        return NotImplemented
+
+    def __ge__(self, other):
+        if isinstance(other, ChartWheelRole):
+            return self > other or self == other
+        return NotImplemented
 
 
 @dataclass
@@ -28,6 +70,13 @@ class PlanetData:
     prime_vertical_longitude: float = 0
     meridian_longitude: float = 0
     treat_as_foreground: bool = False
+    role: ChartWheelRole = ChartWheelRole.NATAL
+    angle: ForegroundAngles | NonForegroundAngles = NonForegroundAngles.BLANK
+    prime_vertical_angle: NonForegroundAngles = NonForegroundAngles.BLANK
+    __prime_vertical_angles = [
+        NonForegroundAngles.VERTEX,
+        NonForegroundAngles.ANTIVERTEX,
+    ]
 
     def with_ecliptic_and_equatorial_data(
         self,
@@ -56,6 +105,18 @@ class PlanetData:
 
     def with_meridian_longitude(self, meridian_longitude: float):
         self.meridian_longitude = meridian_longitude
+        return self
+
+    def with_role(self, role: ChartWheelRole):
+        self.role = role
+        return self
+
+    def with_angle(self, angle: ForegroundAngles | NonForegroundAngles):
+        self.angle = angle
+        return self
+
+    def with_prime_vertical_angle(self, angle: NonForegroundAngles):
+        self.prime_vertical_angle = angle
         return self
 
     def precess_to(self, to_chart: T):
@@ -90,6 +151,18 @@ class PlanetData:
         self.prime_vertical_longitude = self.house
 
         return self
+
+    @property
+    def is_foreground(self):
+        return self.angle != NonForegroundAngles.BLANK
+
+    @property
+    def is_on_prime_vertical(self):
+        return self.prime_vertical_angle in self.__prime_vertical_angles
+
+    @property
+    def name_with_role(self):
+        return f'{self.role.value}{self.short_name}'
 
     def __str__(self):
         return self.name
@@ -144,7 +217,7 @@ class ChartObject:
     angles: dict[str, float]
     vertex: list[float]
     eastpoint: list[float]
-    role: R
+    role: ChartWheelRole
     notes: str | None = None
     style: int = 1
 
@@ -275,7 +348,7 @@ class ChartObject:
         with open(file_path, 'w') as file:
             json.dump(self.__dict__, file, indent=4)
 
-    def with_role(self, role: R):
+    def with_role(self, role: ChartWheelRole):
         self.role = role
         return self
 
@@ -284,48 +357,6 @@ class ChartObject:
             self.planets[planet].precess_to(to_chart)
 
         return self
-
-
-class ChartWheelRole(Enum):
-    NATAL = ''
-    TRANSIT = 't'
-    PROGRESSED = 'p'
-    SOLAR = 's'
-    RADIX = 'r'
-    INGRESS = 'i'
-
-    def __eq__(self, other):
-        if isinstance(other, ChartWheelRole):
-            return self.value == other.value
-        return NotImplemented
-
-    def __lt__(self, other):
-        if isinstance(other, ChartWheelRole):
-            order = {
-                'i': 1,
-                'r': 2,
-                's': 3,
-                'p': 4,
-                't': 5,
-                '': 6,
-            }
-            return order[self.value] < order[other.value]
-        return NotImplemented
-
-    def __le__(self, other):
-        if isinstance(other, ChartWheelRole):
-            return self < other or self == other
-        return NotImplemented
-
-    def __gt__(self, other):
-        if isinstance(other, ChartWheelRole):
-            return not self < other and self != other
-        return NotImplemented
-
-    def __ge__(self, other):
-        if isinstance(other, ChartWheelRole):
-            return self > other or self == other
-        return NotImplemented
 
 
 class AspectType(Enum):
