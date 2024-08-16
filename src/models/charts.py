@@ -74,8 +74,8 @@ class PlanetData:
     angle: ForegroundAngles | NonForegroundAngles = NonForegroundAngles.BLANK
     prime_vertical_angle: NonForegroundAngles = NonForegroundAngles.BLANK
     __prime_vertical_angles = [
-        NonForegroundAngles.VERTEX,
-        NonForegroundAngles.ANTIVERTEX,
+        NonForegroundAngles.VERTEX.value,
+        NonForegroundAngles.ANTIVERTEX.value,
     ]
 
     def with_ecliptic_and_equatorial_data(
@@ -158,7 +158,7 @@ class PlanetData:
 
     @property
     def is_on_prime_vertical(self):
-        return self.prime_vertical_angle in self.__prime_vertical_angles
+        return self.prime_vertical_angle.value in self.__prime_vertical_angles
 
     @property
     def name_with_role(self):
@@ -526,17 +526,17 @@ class Aspect:
         text = (
             f'{planet_1_role}{self.from_planet_short_name} '
             f'{self.type.value} {planet_2_role}{self.to_planet_short_name} '
-            f"{self.get_formatted_orb()} {self.strength}%{(' ' + self.framework.value) if self.framework else ''}"
+            f"{self.get_formatted_orb()} {self.strength}%{(' ' + self.framework.value) if self.framework else ' '}"
         )
 
-        return text.strip()
+        return text
 
     def cosmic_state_format(self, planet_short_name: str):
         # Exclude the given planet name from the aspect.
         # This will read: "aspect_type other_planet dm_orb framework"
         if self.from_planet_short_name == planet_short_name:
-            return f'{self.type.value} {self.to_planet_short_name} {self.get_formatted_orb()}{self.framework.value}'
-        return f'{self.type.value} {self.from_planet_short_name} {self.get_formatted_orb()}{self.framework.value}'
+            return f'{self.type.value} {self.to_planet_role.value}{self.to_planet_short_name} {self.get_formatted_orb()}{self.framework.value}'
+        return f'{self.type.value} {self.from_planet_role.value}{self.from_planet_short_name} {self.get_formatted_orb()}{self.framework.value}'
 
     def includes_planet(self, planet_name: str) -> bool:
         # This would be short name

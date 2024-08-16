@@ -8,6 +8,7 @@
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
 from abc import ABCMeta, abstractmethod
+import copy
 from io import TextIOWrapper
 
 import src.models.angles as angles_models
@@ -84,9 +85,9 @@ class CoreChart(object, metaclass=ABCMeta):
         planet_long_name: str,
         prefix: str = '',
         abbreviation_only: bool = False,
+        width: int = None,
     ) -> str:
         planet_data = chart.planets[planet_long_name]
-        number = constants.PLANETS[planet_long_name]['number']
         short_name = constants.PLANETS[planet_long_name]['short_name']
 
         if abbreviation_only:
@@ -98,10 +99,11 @@ class CoreChart(object, metaclass=ABCMeta):
             + ' '
             + chart_utils.zod_min(planet_data.longitude)
         )
-        if number < 14:
-            data_line += ' ' + chart_utils.fmt_dm(planet_data.house % 30)
-        else:
-            data_line = chart_utils.center_align(data_line, 16)
+
+        data_line += ' ' + chart_utils.fmt_dm(planet_data.house % 30)
+
+        if width:
+            data_line = data_line[0:width]
 
         return data_line
 
@@ -314,8 +316,10 @@ class CoreChart(object, metaclass=ABCMeta):
 
             aspect = (
                 chart_models.Aspect()
-                .from_planet(greater_planet, role=greater_planet.role)
-                .to_planet(lesser_planet, role=lesser_planet.role)
+                .from_planet(
+                    greater_planet.short_name, role=greater_planet.role
+                )
+                .to_planet(lesser_planet.short_name, role=lesser_planet.role)
                 .as_type(aspect_type)
             )
             aspect.framework = aspect_framework
@@ -432,15 +436,20 @@ class CoreChart(object, metaclass=ABCMeta):
         )
 
         planet_is_on_meridian = (
-            planet_on_other_axis.angle == angles_models.ForegroundAngles.MC
-            or planet_on_other_axis.angle == angles_models.ForegroundAngles.IC
+            planet_on_other_axis.angle.value
+            == angles_models.ForegroundAngles.MC.value
+            or planet_on_other_axis.angle.value
+            == angles_models.ForegroundAngles.IC.value
         )
         planet_is_on_horizon = (
-            planet_on_other_axis.angle
-            == angles_models.ForegroundAngles.ASCENDANT
-            or planet_on_other_axis.angle
-            == angles_models.ForegroundAngles.DESCENDANT
+            planet_on_other_axis.angle.value
+            == angles_models.ForegroundAngles.ASCENDANT.value
+            or planet_on_other_axis.angle.value
+            == angles_models.ForegroundAngles.DESCENDANT.value
         )
+
+        if not planet_is_on_meridian and not planet_is_on_horizon:
+            return None
 
         square_orb = (
             self.options.pvp_aspects['90'][0]
@@ -755,26 +764,33 @@ class CoreChart(object, metaclass=ABCMeta):
             whole_chart_is_dormant,
         )
 
-        pvp_aspect = None
+        # Skip existing ecliptical aspects between radical planets
         if (
-            self.options.allow_pvp_aspects
-            and not ecliptical_aspect
-            and not mundane_aspect
+            primary_planet_data.role.value
+            == chart_models.ChartWheelRole.RADIX.value
+            and secondary_planet_data.role.value
+            == chart_models.ChartWheelRole.RADIX.value
         ):
-            pvp_aspect = self.find_pvp_aspect(
-                primary_planet_data,
-                secondary_planet_data,
-            )
+            if ecliptical_aspect and (
+                not mundane_aspect
+                or mundane_aspect.orb > ecliptical_aspect.orb
+            ):
+                # For now, we also don't allow PVP aspects if there's already an ecliptical aspect
+                return None
 
-        # This will get overwritten if there are any other aspects,
-        # i.e. if there are any other aspects, the PVP aspect will not be used
-        tightest_aspect = pvp_aspect
+        tightest_aspect = None
 
         if ecliptical_aspect or mundane_aspect:
             tightest_aspect = min(
                 ecliptical_aspect,
                 mundane_aspect,
                 key=lambda x: x.orb if x else 1000,
+            )
+        elif self.options.allow_pvp_aspects:
+            # This may also be None; that's fine
+            tightest_aspect = self.find_pvp_aspect(
+                primary_planet_data,
+                secondary_planet_data,
             )
 
         return tightest_aspect
@@ -787,8 +803,9 @@ class CoreChart(object, metaclass=ABCMeta):
 
         aspects_by_class = [[], [], [], []]
 
-        for from_chart in self.charts:
-            for to_chart in self.charts:
+        for (from_index, from_chart) in enumerate(self.charts):
+            for to_index in range(from_index, len(self.charts)):
+                to_chart = self.charts[to_index]
                 for (
                     primary_index,
                     (primary_planet_long_name, _),
@@ -801,7 +818,10 @@ class CoreChart(object, metaclass=ABCMeta):
                     ) in enumerate(
                         chart_utils.iterate_allowed_planets(self.options)
                     ):
-                        if secondary_index <= primary_index:
+                        if (
+                            secondary_index <= primary_index
+                            and from_chart == to_chart
+                        ):
                             continue
 
                         primary_planet = from_chart.planets[
@@ -855,34 +875,51 @@ class CoreChart(object, metaclass=ABCMeta):
                 )
             chartfile.write('\n')
 
+        # For each aspect class, insert dividers where the roles change
+        aspects_by_class_with_dividers = copy.deepcopy(aspects_by_class)
+        for aspect_class in aspects_by_class_with_dividers:
+            previous_roles = [None, None]
+            for (index, aspect) in enumerate(aspect_class):
+                if index > 0 and (
+                    aspect.from_planet_role.value != previous_roles[0]
+                    or aspect.to_planet_role.value != previous_roles[1]
+                ):
+                    aspect_class.insert(index, '-' * 24)
+                previous_roles[0] = aspect.from_planet_role.value
+                previous_roles[1] = aspect.to_planet_role.value
+
         # Write aspects from all classes to file
         for aspect_index in range(
             max(
-                len(aspects_by_class[0]),
-                len(aspects_by_class[1]),
-                len(aspects_by_class[2]),
+                len(aspects_by_class_with_dividers[0]),
+                len(aspects_by_class_with_dividers[1]),
+                len(aspects_by_class_with_dividers[2]),
             )
         ):
-            if aspect_index < len(aspects_by_class[0]):
+            previous_roles = [None, None]
+            if aspect_index < len(aspects_by_class_with_dividers[0]):
                 chartfile.write(
                     chart_utils.left_align(
-                        str(aspects_by_class[0][aspect_index]), width=24
+                        str(aspects_by_class_with_dividers[0][aspect_index]),
+                        width=24,
                     )
                 )
             else:
                 chartfile.write(' ' * 24)
-            if aspect_index < len(aspects_by_class[1]):
+            if aspect_index < len(aspects_by_class_with_dividers[1]):
                 chartfile.write(
                     chart_utils.center_align(
-                        str(aspects_by_class[1][aspect_index]), width=24
+                        str(aspects_by_class_with_dividers[1][aspect_index]),
+                        width=24,
                     )
                 )
             else:
                 chartfile.write(' ' * 24)
-            if aspect_index < len(aspects_by_class[2]):
+            if aspect_index < len(aspects_by_class_with_dividers[2]):
                 chartfile.write(
                     chart_utils.right_align(
-                        str(aspects_by_class[2][aspect_index]), width=24
+                        str(aspects_by_class_with_dividers[2][aspect_index]),
+                        width=24,
                     )
                 )
             else:
@@ -890,15 +927,15 @@ class CoreChart(object, metaclass=ABCMeta):
             chartfile.write('\n')
 
         chartfile.write('-' * self.table_width + '\n')
-        if aspects_by_class[3]:
+        if aspects_by_class_with_dividers[3]:
             chartfile.write(
                 chart_utils.center_align(
-                    f'{aspect_class_headers[3]} Aspects',
+                    f'{aspects_by_class_with_dividers[3]} Aspects',
                     width=self.table_width,
                 )
                 + '\n'
             )
-            for aspect in aspects_by_class[3]:
+            for aspect in aspects_by_class_with_dividers[3]:
                 chartfile.write(
                     chart_utils.center_align(str(aspect), self.table_width)
                     + '\n'
@@ -1080,7 +1117,7 @@ class CoreChart(object, metaclass=ABCMeta):
         )
 
         # Iterate from transiting chart to radix
-        for (index, chart) in enumerate(reversed(self.charts)):
+        for (index, chart) in enumerate(self.charts):
             if index != 0:
                 chartfile.write(f'\n{"-" * self.table_width} \n')
             if len(self.charts) > 1:
@@ -1173,7 +1210,10 @@ class CoreChart(object, metaclass=ABCMeta):
 
                 for class_index in range(3):
                     for aspect in aspects_by_class[class_index]:
-                        if aspect.includes_planet(planet_short_name):
+                        if aspect.includes_planet(planet_short_name) and (
+                            aspect.from_planet_role.value == chart.role.value
+                            or aspect.to_planet_role.value == chart.role.value
+                        ):
                             # This lets us sort by strength descending, basically;
                             # The sort is still ascending, but the strength is inverted.
                             percent = str(200 - aspect.strength)
@@ -1218,14 +1258,6 @@ class CoreChart(object, metaclass=ABCMeta):
         chartfile: TextIOWrapper,
     ):
         pass
-
-    def planet_name_with_role(
-        self, planet: str, role: chart_models.ChartWheelRole
-    ) -> str:
-        name = planet
-        if len(name) == 2:
-            name = chart_utils.convert_short_name_to_long(name)
-        return f'{role.value}{name}'
 
     def show(self):
         open_file(self.filename)

@@ -40,25 +40,6 @@ class BiwheelV3(CoreChart):
         options: option_models.Options,
     ):
         super().__init__(charts, temporary, options)
-        filename = chart_utils.make_chart_path(
-            self.find_outermost_chart(), temporary
-        )
-        filename = filename[0:-3] + 'txt'
-
-        try:
-            chartfile = open(filename, 'w')
-        except Exception as e:
-            tkmessagebox.showerror(f'Unable to open file:', f'{e}')
-            return
-
-        with chartfile:
-            self.draw_chart(chartfile)
-            self.write_info_table(chartfile)
-
-            chartfile.write('\n' + '-' * self.table_width + '\n')
-            chartfile.write(
-                f"Created by Time Matters {constants.VERSION}  ({datetime.now().strftime('%d %b %Y')})"
-            )
 
     def draw_chart(
         self,
@@ -218,13 +199,13 @@ class BiwheelV3(CoreChart):
                             chart_grid[y[column_index] + sub_index][
                                 x[column_index] : x[column_index] + 16
                             ] = self.insert_planet_into_line(
-                                return_chart, planet, 't'
+                                return_chart, planet, 't', width=16
                             )
                         else:
                             chart_grid[y[column_index] + sub_index][
                                 x[column_index] : x[column_index] + 16
                             ] = self.insert_planet_into_line(
-                                radix, planet, 'r'
+                                radix, planet, 'r', width=16
                             )
         for row in chart_grid:
             chartfile.write(' ')
@@ -244,14 +225,14 @@ class BiwheelV3(CoreChart):
                 if planet_name[-1] == 't':
                     ex += (
                         self.insert_planet_into_line(
-                            return_chart, planet_name[0], 't', True
+                            return_chart, planet_name[0], 't', True, width=16
                         )
                         + ' '
                     )
                 else:
                     ex += (
                         self.insert_planet_into_line(
-                            radix, planet_name[0], 'r', True
+                            radix, planet_name[0], 'r', True, width=16
                         )
                         + ' '
                     )
