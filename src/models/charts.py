@@ -72,7 +72,9 @@ class PlanetData:
     treat_as_foreground: bool = False
     role: ChartWheelRole = ChartWheelRole.NATAL
     angle: ForegroundAngles | NonForegroundAngles = NonForegroundAngles.BLANK
+    all_angles_planet_is_on: list[ForegroundAngles | NonForegroundAngles] = []
     prime_vertical_angle: NonForegroundAngles = NonForegroundAngles.BLANK
+
     __prime_vertical_angles = [
         NonForegroundAngles.VERTEX.value,
         NonForegroundAngles.ANTIVERTEX.value,

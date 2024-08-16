@@ -1252,6 +1252,31 @@ class CoreChart(object, metaclass=ABCMeta):
             return 'SR' if 'solar' in t else 'LR'
         return 'N'
 
+    def calc_midpoints(self):
+        # For mundane midpoints to horizon and meridian:
+        # using planets that are foreground in any fashion:
+        # check if midpoints in PVL are within orb of 0, 90, 180, 270 PVL.
+        # List these as "Angle."
+
+        # For mundane midpoints to EP-a or WP-a:
+        # Using only planets that are conjunct to EP or WP in RA:
+        # Check if their midpoints are conjunct EP-a or WP-a in RA.
+        # List these as "EP-a."
+
+        # For ecliptic midpoints to Zenith, Nadir, EP/WP in longitude:
+        # Using only planets conjunct Z/N or EP/WP in longitude:
+        # Check if their midpoints are conjunct the angle that those planets are conjunct.
+        # List these as "Z" or "E."
+
+        # (If ecliptical aspects are turned on include squares to midpoints, 
+        # this will duplicate items on the Asc or MC lines.)
+
+        # Ask Jim: do we also attempt to capture planets to midpoints,
+        # or midpoints to other midpoints?
+
+        pass
+    
+
     @abstractmethod
     def draw_chart(
         self,
