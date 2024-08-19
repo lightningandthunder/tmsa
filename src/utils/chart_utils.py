@@ -420,6 +420,10 @@ def fmt_dms(value):
     return f'{deg:2d}{DS}{minute:2}\'{sec:2}"'
 
 
+def fmt_minutes(value):
+    return int(value) * 60 + (value - int(value)) * 60
+
+
 def fmt_dm(value, noz=False, degree_digits=2):
     deg = int(value)
     value = (value - deg) * 60

@@ -79,6 +79,7 @@ class Options:
     pvp_aspects: dict[str, list[float]] = field(default_factory=lambda: {})
     allow_pvp_aspects: bool = False
     midpoints: dict[str, list[float]] = field(default_factory=lambda: {})
+    enable_natal_midpoints: bool = False
 
     @staticmethod
     def from_file(file_path: str):
@@ -117,6 +118,17 @@ class Options:
             self.pvp_aspects = data['pvp_aspects']
         if 'midpoints' in data:
             self.midpoints = data['midpoints']
+        if 'enable_natal_midpoints' in data:
+            self.enable_natal_midpoints = data['enable_natal_midpoints']
+        else:
+            if 'midpoints' in data:
+                for key in data['midpoints']:
+                    if (
+                        data['midpoints'][key].isnumeric()
+                        and data['midpoints'][key] > 0
+                    ):
+                        self.enable_natal_midpoints = True
+                        break
 
     def to_file(self, file_path: str):
         with open(file_path, 'w') as file:

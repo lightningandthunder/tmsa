@@ -28,6 +28,7 @@ class CoreChart(object, metaclass=ABCMeta):
     filename: str = ''
     options: option_models.Options
     charts: list[chart_models.ChartObject]
+    halfsums: list[chart_models.HalfSum]
     temporary: bool
 
     def __init__(
@@ -43,6 +44,14 @@ class CoreChart(object, metaclass=ABCMeta):
 
         self.charts = sorted(charts, key=lambda x: x.role, reverse=True)
         self.temporary = temporary
+
+        # For now, only enable natal midpoints
+        if (
+            len(charts) == 1
+            and charts[0].type == chart_models.ChartType.NATAL
+            and self.options.enable_natal_midpoints
+        ):
+            self.halfsums = self.calc_halfsums(self.charts)
 
         for chart in self.charts:
             for (
@@ -1252,30 +1261,129 @@ class CoreChart(object, metaclass=ABCMeta):
             return 'SR' if 'solar' in t else 'LR'
         return 'N'
 
+    # TODO - also calculate mundane midpoints,
+    # and use the closer of the two orbs.
+    # Also, include angles in these.
     def calc_midpoints(self):
-        # For mundane midpoints to horizon and meridian:
-        # using planets that are foreground in any fashion:
-        # check if midpoints in PVL are within orb of 0, 90, 180, 270 PVL.
-        # List these as "Angle."
+        midpoints = {}
 
-        # For mundane midpoints to EP-a or WP-a:
-        # Using only planets that are conjunct to EP or WP in RA:
-        # Check if their midpoints are conjunct EP-a or WP-a in RA.
-        # List these as "EP-a."
+        midpoint_orbs = self.options.midpoints
+        square_direction = (
+            chart_models.MidpointAspectType.DIRECT
+            if self.options.midpoints['is90'] == 'd'
+            else chart_models.MidpointAspectType.INDIRECT
+        )
+        for chart in self.charts:
+            for (planet_name, _) in chart_utils.iterate_allowed_planets(
+                self.options
+            ):
+                planet = chart.planets[planet_name]
+                for (
+                    aspect_type,
+                    aspect_degrees,
+                ) in chart_models.AspectType.iterate():
+                    max_orb = None
+                    raw_orb = None
 
-        # For ecliptic midpoints to Zenith, Nadir, EP/WP in longitude:
-        # Using only planets conjunct Z/N or EP/WP in longitude:
-        # Check if their midpoints are conjunct the angle that those planets are conjunct.
-        # List these as "Z" or "E."
+                    # If the aspect is a sesquisquare, we need to use the orb for semisquare,
+                    # as it's the only orb in options
+                    aspect_degrees_for_options = (
+                        45 if aspect_degrees == 135 else aspect_degrees
+                    )
 
-        # (If ecliptical aspects are turned on include squares to midpoints, 
-        # this will duplicate items on the Asc or MC lines.)
+                    if str(aspect_degrees_for_options) in midpoint_orbs:
+                        max_orb = self.options.midpoints[
+                            str(aspect_degrees_for_options)
+                        ]
+                    else:
+                        continue
 
-        # Ask Jim: do we also attempt to capture planets to midpoints,
-        # or midpoints to other midpoints?
+                    for halfsum in self.halfsums:
+                        raw_orb = abs(halfsum.longitude - planet.longitude)
 
-        pass
-    
+                        if (
+                            max_orb is not None
+                            and raw_orb <= max_orb + aspect_degrees
+                            and raw_orb >= aspect_degrees - max_orb
+                        ):
+                            midpoint_direction = None
+                            if aspect_degrees in [0, 180]:
+                                midpoint_direction = (
+                                    chart_models.MidpointAspectType.DIRECT
+                                )
+                            if aspect_degrees in [45, 135]:
+                                midpoint_direction = (
+                                    chart_models.MidpointAspectType.INDIRECT
+                                )
+                            else:
+                                midpoint_direction = square_direction
+                            midpoint = chart_models.MidpointAspect(
+                                midpoint_type=midpoint_direction,
+                                orb=abs(raw_orb - aspect_degrees),
+                                framework=chart_models.AspectFramework.ECLIPTICAL,
+                                from_point=planet,
+                                to_midpoint=halfsum,
+                                from_point_role=planet.role,
+                            )
+
+                            self.midpoints[
+                                f'{planet.role.value}{planet.short_name}'
+                            ] = midpoint
+        return midpoints
+
+    # TODO - include angles in this
+    def calc_halfsums(self):
+        halfsums = []
+        for (from_index, from_chart) in enumerate(self.charts):
+            for to_index in range(from_index, len(self.charts)):
+                to_chart = self.charts[to_index]
+                for (
+                    primary_index,
+                    (primary_planet_long_name, _),
+                ) in enumerate(
+                    chart_utils.iterate_allowed_planets(self.options)
+                ):
+                    for (
+                        secondary_index,
+                        (secondary_planet_long_name, _),
+                    ) in enumerate(
+                        chart_utils.iterate_allowed_planets(self.options)
+                    ):
+                        if (
+                            secondary_index <= primary_index
+                            and from_chart == to_chart
+                        ):
+                            continue
+
+                        primary_planet = from_chart.planets[
+                            primary_planet_long_name
+                        ]
+                        secondary_planet = to_chart.planets[
+                            secondary_planet_long_name
+                        ]
+
+                        halfsums.append(
+                            chart_models.HalfSum(
+                                point_a=primary_planet,
+                                point_b=secondary_planet,
+                                longitude=(
+                                    primary_planet.longitude
+                                    + secondary_planet.longitude
+                                )
+                                / 2,
+                                prime_vertical_longitude=(
+                                    primary_planet.prime_vertical_longitude
+                                    + secondary_planet.prime_vertical_longitude
+                                )
+                                / 2,
+                                right_ascension=(
+                                    primary_planet.right_ascension
+                                    + secondary_planet.right_ascension
+                                )
+                                / 2,
+                            )
+                        )
+        return halfsums
 
     @abstractmethod
     def draw_chart(

@@ -6,7 +6,7 @@ from typing import Iterator, TypeVar
 from src import log_error, swe
 from src.constants import PLANETS
 from src.models.angles import ForegroundAngles, NonForegroundAngles
-from src.utils.chart_utils import convert_house_to_pvl, fmt_dm
+from src.utils.chart_utils import convert_house_to_pvl, fmt_dm, fmt_minutes
 from src.utils.format_utils import to360
 
 T = TypeVar('T', bound='ChartObject')
@@ -72,7 +72,7 @@ class PlanetData:
     treat_as_foreground: bool = False
     role: ChartWheelRole = ChartWheelRole.NATAL
     angle: ForegroundAngles | NonForegroundAngles = NonForegroundAngles.BLANK
-    all_angles_planet_is_on: list[ForegroundAngles | NonForegroundAngles] = []
+    all_angles_contacted: list[ForegroundAngles | NonForegroundAngles] = []
     prime_vertical_angle: NonForegroundAngles = NonForegroundAngles.BLANK
 
     __prime_vertical_angles = [
@@ -557,3 +557,40 @@ class Aspect:
             )
 
         return False
+
+
+@dataclass
+class HalfSum:
+    point_a: str = ''
+    point_b: str = ''
+    point_a_role: ChartWheelRole = ChartWheelRole.NATAL
+    point_b_role: ChartWheelRole = ChartWheelRole.NATAL
+    longitude: float = 0
+    prime_vertical_longitude: float = 0
+    right_ascension: float = 0
+
+    def __str__(self):
+        return f'{self.point_a_role.value}{self.point_a}/{self.point_b_role.value}{self.point_b}'
+
+
+class MidpointAspectType(Enum):
+    DIRECT = 'd'
+    INDIRECT = 'i'
+
+
+@dataclass
+class MidpointAspect:
+    midpoint_type: MidpointAspectType = MidpointAspectType.DIRECT
+    orb: float = 0
+    framework: AspectFramework = AspectFramework.ECLIPTICAL
+    from_point: str = ''
+    to_midpoint: HalfSum = None
+    from_point_role: ChartWheelRole = ''
+
+    def format_for_cosmic_state(self):
+        framework_suffix = (
+            f' {self.framework.value}'
+            if self.framework.value != AspectFramework.ECLIPTICAL.value
+            else ''
+        )
+        return f"{self.to_midpoint} {fmt_minutes(self.orb)}'{self.midpoint_type.value}{framework_suffix}"
