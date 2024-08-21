@@ -49,9 +49,9 @@ class CoreChart(object, metaclass=ABCMeta):
         if (
             len(charts) == 1
             and charts[0].type == chart_models.ChartType.NATAL
-            and self.options.enable_natal_midpoints
+            # and self.options.enable_natal_midpoints
         ):
-            self.halfsums = self.calc_halfsums(self.charts)
+            self.halfsums = self.calc_halfsums()
 
         for chart in self.charts:
             for (
@@ -132,24 +132,26 @@ class CoreChart(object, metaclass=ABCMeta):
                     )
             house.sort(key=lambda h: h[1])
 
-        return self.spread_planets_within_house(house, 0, len(charts))
+        return self.spread_planets_within_house(house, 0)
 
     def spread_planets_within_house(
-        self, old, start=0, number_of_charts: int = 1
+        self,
+        house_info,
+        start=0,
     ):
         new = [[] for _ in range(15)]
         placed = 0
-        for i in range(len(old)):
-            x = int(old[i][-(number_of_charts)]) + start
-            limit = 15 - len(old) + placed
-            if x > limit:
-                x = limit
+        for i in range(len(house_info)):
+            zero_indexed_house = int(house_info[i][-2]) + start
+            limit = 15 - len(house_info) + placed
+            if zero_indexed_house > limit:
+                zero_indexed_house = limit
             while True:
-                if len(new[x]):
-                    x += 1
+                if len(new[zero_indexed_house]):
+                    zero_indexed_house += 1
                 else:
                     break
-            new[x] = old[i]
+            new[zero_indexed_house] = house_info[i]
             placed += 1
         return new
 
@@ -1013,6 +1015,7 @@ class CoreChart(object, metaclass=ABCMeta):
         chartfile: TextIOWrapper,
         chart: chart_models.ChartObject,
     ):
+        whole_chart_is_dormant = True
         angularity_options = self.options.angularity
         for planet_name, _ in chart.iterate_points(self.options):
             planet_data = chart.planets[planet_name]
@@ -1325,15 +1328,13 @@ class CoreChart(object, metaclass=ABCMeta):
                             ] = midpoint
         return midpoints
 
-    # TODO - include angles in this
     def calc_halfsums(self):
         halfsums = []
-        for (from_index, from_chart) in enumerate(self.charts):
-            for to_index in range(from_index, len(self.charts)):
-                to_chart = self.charts[to_index]
+        for from_chart in self.charts:
+            for to_chart in self.charts:
                 for (
                     primary_index,
-                    (primary_planet_long_name, _),
+                    (primary_point_name, primary_point),
                 ) in enumerate(
                     from_chart.iterate_points(
                         self.options, include_angles=True
@@ -1341,7 +1342,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 ):
                     for (
                         secondary_index,
-                        (secondary_planet_long_name, _),
+                        (secondary_point_name, secondary_point),
                     ) in enumerate(
                         to_chart.iterate_points(
                             self.options, include_angles=True
@@ -1352,35 +1353,51 @@ class CoreChart(object, metaclass=ABCMeta):
                             and from_chart == to_chart
                         ):
                             continue
-
-                        primary_planet = from_chart.planets[
-                            primary_planet_long_name
-                        ]
-                        secondary_planet = to_chart.planets[
-                            secondary_planet_long_name
-                        ]
+                        primary_point_is_angle = (
+                            primary_point_name in constants.ANGLE_ABBREVIATIONS
+                        )
+                        secondary_point_is_angle = (
+                            secondary_point_name
+                            in constants.ANGLE_ABBREVIATIONS
+                        )
+                        if primary_point_is_angle and secondary_point_is_angle:
+                            continue
+                        elif (
+                            primary_point_is_angle or secondary_point_is_angle
+                        ):
+                            longitude = (
+                                primary_point.longitude
+                                if secondary_point_is_angle
+                                else primary_point + secondary_point.longitude
+                                if primary_point_is_angle
+                                else secondary_point
+                            ) / 2
+                            prime_vertical_longitude = 0
+                            right_ascension = 0
+                        else:
+                            longitude = (
+                                primary_point.longitude
+                                + secondary_point.longitude
+                            ) / 2
+                            prime_vertical_longitude = (
+                                primary_point.prime_vertical_longitude
+                                + secondary_point.prime_vertical_longitude
+                            ) / 2
+                            right_ascension = (
+                                primary_point.right_ascension
+                                + secondary_point.right_ascension
+                            ) / 2
 
                         halfsums.append(
                             chart_models.HalfSum(
-                                point_a=primary_planet,
-                                point_b=secondary_planet,
-                                longitude=(
-                                    primary_planet.longitude
-                                    + secondary_planet.longitude
-                                )
-                                / 2,
-                                prime_vertical_longitude=(
-                                    primary_planet.prime_vertical_longitude
-                                    + secondary_planet.prime_vertical_longitude
-                                )
-                                / 2,
-                                right_ascension=(
-                                    primary_planet.right_ascension
-                                    + secondary_planet.right_ascension
-                                )
-                                / 2,
+                                point_a=primary_point_name,
+                                point_b=secondary_point_name,
+                                longitude=longitude,
+                                prime_vertical_longitude=prime_vertical_longitude,
+                                right_ascension=right_ascension,
                             )
                         )
+
         return halfsums
 
     @abstractmethod

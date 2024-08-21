@@ -38,6 +38,11 @@ LABEL_X_COORD = 0
 LABEL_WIDTH = 1
 LABEL_HEIGHT_UNIT = 0.022
 
+ANGLE_ABBREVIATIONS = [
+    'As',
+    'Mc',
+]
+
 MONTHS = [
     'Jan',
     'Feb',

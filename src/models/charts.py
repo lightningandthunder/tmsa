@@ -170,9 +170,6 @@ class PlanetData:
     def name_with_role(self):
         return f'{self.role.value}{self.short_name}'
 
-    def __str__(self):
-        return self.name
-
 
 @dataclass
 class ChartType(Enum):
@@ -347,7 +344,7 @@ class ChartObject:
         iterator = (
             self.planets.items()
             if not include_angles
-            else itertools.chain(self.planets.items(), self.cusps.items())
+            else itertools.chain(self.planets.items(), enumerate(self.cusps))
         )
         for point, data in iterator:
             if (
@@ -367,13 +364,13 @@ class ChartObject:
             ):
                 continue
 
-            if point == '1':
+            elif point == 1:
                 yield 'As', data
 
-            elif point == '10':
+            elif point == 10:
                 yield 'Mc', data
 
-            elif point in ['2', '3', '4', '5', '6', '7', '8', '9', '11', '12']:
+            elif type(point) == int:
                 continue
 
             else:

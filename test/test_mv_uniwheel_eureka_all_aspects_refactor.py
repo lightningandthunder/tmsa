@@ -34,6 +34,8 @@ class TestUniwheelDisplay:
         )
 
         lines = mockfile.file.split('\n')
+        for index, line in enumerate(lines):
+            print(f'{index: <3}: {line}')
 
         return lines
 
