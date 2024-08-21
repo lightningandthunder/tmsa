@@ -57,7 +57,7 @@ class CoreChart(object, metaclass=ABCMeta):
             for (
                 planet_name,
                 _,
-            ) in chart_utils.iterate_allowed_planets(self.options):
+            ) in chart.iterate_points(self.options):
                 chart.planets[planet_name].role = chart.role
 
                 if planet_name == 'Moon' and (
@@ -122,7 +122,7 @@ class CoreChart(object, metaclass=ABCMeta):
             for (
                 planet_name,
                 planet_data,
-            ) in chart_utils.iterate_allowed_planets(self.options):
+            ) in chart.iterate_points(self.options):
 
                 planet_data = chart.planets[planet_name]
                 if planet_data.house // 30 == index:
@@ -818,15 +818,11 @@ class CoreChart(object, metaclass=ABCMeta):
                 for (
                     primary_index,
                     (primary_planet_long_name, _),
-                ) in enumerate(
-                    chart_utils.iterate_allowed_planets(self.options)
-                ):
+                ) in enumerate(from_chart.iterate_points(self.options)):
                     for (
                         secondary_index,
                         (secondary_planet_long_name, _),
-                    ) in enumerate(
-                        chart_utils.iterate_allowed_planets(self.options)
-                    ):
+                    ) in enumerate(to_chart.iterate_points(self.options)):
                         if (
                             secondary_index <= primary_index
                             and from_chart == to_chart
@@ -1018,9 +1014,7 @@ class CoreChart(object, metaclass=ABCMeta):
         chart: chart_models.ChartObject,
     ):
         angularity_options = self.options.angularity
-        for planet_name, _ in chart_utils.iterate_allowed_planets(
-            self.options
-        ):
+        for planet_name, _ in chart.iterate_points(self.options):
             planet_data = chart.planets[planet_name]
 
             chartfile.write(chart_utils.left_align(planet_data.short_name, 3))
@@ -1153,11 +1147,10 @@ class CoreChart(object, metaclass=ABCMeta):
                 int(chart.planets['Sun'].longitude // 30)
             ]
 
-            for index, (planet_name, planet_info) in enumerate(
-                chart_utils.iterate_allowed_planets(self.options)
+            for index, (_, planet_data) in enumerate(
+                chart.iterate_points(self.options)
             ):
-                planet_short_name = planet_info['short_name']
-                planet_data = chart.planets[planet_name]
+                planet_short_name = planet_data.short_name
 
                 if index != 0:
                     chartfile.write('\n')
@@ -1274,8 +1267,9 @@ class CoreChart(object, metaclass=ABCMeta):
             else chart_models.MidpointAspectType.INDIRECT
         )
         for chart in self.charts:
-            for (planet_name, _) in chart_utils.iterate_allowed_planets(
-                self.options
+            for (planet_name, _) in chart.iterate_points(
+                self.options,
+                include_angles=True,
             ):
                 planet = chart.planets[planet_name]
                 for (
@@ -1341,13 +1335,17 @@ class CoreChart(object, metaclass=ABCMeta):
                     primary_index,
                     (primary_planet_long_name, _),
                 ) in enumerate(
-                    chart_utils.iterate_allowed_planets(self.options)
+                    from_chart.iterate_points(
+                        self.options, include_angles=True
+                    )
                 ):
                     for (
                         secondary_index,
                         (secondary_planet_long_name, _),
                     ) in enumerate(
-                        chart_utils.iterate_allowed_planets(self.options)
+                        to_chart.iterate_points(
+                            self.options, include_angles=True
+                        )
                     ):
                         if (
                             secondary_index <= primary_index

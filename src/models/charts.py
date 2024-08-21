@@ -1,11 +1,13 @@
+import itertools
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Iterator, TypeVar
 
 from src import log_error, swe
 from src.constants import PLANETS
 from src.models.angles import ForegroundAngles, NonForegroundAngles
+from src.models.options import NodeTypes, Options
 from src.utils.chart_utils import convert_house_to_pvl, fmt_dm, fmt_minutes
 from src.utils.format_utils import to360
 
@@ -72,7 +74,9 @@ class PlanetData:
     treat_as_foreground: bool = False
     role: ChartWheelRole = ChartWheelRole.NATAL
     angle: ForegroundAngles | NonForegroundAngles = NonForegroundAngles.BLANK
-    all_angles_contacted: list[ForegroundAngles | NonForegroundAngles] = []
+    all_angles_contacted: list[ForegroundAngles | NonForegroundAngles] = field(
+        default_factory=lambda: []
+    )
     prime_vertical_angle: NonForegroundAngles = NonForegroundAngles.BLANK
 
     __prime_vertical_angles = [
@@ -336,6 +340,44 @@ class ChartObject:
         self.angles = angles
 
         self.notes = data.get('notes', None)
+
+    def iterate_points(
+        self, options: Options, include_angles: bool = False
+    ) -> Iterator[tuple[str, dict[str, any]]]:
+        iterator = (
+            self.planets.items()
+            if not include_angles
+            else itertools.chain(self.planets.items(), self.cusps.items())
+        )
+        for point, data in iterator:
+            if (
+                hasattr(data, 'number')
+                and data.number > 11
+                and data.short_name not in options.extra_bodies
+            ):
+                continue
+            elif (
+                point == 'True Node'
+                and options.node_type.value != NodeTypes.TRUE_NODE.value
+            ):
+                continue
+            elif (
+                point == 'Mean Node'
+                and options.node_type.value != NodeTypes.MEAN_NODE.value
+            ):
+                continue
+
+            if point == '1':
+                yield 'As', data
+
+            elif point == '10':
+                yield 'Mc', data
+
+            elif point in ['2', '3', '4', '5', '6', '7', '8', '9', '11', '12']:
+                continue
+
+            else:
+                yield point, data
 
     @staticmethod
     def from_file(file_path: str):

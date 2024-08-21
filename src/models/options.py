@@ -123,9 +123,13 @@ class Options:
         else:
             if 'midpoints' in data:
                 for key in data['midpoints']:
+                    maybe_number = data['midpoints'][key]
+                    if isinstance(maybe_number, int) and maybe_number > 0:
+                        self.enable_natal_midpoints = True
+                        break
                     if (
-                        data['midpoints'][key].isnumeric()
-                        and data['midpoints'][key] > 0
+                        isinstance(maybe_number, str)
+                        and maybe_number.isnumeric()
                     ):
                         self.enable_natal_midpoints = True
                         break
