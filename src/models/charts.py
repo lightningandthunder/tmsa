@@ -608,6 +608,9 @@ class HalfSum:
     prime_vertical_longitude: float = 0
     right_ascension: float = 0
 
+    def contains(self, planet_name: str) -> bool:
+        return self.point_a == planet_name or self.point_b == planet_name
+
     def __str__(self):
         return f'{self.point_a_role.value}{self.point_a}/{self.point_b_role.value}{self.point_b}'
 
@@ -620,16 +623,16 @@ class MidpointAspectType(Enum):
 @dataclass
 class MidpointAspect:
     midpoint_type: MidpointAspectType = MidpointAspectType.DIRECT
-    orb: float = 0
+    orb_minutes: int = 0
     framework: AspectFramework = AspectFramework.ECLIPTICAL
     from_point: str = ''
     to_midpoint: HalfSum = None
     from_point_role: ChartWheelRole = ''
 
-    def format_for_cosmic_state(self):
+    def __str__(self):
         framework_suffix = (
             f' {self.framework.value}'
             if self.framework.value != AspectFramework.ECLIPTICAL.value
             else ''
         )
-        return f"{self.to_midpoint} {fmt_minutes(self.orb)}'{self.midpoint_type.value}{framework_suffix}"
+        return f"{self.to_midpoint} {self.orb_minutes}'{self.midpoint_type.value}{framework_suffix}"

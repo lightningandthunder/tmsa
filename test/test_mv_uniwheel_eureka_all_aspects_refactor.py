@@ -34,8 +34,6 @@ class TestUniwheelDisplay:
         )
 
         lines = mockfile.file.split('\n')
-        for index, line in enumerate(lines):
-            print(f'{index: <3}: {line}')
 
         return lines
 
@@ -45,6 +43,9 @@ class TestUniwheelDisplay:
         lines = self.init_test(
             monkeypatch, base_chart, natal_options, mock_tk_main
         )
+
+        # for index, line in enumerate(lines):
+        #     print(f'{index: <3}: {line}')
 
         assert_line_contains(lines[22], base_chart['name'], any_position=True)
         assert_line_contains(lines[24], base_chart['type'], any_position=True)

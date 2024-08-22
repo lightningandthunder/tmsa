@@ -1121,6 +1121,10 @@ class CoreChart(object, metaclass=ABCMeta):
         chartfile.write(
             chart_utils.center_align('Cosmic State', self.table_width) + '\n'
         )
+        
+        midpoints = {}
+        if self.options.enable_natal_midpoints:
+            midpoints = self.calc_midpoints()
 
         # Iterate from transiting chart to radix
         for (index, chart) in enumerate(self.charts):
@@ -1270,13 +1274,12 @@ class CoreChart(object, metaclass=ABCMeta):
             else chart_models.MidpointAspectType.INDIRECT
         )
         for chart in self.charts:
-            for (planet_name, _) in chart.iterate_points(
+            for (point_name, point) in chart.iterate_points(
                 self.options,
                 include_angles=True,
             ):
-                planet = chart.planets[planet_name]
                 for (
-                    aspect_type,
+                    _,
                     aspect_degrees,
                 ) in chart_models.AspectType.iterate():
                     max_orb = None
@@ -1294,15 +1297,12 @@ class CoreChart(object, metaclass=ABCMeta):
                         ]
                     else:
                         continue
-
                     for halfsum in self.halfsums:
-                        raw_orb = abs(halfsum.longitude - planet.longitude)
-
-                        if (
-                            max_orb is not None
-                            and raw_orb <= max_orb + aspect_degrees
-                            and raw_orb >= aspect_degrees - max_orb
-                        ):
+                        if halfsum.contains(point.name if hasattr(point, 'name') else point_name):
+                            continue
+                        point_longitude = point.longitude if hasattr(point, 'longitude') else point
+                        raw_orb = abs(abs(halfsum.longitude - point_longitude) - aspect_degrees) * 60
+                        if raw_orb <= max_orb:
                             midpoint_direction = None
                             if aspect_degrees in [0, 180]:
                                 midpoint_direction = (
@@ -1316,16 +1316,27 @@ class CoreChart(object, metaclass=ABCMeta):
                                 midpoint_direction = square_direction
                             midpoint = chart_models.MidpointAspect(
                                 midpoint_type=midpoint_direction,
-                                orb=abs(raw_orb - aspect_degrees),
+                                orb_minutes=int(round(raw_orb, 0)),
                                 framework=chart_models.AspectFramework.ECLIPTICAL,
-                                from_point=planet,
-                                to_midpoint=halfsum,
-                                from_point_role=planet.role,
+                                from_point=point_name,
+                                to_midpoint=str(halfsum),
+                                from_point_role=chart.role,
                             )
-
-                            self.midpoints[
-                                f'{planet.role.value}{planet.short_name}'
-                            ] = midpoint
+                            midpoint_name = f'{chart.role.value}{point_name}'
+                            if midpoint_name not in midpoints:
+                                midpoints[midpoint_name] = [midpoint]
+                            else:
+                                midpoints[midpoint_name].append(midpoint)
+                                # make sure it stays sorted
+                                # for index, existing_midpoint in enumerate(midpoints[midpoint_name]):
+                                #     if existing_midpoint.orb_minutes < midpoint.orb_minutes:
+                                #         continue
+                                #     midpoints[midpoint_name].insert(index, midpoint)
+                                #     break
+                                    
+        for k, v in midpoints.items():
+            for m in v:
+                print(k, m)
         return midpoints
 
     def calc_halfsums(self):
