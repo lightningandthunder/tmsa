@@ -8,6 +8,7 @@
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
 from abc import ABCMeta, abstractmethod
+import bisect
 import copy
 from io import TextIOWrapper
 
@@ -16,6 +17,7 @@ import src.models.charts as chart_models
 import src.models.options as option_models
 import src.constants as constants
 import src.utils.chart_utils as chart_utils
+from src.utils.format_utils import to360
 from src.utils.os_utils import open_file
 import tkinter.messagebox as tkmessagebox
 from datetime import datetime
@@ -1121,7 +1123,7 @@ class CoreChart(object, metaclass=ABCMeta):
         chartfile.write(
             chart_utils.center_align('Cosmic State', self.table_width) + '\n'
         )
-        
+
         midpoints = {}
         if self.options.enable_natal_midpoints:
             midpoints = self.calc_midpoints()
@@ -1287,9 +1289,14 @@ class CoreChart(object, metaclass=ABCMeta):
 
                     # If the aspect is a sesquisquare, we need to use the orb for semisquare,
                     # as it's the only orb in options
-                    aspect_degrees_for_options = (
-                        45 if aspect_degrees == 135 else aspect_degrees
-                    )
+                    aspect_degrees_for_options = None
+                    if aspect_degrees == 135:
+                        # We handle all 45° multiples at once
+                        continue
+                    elif aspect_degrees == 180:
+                        aspect_degrees_for_options = 0
+                    else:
+                        aspect_degrees_for_options = aspect_degrees
 
                     if str(aspect_degrees_for_options) in midpoint_orbs:
                         max_orb = self.options.midpoints[
@@ -1298,10 +1305,43 @@ class CoreChart(object, metaclass=ABCMeta):
                     else:
                         continue
                     for halfsum in self.halfsums:
-                        if halfsum.contains(point.name if hasattr(point, 'name') else point_name):
+                        if halfsum.contains(
+                            point.name
+                            if hasattr(point, 'name')
+                            else point_name
+                        ):
                             continue
-                        point_longitude = point.longitude if hasattr(point, 'longitude') else point
-                        raw_orb = abs(abs(halfsum.longitude - point_longitude) - aspect_degrees) * 60
+                        point_longitude = (
+                            point.longitude
+                            if hasattr(point, 'longitude')
+                            else point
+                        )
+                        if aspect_degrees == 45:
+                            raw_orb_0 = abs(
+                                halfsum.longitude - point_longitude
+                            )
+                            raw_orb_45 = abs(raw_orb_0 - 45)
+                            raw_orb_135 = abs(raw_orb_0 - 135)
+                            raw_orb_225 = abs(raw_orb_0 - 225)
+                            raw_orb_315 = abs(raw_orb_0 - 315)
+                            raw_orb = (
+                                min(
+                                    raw_orb_45,
+                                    raw_orb_135,
+                                    raw_orb_225,
+                                    raw_orb_315,
+                                )
+                                * 60
+                            )
+                        else:
+                            raw_orb = (
+                                abs(
+                                    abs(halfsum.longitude - point_longitude)
+                                    - aspect_degrees
+                                )
+                                * 60
+                            )
+
                         if raw_orb <= max_orb:
                             midpoint_direction = None
                             if aspect_degrees in [0, 180]:
@@ -1326,15 +1366,15 @@ class CoreChart(object, metaclass=ABCMeta):
                             if midpoint_name not in midpoints:
                                 midpoints[midpoint_name] = [midpoint]
                             else:
-                                midpoints[midpoint_name].append(midpoint)
                                 # make sure it stays sorted
-                                # for index, existing_midpoint in enumerate(midpoints[midpoint_name]):
-                                #     if existing_midpoint.orb_minutes < midpoint.orb_minutes:
-                                #         continue
-                                #     midpoints[midpoint_name].insert(index, midpoint)
-                                #     break
-                                    
+                                bisect.insort(
+                                    midpoints[midpoint_name],
+                                    midpoint,
+                                    key=lambda x: x.orb_minutes,
+                                )
+
         for k, v in midpoints.items():
+            print(k)
             for m in v:
                 print(k, m)
         return midpoints
@@ -1377,11 +1417,16 @@ class CoreChart(object, metaclass=ABCMeta):
                             primary_point_is_angle or secondary_point_is_angle
                         ):
                             longitude = (
-                                primary_point.longitude
-                                if secondary_point_is_angle
-                                else primary_point + secondary_point.longitude
-                                if primary_point_is_angle
-                                else secondary_point
+                                (
+                                    primary_point.longitude
+                                    if secondary_point_is_angle
+                                    else primary_point
+                                )
+                                + (
+                                    secondary_point.longitude
+                                    if primary_point_is_angle
+                                    else secondary_point
+                                )
                             ) / 2
                             prime_vertical_longitude = 0
                             right_ascension = 0

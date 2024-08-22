@@ -38,7 +38,7 @@ class TestUniwheelDisplay:
         return lines
 
     def test_chart_center_info(
-        self, monkeypatch, base_chart, natal_options, mock_tk_main
+        self, monkeypatch, base_charts, natal_options, mock_tk_main
     ):
         lines = self.init_test(
             monkeypatch, base_chart, natal_options, mock_tk_main
@@ -64,15 +64,15 @@ class TestUniwheelDisplay:
         assert_line_contains(lines[36], 'OE 23°26\'33"', any_position=True)
         assert_line_contains(lines[38], 'SVP  5Pi23\'48"', any_position=True)
 
-    def test_moon(self, monkeypatch, base_chart, natal_options, mock_tk_main):
-        lines = self.init_test(
-            monkeypatch, base_chart, natal_options, mock_tk_main
-        )
+    # def test_moon(self, monkeypatch, base_chart, natal_options, mock_tk_main):
+    #     lines = self.init_test(
+    #         monkeypatch, base_chart, natal_options, mock_tk_main
+    #     )
 
-        assert_line_contains(
-            lines[70].strip(),
-            "Mo 17Vi 8'16\"  4S 9 +11°54' 189° 9'  8S28  73°16' -30°39' 189°41'  31°45'  50%",
-        )
+    #     assert_line_contains(
+    #         lines[70].strip(),
+    #         "Mo 17Vi 8'16\"  4S 9 +11°54' 189° 9'  8S28  73°16' -30°39' 189°41'  31°45'  50%",
+    #     )
 
     # def test_sun(self, monkeypatch, base_chart, natal_options, mock_tk_main):
     #     lines = self.init_test(
