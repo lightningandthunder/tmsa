@@ -1,4 +1,4 @@
-DEFAULT_NATAL = {
+NATAL_DEFAULT = {
     'use_Eris': 1,
     'use_Sedna': 0,
     'use_Vertex': 1,
@@ -28,15 +28,15 @@ DEFAULT_NATAL = {
     },
     'midpoints': {'0': 0, '90': 0, '45': 0, 'M': 0, 'is90': 'd'},
     'pvp_aspects': {
-        '0': [3.0, 0, 0],
-        '180': [3.0, 0, 0],
-        '90': [3.0, 0, 0],
+        'enabled': False,
+        '0': [1.25, 2.0, 3.0],
+        '180': [1.25, 2.0, 3.0],
+        '90': [1.25, 2.0, 3.0],
     },
-    'allow_pvp_aspects': False,
     'extra_bodies': ['Er'],
 }
 
-DEFAULT_RETURN = {
+RETURN_DEFAULT = {
     'use_Eris': 1,
     'use_Sedna': 0,
     'use_Vertex': 0,
@@ -66,15 +66,15 @@ DEFAULT_RETURN = {
     },
     'midpoints': {'0': 0, '90': 0, '45': 0, 'M': 0, 'is90': 'd'},
     'pvp_aspects': {
-        '0': [3.0, 0, 0],
-        '180': [3.0, 0, 0],
-        '90': [3.0, 0, 0],
+        'enabled': False,
+        '0': [1.25, 2.0, 3.0],
+        '180': [1.25, 2.0, 3.0],
+        '90': [1.25, 2.0, 3.0],
     },
-    'allow_pvp_aspects': False,
     'extra_bodies': ['Er'],
 }
 
-DEFAULT_INGRESS = {
+INGRESS_DEFAULT = {
     'use_Eris': 1,
     'use_Sedna': 0,
     'use_Vertex': 0,
@@ -104,11 +104,11 @@ DEFAULT_INGRESS = {
     },
     'midpoints': {'0': 0, '90': 0, '45': 0, 'M': 60, 'is90': 'd'},
     'pvp_aspects': {
-        '0': [3.0, 0, 0],
-        '180': [3.0, 0, 0],
-        '90': [3.0, 0, 0],
+        'enabled': False,
+        '0': [1.25, 2.0, 3.0],
+        '180': [1.25, 2.0, 3.0],
+        '90': [1.25, 2.0, 3.0],
     },
-    'allow_pvp_aspects': False,
     'extra_bodies': ['Er'],
 }
 
@@ -142,11 +142,11 @@ COSMOBIOLOGY = {
     },
     'midpoints': {'0': 60, '90': 60, '45': 60, 'M': 0, 'is90': 'i'},
     'pvp_aspects': {
-        '0': [3.0, 0, 0],
-        '180': [3.0, 0, 0],
-        '90': [3.0, 0, 0],
+        'enabled': False,
+        '0': [1.25, 2.0, 3.0],
+        '180': [1.25, 2.0, 3.0],
+        '90': [1.25, 2.0, 3.0],
     },
-    'allow_pvp_aspects': False,
     'extra_bodies': ['Er'],
 }
 
@@ -180,10 +180,10 @@ STUDENT_NATAL = {
     },
     'midpoints': {'0': 0, '90': 0, '45': 0, 'M': 0, 'is90': 'd'},
     'pvp_aspects': {
-        '0': [3.0, 0, 0],
-        '180': [3.0, 0, 0],
-        '90': [3.0, 0, 0],
+        'enabled': False,
+        '0': [1.25, 2.0, 3.0],
+        '180': [1.25, 2.0, 3.0],
+        '90': [1.25, 2.0, 3.0],
     },
-    'allow_pvp_aspects': False,
     'extra_bodies': [],
 }

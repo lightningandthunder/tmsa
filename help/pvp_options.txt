@@ -1,0 +1,16 @@
+PVP OPTIONS PAGE
+
+Prime Vertical Parans are aspects between a planet closely on the prime vertical 
+(i.e. closely on Vertex or Antivertex), and a planet that is either also on the
+prime vertical, or is on the horizon or meridian.
+Aspects between planets on the prime vertical are measured in azimuth; these are
+conjunctions if both planets are on Vertex or both on Antivertex, and these are
+oppositions if one is on Vertex and the other is on Antivertex.
+Aspects between a planet on Vertex or Antivertex and one on the meridian are
+squares that are also measured in azimuth.
+Aspects between a planet on Vertex or Antivertex and one on the horizon are 
+squares that are measured in meridian longitude.
+
+You can set maximum orbs for these aspects in 3 classes. Omit a class boundary
+by leaving that entry blank. You can separately enable or disable PVP aspects
+without needing to change your orbs by using the checkbox near the bottom.

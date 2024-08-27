@@ -17,7 +17,6 @@ import src.models.charts as chart_models
 import src.models.options as option_models
 import src.constants as constants
 import src.utils.chart_utils as chart_utils
-from src.utils.format_utils import to360
 from src.utils.os_utils import open_file
 import tkinter.messagebox as tkmessagebox
 from datetime import datetime
@@ -71,12 +70,12 @@ class CoreChart(object, metaclass=ABCMeta):
 
         self.try_precess_charts()
 
-        filename = chart_utils.make_chart_path(
+        self.filename = chart_utils.make_chart_path(
             self.find_outermost_chart(), temporary
         )
-        filename = filename[0:-3] + 'txt'
+        self.filename = self.filename[0:-3] + 'txt'
         try:
-            chartfile = open(filename, 'w')
+            chartfile = open(self.filename, 'w')
         except Exception as e:
             tkmessagebox.showerror(f'Unable to open file:', f'{e}')
             return
@@ -522,9 +521,10 @@ class CoreChart(object, metaclass=ABCMeta):
     def calc_angle_and_strength(
         self,
         planet: chart_models.PlanetData,
-        chart: chart_models.ChartObject,
     ) -> tuple[angles_models.ForegroundAngles, float, bool, bool]:
         # I should be able to rewrite this mostly using self. variables
+
+        chart = self.find_outermost_chart()
 
         angularity_options = self.options.angularity
 
@@ -1081,10 +1081,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 strength_percent,
                 planet_negates_dormancy,
                 is_mundanely_background,
-            ) = self.calc_angle_and_strength(
-                planet_data,
-                chart,
-            )
+            ) = self.calc_angle_and_strength(planet_data)
 
             if planet_negates_dormancy:
                 whole_chart_is_dormant = False
@@ -1263,9 +1260,6 @@ class CoreChart(object, metaclass=ABCMeta):
             return 'SR' if 'solar' in t else 'LR'
         return 'N'
 
-    # TODO - also calculate mundane midpoints,
-    # and use the closer of the two orbs.
-    # Also, include angles in these.
     def calc_midpoints(self):
         midpoints = {}
 
@@ -1372,6 +1366,102 @@ class CoreChart(object, metaclass=ABCMeta):
                                     midpoint,
                                     key=lambda x: x.orb_minutes,
                                 )
+
+        return midpoints
+
+    def calc_mundane_midpoints(self):
+        midpoints = {}
+
+        midpoint_orbs = self.options.midpoints.get('mundane', 0)
+        if midpoint_orbs == 0:
+            return midpoints
+
+        for (
+            _,
+            aspect_degrees,
+        ) in chart_models.AspectType.iterate():
+            max_orb = None
+            raw_orb = None
+
+            # If the aspect is a sesquisquare, we need to use the orb for semisquare,
+            # as it's the only orb in options
+            aspect_degrees_for_options = None
+            if aspect_degrees == 135:
+                # We handle all 45° multiples at once
+                continue
+            elif aspect_degrees == 180:
+                aspect_degrees_for_options = 0
+            else:
+                aspect_degrees_for_options = aspect_degrees
+
+            if str(aspect_degrees_for_options) in midpoint_orbs:
+                max_orb = self.options.midpoints[
+                    str(aspect_degrees_for_options)
+                ]
+            else:
+                continue
+            for halfsum in self.halfsums:
+                if halfsum.contains(
+                    point.name if hasattr(point, 'name') else point_name
+                ):
+                    continue
+                point_longitude = (
+                    point.longitude if hasattr(point, 'longitude') else point
+                )
+                if aspect_degrees == 45:
+                    raw_orb_0 = abs(halfsum.longitude - point_longitude)
+                    raw_orb_45 = abs(raw_orb_0 - 45)
+                    raw_orb_135 = abs(raw_orb_0 - 135)
+                    raw_orb_225 = abs(raw_orb_0 - 225)
+                    raw_orb_315 = abs(raw_orb_0 - 315)
+                    raw_orb = (
+                        min(
+                            raw_orb_45,
+                            raw_orb_135,
+                            raw_orb_225,
+                            raw_orb_315,
+                        )
+                        * 60
+                    )
+                else:
+                    raw_orb = (
+                        abs(
+                            abs(halfsum.longitude - point_longitude)
+                            - aspect_degrees
+                        )
+                        * 60
+                    )
+
+                if raw_orb <= max_orb:
+                    midpoint_direction = None
+                    if aspect_degrees in [0, 180]:
+                        midpoint_direction = (
+                            chart_models.MidpointAspectType.DIRECT
+                        )
+                    if aspect_degrees in [45, 135]:
+                        midpoint_direction = (
+                            chart_models.MidpointAspectType.INDIRECT
+                        )
+                    else:
+                        midpoint_direction = square_direction
+                    midpoint = chart_models.MidpointAspect(
+                        midpoint_type=midpoint_direction,
+                        orb_minutes=int(round(raw_orb, 0)),
+                        framework=chart_models.AspectFramework.ECLIPTICAL,
+                        from_point=point_name,
+                        to_midpoint=str(halfsum),
+                        from_point_role=chart.role,
+                    )
+                    midpoint_name = f'{chart.role.value}{point_name}'
+                    if midpoint_name not in midpoints:
+                        midpoints[midpoint_name] = [midpoint]
+                    else:
+                        # make sure it stays sorted
+                        bisect.insort(
+                            midpoints[midpoint_name],
+                            midpoint,
+                            key=lambda x: x.orb_minutes,
+                        )
 
         for k, v in midpoints.items():
             print(k)

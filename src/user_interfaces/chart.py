@@ -8,9 +8,11 @@
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
 from src import *
+from src.models.charts import ChartObject, ChartWheelRole
+from src.models.options import Options
 from src.swe import *
-from src.user_interfaces.biwheelV2 import BiwheelV2
-from src.user_interfaces.uniwheelV2 import UniwheelV2
+from src.user_interfaces.biwheelV3 import BiwheelV3
+from src.user_interfaces.uniwheelV3 import UniwheelV3
 from src.user_interfaces.widgets import *
 from src.utils.chart_utils import make_chart_path
 from src.utils.format_utils import to360
@@ -144,35 +146,41 @@ class Chart:
                     json.dump(recent, datafile, indent=4)
             except Exception:
                 pass
+
+        options = Options(options)
         if chart.get('base_chart', None):
-            self.precess(chart['base_chart'])
-            self.report = BiwheelV2(chart, temporary, options)
+            return_chart = ChartObject(chart).with_role(ChartWheelRole.TRANSIT)
+            radix = ChartObject(chart['base_chart']).with_role(
+                ChartWheelRole.RADIX
+            )
+            self.report = BiwheelV3([return_chart, radix], temporary, options)
         else:
-            self.report = UniwheelV2(chart, temporary, options)
+            single_chart = ChartObject(chart).with_role(ChartWheelRole.NATAL)
+            self.report = UniwheelV3([single_chart], temporary, options)
 
-    def precess(self, chart):
-        for planet_name in planet_names:
-            planet_data = chart[planet_name]
-            planet_data[3:5] = cotrans(
-                [planet_data[0] + self.ayan, planet_data[1], planet_data[2]],
-                self.oe,
-            )
-            planet_data[5:7] = calc_azimuth(
-                self.jd,
-                self.long,
-                self.lat,
-                to360(planet_data[0] + self.ayan),
-                planet_data[1],
-            )
-            planet_data[7] = calc_meridian_longitude(
-                planet_data[5], planet_data[6]
-            )
+    # def precess(self, chart):
+    #     for planet_name in planet_names:
+    #         planet_data = chart[planet_name]
+    #         planet_data[3:5] = cotrans(
+    #             [planet_data[0] + self.ayan, planet_data[1], planet_data[2]],
+    #             self.oe,
+    #         )
+    #         planet_data[5:7] = calc_azimuth(
+    #             self.jd,
+    #             self.long,
+    #             self.lat,
+    #             to360(planet_data[0] + self.ayan),
+    #             planet_data[1],
+    #         )
+    #         planet_data[7] = calc_meridian_longitude(
+    #             planet_data[5], planet_data[6]
+    #         )
 
-            planet_data[8] = calc_house_pos(
-                self.ramc,
-                self.lat,
-                self.oe,
-                to360(planet_data[0] + self.ayan),
-                planet_data[1],
-            )
-            chart[planet_name] = planet_data
+    #         planet_data[8] = calc_house_pos(
+    #             self.ramc,
+    #             self.lat,
+    #             self.oe,
+    #             to360(planet_data[0] + self.ayan),
+    #             planet_data[1],
+    #         )
+    #         chart[planet_name] = planet_data

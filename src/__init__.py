@@ -11,10 +11,18 @@ import json
 import os
 
 from src.constants import PLATFORM
+from src.defaults.option_defaults import (
+    COSMOBIOLOGY,
+    INGRESS_DEFAULT,
+    NATAL_DEFAULT,
+    RETURN_DEFAULT,
+    STUDENT_NATAL,
+)
 from src.utils.os_utils import (
     app_path,
     copy_file_if_not_exists,
     create_directory,
+    migrate_from_file,
     write_to_path,
 )
 
@@ -88,6 +96,7 @@ if PLATFORM == 'Win32GUI':
     OPTION_PATH = os.path.join(docpath, 'tmsa', 'options')
     os.makedirs(OPTION_PATH, exist_ok=True)
 
+
 elif PLATFORM in ['linux', 'darwin']:
     CHART_PATH = os.path.join(primary_directory, 'charts')
     create_directory(CHART_PATH)
@@ -104,26 +113,38 @@ elif PLATFORM in ['linux', 'darwin']:
     OPTION_PATH = os.path.join(primary_directory, 'options')
     create_directory(OPTION_PATH)
 
-    copy_file_if_not_exists(
-        os.path.join(OPTION_PATH, 'Default_Natal.opt'),
-        app_path(os.path.join('assets', 'Default_Natal.opt')),
-    )
-    copy_file_if_not_exists(
-        os.path.join(OPTION_PATH, 'Cosmobiology.opt'),
-        app_path(os.path.join('assets', 'Cosmobiology.opt')),
-    )
-    copy_file_if_not_exists(
-        os.path.join(OPTION_PATH, 'Default_Ingress.opt'),
-        app_path(os.path.join('assets', 'Default_Ingress.opt')),
-    )
-    copy_file_if_not_exists(
-        os.path.join(OPTION_PATH, 'Default_Return.opt'),
-        app_path(os.path.join('assets', 'Default_Return.opt')),
-    )
-    copy_file_if_not_exists(
-        os.path.join(OPTION_PATH, 'Student_Natal.opt'),
-        app_path(os.path.join('assets', 'Student_Natal.opt')),
-    )
+# Ensure all option file defaults exist.
+# This is the same for every OS.
+
+migrate_from_file(
+    old_path=os.path.join(OPTION_PATH, 'Default_Natal.opt'),
+    new_path=os.path.join(OPTION_PATH, 'Natal_Default.opt'),
+    fallback=NATAL_DEFAULT,
+)
+
+migrate_from_file(
+    old_path=os.path.join(OPTION_PATH, 'Default_Ingress.opt'),
+    new_path=os.path.join(OPTION_PATH, 'Ingress_Default.opt'),
+    fallback=INGRESS_DEFAULT,
+)
+
+migrate_from_file(
+    old_path=os.path.join(OPTION_PATH, 'Default_Return.opt'),
+    new_path=os.path.join(OPTION_PATH, 'Return_Default.opt'),
+    fallback=RETURN_DEFAULT,
+)
+
+migrate_from_file(
+    old_path=os.path.join(OPTION_PATH, 'Cosmobiology.opt'),
+    new_path=os.path.join(OPTION_PATH, 'Cosmobiology.opt'),
+    fallback=COSMOBIOLOGY,
+)
+
+migrate_from_file(
+    os.path.join(OPTION_PATH, 'Student_Natal.opt'),
+    os.path.join(OPTION_PATH, 'Student_Natal.opt'),
+    fallback=STUDENT_NATAL,
+)
 
 STUDENT_FILE = os.path.join(OPTION_PATH, 'student.json')
 

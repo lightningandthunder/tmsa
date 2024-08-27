@@ -16,6 +16,23 @@ def copy_file_if_not_exists(expected: str, src: str):
         shutil.copyfile(src, expected)
 
 
+def write_to_file_if_not_exists(path: str, text: str):
+    if not os.path.exists(path):
+        write_to_path(path, text)
+
+
+def migrate_from_file(old_path: str, new_path: str, fallback: str):
+    if not os.path.exists(new_path):
+        if os.path.exists(old_path):
+            shutil.copyfile(old_path, new_path)
+            try:
+                os.path.remove(old_path)
+            except:
+                print(f'Could not remove {old_path}')
+        else:
+            write_to_path(new_path, fallback)
+
+
 def create_directory(path):
     os.makedirs(path, exist_ok=True)
 

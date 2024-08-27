@@ -13,6 +13,7 @@ import tkinter.filedialog as tkfiledialog
 import tkinter.messagebox as tkmessagebox
 
 from src import *
+from src.user_interfaces.pvp_options import PVPOptions
 from src.user_interfaces.widgets import *
 from src.utils.format_utils import normalize_text
 from src.utils.gui_utils import ShowHelp
@@ -41,13 +42,13 @@ class ChartOptions(Frame):
         Radiobutton(self, self.node, 2, 'Use Mean Node', 0.6, 0.15, 0.2)
         Label(self, 'Background   ', 0, 0.2, 0.2)
         self.bgcurve = Radiogroup(self)
-        Radiobutton(self, self.bgcurve, 0, 'At Cadent Cusps', 0.2, 0.2, 0.2)
+        Radiobutton(self, self.bgcurve, 0, 'TMSA Classic', 0.2, 0.2, 0.2)
         Radiobutton(self, self.bgcurve, 1, 'At Mid-quadrant', 0.4, 0.2, 0.2)
         Radiobutton(
             self,
             self.bgcurve,
             2,
-            'Eureka curve',
+            'At Cadent Cusps',
             0.6,
             0.2,
             0.2,
@@ -92,16 +93,6 @@ class ChartOptions(Frame):
         ]
         abbr = ['co ', 'op ', 'sq ', 'oc ', 'tr ', 'sx ', 'in ']
         exact = [0, 180, 90, [45, 135], 120, 60, [30, 150]]
-        maxorb = [
-            [3, 7, 10],
-            [3, 7, 10],
-            [3, 6, 7.5],
-            [1, 2, 0],
-            [3, 6, 7.5],
-            [3, 6, 7.5],
-            [0, 0, 0],
-        ]
-        mmaxorb = [[3, 0, 0], [3, 0, 0], [3, 0, 0], [0, 0, 0]]
         self.names = []
         self.abbrs = []
         self.maxorbs = []
@@ -119,7 +110,6 @@ class ChartOptions(Frame):
             mxo[0] = Entry(self, '', 0.25, i * 0.05 + 0.45, 0.05)
             mxo[1] = Entry(self, '', 0.35, i * 0.05 + 0.45, 0.05)
             mxo[2] = Entry(self, '', 0.45, i * 0.05 + 0.45, 0.05)
-            maxorb = 5 if names[i] in ['oc', 'in'] else 15
             for j in range(3):
                 mxo[j].bind(
                     '<KeyRelease>',
@@ -136,7 +126,6 @@ class ChartOptions(Frame):
                 mmxo[0] = Entry(self, '', 0.55, i * 0.05 + 0.45, 0.05)
                 mmxo[1] = Entry(self, '', 0.65, i * 0.05 + 0.45, 0.05)
                 mmxo[2] = Entry(self, '', 0.75, i * 0.05 + 0.45, 0.05)
-                maxorb = 5 if names[i] in ['oc', 'in'] else 15
                 for j in range(3):
                     mmxo[j].bind(
                         '<KeyRelease>',
@@ -156,8 +145,11 @@ class ChartOptions(Frame):
         Radiobutton(self, self.showasp, 1, '1+ FG', 0.3, 0.85, 0.1)
         Radiobutton(self, self.showasp, 2, '2 FG', 0.4, 0.85, 0.1)
         self.partile = Checkbutton(self, 'Partile', 0.5, 0.85, 0.1)
-        self.mps = Button(self, 'Midpoints', 0.625, 0.85, 0.2).bind(
+        self.mps = Button(self, 'Midpoints', 0.6, 0.85, 0.175).bind(
             '<Button-1>', lambda _: delay(self.midpoints)
+        )
+        self.pvp_button = Button(self, 'PVP Aspects', 0.775, 0.85, 0.175).bind(
+            '<Button-1>', lambda _: delay(self.prime_vertical_parans)
         )
         self.status = Label(self, '', 0, 0.9, 1)
         Button(self, 'Save', 0.2, 0.95, 0.2).bind(
@@ -204,13 +196,23 @@ class ChartOptions(Frame):
         ang = options.get('angularity', {})
         ea = options.get('ecliptic_aspects', {})
         ma = options.get('mundane_aspects', {})
-        self.mpopt = options.get('midpoints', {})
         self.bgcurve.value = ang.get('model', 0)
         self.nobg.checked = ang.get('no_bg', False)
         ex = ['0', '180', '90', '45', '120', '60', '30']
         maja = ang.get('major_angles', [3.0, 7.0, 10.0])
         mina = ang.get('minor_angles', [1.0, 2.0, 3.0])
         self.mpopt = options.get('midpoints', {})
+
+        self.pvp_aspects = options.get(
+            'pvp_aspects',
+            {
+                'enabled': False,
+                '0': [1.25, 2.0, 3.0],
+                '180': [1.25, 2.0, 3.0],
+                '90': [1.25, 2.0, 3.0],
+            },
+        )
+
         for i in range(3):
             if maja[i] == 0:
                 maja[i] = ''
@@ -500,5 +502,22 @@ class ChartOptions(Frame):
             self.status.text = 'Midpoint options unchanged.'
             self.mpopt = {'0': 0, '90': 0, '45': 0, 'M': 0}
 
+    def finish_pvp_options(self):
+        if self.pvp_aspects:
+            self.status.text = 'Prime vertical paran options changed.'
+        else:
+            self.status.text = 'Prime vertical paran options unchanged.'
+            self.pvp_aspects = {
+                'enabled': False,
+                '0': [1.25, 2.0, 3.0],
+                '180': [1.25, 2.0, 3.0],
+                '90': [1.25, 2.0, 3.0],
+            }
+
     def midpoints(self):
         MidpointOptions(self.optfile.text, self.mpopt, self.finish_mp)
+
+    def prime_vertical_parans(self):
+        PVPOptions(
+            self.optfile.text, self.pvp_aspects, self.finish_pvp_options
+        )

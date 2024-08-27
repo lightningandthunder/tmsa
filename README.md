@@ -22,6 +22,8 @@ conda install python=3.10  # newest 32-bit version that Conda can find
 pip install -r .\\etc\\requirements-win32.txt
 
 python setup.py bdist_msi
+# Alternately, run it locally:
+python -m src.tmsa.py
 ```
 
 ##### For 64-bit Linux:
