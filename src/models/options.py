@@ -77,7 +77,6 @@ class Options:
     )
     mundane_aspects: dict[str, list[float]] = field(default_factory=lambda: {})
     pvp_aspects: dict[str, list[float]] = field(default_factory=lambda: {})
-    allow_pvp_aspects: bool = False
     midpoints: dict[str, list[float]] = field(default_factory=lambda: {})
     enable_natal_midpoints: bool = False
 
@@ -97,8 +96,6 @@ class Options:
         if data.get('use_Sedna', False) and 'Se' not in self.extra_bodies:
             self.extra_bodies.append('Se')
         self.use_vertex = True if data.get('use_Vertex') else False
-
-        self.allow_pvp_aspects = data.get('allow_pvp_aspects', False)
 
         self.node_type = NodeTypes.from_number(data.get('node_type', 0))
         self.show_aspects = ShowAspect.from_number(data.get('show_aspects', 0))

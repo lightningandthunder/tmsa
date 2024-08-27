@@ -32,8 +32,8 @@ def return_options():
             '45': [0, 0, 0],
         },
         'midpoints': {'0': 0, '90': 0, '45': 0, 'M': 0, 'is90': 'd'},
-        'allow_pvp_aspects': 1,
         'pvp_aspects':  {
+            'enabled': 1,
             '0': [3.0, 0, 0],
             '180': [3.0, 0, 0],
             '90': [3.0, 0, 0],
