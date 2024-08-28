@@ -8,8 +8,6 @@
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
 from io import TextIOWrapper
-import tkinter.messagebox as tkmessagebox
-from datetime import datetime
 
 import src.models.charts as chart_models
 import src.models.options as option_models

@@ -19,7 +19,7 @@ from src.user_interfaces.new_chart import NewChart
 from src.user_interfaces.solunars import Solunars
 from src.user_interfaces.widgets import *
 from src.utils.chart_utils import make_chart_path
-from src.utils.format_utils import display_name
+from src.utils.format_utils import display_name, parse_version_from_txt_file
 from src.utils.gui_utils import ShowHelp, show_not_implemented
 from src.utils.os_utils import open_file
 
@@ -270,6 +270,10 @@ class SelectChart(Frame):
         try:
             with open(self.filename) as file:
                 chart = json.load(file)
+            if 'version' not in chart:
+                datafile_name = self.filename[0:-3] + 'txt'
+                chart['version'] = parse_version_from_txt_file(datafile_name)
+
             self.sort_recent()
             if chart.get('base_chart', None):
                 chart['basechart'] = None
@@ -277,7 +281,7 @@ class SelectChart(Frame):
             Solunars(chart, self.filename)
         except Exception as e:
             self.status.error(
-                f"Unable to open file: '{os.path.basename(self.filename)}'."
+                f"Unable to open file: '{os.path.basename(self.filename)}' : {e}."
             )
             return
 

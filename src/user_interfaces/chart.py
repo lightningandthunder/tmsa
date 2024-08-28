@@ -7,19 +7,18 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
+from copy import deepcopy
 from src import *
 from src.models.charts import ChartObject, ChartWheelRole
 from src.models.options import Options
 from src.swe import *
 from src.user_interfaces.biwheelV3 import BiwheelV3
-from src.user_interfaces.new_chart import NewChart
 from src.user_interfaces.uniwheelV3 import UniwheelV3
 from src.user_interfaces.widgets import *
 from src.utils.chart_utils import make_chart_path
 from src.utils.format_utils import (
     to360,
     version_is_supported,
-    version_tuple_to_str,
     version_str_to_tuple,
 )
 
@@ -171,7 +170,54 @@ class Chart:
                 ):
                     return None
 
+                radix = self.recalculate_radix(chart['base_chart'])
+                if not radix:
+                    return None
+
             self.report = BiwheelV3([return_chart, radix], temporary, options)
         else:
             single_chart = ChartObject(chart).with_role(ChartWheelRole.NATAL)
             self.report = UniwheelV3([single_chart], temporary, options)
+
+    def recalculate_radix(self, chart):
+        recalculated_chart = deepcopy(chart)
+        recalculated_chart['version'] = version_str_to_tuple(VERSION)
+
+        # Write recalculated data file
+        filename = make_chart_path(recalculated_chart, False)
+        with open(filename, 'w') as datafile:
+            json.dump(recalculated_chart, datafile, indent=4)
+
+        # Write recalculated chart file
+        radix = ChartObject(recalculated_chart).with_role(ChartWheelRole.RADIX)
+        try:
+            optfile = recalculated_chart['options'].replace(' ', '_') + '.opt'
+            if not os.path.exists(os.path.join(OPTION_PATH, optfile)):
+                old_filename_parts = recalculated_chart['options'].split(' ')
+                if (
+                    len(old_filename_parts) == 2
+                    and old_filename_parts[0] == 'Default'
+                ):
+                    optfile = f'{old_filename_parts[1]}_Default.opt'
+                    recalculated_chart[
+                        'options'
+                    ] = f'{old_filename_parts[1]} Default'
+
+            with open(os.path.join(OPTION_PATH, optfile)) as datafile:
+                options = json.load(datafile)
+        except Exception:
+            tkmessagebox.showerror(
+                'File Error',
+                f"Unable to open '{optfile}' during recalculation of radix.",
+            )
+            return None
+
+        # This is important because it's not actually a radix;
+        # it is its own thing in this context.
+        recalculated_natal = ChartObject(recalculated_chart).with_role(
+            ChartWheelRole.NATAL
+        )
+        UniwheelV3([recalculated_natal], False, Options(options))
+
+        # But we still want to return the *radix* specifically
+        return radix

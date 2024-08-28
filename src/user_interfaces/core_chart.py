@@ -38,9 +38,6 @@ class CoreChart(object, metaclass=ABCMeta):
         temporary: bool,
         options: option_models.Options,
     ):
-        def s(c):
-            return c.role
-
         self.options = options
 
         self.charts = sorted(charts, key=lambda x: x.role, reverse=True)
@@ -965,7 +962,6 @@ class CoreChart(object, metaclass=ABCMeta):
             and self.charts[0].type in chart_utils.INGRESSES
             else False
         )
-
         for (chart_index, chart) in enumerate(self.charts):
             if chart_index > 0:
                 chartfile.write('-' * self.table_width + '\n')

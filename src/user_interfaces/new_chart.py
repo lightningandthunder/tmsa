@@ -118,7 +118,7 @@ class NewChart(Frame):
         Label(self, 'Notes', 0.15, 0.5, 0.15, anchor=tk.W)
         self.notes = Entry(self, '', 0.3, 0.5, 0.3)
         Label(self, 'Options', 0.15, 0.55, 0.15, anchor=tk.W)
-        self.options = Entry(self, 'Default Natal', 0.3, 0.55, 0.3)
+        self.options = Entry(self, 'Natal Default', 0.3, 0.55, 0.3)
         if os.path.exists(STUDENT_FILE):
             self.options.text = 'Student Natal'
         Button(self, 'Select', 0.6, 0.55, 0.1).bind(
@@ -696,6 +696,8 @@ class NewChart(Frame):
         self.options.text = chart['options']
         if self.options.text == 'Temporary':
             self.select_options()
+        if self.options.text == 'Default Natal':
+            self.options.text = 'Natal Default'
 
     def select_options(self):
         name = tkfiledialog.askopenfilename(
@@ -894,6 +896,9 @@ class NewChart(Frame):
         chart['correction'] = tzcorr
         chart['notes'] = normalize_text(self.notes.text, True)
         chart['options'] = self.options.text.strip() or 'Natal Default'
+        if chart['options'] == 'Default Natal':
+            chart['options'] = 'Natal Default'
+
         chart['version'] = version_str_to_tuple(VERSION)
         Chart(chart, self.istemp.value).report.show()
 
@@ -1074,7 +1079,7 @@ class NewChart(Frame):
         chart.correction = tzcorr
         chart.notes = normalize_text(self.notes.text, True)
         # TODO - this is almost certainly wrong
-        chart.options = self.options.text.strip() or 'Default Natal'
+        chart.options = self.options.text.strip() or 'Natal Default'
         Chart(chart, self.istemp.value).report.show()
 
     def save_location(self, chart):

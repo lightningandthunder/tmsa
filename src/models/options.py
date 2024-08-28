@@ -132,3 +132,6 @@ class Options:
     def to_file(self, file_path: str):
         with open(file_path, 'w') as file:
             json.dump(self.__dict__, file, indent=4)
+
+    def __str__(self):
+        return str(self.__dict__)

@@ -504,14 +504,14 @@ def make_chart_path(chart, temporary):
         if ingress:
             first = f'{chart.year}-{chart.month}-{chart.day}'
             second = chart.location
-            third = chart.type
+            third = chart.type.value
         else:
             first = chart.name
             index = first.find(';')
             if index > -1:
                 first = first[0:index]
             second = f'{chart.year}-{chart.month:02d}-{chart.day:02d}'
-            third = chart.type
+            third = chart.type.value
     filename = f'{first}~{second}~{third}.dat'
     if ingress:
         filepath = os.path.join(
