@@ -1,6 +1,8 @@
 import math
 import os
 
+from src.constants import OLDEST_SUPPORTED_VERSION
+
 
 def normalize_text(text, nocap=False, maxlen=33):
     text = text.strip()
@@ -84,3 +86,42 @@ def add_360_if_negative(angle: float):
     if angle < 0:
         angle += 360
     return angle
+
+
+def version_str_to_tuple(version: str) -> tuple[int | str]:
+    return tuple(
+        map(
+            lambda x: int(x) if 'a' not in x and 'b' not in x else str(x),
+            (version.split('.')),
+        )
+    )
+
+
+def version_tuple_to_str(version: tuple[int | str]) -> str:
+    return '.'.join(map(str, version))
+
+
+def parse_version_from_txt_file(file_path: str) -> str:
+    with open(file_path, 'r') as file:
+        last_line = file.readlines()[-1]
+        elements = last_line.split(' ')
+        for element in elements:
+            if '.' in element:
+                return version_str_to_tuple(element)
+
+
+def version_is_supported(version: tuple[int | str]) -> bool:
+    supported_version = version_str_to_tuple(OLDEST_SUPPORTED_VERSION)
+    if version[0] > supported_version[0]:
+        return True
+
+    if version[1] > supported_version[1]:
+        return True
+
+    if version[1] == supported_version[1]:
+        if 'a' in version[2] or 'b' in version[2]:
+            return False
+
+        return version[2] >= supported_version[2]
+
+    return False

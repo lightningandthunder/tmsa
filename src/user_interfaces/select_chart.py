@@ -20,7 +20,7 @@ from src.user_interfaces.solunars import Solunars
 from src.user_interfaces.widgets import *
 from src.utils.chart_utils import make_chart_path
 from src.utils.format_utils import display_name
-from src.utils.gui_utils import ShowHelp
+from src.utils.gui_utils import ShowHelp, show_not_implemented
 from src.utils.os_utils import open_file
 
 

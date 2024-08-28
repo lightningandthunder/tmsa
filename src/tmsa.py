@@ -167,7 +167,7 @@ class StartPage(Frame):
         default = (
             'Student Natal'
             if os.path.exists(STUDENT_FILE)
-            else 'Default Natal'
+            else 'Natal Default'
         )
 
         self.chart_options = Button(self, 'Chart Options', 0.4, 0.45, 0.2)

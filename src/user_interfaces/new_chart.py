@@ -26,7 +26,7 @@ from src.models.charts import ChartObject
 from src.user_interfaces.chart import Chart
 from src.user_interfaces.locations import Locations
 from src.user_interfaces.widgets import *
-from src.utils.format_utils import normalize_text
+from src.utils.format_utils import normalize_text, version_str_to_tuple
 from src.utils.gui_utils import ShowHelp
 
 
@@ -893,7 +893,8 @@ class NewChart(Frame):
             tzcorr = -tzcorr
         chart['correction'] = tzcorr
         chart['notes'] = normalize_text(self.notes.text, True)
-        chart['options'] = self.options.text.strip() or 'Default Natal'
+        chart['options'] = self.options.text.strip() or 'Natal Default'
+        chart['version'] = version_str_to_tuple(VERSION)
         Chart(chart, self.istemp.value).report.show()
 
     def calculate_refactored(self, chart: ChartObject):

@@ -479,6 +479,7 @@ class ChartOptions(Frame):
                 text = self.mmaxorbs[i][j].text
                 options[ma][ex[i]].append(float(text) if text else 0)
         options['midpoints'] = self.mpopt
+        options['pvp_aspects'] = self.pvp_aspects
         if os.path.exists(filepath):
             if not tkmessagebox.askyesno(
                 'File Exists', f"Do you want to overwrite file '{filename}'?"

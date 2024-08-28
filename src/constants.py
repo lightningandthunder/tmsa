@@ -11,6 +11,7 @@ import os
 import sys
 
 VERSION = '0.6.0a0'
+OLDEST_SUPPORTED_VERSION = '0.5.7'
 
 DS = '\N{DEGREE SIGN}'
 DQ = '"'

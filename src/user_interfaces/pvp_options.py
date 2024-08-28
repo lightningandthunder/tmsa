@@ -165,7 +165,6 @@ class PVPOptions(Frame):
             self.destroy()
             self.func()
         except Exception as e:
-            print(e)
             self.status.error('Error saving PVP options: ' + str(e))
 
     def back(self):

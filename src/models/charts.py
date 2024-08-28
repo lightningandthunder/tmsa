@@ -223,6 +223,7 @@ class ChartObject:
     role: ChartWheelRole
     notes: str | None = None
     style: int = 1
+    version: tuple[int | str] = (0, 0, 0)
 
     def __init__(self, data: dict):
         self.type = ChartType(data['type'])
@@ -337,6 +338,8 @@ class ChartObject:
         self.angles = angles
 
         self.notes = data.get('notes', None)
+
+        self.version = data.get('version', (0, 0, 0))
 
     def iterate_points(
         self, options: Options, include_angles: bool = False

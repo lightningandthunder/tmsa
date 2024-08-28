@@ -25,12 +25,14 @@ def migrate_from_file(old_path: str, new_path: str, fallback: str):
     if not os.path.exists(new_path):
         if os.path.exists(old_path):
             shutil.copyfile(old_path, new_path)
-            try:
-                os.path.remove(old_path)
-            except:
-                print(f'Could not remove {old_path}')
         else:
             write_to_path(new_path, fallback)
+
+    if os.path.exists(old_path) and old_path != new_path:
+        try:
+            os.remove(old_path)
+        except:
+            pass
 
 
 def create_directory(path):

@@ -117,7 +117,7 @@ class Ingresses(Frame):
         Label(self, 'Notes', 0.15, 0.35, 0.15, anchor=tk.W)
         self.notes = Entry(self, '', 0.3, 0.35, 0.3)
         Label(self, 'Options', 0.15, 0.4, 0.15, anchor=tk.W)
-        self.options = Entry(self, 'Default Ingress', 0.3, 0.4, 0.3)
+        self.options = Entry(self, 'Ingress Default', 0.3, 0.4, 0.3)
         Button(self, 'Select', 0.6, 0.4, 0.1).bind(
             '<Button-1>', lambda _: delay(self.select_options)
         )

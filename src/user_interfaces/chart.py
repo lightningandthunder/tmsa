@@ -12,10 +12,16 @@ from src.models.charts import ChartObject, ChartWheelRole
 from src.models.options import Options
 from src.swe import *
 from src.user_interfaces.biwheelV3 import BiwheelV3
+from src.user_interfaces.new_chart import NewChart
 from src.user_interfaces.uniwheelV3 import UniwheelV3
 from src.user_interfaces.widgets import *
 from src.utils.chart_utils import make_chart_path
-from src.utils.format_utils import to360
+from src.utils.format_utils import (
+    to360,
+    version_is_supported,
+    version_tuple_to_str,
+    version_str_to_tuple,
+)
 
 planet_names = [
     'Moon',
@@ -38,6 +44,11 @@ planet_indices = [1, 0] + [i for i in range(2, 10)] + [146199, 100377, 10, 11]
 
 class Chart:
     def __init__(self, chart, temporary, burst=False):
+        chart['version'] = (
+            version_str_to_tuple(VERSION)
+            if 'version' not in chart
+            else chart['version']
+        )
         self.jd = julday(
             chart['year'],
             chart['month'],
@@ -153,34 +164,14 @@ class Chart:
             radix = ChartObject(chart['base_chart']).with_role(
                 ChartWheelRole.RADIX
             )
+            if not version_is_supported(radix.version):
+                if not tkmessagebox.askyesno(
+                    'Radix chart version is needs to be updated',
+                    f'Do you want to recalculate the radix chart to the newest version?',
+                ):
+                    return None
+
             self.report = BiwheelV3([return_chart, radix], temporary, options)
         else:
             single_chart = ChartObject(chart).with_role(ChartWheelRole.NATAL)
             self.report = UniwheelV3([single_chart], temporary, options)
-
-    # def precess(self, chart):
-    #     for planet_name in planet_names:
-    #         planet_data = chart[planet_name]
-    #         planet_data[3:5] = cotrans(
-    #             [planet_data[0] + self.ayan, planet_data[1], planet_data[2]],
-    #             self.oe,
-    #         )
-    #         planet_data[5:7] = calc_azimuth(
-    #             self.jd,
-    #             self.long,
-    #             self.lat,
-    #             to360(planet_data[0] + self.ayan),
-    #             planet_data[1],
-    #         )
-    #         planet_data[7] = calc_meridian_longitude(
-    #             planet_data[5], planet_data[6]
-    #         )
-
-    #         planet_data[8] = calc_house_pos(
-    #             self.ramc,
-    #             self.lat,
-    #             self.oe,
-    #             to360(planet_data[0] + self.ayan),
-    #             planet_data[1],
-    #         )
-    #         chart[planet_name] = planet_data

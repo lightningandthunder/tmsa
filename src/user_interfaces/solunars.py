@@ -124,7 +124,7 @@ class Solunars(Frame):
         Label(self, 'Notes', 0.15, 0.35, 0.15, anchor=tk.W)
         self.notes = Entry(self, '', 0.3, 0.35, 0.3)
         Label(self, 'Options', 0.15, 0.4, 0.15, anchor=tk.W)
-        self.options = Entry(self, 'Default Return', 0.3, 0.4, 0.3)
+        self.options = Entry(self, 'Return Default', 0.3, 0.4, 0.3)
         Button(self, 'Select', 0.6, 0.4, 0.1).bind(
             '<Button-1>', lambda _: delay(self.select_options)
         )
@@ -663,7 +663,6 @@ class Solunars(Frame):
         sun = chart['base_chart']['Sun'][0]
         moon = chart['base_chart']['Moon'][0]
         for sol in solunars:
-            cchart = deepcopy(chart)
             sl = sol.lower()
             if 'solar' in sl:
                 cclass = 'SR'
@@ -912,9 +911,13 @@ class Solunars(Frame):
         cchart['correction'] = 0
         cchart['zone'] = 'UT'
         if show:
-            Chart(cchart, self.istemp.value).report.show()
+            chart_class = Chart(cchart, self.istemp.value)
+            if hasattr(chart_class, 'report'):
+                chart_class.report.show()
         else:
-            Chart(cchart, self.istemp.value).report
+            chart_class = Chart(cchart, self.istemp.value)
+            if hasattr(chart_class, 'report'):
+                chart_class.report
 
     def save_location(self, chart):
         try:

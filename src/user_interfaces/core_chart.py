@@ -799,7 +799,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 mundane_aspect,
                 key=lambda x: x.orb if x else 1000,
             )
-        elif self.options.allow_pvp_aspects:
+        elif self.options.pvp_aspects.get('enabled', False):
             # This may also be None; that's fine
             tightest_aspect = self.find_pvp_aspect(
                 primary_planet_data,

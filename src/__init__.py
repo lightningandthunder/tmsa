@@ -20,7 +20,6 @@ from src.defaults.option_defaults import (
 )
 from src.utils.os_utils import (
     app_path,
-    copy_file_if_not_exists,
     create_directory,
     migrate_from_file,
     write_to_path,
@@ -119,31 +118,31 @@ elif PLATFORM in ['linux', 'darwin']:
 migrate_from_file(
     old_path=os.path.join(OPTION_PATH, 'Default_Natal.opt'),
     new_path=os.path.join(OPTION_PATH, 'Natal_Default.opt'),
-    fallback=NATAL_DEFAULT,
+    fallback=json.dumps(NATAL_DEFAULT),
 )
 
 migrate_from_file(
     old_path=os.path.join(OPTION_PATH, 'Default_Ingress.opt'),
     new_path=os.path.join(OPTION_PATH, 'Ingress_Default.opt'),
-    fallback=INGRESS_DEFAULT,
+    fallback=json.dumps(INGRESS_DEFAULT),
 )
 
 migrate_from_file(
     old_path=os.path.join(OPTION_PATH, 'Default_Return.opt'),
     new_path=os.path.join(OPTION_PATH, 'Return_Default.opt'),
-    fallback=RETURN_DEFAULT,
+    fallback=json.dumps(RETURN_DEFAULT),
 )
 
 migrate_from_file(
     old_path=os.path.join(OPTION_PATH, 'Cosmobiology.opt'),
     new_path=os.path.join(OPTION_PATH, 'Cosmobiology.opt'),
-    fallback=COSMOBIOLOGY,
+    fallback=json.dumps(COSMOBIOLOGY),
 )
 
 migrate_from_file(
     os.path.join(OPTION_PATH, 'Student_Natal.opt'),
     os.path.join(OPTION_PATH, 'Student_Natal.opt'),
-    fallback=STUDENT_NATAL,
+    fallback=json.dumps(STUDENT_NATAL),
 )
 
 STUDENT_FILE = os.path.join(OPTION_PATH, 'student.json')
