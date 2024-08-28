@@ -6,7 +6,7 @@
 - Switched from default options files to in-code data structures
 - Migrated "Default_XYZ" option files to "XYZ_Default"
 - Changed mundane midpoint calculation to use the closest angular contact among angle axes that both planets are foreground on
-- Included version number and auto-recalculate when version number is too low
+- Included version number and option to recalculate the radix when version number is too low for solunars to be correctly calculated
 
 ### 0.5.7
 - Fixed bug where mundane midpoints were using meridian longitude instead of prime vertical longitude
@@ -14,7 +14,7 @@
 
 ### O.5.6
 - Fixed background planets showing as foreground in cosmic state
-
+s
 ### 0.5.5
 - Fixed bug where planets mundanely background wouldn't be considered for aspects even if they were on a minor angle
 

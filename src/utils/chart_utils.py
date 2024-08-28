@@ -567,3 +567,15 @@ def greatest_nonzero_class_orb(orbs: list[float]) -> float:
         if orbs[i] > 0:
             return orbs[i]
     return 0
+
+
+def decimal_longitude_to_sign(longitude: float) -> str:
+    sign = SIGNS_SHORT[int(longitude // 30)]
+    sign_degrees = int(longitude % 30)
+
+    raw_degrees = int(longitude)
+    mins = int((longitude - raw_degrees) * 60)
+
+    seconds = int((((longitude - raw_degrees) * 60) - mins) * 60)
+
+    return f'{sign_degrees}{sign}{mins: >2}\'{seconds: >2}"'

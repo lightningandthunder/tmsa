@@ -1106,6 +1106,23 @@ class CoreChart(object, metaclass=ABCMeta):
             chartfile.write(f'{strength_percent:3d}% {angularity}')
             chartfile.write('\n')
 
+        # Angles for info table
+        vertex_azimuth = chart.cusps[10] - 90
+
+        # Longitude
+        chartfile.write(
+            f'MC {chart_utils.decimal_longitude_to_sign(chart.cusps["10"])} '
+        )
+        # Latitude
+        chartfile.write(f' ' * 7)
+        # Speed
+        chartfile.write(' ' * 7)
+        # Right Ascension
+        chartfile.write(chart_utils.fmt_dm(chart.ramc, True) + ' ')
+        # Declination
+
+        # Ascendant RA is to360(RAMC + 270)
+
         return whole_chart_is_dormant
 
     def write_cosmic_state(
