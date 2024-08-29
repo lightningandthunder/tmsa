@@ -10,12 +10,12 @@
 import math
 import os
 from typing import Iterator
-from itertools import chain
 
 from src import *
 from src import constants
 from src.models.options import NodeTypes, Options
 from src.user_interfaces.widgets import *
+from src.utils.format_utils import to360
 
 SIGNS_SHORT = [
     'Ar',
@@ -578,4 +578,20 @@ def decimal_longitude_to_sign(longitude: float) -> str:
 
     seconds = int((((longitude - raw_degrees) * 60) - mins) * 60)
 
-    return f'{sign_degrees}{sign}{mins: >2}\'{seconds: >2}"'
+    return f'{sign_degrees: >2}{sign}{mins: >2}\'{seconds: >2}"'
+
+
+def declination_from_celestial(longitude: float, obliquity: float) -> float:
+    sin_dec = math.sin(math.radians(longitude)) * math.sin(
+        math.radians(obliquity)
+    )
+    return math.degrees(math.asin(sin_dec))
+
+
+def right_ascension_from_celestial(
+    longitude: float, obliquity: float
+) -> float:
+    tan_ra = math.tan(math.radians(longitude)) * math.cos(
+        math.radians(obliquity)
+    )
+    return to360(math.degrees(math.atan(tan_ra)))

@@ -202,19 +202,19 @@ def calc_ayan(ut):
 
 
 def calc_cusps(ut, lat, long):
-    cusps = (c_double * 13)()
-    angles = (c_double * 10)()
+    cusps_return_array = (c_double * 13)()
+    angles_return_array = (c_double * 10)()
     swe_houses_ex(
-        ut, 64 * 1024, lat, long, ord('C'), byref(cusps), byref(angles)
+        ut,
+        64 * 1024,
+        lat,
+        long,
+        ord('C'),
+        byref(cusps_return_array),
+        byref(angles_return_array),
     )
-    cc = []
-    for c in cusps:
-        cc.append(c)
-    aa = []
-    for i in range(len(angles)):
-        if i in [2, 3, 4]:
-            aa.append(angles[i])
-    return [cc, aa]
+    # The angles kept are RAMC, Vertex, Equatorial Ascendant
+    return [cusps_return_array[:], angles_return_array[2:5]]
 
 
 def calc_house_pos(ramc, geo_latitude, obliquity, tlong, elat):

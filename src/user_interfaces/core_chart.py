@@ -17,6 +17,7 @@ import src.models.charts as chart_models
 import src.models.options as option_models
 import src.constants as constants
 import src.utils.chart_utils as chart_utils
+from src.utils.format_utils import to360
 from src.utils.os_utils import open_file
 import tkinter.messagebox as tkmessagebox
 from datetime import datetime
@@ -1106,22 +1107,115 @@ class CoreChart(object, metaclass=ABCMeta):
             chartfile.write(f'{strength_percent:3d}% {angularity}')
             chartfile.write('\n')
 
-        # Angles for info table
-        vertex_azimuth = chart.cusps[10] - 90
+        # Write angles to info table
+
+        # Midheaven
 
         # Longitude
         chartfile.write(
-            f'MC {chart_utils.decimal_longitude_to_sign(chart.cusps["10"])} '
+            f'Mc {chart_utils.decimal_longitude_to_sign(chart.cusps[10])} '
         )
         # Latitude
-        chartfile.write(f' ' * 7)
+        chartfile.write(' ' * 7)
         # Speed
         chartfile.write(' ' * 7)
         # Right Ascension
-        chartfile.write(chart_utils.fmt_dm(chart.ramc, True) + ' ')
+        ra = chart_utils.right_ascension_from_celestial(
+            chart.cusps[10], chart.obliquity
+        )
+        chartfile.write(chart_utils.fmt_dm(ra, True, degree_digits=3) + ' ')
         # Declination
+        dec = chart_utils.declination_from_celestial(
+            chart.cusps[10], chart.obliquity
+        )
+        chartfile.write(chart_utils.fmt_lat(dec, True) + ' ')
+        # Azimuth
+        chartfile.write("180° 0' ")
+        # Altitude - TODO
+        chartfile.write(' ' * 8)
+        # Meridian Longitude
+        chartfile.write(' ' * 8)
+        # PVL
+        chartfile.write("270° 0'")
 
-        # Ascendant RA is to360(RAMC + 270)
+        chartfile.write('\n')
+
+        # Ascendant
+
+        # Longitude
+        chartfile.write(
+            f'As {chart_utils.decimal_longitude_to_sign(chart.cusps[1])} '
+        )
+        # Latitude
+        chartfile.write(' ' * 7)
+        # Speed
+        chartfile.write(' ' * 7)
+        # Right Ascension
+        ra = chart_utils.right_ascension_from_celestial(
+            chart.cusps[1], chart.obliquity
+        )
+        chartfile.write(chart_utils.fmt_dm(ra, True, degree_digits=3) + ' ')
+        # Declination
+        dec = chart_utils.declination_from_celestial(
+            chart.cusps[1], chart.obliquity
+        )
+        chartfile.write(chart_utils.fmt_lat(dec, True) + ' ')
+        # Azimuth
+        chartfile.write(' ' * 7)
+        # Altitude
+        chartfile.write("   0° 0' ")
+        # Meridian Longitude
+        chartfile.write(' ' * 8)
+        # PVL
+        chartfile.write("  0° 0'")
+
+        chartfile.write('\n')
+
+        # Eastpoint
+
+        # Longitudes
+        chartfile.write(
+            f'Ep {chart_utils.decimal_longitude_to_sign(chart.angles[2])} '
+        )
+        # Latitude
+        chartfile.write(' ' * 7)
+        # Speed
+        chartfile.write(' ' * 7)
+        # Right Ascension
+        ra = to360(chart.ramc - 90)
+        chartfile.write(chart_utils.fmt_dm(ra, True, degree_digits=3) + ' ')
+
+        # Declination
+        dec = chart_utils.declination_from_celestial(
+            chart.angles[2], chart.obliquity
+        )
+        chartfile.write(chart_utils.fmt_lat(dec, True))
+
+        chartfile.write('\n')
+
+        # Vertex
+        if self.options.use_vertex:
+            # Longitude
+            chartfile.write(
+                f'Vx {chart_utils.decimal_longitude_to_sign(chart.angles[1])} '
+            )
+            # Latitude
+            chartfile.write(' ' * 7)
+            # Speed
+            chartfile.write(' ' * 7)
+            # Right Ascension
+            chartfile.write(' ' * 8)
+
+            # Declination
+            dec = chart_utils.declination_from_celestial(
+                chart.angles[1], chart.obliquity
+            )
+            chartfile.write(chart_utils.fmt_lat(dec, True) + ' ')
+            # Azimuth
+            chartfile.write("270° 0' ")
+            # Altitude - TODO
+            chartfile.write(' ' * 7)
+            chartfile.write('\n')
 
         return whole_chart_is_dormant
 
