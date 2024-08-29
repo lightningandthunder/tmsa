@@ -677,4 +677,4 @@ class MidpointAspect:
             if self.framework.value != AspectFramework.ECLIPTICAL.value
             else ''
         )
-        return f"{self.to_midpoint} {self.orb_minutes}'{self.midpoint_type.value}{framework_suffix}"
+        return f"{self.to_midpoint} {self.orb_minutes: >2}'{self.midpoint_type.value}{framework_suffix}"

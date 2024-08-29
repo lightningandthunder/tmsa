@@ -1297,6 +1297,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 chartfile.write(angle + ' |')
 
                 # Write needs hierarchy strength for natals
+                strength_hierarchy_written = False
                 if (
                     len(self.charts) == 1
                     and chart.type.value == chart_models.ChartType.NATAL.value
@@ -1304,7 +1305,8 @@ class CoreChart(object, metaclass=ABCMeta):
                     strength = self.calc_planetary_needs_strength(
                         planet_data, chart, aspects_by_class
                     )
-                    chartfile.write((f' ({int(strength)}%)').ljust(14))
+                    chartfile.write((f' ({int(strength)}%)').ljust(16))
+                    strength_hierarchy_written = True
 
                 need_another_row = False
 
@@ -1367,12 +1369,71 @@ class CoreChart(object, metaclass=ABCMeta):
                         aspect[0]
                         + ' '
                         + ('' if aspect[0][-1] in ['M', 'p'] else ' ')
+                        + ' ' * 2
                     )
+
+                    if strength_hierarchy_written:
+                        if (
+                            aspect_index == 2
+                            and aspect_index != len(aspect_list) - 1
+                            or (
+                                aspect_index >= 5
+                                and aspect_index % 4 == 3
+                                and aspect_index != len(aspect_list) - 1
+                            )
+                        ):
+                            chartfile.write('\n' + (' ' * 9) + '| ')
+
+                    else:
+                        if (
+                            aspect_index % 4 == 3
+                            and aspect_index != len(aspect_list) - 1
+                        ):
+                            chartfile.write('\n' + (' ' * 9) + '| ')
+
+                # Midpoints
+                related_midpoints = midpoints.get(
+                    f'{planet_data.role.value}{planet_data.name}', []
+                )
+                if len(related_midpoints) > 0:
+                    chartfile.write('\n' + (' ' * 9) + '|    ')
+                for (midpoint_index, midpoint) in enumerate(related_midpoints):
+                    chartfile.write(str(midpoint) + (' ' * 6))
                     if (
-                        aspect_index % 4 == 3
-                        and aspect_index != len(aspect_list) - 1
+                        midpoint_index % 4 == 3
+                        and midpoint_index != len(related_midpoints) - 1
                     ):
-                        chartfile.write('\n' + (' ' * 9) + '| ')
+                        chartfile.write('\n' + (' ' * 9) + '|    ')
+
+            chartfile.write('\n')
+            # Write midpoints for Ascendant/MC
+            ascendant_midpoints = midpoints.get(f'{chart.role.value}As', [])
+            if len(ascendant_midpoints) > 0:
+                ascendant_sign = chart_utils.SIGNS_SHORT[
+                    int(chart.cusps[1] // 30)
+                ]
+                chartfile.write(f'As {ascendant_sign}    |    ')
+            for (midpoint_index, midpoint) in enumerate(ascendant_midpoints):
+                chartfile.write(str(midpoint) + (' ' * 6))
+                if (
+                    midpoint_index % 4 == 3
+                    and midpoint_index != len(ascendant_midpoints) - 1
+                ):
+                    chartfile.write('\n' + (' ' * 9) + '|    ')
+
+            midheaven_midpoints = midpoints.get(f'{chart.role.value}Mc', [])
+            if len(midheaven_midpoints) > 0:
+                midheaven_sign = chart_utils.SIGNS_SHORT[
+                    int(chart.cusps[10] // 30)
+                ]
+                chartfile.write(f'\nMc {midheaven_sign}    |    ')
+            for (midpoint_index, midpoint) in enumerate(midheaven_midpoints):
+                chartfile.write(str(midpoint) + (' ' * 6))
+                if (
+                    midpoint_index % 4 == 3
+                    and midpoint_index != len(midheaven_midpoints) - 1
+                ):
+                    chartfile.write('\n' + (' ' * 9) + '|    ')
 
     def get_return_class(self, t: chart_models.ChartType) -> str:
         t = t.type.value.lower()
@@ -1422,8 +1483,8 @@ class CoreChart(object, metaclass=ABCMeta):
                         continue
                     for halfsum in self.halfsums:
                         if halfsum.contains(
-                            point.name
-                            if hasattr(point, 'name')
+                            point.short_name
+                            if hasattr(point, 'short_name')
                             else point_name
                         ):
                             continue
@@ -1658,8 +1719,12 @@ class CoreChart(object, metaclass=ABCMeta):
 
                         halfsums.append(
                             chart_models.HalfSum(
-                                point_a=primary_point_name,
-                                point_b=secondary_point_name,
+                                point_a=primary_point.short_name
+                                if hasattr(primary_point, 'short_name')
+                                else primary_point_name,
+                                point_b=secondary_point.short_name
+                                if hasattr(secondary_point, 'short_name')
+                                else secondary_point_name,
                                 longitude=longitude,
                                 prime_vertical_longitude=prime_vertical_longitude,
                                 right_ascension=right_ascension,
