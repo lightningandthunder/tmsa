@@ -193,15 +193,7 @@ class Chart:
         try:
             optfile = recalculated_chart['options'].replace(' ', '_') + '.opt'
             if not os.path.exists(os.path.join(OPTION_PATH, optfile)):
-                old_filename_parts = recalculated_chart['options'].split(' ')
-                if (
-                    len(old_filename_parts) == 2
-                    and old_filename_parts[0] == 'Default'
-                ):
-                    optfile = f'{old_filename_parts[1]}_Default.opt'
-                    recalculated_chart[
-                        'options'
-                    ] = f'{old_filename_parts[1]} Default'
+                optfile = 'Natal_Default.opt'
 
             with open(os.path.join(OPTION_PATH, optfile)) as datafile:
                 options = json.load(datafile)

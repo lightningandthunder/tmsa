@@ -7,6 +7,8 @@
 - Migrated "Default_XYZ" option files to "XYZ_Default"
 - Changed mundane midpoint calculation to use the closest angular contact among angle axes that both planets are foreground on
 - Included version number and option to recalculate the radix when version number is too low for solunars to be correctly calculated
+- New midpoint calculations are now written to the Cosmic State report
+- Added angles (Ascendant, Midheaven, Eastpoint, and Vertex) to the data table
 
 ### 0.5.7
 - Fixed bug where mundane midpoints were using meridian longitude instead of prime vertical longitude
