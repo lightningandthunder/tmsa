@@ -131,6 +131,21 @@ RETURNS_WHERE_MOON_ALWAYS_FOREGROUND = [
     'Solilunar Return',
 ]
 
+RULERSHIPS = {
+    'Ar': ['Su', 'Pl'],
+    'Ta': ['Mo', 'Ve'],
+    'Ge': ['Me'],
+    'Cn': ['Mo', 'Ju'],
+    'Le': ['Su'],
+    'Vi': ['Me'],
+    'Li': ['Ve', 'Sa'],
+    'Sc': ['Ma'],
+    'Sg': ['Ju'],
+    'Cp': ['Ma', 'Sa'],
+    'Aq': ['Ur'],
+    'Pi': ['Ve', 'Ne'],
+}
+
 POS_SIGN = {
     'Mo': ['Cn', 'Ta'],
     'Su': ['Le', 'Ar'],
@@ -581,16 +596,14 @@ def decimal_longitude_to_sign(longitude: float) -> str:
     return f'{sign_degrees: >2}{sign}{mins: >2}\'{seconds: >2}"'
 
 
-def declination_from_celestial(longitude: float, obliquity: float) -> float:
+def declination_from_zodiacal(longitude: float, obliquity: float) -> float:
     sin_dec = math.sin(math.radians(longitude)) * math.sin(
         math.radians(obliquity)
     )
     return math.degrees(math.asin(sin_dec))
 
 
-def right_ascension_from_celestial(
-    longitude: float, obliquity: float
-) -> float:
+def right_ascension_from_zodiacal(longitude: float, obliquity: float) -> float:
     tan_ra = math.tan(math.radians(longitude)) * math.cos(
         math.radians(obliquity)
     )

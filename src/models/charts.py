@@ -8,7 +8,12 @@ from src import log_error, swe
 from src.constants import PLANETS
 from src.models.angles import ForegroundAngles, NonForegroundAngles
 from src.models.options import NodeTypes, Options
-from src.utils.chart_utils import convert_house_to_pvl, fmt_dm, fmt_minutes
+from src.utils.chart_utils import (
+    SIGNS_SHORT,
+    convert_house_to_pvl,
+    decimal_longitude_to_sign,
+    fmt_dm,
+)
 from src.utils.format_utils import to360
 
 T = TypeVar('T', bound='ChartObject')
@@ -78,6 +83,7 @@ class PlanetData:
         default_factory=lambda: []
     )
     prime_vertical_angle: NonForegroundAngles = NonForegroundAngles.BLANK
+    angularity_strength: int = 0
 
     __prime_vertical_angles = [
         NonForegroundAngles.VERTEX.value,
@@ -224,6 +230,8 @@ class ChartObject:
     notes: str | None = None
     style: int = 1
     version: tuple[int | str] = (0, 0, 0)
+    sun_sign: str = ''
+    moon_sign: str = ''
 
     def __init__(self, data: dict):
         self.type = ChartType(data['type'])
@@ -235,6 +243,12 @@ class ChartObject:
         self.time = data['time']
         self.zone = data['zone']
         self.correction = data['correction']
+
+        planet_data = data['Sun'][0]
+        planet = PlanetData()
+
+        self.sun_sign = SIGNS_SHORT[int(data['Sun'][0] // 30)]
+        self.moon_sign = SIGNS_SHORT[int(data['Moon'][0] // 30)]
 
         self.julian_day_utc = swe.julday(
             data['year'],
@@ -561,6 +575,31 @@ class Aspect:
 
     def get_formatted_orb(self):
         return fmt_dm(abs(self.orb), True)
+
+    def is_hard_aspect(self):
+        return self.type in [
+            AspectType.CONJUNCTION,
+            AspectType.OPPOSITION,
+            AspectType.SQUARE,
+        ]
+
+    def is_hard_aspect_8th_harmonic(self):
+        return self.type in [
+            AspectType.CONJUNCTION,
+            AspectType.OPPOSITION,
+            AspectType.SQUARE,
+            AspectType.OCTILE,
+        ]
+
+    def is_soft_aspect(self):
+        return self.type in [AspectType.SEXTILE, AspectType.TRINE]
+
+    def is_minor_aspect(self):
+        return self.type in [
+            AspectType.OCTILE,
+            AspectType.TRINE,
+            AspectType.SEXTILE,
+        ]
 
     def __str__(self):
         # This will read something like this:

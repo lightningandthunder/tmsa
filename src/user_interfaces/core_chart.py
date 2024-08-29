@@ -697,6 +697,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 angularity_orb, str(angularity)
             )
 
+        planet.angularity_strength = angularity_strength
         return (
             angularity,
             angularity_strength,
@@ -1120,12 +1121,12 @@ class CoreChart(object, metaclass=ABCMeta):
         # Speed
         chartfile.write(' ' * 7)
         # Right Ascension
-        ra = chart_utils.right_ascension_from_celestial(
+        ra = chart_utils.right_ascension_from_zodiacal(
             chart.cusps[10], chart.obliquity
         )
         chartfile.write(chart_utils.fmt_dm(ra, True, degree_digits=3) + ' ')
         # Declination
-        dec = chart_utils.declination_from_celestial(
+        dec = chart_utils.declination_from_zodiacal(
             chart.cusps[10], chart.obliquity
         )
         chartfile.write(chart_utils.fmt_lat(dec, True) + ' ')
@@ -1151,12 +1152,12 @@ class CoreChart(object, metaclass=ABCMeta):
         # Speed
         chartfile.write(' ' * 7)
         # Right Ascension
-        ra = chart_utils.right_ascension_from_celestial(
+        ra = chart_utils.right_ascension_from_zodiacal(
             chart.cusps[1], chart.obliquity
         )
         chartfile.write(chart_utils.fmt_dm(ra, True, degree_digits=3) + ' ')
         # Declination
-        dec = chart_utils.declination_from_celestial(
+        dec = chart_utils.declination_from_zodiacal(
             chart.cusps[1], chart.obliquity
         )
         chartfile.write(chart_utils.fmt_lat(dec, True) + ' ')
@@ -1186,7 +1187,7 @@ class CoreChart(object, metaclass=ABCMeta):
         chartfile.write(chart_utils.fmt_dm(ra, True, degree_digits=3) + ' ')
 
         # Declination
-        dec = chart_utils.declination_from_celestial(
+        dec = chart_utils.declination_from_zodiacal(
             chart.angles[2], chart.obliquity
         )
         chartfile.write(chart_utils.fmt_lat(dec, True))
@@ -1207,7 +1208,7 @@ class CoreChart(object, metaclass=ABCMeta):
             chartfile.write(' ' * 8)
 
             # Declination
-            dec = chart_utils.declination_from_celestial(
+            dec = chart_utils.declination_from_zodiacal(
                 chart.angles[1], chart.obliquity
             )
             chartfile.write(chart_utils.fmt_lat(dec, True) + ' ')
@@ -1295,6 +1296,16 @@ class CoreChart(object, metaclass=ABCMeta):
                     angle = 'B'
                 chartfile.write(angle + ' |')
 
+                # Write needs hierarchy strength for natals
+                if (
+                    len(self.charts) == 1
+                    and chart.type.value == chart_models.ChartType.NATAL.value
+                ):
+                    strength = self.calc_planetary_needs_strength(
+                        planet_data, chart, aspects_by_class
+                    )
+                    chartfile.write((f' ({int(strength)}%)').ljust(14))
+
                 need_another_row = False
 
                 if chart.type not in chart_utils.INGRESSES:
@@ -1352,7 +1363,11 @@ class CoreChart(object, metaclass=ABCMeta):
                         chartfile.write(' ')
 
                 for aspect_index, aspect in enumerate(aspect_list):
-                    chartfile.write(aspect[0] + '   ')
+                    chartfile.write(
+                        aspect[0]
+                        + ' '
+                        + ('' if aspect[0][-1] in ['M', 'p'] else ' ')
+                    )
                     if (
                         aspect_index % 4 == 3
                         and aspect_index != len(aspect_list) - 1
@@ -1652,6 +1667,86 @@ class CoreChart(object, metaclass=ABCMeta):
                         )
 
         return halfsums
+
+    def calc_planetary_needs_strength(
+        self,
+        planet: chart_models.PlanetData,
+        chart: chart_models.ChartObject,
+        aspects_by_class: list[list[chart_models.Aspect]],
+    ) -> int:
+        luminary_strength = 0
+        rules_sun_sign = (
+            chart.sun_sign in chart_utils.POS_SIGN[planet.short_name]
+        )
+        rules_moon_sign = (
+            chart.moon_sign in chart_utils.POS_SIGN[planet.short_name]
+        )
+        if rules_sun_sign and rules_moon_sign:
+            luminary_strength = 95
+        elif rules_sun_sign or rules_moon_sign:
+            luminary_strength = 90
+
+        max_luminary_aspect_strength = 0
+        for aspect in aspects_by_class[0]:
+            if (
+                aspect.includes_planet(planet.short_name)
+                and aspect.is_hard_aspect()
+            ):
+                if (
+                    (planet.name == 'Sun' and aspect.includes_planet('Mo'))
+                    or (planet.name == 'Moon' and aspect.includes_planet('Su'))
+                    or (
+                        planet.name not in ['Sun', 'Moon']
+                        and (
+                            aspect.includes_planet('Su')
+                            or aspect.includes_planet('Mo')
+                        )
+                    )
+                ):
+                    max_luminary_aspect_strength = max(
+                        max_luminary_aspect_strength, aspect.strength
+                    )
+
+        if luminary_strength > 0 and max_luminary_aspect_strength > 0:
+            max_luminary_aspect_strength = max(
+                95, max_luminary_aspect_strength
+            )
+
+        if max_luminary_aspect_strength == 0:
+            for aspect in aspects_by_class[1]:
+                if (
+                    aspect.includes_planet(planet.short_name)
+                    and aspect.is_hard_aspect()
+                ):
+                    if (
+                        (planet.name == 'Sun' and aspect.includes_planet('Mo'))
+                        or (
+                            planet.name == 'Moon'
+                            and aspect.includes_planet('Su')
+                        )
+                        or (
+                            planet.name not in ['Sun', 'Moon']
+                            and (
+                                aspect.includes_planet('Su')
+                                or aspect.includes_planet('Mo')
+                            )
+                        )
+                    ):
+                        max_luminary_aspect_strength = max(
+                            max_luminary_aspect_strength, aspect.strength
+                        )
+
+        if luminary_strength > 0 and max_luminary_aspect_strength > 0:
+            max_luminary_aspect_strength = max(
+                92, max_luminary_aspect_strength
+            )
+
+        strength = max(
+            planet.angularity_strength,
+            luminary_strength,
+            max_luminary_aspect_strength,
+        )
+        return min(strength, 100)
 
     @abstractmethod
     def draw_chart(

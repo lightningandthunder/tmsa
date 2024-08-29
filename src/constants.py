@@ -19,6 +19,9 @@ SQ = "'"
 
 PLATFORM = None
 
+PROGRESSION_Q1 = 0.00273032809
+PROGRESSION_Q2 = 0.00273780311
+
 match sys.platform:
     case 'win32':
         PLATFORM = 'Win32GUI'
