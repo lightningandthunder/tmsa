@@ -62,131 +62,185 @@ MONTHS = [
     'Dec',
 ]
 
+ARCSECONDS_DECIMAL = 1 / 3600
+
+HOUR_FRACTION_OF_A_DAY = 1 / 24
+
 PLANETS = {
     'Moon': {
         'short_name': 'Mo',
         'long_name': 'Moon',
         'number': 0,
+        'minimum_speed': -1.0,
+        'stationary_period_hours': -1.0,
     },
     'Sun': {
         'short_name': 'Su',
         'long_name': 'Sun',
         'number': 1,
+        'minimum_speed': -1.0,
+        'stationary_period_hours': -1.0,
     },
     'Mercury': {
         'short_name': 'Me',
         'long_name': 'Mercury',
         'number': 2,
+        'minimum_speed': 5 * ARCSECONDS_DECIMAL,
+        'stationary_period_hours': 72,
     },
     'Venus': {
         'short_name': 'Ve',
         'long_name': 'Venus',
         'number': 3,
+        'minimum_speed': 5 * ARCSECONDS_DECIMAL,
+        'stationary_period_hours': 72,
     },
     'Mars': {
         'short_name': 'Ma',
         'long_name': 'Mars',
         'number': 4,
+        'minimum_speed': 5 * ARCSECONDS_DECIMAL,
+        'stationary_period_hours': 72,
     },
     'Jupiter': {
         'short_name': 'Ju',
         'long_name': 'Jupiter',
         'number': 5,
+        'minimum_speed': 5 * ARCSECONDS_DECIMAL,
+        'stationary_period_hours': 72,
     },
     'Saturn': {
         'short_name': 'Sa',
         'long_name': 'Saturn',
         'number': 6,
+        'minimum_speed': 10 * ARCSECONDS_DECIMAL,
+        'stationary_period_hours': 72,
     },
     'Uranus': {
         'short_name': 'Ur',
         'long_name': 'Uranus',
         'number': 7,
+        'minimum_speed': 10 * ARCSECONDS_DECIMAL,
+        'stationary_period_hours': 72,
     },
     'Neptune': {
         'short_name': 'Ne',
         'long_name': 'Neptune',
         'number': 8,
+        'minimum_speed': 15 * ARCSECONDS_DECIMAL,
+        'stationary_period_hours': 72,
     },
     'Pluto': {
         'short_name': 'Pl',
         'long_name': 'Pluto',
         'number': 9,
+        'minimum_speed': -1.0,
+        'stationary_period_hours': 168,  # 7 days
     },
     'Mean Node': {
         'short_name': 'MN',
         'long_name': 'Mean Node',
         'number': 10,
+        'minimum_speed': -1.0,
+        'stationary_period_hours': -1,
     },
     'True Node': {
         'short_name': 'TN',
         'long_name': 'True Node',
         'number': 11,
+        'minimum_speed': -1.0,
+        'stationary_period_hours': -1,
     },
     'Eris': {
         'short_name': 'Er',
         'long_name': 'Eris',
         'number': 146199,
+        'minimum_speed': -1.0,
+        'stationary_period_hours': 336,  # 14 days
     },
     # Experimental bodies
     'Sedna': {
         'short_name': 'Se',
         'long_name': 'Sedna',
         'number': 100377,
+        'minimum_speed': -1.0,
+        'stationary_period_hours': 336,  # 14 days
     },
     'Chiron': {
         'short_name': 'Ch',
         'long_name': 'Chiron',
         'number': 15,
+        'minimum_speed': 5 * ARCSECONDS_DECIMAL,
+        'stationary_period_hours': 72,
     },
     'Ceres': {
         'short_name': 'Ce',
         'long_name': 'Ceres',
         'number': 17,
+        'minimum_speed': 5 * ARCSECONDS_DECIMAL,
+        'stationary_period_hours': 72,
     },
     'Pallas': {
         'short_name': 'Pa',
         'long_name': 'Pallas',
         'number': 18,
+        'minimum_speed': 5 * ARCSECONDS_DECIMAL,
+        'stationary_period_hours': 72,
     },
     'Juno': {
         'short_name': 'Jn',
         'long_name': 'Juno',
         'number': 19,
+        'minimum_speed': 5 * ARCSECONDS_DECIMAL,
+        'stationary_period_hours': 72,
     },
     'Vesta': {
         'short_name': 'Vs',
         'long_name': 'Vesta',
         'number': 20,
+        'minimum_speed': 5 * ARCSECONDS_DECIMAL,
+        'stationary_period_hours': 72,
     },
     'Orcus': {
         'short_name': 'Or',
         'long_name': 'Orcus',
         'number': 100482,
+        'minimum_speed': -1.0,
+        'stationary_period_hours': 336,  # 14 days
     },
     'Haumea': {
         'short_name': 'Ha',
         'long_name': 'Haumea',
         'number': 146108,
+        'minimum_speed': -1.0,
+        'stationary_period_hours': 336,  # 14 days
     },
     'Makemake': {
         'short_name': 'Mk',
         'long_name': 'Makemake',
         'number': 146472,
+        'minimum_speed': -1.0,
+        'stationary_period_hours': 336,  # 14 days
     },
     'Gonggong': {
         'short_name': 'Go',
         'long_name': 'Gonggong',
         'number': 235088,
+        'minimum_speed': -1.0,
+        'stationary_period_hours': 336,  # 14 days
     },
     'Quaoar': {
         'short_name': 'Qu',
         'long_name': 'Quaoar',
         'number': 60000,
+        'minimum_speed': -1.0,
+        'stationary_period_hours': 336,  # 14 days
     },
     'Salacia': {
         'short_name': 'Sl',
         'long_name': 'Salacia',
         'number': 130347,
+        'minimum_speed': -1.0,
+        'stationary_period_hours': 336,  # 14 days
     },
 }

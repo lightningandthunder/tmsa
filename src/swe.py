@@ -21,7 +21,8 @@ from ctypes import (
 )
 
 from src import *
-from src.constants import PLATFORM
+from src.constants import HOUR_FRACTION_OF_A_DAY, PLANETS, PLATFORM
+from src.models.charts import PlanetData
 from src.utils.format_utils import (
     add_360_if_negative,
     arccotangent,
@@ -349,3 +350,43 @@ def calc_meridian_longitude(azimuth: float, altitude: float):
         meridian_longitude = add_360_if_negative(meridian_longitude - 180)
 
     return meridian_longitude
+
+
+def is_planet_stationary(long_name: str, julian_day: float) -> bool:
+    stats = PLANETS[long_name]
+
+    # Planet cannot be stationary
+    if stats['stationary_period_hours'] < 0:
+        return False
+
+    # If there's a defined minimum speed, we can use that to determine a station.
+    # Otherwise, we will need to consider a "station" to be when it changes direction.
+    use_speed = stats['minimum_speed'] > 0
+
+    maximum_time_difference = (
+        stats['stationary_period_hours'] * HOUR_FRACTION_OF_A_DAY
+    )
+
+    beginning_time = julian_day - maximum_time_difference
+    ending_time = julian_day + maximum_time_difference
+
+    is_direct = None
+
+    test_time = beginning_time
+
+    while test_time < ending_time:
+        test_speed = calc_planet(test_time, stats['number'])[2]
+        if is_direct is None:
+            is_direct = test_speed > 0
+            continue
+
+        if use_speed and abs(test_speed) < stats['minimum_speed']:
+            return True
+
+        # If planet is switching from direct to retrograde or vice versa, that's a station
+        if is_direct and test_speed < 0 or not is_direct and test_speed > 0:
+            return True
+
+        test_time += HOUR_FRACTION_OF_A_DAY
+
+    return False

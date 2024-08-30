@@ -1806,11 +1806,17 @@ class CoreChart(object, metaclass=ABCMeta):
                 92, max_luminary_aspect_strength
             )
 
+        stationary_strength = 75 if planet.is_stationary else 0
+        if stationary_strength > 0 and luminary_strength > 0:
+            stationary_strength = 90
+
         strength = max(
             planet.angularity_strength,
             luminary_strength,
             max_luminary_aspect_strength,
+            stationary_strength,
         )
+
         return min(strength, 100)
 
     @abstractmethod

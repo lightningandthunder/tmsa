@@ -11,7 +11,6 @@ from src.models.options import NodeTypes, Options
 from src.utils.chart_utils import (
     SIGNS_SHORT,
     convert_house_to_pvl,
-    decimal_longitude_to_sign,
     fmt_dm,
 )
 from src.utils.format_utils import to360
@@ -84,6 +83,7 @@ class PlanetData:
     )
     prime_vertical_angle: NonForegroundAngles = NonForegroundAngles.BLANK
     angularity_strength: int = 0
+    is_stationary: bool = False
 
     __prime_vertical_angles = [
         NonForegroundAngles.VERTEX.value,
@@ -334,6 +334,10 @@ class ChartObject:
                 planet.declination = planet_data[4]
                 planet.azimuth = planet_data[5]
                 planet.altitude = planet_data[6]
+
+                planet.is_stationary = swe.is_planet_stationary(
+                    planet.name, self.julian_day_utc
+                )
 
                 if len(planet_data) >= 9:
                     planet.meridian_longitude = planet_data[7]
