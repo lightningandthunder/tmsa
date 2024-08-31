@@ -182,17 +182,38 @@ class ChartType(Enum):
     RADIX = 'Radix'
     NATAL = 'Natal'
     SOLAR_RETURN = 'Solar Return'
+    DEMI_SOLAR_RETURN = 'Demi-Solar Return'
+    LAST_QUARTI_SOLAR_RETURN = 'Last Quarti-Solar Return'
+    FIRST_QUARTI_SOLAR_RETURN = 'First Quarti-Solar Return'
+
     LUNAR_RETURN = 'Lunar Return'
+    DEMI_LUNAR_RETURN = 'Demi-Lunar Return'
+    FIRST_QUARTI_LUNAR_RETURN = 'First Quarti-Lunar Return'
+    LAST_QUARTI_LUNAR_RETURN = 'Last Quarti-Lunar Return'
+
     KINETIC_LUNAR_RETURN = 'Kinetic Lunar Return'
+    DEMI_KINETIC_LUNAR_RETURN = 'Kinetic Demi-Lunar Return'
+
     KINETIC_SOLAR_RETURN = 'Kinetic Solar Return'
+    DEMI_KINETIC_SOLAR_RETURN = 'Kinetic Demi-Solar Return'
+
     NOVIENIC_SOLAR_RETURN = 'Novienic Solar Return'
     TEN_DAY_SOLAR_RETURN = '10-Day Solar Return'
+
     NOVIENIC_LUNAR_RETURN = 'Novienic Lunar Return'
     EIGHTEEN_HOUR_LUNAR_RETURN = '18-Hour Lunar Return'
+
     ANLUNAR_RETURN = 'Anlunar Return'
+    DEMI_ANLUNAR_RETURN = 'Demi-Anlunar Return'
+
     KINETIC_ANULAR_RETURN = 'Kinetic Anlunar Return'
+    KINETIC_DEMI_ANLUNAR_RETURN = 'Kinetic Demi-Anlunar Return'
+
     SOLILUNAR_RETURN = 'Solilunar Return'
+    DEMI_SOLILUNAR_RETURN = 'Demi-Solilunar Return'
     LUNISOLAR_RETURN = 'Lunisolar Return'
+    DEMI_LUNISOLAR_RETURN = 'Demi-Lunisolar Return'
+
     CAP_SOLAR = 'Capsolar'
     ARI_SOLAR = 'Arisolar'
     CAN_SOLAR = 'Cansolar'
