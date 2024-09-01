@@ -139,8 +139,7 @@ class BiwheelV3(CoreChart):
 
         radix = self.find_innermost_chart()
         chart_grid[33][18:51] = center_align('Radical (r) Chart')
-        if radix.type not in chart_utils.INGRESSES:
-
+        if radix.type not in chart_models.INGRESSES:
             radix_type = radix.type.value.lower()
             if 'solar' not in radix_type and 'lunar' not in radix_type:
                 chart_grid[34][18:51] = center_align(radix.name)

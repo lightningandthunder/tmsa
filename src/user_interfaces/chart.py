@@ -9,7 +9,7 @@
 
 from copy import deepcopy
 from src import *
-from src.models.charts import ChartObject, ChartWheelRole
+from src.models.charts import INGRESSES, ChartObject, ChartWheelRole
 from src.models.options import Options
 from src.swe import *
 from src.user_interfaces.biwheelV3 import BiwheelV3
@@ -132,7 +132,11 @@ class Chart:
                 'File Error', f"Unable to open '{optfile}'."
             )
             return
-        filename = make_chart_path(chart, temporary)
+        filename = make_chart_path(
+            chart,
+            temporary,
+            is_ingress=chart['type'] in INGRESSES or not chart['name'],
+        )
         if not burst:
             try:
                 with open(RECENT_FILE, 'r') as datafile:

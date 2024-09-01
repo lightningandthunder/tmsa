@@ -6,7 +6,7 @@ from typing import Iterator, TypeVar
 
 from src import log_error, swe
 from src.constants import PLANETS
-from src.models.angles import ForegroundAngles, NonForegroundAngles
+from src.models.angles import AngleAxes, ForegroundAngles, NonForegroundAngles
 from src.models.options import NodeTypes, Options
 from src.utils.chart_utils import (
     SIGNS_SHORT,
@@ -78,9 +78,7 @@ class PlanetData:
     treat_as_foreground: bool = False
     role: ChartWheelRole = ChartWheelRole.NATAL
     angle: ForegroundAngles | NonForegroundAngles = NonForegroundAngles.BLANK
-    all_angles_contacted: list[ForegroundAngles | NonForegroundAngles] = field(
-        default_factory=lambda: []
-    )
+    angle_axes_contacted: list[AngleAxes] = field(default_factory=list)
     prime_vertical_angle: NonForegroundAngles = NonForegroundAngles.BLANK
     angularity_strength: int = 0
     is_stationary: bool = False
@@ -538,6 +536,26 @@ class AspectType(Enum):
             if member == AspectType.OCTILE:
                 yield (member, 135)
 
+    @classmethod
+    def iterate_harmonic_8(cls) -> Iterator[tuple['AspectType', int]]:
+        for member in AspectType:
+            if member == AspectType.SEXTILE or member == AspectType.TRINE:
+                continue
+            yield (member, cls.degrees_from_abbreviation(member.value))
+            if member == AspectType.OCTILE:
+                yield (member, 135)
+
+    @classmethod
+    def iterate_harmonic_4(cls) -> Iterator[tuple['AspectType', int]]:
+        for member in AspectType:
+            if (
+                member == AspectType.SEXTILE
+                or member == AspectType.TRINE
+                or member == AspectType.OCTILE
+            ):
+                continue
+            yield (member, cls.degrees_from_abbreviation(member.value))
+
 
 class AspectFramework(Enum):
     ECLIPTICAL = ''
@@ -703,3 +721,57 @@ class MidpointAspect:
             else ''
         )
         return f"{self.to_midpoint} {self.orb_minutes: >2}'{self.midpoint_type.value}{framework_suffix}"
+
+
+SOLUNAR_RETURNS = [
+    ChartType.SOLAR_RETURN.value,
+    ChartType.DEMI_SOLAR_RETURN.value,
+    ChartType.LAST_QUARTI_SOLAR_RETURN.value,
+    ChartType.FIRST_QUARTI_SOLAR_RETURN.value,
+    ChartType.LUNAR_RETURN.value,
+    ChartType.DEMI_LUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_LUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_LUNAR_RETURN.value,
+    ChartType.KINETIC_LUNAR_RETURN.value,
+    ChartType.DEMI_KINETIC_LUNAR_RETURN.value,
+    ChartType.KINETIC_SOLAR_RETURN.value,
+    ChartType.DEMI_KINETIC_SOLAR_RETURN.value,
+    ChartType.NOVIENIC_SOLAR_RETURN.value,
+    ChartType.TEN_DAY_SOLAR_RETURN.value,
+    ChartType.NOVIENIC_LUNAR_RETURN.value,
+    ChartType.EIGHTEEN_HOUR_LUNAR_RETURN.value,
+    ChartType.ANLUNAR_RETURN.value,
+    ChartType.DEMI_ANLUNAR_RETURN.value,
+    ChartType.KINETIC_ANULAR_RETURN.value,
+    ChartType.KINETIC_DEMI_ANLUNAR_RETURN.value,
+    ChartType.SOLILUNAR_RETURN.value,
+    ChartType.DEMI_SOLILUNAR_RETURN.value,
+    ChartType.LUNISOLAR_RETURN.value,
+    ChartType.DEMI_LUNISOLAR_RETURN.value,
+]
+
+RETURNS_WHERE_MOON_ALWAYS_FOREGROUND = [
+    ChartType.SOLAR_RETURN.value,
+    ChartType.DEMI_SOLAR_RETURN.value,
+    ChartType.LAST_QUARTI_SOLAR_RETURN.value,
+    ChartType.FIRST_QUARTI_SOLAR_RETURN.value,
+    ChartType.KINETIC_SOLAR_RETURN.value,
+    ChartType.DEMI_KINETIC_SOLAR_RETURN.value,
+    ChartType.NOVIENIC_SOLAR_RETURN.value,
+    ChartType.TEN_DAY_SOLAR_RETURN.value,
+    ChartType.NOVIENIC_LUNAR_RETURN.value,
+    ChartType.EIGHTEEN_HOUR_LUNAR_RETURN.value,
+    ChartType.SOLILUNAR_RETURN.value,
+    ChartType.DEMI_SOLILUNAR_RETURN.value,
+]
+
+INGRESSES = [
+    'Capsolar',
+    'Cansolar',
+    'Arisolar',
+    'Libsolar',
+    'Caplunar',
+    'Canlunar',
+    'Arilunar',
+    'Liblunar',
+]

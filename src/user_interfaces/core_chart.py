@@ -60,16 +60,20 @@ class CoreChart(object, metaclass=ABCMeta):
                 chart.planets[planet_name].role = chart.role
 
                 if planet_name == 'Moon' and (
-                    chart.type.value in chart_utils.INGRESSES
+                    chart.type.value in chart_models.INGRESSES
                     or chart.type.value
-                    in chart_utils.RETURNS_WHERE_MOON_ALWAYS_FOREGROUND
+                    in chart_models.RETURNS_WHERE_MOON_ALWAYS_FOREGROUND
                 ):
                     chart.planets[planet_name].treat_as_foreground = True
 
         self.try_precess_charts()
 
         self.filename = chart_utils.make_chart_path(
-            self.find_outermost_chart(), temporary
+            self.find_outermost_chart(),
+            temporary,
+            is_ingress=self.find_outermost_chart().type.value
+            in chart_models.INGRESSES
+            or not chart.name,
         )
         self.filename = self.filename[0:-3] + 'txt'
         try:
@@ -219,8 +223,7 @@ class CoreChart(object, metaclass=ABCMeta):
         whole_chart_is_dormant: bool,
         aspect_framework: chart_models.AspectFramework,
     ) -> chart_models.Aspect:
-        # If options say to skip one or both planets' aspects outside the foreground,
-        # just skip calculating anything
+
         show_aspects = (
             self.options.show_aspects or option_models.ShowAspect.ALL
         )
@@ -241,16 +244,20 @@ class CoreChart(object, metaclass=ABCMeta):
 
         elif show_aspects == option_models.ShowAspect.BOTH_FOREGROUND:
             if (
-                not primary_planet.is_foreground
-                and not primary_planet.treat_as_foreground
-            ) or (
-                not secondary_planet.is_foreground
+                not primary_planet.treat_as_foreground
                 and not secondary_planet.treat_as_foreground
             ):
-                if not self.options.partile_nf:
-                    return None
-                else:
-                    aspect_is_not_foreground = True
+                if (
+                    not primary_planet.is_foreground
+                    and not primary_planet.treat_as_foreground
+                ) or (
+                    not secondary_planet.is_foreground
+                    and not secondary_planet.treat_as_foreground
+                ):
+                    if not self.options.partile_nf:
+                        return None
+                    else:
+                        aspect_is_not_foreground = True
 
         raw_orb = None
         aspect = None
@@ -346,8 +353,8 @@ class CoreChart(object, metaclass=ABCMeta):
                 continue
 
             if primary_planet.name == 'Moon' and (
-                primary_planet.role == chart_utils.INGRESSES
-                or primary_planet.role == chart_utils.SOLUNAR_RETURNS
+                primary_planet.role == chart_models.INGRESSES
+                or primary_planet.role == chart_models.SOLUNAR_RETURNS
             ):
                 # Always consider transiting Moon aspects, as long as they're in orb
                 break
@@ -598,6 +605,8 @@ class CoreChart(object, metaclass=ABCMeta):
             ramc_square_strength,
         )
 
+        planet.angularity_strength = angularity_strength
+
         is_mundanely_background = False
         is_foreground = False
 
@@ -618,14 +627,23 @@ class CoreChart(object, metaclass=ABCMeta):
         zenith_nadir_orb = abs(aspect_to_asc - 90)
         if zenith_nadir_orb <= max(minor_angle_orbs):
             is_foreground = True
+            planet.angle_axes_contacted.append(
+                angles_models.AngleAxes.ZENITH_NADIR
+            )
 
         ep_wp_eclipto_orb = abs(aspect_to_mc - 90)
         if ep_wp_eclipto_orb <= max(minor_angle_orbs):
             is_foreground = True
+            planet.angle_axes_contacted.append(
+                angles_models.AngleAxes.EASTPOINT_WESTPOINT
+            )
 
         ep_wp_ascension_orb = abs(ramc_aspect - 90)
         if ep_wp_ascension_orb <= max(minor_angle_orbs):
             is_foreground = True
+            planet.angle_axes_contacted.append(
+                angles_models.AngleAxes.EASTPOINT_IN_RA
+            )
 
         angularity_orb = -1
         angularity = angles_models.NonForegroundAngles.BLANK
@@ -689,7 +707,7 @@ class CoreChart(object, metaclass=ABCMeta):
         if str(angularity.value).strip() == '' and is_mundanely_background:
             angularity = angles_models.NonForegroundAngles.BACKGROUND
 
-        if chart.type not in chart_utils.INGRESSES:
+        if chart.type not in chart_models.INGRESSES:
             # It's not an ingress; dormancy is always negated
             planet_negates_dormancy = True
         else:
@@ -785,7 +803,7 @@ class CoreChart(object, metaclass=ABCMeta):
         ):
             if ecliptical_aspect and (
                 not mundane_aspect
-                or mundane_aspect.orb > ecliptical_aspect.orb
+                or mundane_aspect.orb < ecliptical_aspect.orb
             ):
                 # For now, we also don't allow PVP aspects if there's already an ecliptical aspect
                 return None
@@ -961,7 +979,7 @@ class CoreChart(object, metaclass=ABCMeta):
         whole_chart_is_dormant = (
             True
             if len(self.charts) == 0
-            and self.charts[0].type in chart_utils.INGRESSES
+            and self.charts[0].type in chart_models.INGRESSES
             else False
         )
         for (chart_index, chart) in enumerate(self.charts):
@@ -1310,7 +1328,7 @@ class CoreChart(object, metaclass=ABCMeta):
 
                 need_another_row = False
 
-                if chart.type not in chart_utils.INGRESSES:
+                if chart.type not in chart_models.INGRESSES:
                     if planet_short_name != 'Mo':
                         if (
                             moon_sign
@@ -1555,34 +1573,17 @@ class CoreChart(object, metaclass=ABCMeta):
     def calc_mundane_midpoints(self):
         midpoints = {}
 
-        midpoint_orbs = self.options.midpoints.get('mundane', 0)
-        if midpoint_orbs == 0:
+        max_orb = self.options.midpoints.get('mundane', 0)
+        if max_orb == 0:
             return midpoints
 
         for (
             _,
             aspect_degrees,
-        ) in chart_models.AspectType.iterate():
+        ) in chart_models.AspectType.iterate_harmonic_4():
             max_orb = None
             raw_orb = None
 
-            # If the aspect is a sesquisquare, we need to use the orb for semisquare,
-            # as it's the only orb in options
-            aspect_degrees_for_options = None
-            if aspect_degrees == 135:
-                # We handle all 45° multiples at once
-                continue
-            elif aspect_degrees == 180:
-                aspect_degrees_for_options = 0
-            else:
-                aspect_degrees_for_options = aspect_degrees
-
-            if str(aspect_degrees_for_options) in midpoint_orbs:
-                max_orb = self.options.midpoints[
-                    str(aspect_degrees_for_options)
-                ]
-            else:
-                continue
             for halfsum in self.halfsums:
                 if halfsum.contains(
                     point.name if hasattr(point, 'name') else point_name

@@ -3,6 +3,19 @@ from enum import Enum
 
 
 @dataclass
+class AngleAxes(Enum):
+    HORIZONTAL = 'H'
+    MERIDIAN = 'M'
+    PRIME_VERTICAL = 'V'
+    ZENITH_NADIR = 'Z'
+    EASTPOINT_WESTPOINT = 'E'
+    EASTPOINT_IN_RA = 'Ea'
+
+    def __str__(self):
+        return self.value
+
+
+@dataclass
 class ForegroundAngles(Enum):
     ASCENDANT = 'A '
     DESCENDANT = 'D '

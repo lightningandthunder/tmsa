@@ -95,42 +95,6 @@ DEFAULT_MUNDANE_ORBS = {
     '45': [0, 0, 0],
 }
 
-INGRESSES = [
-    'Capsolar',
-    'Cansolar',
-    'Arisolar',
-    'Libsolar',
-    'Caplunar',
-    'Canlunar',
-    'Arilunar',
-    'Liblunar',
-]
-
-SOLUNAR_RETURNS = [
-    'Lunar Return',
-    'Kinetic Lunar Return',
-    'Novienic Lunar Return',
-    '18-Hour Lunar Return',
-    'Solar Return',
-    'Kinetic Solar Return',
-    'Novienic Solar Return',
-    '10-Day Solar Return',
-    'Anlunar Return',
-    'Kinetic Anlunar Return',
-    'Solilunar Return',
-    'Lunisolar Return',
-]
-
-RETURNS_WHERE_MOON_ALWAYS_FOREGROUND = [
-    'Novienic Lunar Return',
-    '18-Hour Lunar Return',
-    'Solar Return',
-    'Kinetic Solar Return',
-    'Novienic Solar Return',
-    '10-Day Solar Return',
-    'Solilunar Return',
-]
-
 RULERSHIPS = {
     'Ar': ['Su', 'Pl'],
     'Ta': ['Mo', 'Ve'],
@@ -493,7 +457,7 @@ def angularity_activates_ingress(orb: float, angle: str) -> bool:
     return orb <= 2.0
 
 
-def make_chart_path(chart, temporary):
+def make_chart_path(chart, temporary, is_ingress=False):
     if isinstance(chart, dict):
         ingress = (
             True
@@ -502,7 +466,7 @@ def make_chart_path(chart, temporary):
             else False
         )
     else:
-        ingress = True if chart.type in INGRESSES or not chart.name else False
+        ingress = is_ingress
     if isinstance(chart, dict):
         if ingress:
             first = f"{chart['year']}-{chart['month']}-{chart['day']}"

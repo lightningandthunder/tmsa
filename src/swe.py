@@ -22,7 +22,6 @@ from ctypes import (
 
 from src import *
 from src.constants import HOUR_FRACTION_OF_A_DAY, PLANETS, PLATFORM
-from src.models.charts import PlanetData
 from src.utils.format_utils import (
     add_360_if_negative,
     arccotangent,
@@ -145,7 +144,7 @@ swe_cotrans = _get_handle_for_platform(dll, '_swe_cotrans@16')
 swe_cotrans.argtypes = [POINTER(c_double * 3), POINTER(c_double * 3), c_double]
 
 
-def julday(year, month, day, hour, isgreg):
+def julday(year, month, day, hour, isgreg) -> float:
     return swe_julday(year, month, day, hour, isgreg)
 
 
@@ -359,34 +358,22 @@ def is_planet_stationary(long_name: str, julian_day: float) -> bool:
     if stats['stationary_period_hours'] < 0:
         return False
 
-    # If there's a defined minimum speed, we can use that to determine a station.
-    # Otherwise, we will need to consider a "station" to be when it changes direction.
-    use_speed = stats['minimum_speed'] > 0
-
     maximum_time_difference = (
         stats['stationary_period_hours'] * HOUR_FRACTION_OF_A_DAY
-    )
+    ) / 2
+
+    base_direction = calc_planet(julian_day, stats['number'])[2] > 0
 
     beginning_time = julian_day - maximum_time_difference
+    beginning_period_direction = (
+        calc_planet(beginning_time, stats['number'])[2] > 0
+    )
+
+    # There was a station at some point
+    if base_direction != beginning_period_direction:
+        return True
+
     ending_time = julian_day + maximum_time_difference
+    ending_period_direction = calc_planet(ending_time, stats['number'])[2] > 0
 
-    is_direct = None
-
-    test_time = beginning_time
-
-    while test_time < ending_time:
-        test_speed = calc_planet(test_time, stats['number'])[2]
-        if is_direct is None:
-            is_direct = test_speed > 0
-            continue
-
-        if use_speed and abs(test_speed) < stats['minimum_speed']:
-            return True
-
-        # If planet is switching from direct to retrograde or vice versa, that's a station
-        if is_direct and test_speed < 0 or not is_direct and test_speed > 0:
-            return True
-
-        test_time += HOUR_FRACTION_OF_A_DAY
-
-    return False
+    return base_direction != ending_period_direction

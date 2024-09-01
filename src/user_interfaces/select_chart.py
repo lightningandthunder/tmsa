@@ -14,6 +14,7 @@ import tkinter.filedialog as tkfiledialog
 import tkinter.messagebox as tkmessagebox
 
 from src import *
+from src.models.charts import INGRESSES
 from src.user_interfaces.more_charts import MoreCharts
 from src.user_interfaces.new_chart import NewChart
 from src.user_interfaces.solunars import Solunars
@@ -292,7 +293,13 @@ class SelectChart(Frame):
         try:
             with open(filename) as datafile:
                 chart = json.load(datafile)
-            newpath = make_chart_path(chart, False)
+            newpath = make_chart_path(
+                chart,
+                False,
+                is_ingress=True
+                if chart.type in INGRESSES or not chart.name
+                else False,
+            )
             if not os.path.exists(newpath):
                 os.makedirs(os.path.dirname(newpath), exist_ok=True)
             shutil.move(path, newpath)

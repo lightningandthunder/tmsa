@@ -38,7 +38,7 @@ class UniwheelV3(CoreChart):
 
         chartfile.write('\n')
 
-        if chart.type not in chart_utils.INGRESSES:
+        if chart.type.value not in chart_models.INGRESSES:
             name = chart.name
             if ';' in name:
                 name = name.split(';')[0]
