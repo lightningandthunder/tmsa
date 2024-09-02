@@ -2,10 +2,10 @@ import itertools
 import json
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Iterator, TypeVar
+from typing import Iterator, TypeVar, TypedDict
 
 from src import log_error, swe
-from src.constants import PLANETS
+from src.constants import PLANETS, VERSION
 from src.models.angles import AngleAxes, ForegroundAngles, NonForegroundAngles
 from src.models.options import NodeTypes, Options
 from src.utils.chart_utils import (
@@ -13,7 +13,7 @@ from src.utils.chart_utils import (
     convert_house_to_pvl,
     fmt_dm,
 )
-from src.utils.format_utils import to360
+from src.utils.format_utils import to360, version_str_to_tuple
 
 T = TypeVar('T', bound='ChartObject')
 
@@ -221,6 +221,20 @@ class ChartType(Enum):
     CAN_LUNAR = 'Canlunar'
     LIB_LUNAR = 'Liblunar'
 
+class ChartParams(TypedDict):
+    name: str | None
+    year: int
+    month: int
+    day: int
+    location: str
+    time: float
+    zone: str
+    correction: float
+    version: tuple[int]
+    longitude: float
+    latitude: float
+    type: ChartType
+
 
 @dataclass
 class ChartObject:
@@ -268,19 +282,21 @@ class ChartObject:
 
         self.sun_sign = SIGNS_SHORT[int(data['Sun'][0] // 30)]
         self.moon_sign = SIGNS_SHORT[int(data['Moon'][0] // 30)]
-
-        self.julian_day_utc = swe.julday(
-            data['year'],
-            data['month'],
-            data['day'],
-            data['time'] + data['correction'],
-            data.get('style', 1),
-        )
+        if 'julian_day_utc' in data:
+            self.julian_day_utc = data['julian_day_utc']
+        else:
+            self.julian_day_utc = swe.julday(
+                data['year'],
+                data['month'],
+                data['day'],
+                data['time'] + data['correction'],
+                data.get('style', 1),
+            )
         if data['zone'] == 'LAT':
             self.julian_day_utc = swe.calc_lat_to_lmt(
                 self.jd, data['longitude']
             )
-        self.ayanamsa = data['ayan']
+        self.ayanamsa = data.get('ayan', swe.calc_ayan(self.julian_day_utc))
         self.obliquity = data.get(
             'oe', swe.calc_obliquity(self.julian_day_utc)
         )
@@ -327,6 +343,10 @@ class ChartObject:
                     0,
                 ),
             ]
+            
+        self.angles = angles
+        self.cusps = cusps
+        
         if data.get('planets'):
             self.planets = {
                 planet: PlanetData(**data['planets'][planet])
@@ -377,6 +397,35 @@ class ChartObject:
         self.notes = data.get('notes', None)
 
         self.version = data.get('version', (0, 0, 0))
+        
+        def __dict__(self):
+            return {
+                'name': self.name,
+                'year': self.year,
+                'month': self.month,
+                'day': self.day,
+                'location': self.location,
+                'time': self.time,
+                'zone': self.zone,
+                'correction': self.correction,
+                'type': self.type.value,
+                'julian_day_utc': self.julian_day_utc,
+                'ayanamsa': self.ayanamsa,
+                'obliquity': self.obliquity,
+                'geo_longitude': self.geo_longitude,
+                'geo_latitude': self.geo_latitude,
+                'lst': self.lst,
+                'ramc': self.ramc,
+                'planets': {planet: self.planets[planet].__dict__ for planet in self.planets},
+                'cusps': self.cusps,
+                'angles': self.angles,
+                'vertex': self.vertex,
+                'eastpoint': self.eastpoint,
+                'role': self.role.value,
+                'notes': self.notes,
+                'style': self.style,
+                'version': self.version,
+            }
 
     def iterate_points(
         self, options: Options, include_angles: bool = False
@@ -425,6 +474,64 @@ class ChartObject:
             except json.JSONDecodeError:
                 log_error(f'Error reading {file_path}')
 
+    @staticmethod
+    def from_params(params: ChartParams) -> 'ChartObject':
+        chart = ChartObject(params)
+        chart.version = (
+            version_str_to_tuple(VERSION)
+            if 'version' not in params
+            else params['version']
+        )
+        chart.style = params['style']
+        chart.julian_day_utc = swe.julday(
+            params['year'],
+            params['month'],
+            params['day'],
+            params['time'] + params['correction'],
+            params['style'],
+        )
+
+        for planet in PLANETS:
+            planet_definitions = PLANETS[planet]
+            [
+                longitude,
+                latitude,
+                speed,
+                right_ascension,
+                declination,
+            ] = swe.calc_planet(chart.julian_day_utc, planet_definitions['number'])
+            [azimuth, altitude] = swe.calc_azimuth(
+                chart.julian_day_utc,
+                chart.geo_longitude,
+                chart.geo_latitude,
+                to360(longitude + chart.ayanamsa),
+                latitude,
+            )
+            house_position = swe.calc_house_pos(
+                chart.ramc,
+                chart.latitude,
+                chart.obliquity,
+                to360(longitude + chart.ayanamsa),
+                latitude,
+            )
+            meridian_longitude = swe.calc_meridian_longitude(azimuth, altitude)
+
+            data = [
+                longitude,
+                latitude,
+                speed,
+                right_ascension,
+                declination,
+                azimuth,
+                altitude,
+                meridian_longitude,
+                house_position,
+            ]
+
+            chart.planets[planet_definitions['long_name']] = data
+
+        return chart
+
     def to_file(self, file_path: str):
         with open(file_path, 'w') as file:
             json.dump(self.__dict__, file, indent=4)
@@ -439,7 +546,7 @@ class ChartObject:
 
         return self
 
-
+        
 class AspectType(Enum):
     CONJUNCTION = 'co'
     OCTILE = 'oc'

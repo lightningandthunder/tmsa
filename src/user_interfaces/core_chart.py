@@ -39,6 +39,7 @@ class CoreChart(object, metaclass=ABCMeta):
         temporary: bool,
         options: option_models.Options,
     ):
+        print('Initializing CoreChart with ', len(charts), ' charts')
         self.options = options
 
         self.charts = sorted(charts, key=lambda x: x.role, reverse=True)
@@ -180,15 +181,26 @@ class CoreChart(object, metaclass=ABCMeta):
                 progressed = chart
                 break
 
+        solar = None
+        for chart in self.charts:
+            if chart.role == chart_models.ChartWheelRole.SOLAR:
+                solar = chart
+                break
+
         if transit:
             if radix:
                 radix.precess_to(transit)
 
             if progressed:
                 progressed.precess_to(transit)
+                
+            if solar:
+                solar.precess_to(transit)
         else:
             if radix and progressed:
                 radix.precess_to(progressed)
+            if solar and progressed:
+                solar.precess_to(progressed)
 
     def find_ecliptical_aspect(
         self,

@@ -42,89 +42,10 @@ planet_names = [
 planet_indices = [1, 0] + [i for i in range(2, 10)] + [146199, 100377, 10, 11]
 
 
-class Chart:
-    def __init__(self, chart, temporary, burst=False, calculate_only=False):
-        chart['version'] = (
-            version_str_to_tuple(VERSION)
-            if 'version' not in chart
-            else chart['version']
-        )
-        self.jd = julday(
-            chart['year'],
-            chart['month'],
-            chart['day'],
-            chart['time'] + chart['correction'],
-            chart['style'],
-        )
-        self.long = chart['longitude']
-        if chart['zone'] == 'LAT':
-            self.jd = calc_lat_to_lmt(self.jd, self.long)
-        self.ayan = calc_ayan(self.jd)
-        chart['ayan'] = self.ayan
-        self.oe = calc_obliquity(self.jd)
-        chart['oe'] = self.oe
-        self.lat = chart['latitude']
-        (cusps, angles) = calc_cusps(self.jd, self.lat, self.long)
-        self.ramc = angles[0]
-        chart['cusps'] = cusps
-        chart['ramc'] = self.ramc
-        chart['Vertex'] = [
-            angles[1],
-            calc_house_pos(
-                self.ramc, self.lat, self.oe, to360(angles[1] + self.ayan), 0
-            ),
-        ]
-        chart['Eastpoint'] = [
-            angles[2],
-            calc_house_pos(
-                self.ramc, self.lat, self.oe, to360(angles[2] + self.ayan), 0
-            ),
-        ]
-        for i in range(len(planet_indices)):
-            planet_index = planet_indices[i]
-            planet_name = planet_names[i]
-
-            [
-                longitude,
-                latitude,
-                speed,
-                right_ascension,
-                declination,
-            ] = calc_planet(self.jd, planet_index)
-            [azimuth, altitude] = calc_azimuth(
-                self.jd,
-                self.long,
-                self.lat,
-                to360(longitude + self.ayan),
-                latitude,
-            )
-            house_position = calc_house_pos(
-                self.ramc,
-                self.lat,
-                self.oe,
-                to360(longitude + self.ayan),
-                latitude,
-            )
-            meridian_longitude = calc_meridian_longitude(azimuth, altitude)
-
-            data = [
-                longitude,
-                latitude,
-                speed,
-                right_ascension,
-                declination,
-                azimuth,
-                altitude,
-                meridian_longitude,
-                house_position,
-            ]
-
-            chart[planet_name] = data
-        
-        self.chart = chart
-        
-        if not calculate_only:
-            self.save_and_print(chart, temporary, burst)
+class ChartV2:
+    def __init__(self, chart, temporary, burst=False):
+        self.chart = ChartObject.from_params(chart)
+        self.save_and_print(chart, temporary, burst)
 
     def save_and_print(self, chart, temporary, burst):
         try:
