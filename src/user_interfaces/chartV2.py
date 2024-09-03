@@ -18,7 +18,6 @@ from src.user_interfaces.uniwheelV3 import UniwheelV3
 from src.user_interfaces.widgets import *
 from src.utils.chart_utils import make_chart_path
 from src.utils.format_utils import (
-    to360,
     version_is_supported,
     version_str_to_tuple,
 )
@@ -44,7 +43,7 @@ planet_indices = [1, 0] + [i for i in range(2, 10)] + [146199, 100377, 10, 11]
 
 class ChartV2:
     def __init__(self, chart, temporary, burst=False):
-        self.chart = ChartObject.from_params(chart)
+        self.chart = ChartObject.from_calculation(chart)
         self.save_and_print(chart, temporary, burst)
 
     def save_and_print(self, chart, temporary, burst):

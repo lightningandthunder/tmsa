@@ -475,7 +475,7 @@ class ChartObject:
                 log_error(f'Error reading {file_path}')
 
     @staticmethod
-    def from_params(params: ChartParams) -> 'ChartObject':
+    def from_calculation(params: ChartParams) -> 'ChartObject':
         chart = ChartObject(params)
         chart.version = (
             version_str_to_tuple(VERSION)
@@ -820,6 +820,7 @@ class MidpointAspect:
     from_point: str = ''
     to_midpoint: HalfSum = None
     from_point_role: ChartWheelRole = ''
+    is_mundane: bool = False
 
     def __str__(self):
         framework_suffix = (

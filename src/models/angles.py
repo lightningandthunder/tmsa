@@ -4,8 +4,7 @@ from enum import Enum
 
 @dataclass
 class AngleAxes(Enum):
-    HORIZONTAL = 'H'
-    MERIDIAN = 'M'
+    MUNDOSCOPE_ANGLE = 'A'
     PRIME_VERTICAL = 'V'
     ZENITH_NADIR = 'Z'
     EASTPOINT_WESTPOINT = 'E'
@@ -28,8 +27,13 @@ class ForegroundAngles(Enum):
     EASTPOINT_RA = 'Ea'
     WESTPOINT_RA = 'Wa'
 
+
     def __str__(self):
         return self.value
+
+    @staticmethod
+    def contains(value):
+        return value.strip() in ['A', 'D', 'M', 'I', 'Z', 'N', 'E', 'W', 'Ea', 'Wa']
 
 
 @dataclass

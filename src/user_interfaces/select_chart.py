@@ -14,10 +14,11 @@ import tkinter.filedialog as tkfiledialog
 import tkinter.messagebox as tkmessagebox
 
 from src import *
+from src.constants import DEV_MODE
 from src.models.charts import INGRESSES
 from src.user_interfaces.more_charts import MoreCharts
 from src.user_interfaces.new_chart import NewChart
-from src.user_interfaces.solunars import Solunars
+from src.user_interfaces.solunarsV2 import Solunars, SolunarsV2
 from src.user_interfaces.widgets import *
 from src.utils.chart_utils import make_chart_path
 from src.utils.format_utils import display_name, parse_version_from_txt_file
@@ -279,7 +280,10 @@ class SelectChart(Frame):
             if chart.get('base_chart', None):
                 chart['basechart'] = None
             self.destroy()
-            Solunars(chart, self.filename)
+            if DEV_MODE:
+                SolunarsV2(chart, self.filename)
+            else:
+                Solunars(chart, self.filename)
         except Exception as e:
             self.status.error(
                 f"Unable to open file: '{os.path.basename(self.filename)}' : {e}."

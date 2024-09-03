@@ -9,11 +9,10 @@
 
 from copy import deepcopy
 from src import *
-from src.models.charts import INGRESSES, ChartObject, ChartWheelRole
+from src.models.charts import ChartObject, ChartWheelRole
 from src.models.options import Options
 from src.swe import *
 from src.user_interfaces.biwheelV3 import BiwheelV3
-from src.user_interfaces.triwheel import Triwheel
 from src.user_interfaces.uniwheelV3 import UniwheelV3
 from src.user_interfaces.widgets import *
 from src.utils.chart_utils import make_chart_path
@@ -43,7 +42,7 @@ planet_indices = [1, 0] + [i for i in range(2, 10)] + [146199, 100377, 10, 11]
 
 
 class Chart:
-    def __init__(self, chart, temporary, burst=False, calculate_only=False):
+    def __init__(self, chart, temporary, burst=False):
         chart['version'] = (
             version_str_to_tuple(VERSION)
             if 'version' not in chart
@@ -120,11 +119,8 @@ class Chart:
             ]
 
             chart[planet_name] = data
-        
-        self.chart = chart
-        
-        if not calculate_only:
-            self.save_and_print(chart, temporary, burst)
+
+        self.save_and_print(chart, temporary, burst)
 
     def save_and_print(self, chart, temporary, burst):
         try:
@@ -136,11 +132,7 @@ class Chart:
                 'File Error', f"Unable to open '{optfile}'."
             )
             return
-        filename = make_chart_path(
-            chart,
-            temporary,
-            is_ingress=chart['type'] in INGRESSES or not chart['name'],
-        )
+        filename = make_chart_path(chart, temporary)
         if not burst:
             try:
                 with open(RECENT_FILE, 'r') as datafile:
@@ -166,18 +158,7 @@ class Chart:
                 pass
 
         options = Options(options)
-
-        if chart.get('ssr_chart', None):
-            return_chart = ChartObject(chart).with_role(ChartWheelRole.TRANSIT)
-            ssr_chart = ChartObject(chart['ssr_chart']).with_role(
-                ChartWheelRole.SOLAR
-            )
-            radix = ChartObject(chart['base_chart']).with_role(
-                ChartWheelRole.RADIX
-            )
-
-            self.report = Triwheel([return_chart, ssr_chart, radix], temporary, options)    
-        elif chart.get('base_chart', None):
+        if chart.get('base_chart', None):
             return_chart = ChartObject(chart).with_role(ChartWheelRole.TRANSIT)
             radix = ChartObject(chart['base_chart']).with_role(
                 ChartWheelRole.RADIX

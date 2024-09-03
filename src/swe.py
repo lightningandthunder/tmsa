@@ -288,6 +288,7 @@ def calc_sun_crossing(pos, ut):
     if sun > pos + 180:
         sun -= 360
     if sun < pos:
+        # interpolation given the speed of the sun
         cross += (pos - sun + 0.5 / 86400) / s[2]
     return cross
 
@@ -300,6 +301,7 @@ def calc_moon_crossing(pos, ut):
     if moon > pos + 180:
         moon -= 360
     if moon < pos:
+        # interpolation given the speed of the moon
         cross += (pos - moon + 0.5 / 86400) / m[2]
     return cross
 

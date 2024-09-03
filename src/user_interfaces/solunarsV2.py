@@ -33,7 +33,7 @@ from src.utils.gui_utils import ShowHelp
 from src.utils.os_utils import open_file
 
 
-class Solunars(Frame):
+class SolunarsV2(Frame):
     def __init__(self, base, filename):
         super().__init__()
         now = dt.utcnow()
@@ -689,15 +689,15 @@ class Solunars(Frame):
         )
         sun_longitude = chart['base_chart']['Sun'][0]
         moon_longitude = chart['base_chart']['Moon'][0]
-        
+
         if len(solunars) == 1 and solunars[0].value == ChartType.ANLUNAR_RETURN.value:
             # find SSR first
             ssr_date = calc_sun_crossing(sun_longitude, start - 184)
             if ssr_date > start:
                 ssr_date = calc_sun_crossing(sun_longitude, start - 367)
-            
+
             cchart = deepcopy(chart)
-            
+
             (y, m, d, t) = revjul(ssr_date, cchart['style'])
             cchart['year'] = y
             cchart['month'] = m
@@ -714,7 +714,7 @@ class Solunars(Frame):
             cchart['class'] = cclass
             cchart['correction'] = 0
             cchart['zone'] = 'UT'
-            
+
             params: ChartParams = {
                 'year': y,
                 'month': m,
@@ -729,7 +729,7 @@ class Solunars(Frame):
             }
 
             ssr_chart = ChartObject.from_calculation(chart, ssr_date, ChartType.SOLAR_RETURN, 'SR', show=False, calculate_only=True)
-            
+
             ssr_moon = ssr_chart['Moon'][0]
 
             # find SLR 
