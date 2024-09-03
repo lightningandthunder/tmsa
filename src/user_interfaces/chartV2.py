@@ -96,7 +96,9 @@ class ChartV2:
                 ChartWheelRole.RADIX
             )
 
-            self.report = Triwheel([return_chart, ssr_chart, radix], temporary, options)    
+            self.report = Triwheel(
+                [return_chart, ssr_chart, radix], temporary, options
+            )
         elif chart.get('base_chart', None):
             return_chart = ChartObject(chart).with_role(ChartWheelRole.TRANSIT)
             radix = ChartObject(chart['base_chart']).with_role(

@@ -18,7 +18,8 @@ from src.constants import DEV_MODE
 from src.models.charts import INGRESSES
 from src.user_interfaces.more_charts import MoreCharts
 from src.user_interfaces.new_chart import NewChart
-from src.user_interfaces.solunarsV2 import Solunars, SolunarsV2
+from src.user_interfaces.solunars import Solunars
+from src.user_interfaces.solunarsV2 import SolunarsV2
 from src.user_interfaces.widgets import *
 from src.utils.chart_utils import make_chart_path
 from src.utils.format_utils import display_name, parse_version_from_txt_file

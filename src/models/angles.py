@@ -27,13 +27,23 @@ class ForegroundAngles(Enum):
     EASTPOINT_RA = 'Ea'
     WESTPOINT_RA = 'Wa'
 
-
     def __str__(self):
         return self.value
 
     @staticmethod
     def contains(value):
-        return value.strip() in ['A', 'D', 'M', 'I', 'Z', 'N', 'E', 'W', 'Ea', 'Wa']
+        return value.strip() in [
+            'A',
+            'D',
+            'M',
+            'I',
+            'Z',
+            'N',
+            'E',
+            'W',
+            'Ea',
+            'Wa',
+        ]
 
 
 @dataclass

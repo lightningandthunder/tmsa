@@ -67,11 +67,13 @@ MONTHS = [
 
 HOUR_FRACTION_OF_A_DAY = 1 / 24
 
+
 class PlanetInfo(TypedDict):
     short_name: str
     long_name: str
     number: int
     stationary_period_hours: float
+
 
 PLANETS: dict[str, PlanetInfo] = {
     'Moon': {

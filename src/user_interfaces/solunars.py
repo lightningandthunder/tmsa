@@ -689,15 +689,18 @@ class Solunars(Frame):
         )
         sun_longitude = chart['base_chart']['Sun'][0]
         moon_longitude = chart['base_chart']['Moon'][0]
-        
-        if len(solunars) == 1 and solunars[0].value == ChartType.ANLUNAR_RETURN.value:
+
+        if (
+            len(solunars) == 1
+            and solunars[0].value == ChartType.ANLUNAR_RETURN.value
+        ):
             # find SSR first
             ssr_date = calc_sun_crossing(sun_longitude, start - 184)
             if ssr_date > start:
                 ssr_date = calc_sun_crossing(sun_longitude, start - 367)
-            
+
             cchart = deepcopy(chart)
-            
+
             (y, m, d, t) = revjul(ssr_date, cchart['style'])
             cchart['year'] = y
             cchart['month'] = m
@@ -714,7 +717,7 @@ class Solunars(Frame):
             cchart['class'] = cclass
             cchart['correction'] = 0
             cchart['zone'] = 'UT'
-            
+
             params: ChartParams = {
                 'year': y,
                 'month': m,
@@ -728,16 +731,28 @@ class Solunars(Frame):
                 type: ChartType.ANLUNAR_RETURN,
             }
 
-            ssr_chart = ChartObject.from_calculation(chart, ssr_date, ChartType.SOLAR_RETURN, 'SR', show=False, calculate_only=True)
-            
+            ssr_chart = ChartObject.from_calculation(
+                chart,
+                ssr_date,
+                ChartType.SOLAR_RETURN,
+                'SR',
+                show=False,
+                calculate_only=True,
+            )
+
             ssr_moon = ssr_chart['Moon'][0]
 
-            # find SLR 
+            # find SLR
             sar_date = calc_moon_crossing(ssr_moon, start)
 
             chart['ssr_chart'] = ssr_chart
 
-            self.make_chart(chart, sar_date, ChartType.ANLUNAR_RETURN, ChartType.ANLUNAR_RETURN.value)
+            self.make_chart(
+                chart,
+                sar_date,
+                ChartType.ANLUNAR_RETURN,
+                ChartType.ANLUNAR_RETURN.value,
+            )
             return
 
         for sol in solunars:
@@ -767,14 +782,20 @@ class Solunars(Frame):
                             if date > start:
                                 if (
                                     not smallest_date_difference
-                                    or abs(date - start) < smallest_date_difference
+                                    or abs(date - start)
+                                    < smallest_date_difference
                                 ):
-                                    smallest_date_difference = abs(date - start)
+                                    smallest_date_difference = abs(
+                                        date - start
+                                    )
                                     closest_target = target
 
                         target = closest_target
 
-                    elif DEV_MODE and sol.value == ChartType.TEN_DAY_SOLAR_RETURN.value:
+                    elif (
+                        DEV_MODE
+                        and sol.value == ChartType.TEN_DAY_SOLAR_RETURN.value
+                    ):
                         smallest_date_difference = None
                         closest_target = None
 
@@ -789,9 +810,12 @@ class Solunars(Frame):
                             if date > start:
                                 if (
                                     not smallest_date_difference
-                                    or abs(date - start) < smallest_date_difference
+                                    or abs(date - start)
+                                    < smallest_date_difference
                                 ):
-                                    smallest_date_difference = abs(date - start)
+                                    smallest_date_difference = abs(
+                                        date - start
+                                    )
                                     closest_target = target
 
                         target = closest_target
@@ -997,7 +1021,10 @@ class Solunars(Frame):
 
             if solars[0].value == ChartType.FIRST_QUARTI_SOLAR_RETURN.value:
                 solars = solars[1:]
-            if solars and solars[0].value == ChartType.LAST_QUARTI_SOLAR_RETURN.value:
+            if (
+                solars
+                and solars[0].value == ChartType.LAST_QUARTI_SOLAR_RETURN.value
+            ):
                 solars = solars[1:]
 
         # The NSR can't be a QSSR, but it can possibly be a DSSR
@@ -1200,9 +1227,6 @@ class Solunars(Frame):
         cclass = ''
 
         any_charts_found = False
-        
-        
-
 
         # Look for full SSR
         if solars:
@@ -1240,7 +1264,10 @@ class Solunars(Frame):
 
             if solars[0].value == ChartType.FIRST_QUARTI_SOLAR_RETURN.value:
                 solars = solars[1:]
-            if solars and solars[0].value == ChartType.LAST_QUARTI_SOLAR_RETURN.value:
+            if (
+                solars
+                and solars[0].value == ChartType.LAST_QUARTI_SOLAR_RETURN.value
+            ):
                 solars = solars[1:]
 
         # The NSR can't be a QSSR, but it can possibly be a DSSR
@@ -1423,8 +1450,9 @@ class Solunars(Frame):
         if not any_charts_found:
             self.status.error('No charts found.')
 
-
-    def make_chart(self, chart, date, chtype, cclass, show=True, calculate_only=False):
+    def make_chart(
+        self, chart, date, chtype, cclass, show=True, calculate_only=False
+    ):
         cchart = deepcopy(chart)
         (y, m, d, t) = revjul(date, cchart['style'])
         cchart['year'] = y
@@ -1443,11 +1471,15 @@ class Solunars(Frame):
         cchart['correction'] = 0
         cchart['zone'] = 'UT'
         if show:
-            chart_class = ChartV2(cchart, self.istemp.value, calculate_only=calculate_only)
+            chart_class = ChartV2(
+                cchart, self.istemp.value, calculate_only=calculate_only
+            )
             if hasattr(chart_class, 'report'):
                 chart_class.report.show()
         else:
-            chart_class = ChartV2(cchart, self.istemp.value, calculate_only=calculate_only)
+            chart_class = ChartV2(
+                cchart, self.istemp.value, calculate_only=calculate_only
+            )
             if hasattr(chart_class, 'report'):
                 chart_class.report
 

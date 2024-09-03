@@ -221,6 +221,7 @@ class ChartType(Enum):
     CAN_LUNAR = 'Canlunar'
     LIB_LUNAR = 'Liblunar'
 
+
 class ChartParams(TypedDict):
     name: str | None
     year: int
@@ -343,10 +344,10 @@ class ChartObject:
                     0,
                 ),
             ]
-            
+
         self.angles = angles
         self.cusps = cusps
-        
+
         if data.get('planets'):
             self.planets = {
                 planet: PlanetData(**data['planets'][planet])
@@ -397,7 +398,7 @@ class ChartObject:
         self.notes = data.get('notes', None)
 
         self.version = data.get('version', (0, 0, 0))
-        
+
         def __dict__(self):
             return {
                 'name': self.name,
@@ -416,7 +417,10 @@ class ChartObject:
                 'geo_latitude': self.geo_latitude,
                 'lst': self.lst,
                 'ramc': self.ramc,
-                'planets': {planet: self.planets[planet].__dict__ for planet in self.planets},
+                'planets': {
+                    planet: self.planets[planet].__dict__
+                    for planet in self.planets
+                },
                 'cusps': self.cusps,
                 'angles': self.angles,
                 'vertex': self.vertex,
@@ -499,7 +503,9 @@ class ChartObject:
                 speed,
                 right_ascension,
                 declination,
-            ] = swe.calc_planet(chart.julian_day_utc, planet_definitions['number'])
+            ] = swe.calc_planet(
+                chart.julian_day_utc, planet_definitions['number']
+            )
             [azimuth, altitude] = swe.calc_azimuth(
                 chart.julian_day_utc,
                 chart.geo_longitude,
@@ -546,7 +552,7 @@ class ChartObject:
 
         return self
 
-        
+
 class AspectType(Enum):
     CONJUNCTION = 'co'
     OCTILE = 'oc'
@@ -823,11 +829,13 @@ class MidpointAspect:
     is_mundane: bool = False
 
     def __str__(self):
-        framework_suffix = (
-            f' {self.framework.value}'
-            if self.framework.value != AspectFramework.ECLIPTICAL.value
-            else ''
-        )
+        framework_suffix = ''
+        if (
+            self.framework.value != AspectFramework.ECLIPTICAL.value
+            and self.from_point not in ['Angle', 'Ea', 'E', 'Z']
+        ):
+            framework_suffix = f' {self.framework.value}'
+
         return f"{self.to_midpoint} {self.orb_minutes: >2}'{self.midpoint_type.value}{framework_suffix}"
 
 

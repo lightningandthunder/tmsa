@@ -39,7 +39,6 @@ class CoreChart(object, metaclass=ABCMeta):
         temporary: bool,
         options: option_models.Options,
     ):
-        print('Initializing CoreChart with ', len(charts), ' charts')
         self.options = options
 
         self.charts = sorted(charts, key=lambda x: x.role, reverse=True)
@@ -47,8 +46,8 @@ class CoreChart(object, metaclass=ABCMeta):
 
         # For now, only enable natal midpoints
         if (
-            len(charts) == 1
-            and charts[0].type == chart_models.ChartType.NATAL
+            len(charts)
+            == 1
             # and self.options.enable_natal_midpoints
         ):
             self.halfsums = self.calc_halfsums()
@@ -193,7 +192,7 @@ class CoreChart(object, metaclass=ABCMeta):
 
             if progressed:
                 progressed.precess_to(transit)
-                
+
             if solar:
                 solar.precess_to(transit)
         else:
@@ -1469,6 +1468,60 @@ class CoreChart(object, metaclass=ABCMeta):
                 ):
                     chartfile.write('\n' + (' ' * 9) + '|    ')
 
+            angle_midpoints = midpoints.get(f'Angle', [])
+            ra_midpoints = midpoints.get(f'Ea', [])
+            zenith_midpoints = midpoints.get(f'Z', [])
+            eastpoint_midpoints = midpoints.get(f'E', [])
+
+            if (
+                len(angle_midpoints) > 0
+                or len(ra_midpoints) > 0
+                or len(zenith_midpoints) > 0
+                or len(eastpoint_midpoints) > 0
+            ):
+                chartfile.write((' ' * 9) + '|    ')
+
+            # Write mundane midpoints
+            if len(angle_midpoints) > 0:
+                chartfile.write(f'\nAngle    |    ')
+            for (midpoint_index, midpoint) in enumerate(angle_midpoints):
+                chartfile.write(str(midpoint) + (' ' * 6))
+                if (
+                    midpoint_index % 4 == 3
+                    and midpoint_index != len(angle_midpoints) - 1
+                ):
+                    chartfile.write('\n' + (' ' * 9) + '|    ')
+
+            if len(ra_midpoints) > 0:
+                chartfile.write(f'\nEa       |    ')
+            for (midpoint_index, midpoint) in enumerate(ra_midpoints):
+                chartfile.write(str(midpoint) + (' ' * 6))
+                if (
+                    midpoint_index % 4 == 3
+                    and midpoint_index != len(ra_midpoints) - 1
+                ):
+                    chartfile.write('\n' + (' ' * 9) + '|    ')
+
+            if len(zenith_midpoints) > 0:
+                chartfile.write(f'\nZ        |    ')
+            for (midpoint_index, midpoint) in enumerate(zenith_midpoints):
+                chartfile.write(str(midpoint) + (' ' * 6))
+                if (
+                    midpoint_index % 4 == 3
+                    and midpoint_index != len(zenith_midpoints) - 1
+                ):
+                    chartfile.write('\n' + (' ' * 9) + '|    ')
+
+            if len(eastpoint_midpoints) > 0:
+                chartfile.write(f'\nE        |    ')
+            for (midpoint_index, midpoint) in enumerate(eastpoint_midpoints):
+                chartfile.write(str(midpoint) + (' ' * 6))
+                if (
+                    midpoint_index % 4 == 3
+                    and midpoint_index != len(eastpoint_midpoints) - 1
+                ):
+                    chartfile.write('\n' + (' ' * 9) + '|    ')
+
     def get_return_class(self, t: chart_models.ChartType) -> str:
         t = t.type.value.lower()
         if t[0:3] in ['cap', 'can', 'ari', 'lib']:
@@ -1476,7 +1529,6 @@ class CoreChart(object, metaclass=ABCMeta):
         if 'return' in t:
             return 'SR' if 'solar' in t else 'LR'
         return 'N'
-
 
     def calc_midpoints(self):
         midpoints = {}
@@ -1587,7 +1639,6 @@ class CoreChart(object, metaclass=ABCMeta):
 
         return midpoints
 
-
     def find_chart_by_role(self, role: chart_models.ChartWheelRole):
         for chart in self.charts:
             if chart.role.value == role.value:
@@ -1601,51 +1652,112 @@ class CoreChart(object, metaclass=ABCMeta):
         zenith = to360(eastpoint + 90)
         eastpoint_ra = to360(outermost_chart.ramc - 90)
 
-        max_orb = self.options.midpoints.get('mundane', 0)
+        max_orb = self.options.midpoints.get('M', 0)
         if max_orb == 0:
             return midpoints
-
-        max_orb = None
 
         for halfsum in self.halfsums:
             if halfsum.contains('As') or halfsum.contains('Mc'):
                 continue
 
             chart_a = self.find_chart_by_role(halfsum.point_a_role)
-            planet_a = chart_a.planets[chart_utils.convert_short_name_to_long(halfsum.point_a)]
+            planet_a = chart_a.planets[
+                chart_utils.convert_short_name_to_long(halfsum.point_a)
+            ]
 
             chart_b = self.find_chart_by_role(halfsum.point_b_role)
-            planet_b = chart_b.planets[chart_utils.convert_short_name_to_long(halfsum.point_b)]
+            planet_b = chart_b.planets[
+                chart_utils.convert_short_name_to_long(halfsum.point_b)
+            ]
 
-            if chart_a.type.value in chart_models.INGRESSES or chart_b.type.value in chart_models.INGRESSES:
+            if (
+                chart_a.type.value in chart_models.INGRESSES
+                or chart_b.type.value in chart_models.INGRESSES
+            ):
                 # use ingress logic
-    
-                if not angles_models.ForegroundAngles.contains(planet_b.angle.value) or not angles_models.ForegroundAngles.contains(planet_a.angle.value):
+
+                if not angles_models.ForegroundAngles.contains(
+                    planet_b.angle.value
+                ) or not angles_models.ForegroundAngles.contains(
+                    planet_a.angle.value
+                ):
                     continue
 
                 closest_orb = 360
                 closest_angle = ''
 
                 for (
-                    _, aspect_degrees,
+                    _,
+                    aspect_degrees,
                 ) in chart_models.AspectType.iterate_harmonic_4():
-                
+
                     # Find closest angle that is contacted by both points
                     pvl_orb = 360
                     ra_orb = 360
                     eastpoint_orb = 360
                     zenith_orb = 360
-                    
-                    if angles_models.AngleAxes.MUNDOSCOPE_ANGLE.value in planet_a.angle_axes_contacted and angles_models.AngleAxes.MUNDOSCOPE_ANGLE.value in planet_b.angle_axes_contacted:
-                        pvl_orb = abs(halfsum.prime_vertical_longitude - aspect_degrees) * 60
-                    if angles_models.AngleAxes.EASTPOINT_IN_RA.value in planet_a.angle_axes_contacted and angles_models.AngleAxes.EASTPOINT_IN_RA.value in planet_b.angle_axes_contacted:
-                        ra_orb = abs(abs(halfsum.right_ascension - eastpoint_ra) - aspect_degrees) * 60
-                    if angles_models.AngleAxes.ZENITH_NADIR.value in planet_a.angle_axes_contacted and angles_models.AngleAxes.ZENITH_NADIR.value in planet_b.angle_axes_contacted:
-                        zenith_orb = abs(abs(zenith - halfsum.longitude) - aspect_degrees) * 60
-                    if angles_models.AngleAxes.EASTPOINT_WESTPOINT.value in planet_a.angle_axes_contacted and angles_models.AngleAxes.EASTPOINT_WESTPOINT.value in planet_b.angle_axes_contacted:                    
-                        eastpoint_orb = abs(abs(eastpoint - halfsum.longitude) - aspect_degrees) * 60
-                        
-                        (closest_orb, closest_angle) = min((closest_orb, closest_angle), (pvl_orb, 'Angle'), (ra_orb, 'Ea'), (eastpoint_orb, 'E'), (zenith_orb, 'Z'), key=lambda x: x[0])
+
+                    if (
+                        angles_models.AngleAxes.MUNDOSCOPE_ANGLE.value
+                        in planet_a.angle_axes_contacted
+                        and angles_models.AngleAxes.MUNDOSCOPE_ANGLE.value
+                        in planet_b.angle_axes_contacted
+                    ):
+                        pvl_orb = (
+                            abs(
+                                halfsum.prime_vertical_longitude
+                                - aspect_degrees
+                            )
+                            * 60
+                        )
+                    if (
+                        angles_models.AngleAxes.EASTPOINT_IN_RA.value
+                        in planet_a.angle_axes_contacted
+                        and angles_models.AngleAxes.EASTPOINT_IN_RA.value
+                        in planet_b.angle_axes_contacted
+                    ):
+                        ra_orb = (
+                            abs(
+                                abs(halfsum.right_ascension - eastpoint_ra)
+                                - aspect_degrees
+                            )
+                            * 60
+                        )
+                    if (
+                        angles_models.AngleAxes.ZENITH_NADIR.value
+                        in planet_a.angle_axes_contacted
+                        and angles_models.AngleAxes.ZENITH_NADIR.value
+                        in planet_b.angle_axes_contacted
+                    ):
+                        zenith_orb = (
+                            abs(
+                                abs(zenith - halfsum.longitude)
+                                - aspect_degrees
+                            )
+                            * 60
+                        )
+                    if (
+                        angles_models.AngleAxes.EASTPOINT_WESTPOINT.value
+                        in planet_a.angle_axes_contacted
+                        and angles_models.AngleAxes.EASTPOINT_WESTPOINT.value
+                        in planet_b.angle_axes_contacted
+                    ):
+                        eastpoint_orb = (
+                            abs(
+                                abs(eastpoint - halfsum.longitude)
+                                - aspect_degrees
+                            )
+                            * 60
+                        )
+
+                    (closest_orb, closest_angle) = min(
+                        (closest_orb, closest_angle),
+                        (pvl_orb, 'Angle'),
+                        (ra_orb, 'Ea'),
+                        (eastpoint_orb, 'E'),
+                        (zenith_orb, 'Z'),
+                        key=lambda x: x[0],
+                    )
 
                 if closest_orb <= max_orb:
                     midpoint = chart_models.MidpointAspect(
@@ -1666,11 +1778,6 @@ class CoreChart(object, metaclass=ABCMeta):
                             midpoint,
                             key=lambda x: x.orb_minutes,
                         )
-
-        for k, v in midpoints.items():
-            print(k)
-            for m in v:
-                print(k, m)
 
         return midpoints
 
