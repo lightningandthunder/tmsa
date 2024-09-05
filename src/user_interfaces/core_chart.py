@@ -51,6 +51,8 @@ class CoreChart(object, metaclass=ABCMeta):
             # and self.options.enable_natal_midpoints
         ):
             self.halfsums = self.calc_halfsums()
+        else:
+            self.halfsums = []
 
         for chart in self.charts:
             for (
