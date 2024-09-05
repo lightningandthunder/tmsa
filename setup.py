@@ -10,6 +10,8 @@ import shutil
 base = ""
 out_dir = "dist"
 build_dir = None
+copyright = "Copyright (C) 2024 James A. Eshelman"
+
 match sys.platform:
     case "win32":
         base = "Win32GUI"
@@ -25,7 +27,7 @@ match sys.platform:
         case "win32":
             executable = Executable(
                     script=os.path.join("src", "tmsa.py"),
-                    copyright="Copyright (C) 2024 James A. Eshelman",
+                    copyright=copyright,
                     base=base,
                     icon=os.path.join("src", "assets", "tmsa3.ico"),
                     shortcut_name="Time Matters",
@@ -34,13 +36,13 @@ match sys.platform:
         case "linux":
             executable = Executable(
                     script=os.path.join("src", "tmsa.py"),
-                    copyright="Copyright (C) 2024 James A. Eshelman",
+                    copyright=copyright,
                     base=base,
                 )
         case "darwin":
             executable = Executable(
                     script=os.path.join("src", "tmsa.py"),
-                    copyright="Copyright (C) 2024 James A. Eshelman",
+                    copyright=copyright,
                     base=base,
                 )
 

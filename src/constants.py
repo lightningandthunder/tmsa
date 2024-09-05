@@ -23,7 +23,7 @@ PLATFORM = None
 PROGRESSION_Q1 = 0.00273032809
 PROGRESSION_Q2 = 0.00273780311
 
-DEV_MODE = True
+DEV_MODE = False
 
 match sys.platform:
     case 'win32':
