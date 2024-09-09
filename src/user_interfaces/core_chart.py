@@ -723,7 +723,7 @@ class CoreChart(object, metaclass=ABCMeta):
         if str(angularity.value).strip() == '' and is_mundanely_background:
             angularity = angles_models.NonForegroundAngles.BACKGROUND
 
-        if chart.type not in chart_models.INGRESSES:
+        if chart.type.value not in chart_models.INGRESSES:
             # It's not an ingress; dormancy is always negated
             planet_negates_dormancy = True
         else:
@@ -799,6 +799,7 @@ class CoreChart(object, metaclass=ABCMeta):
         secondary_planet_data: chart_models.PlanetData,
         whole_chart_is_dormant: bool,
     ) -> chart_models.Aspect | None:
+
         ecliptical_aspect = self.find_ecliptical_aspect(
             primary_planet_data,
             secondary_planet_data,
@@ -830,7 +831,7 @@ class CoreChart(object, metaclass=ABCMeta):
             tightest_aspect = min(
                 ecliptical_aspect,
                 mundane_aspect,
-                key=lambda x: x.orb if x else 1000,
+                key=lambda x: 1 - x.strength if x else 1000,
             )
         elif self.options.pvp_aspects.get('enabled', False):
             # This may also be None; that's fine
@@ -994,10 +995,11 @@ class CoreChart(object, metaclass=ABCMeta):
         # Default to true if this is an ingress chart
         whole_chart_is_dormant = (
             True
-            if len(self.charts) == 0
-            and self.charts[0].type in chart_models.INGRESSES
+            if len(self.charts) == 1
+            and self.charts[0].type.value in chart_models.INGRESSES
             else False
         )
+
         for (chart_index, chart) in enumerate(self.charts):
             if chart_index > 0:
                 chartfile.write('-' * self.table_width + '\n')

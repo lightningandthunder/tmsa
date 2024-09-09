@@ -180,37 +180,63 @@ class ChartType(Enum):
     RADIX = 'Radix'
     NATAL = 'Natal'
     SOLAR_RETURN = 'Solar Return'
+    SOLAR_RETURN_SINGLE = 'Solar Return Single Wheel'
     DEMI_SOLAR_RETURN = 'Demi-Solar Return'
+    DEMI_SOLAR_RETURN_SINGLE = 'Demi-Solar Return Single Wheel'
     LAST_QUARTI_SOLAR_RETURN = 'Last Quarti-Solar Return'
+    LAST_QUARTI_SOLAR_RETURN_SINGLE = 'Last Quarti-Solar Return Single Wheel'
     FIRST_QUARTI_SOLAR_RETURN = 'First Quarti-Solar Return'
+    FIRST_QUARTI_SOLAR_RETURN_SINGLE = 'First Quarti-Solar Return Single Wheel'
 
     LUNAR_RETURN = 'Lunar Return'
+    LUNAR_RETURN_SINGLE = 'Lunar Return Single Wheel'
     DEMI_LUNAR_RETURN = 'Demi-Lunar Return'
+    DEMI_LUNAR_RETURN_SINGLE = 'Demi-Lunar Return Single Wheel'
     FIRST_QUARTI_LUNAR_RETURN = 'First Quarti-Lunar Return'
+    FIRST_QUARTI_LUNAR_RETURN_SINGLE = 'First Quarti-Lunar Return Single Wheel'
     LAST_QUARTI_LUNAR_RETURN = 'Last Quarti-Lunar Return'
+    LAST_QUARTI_LUNAR_RETURN_SINGLE = 'Last Quarti-Lunar Return Single Wheel'
 
     KINETIC_LUNAR_RETURN = 'Kinetic Lunar Return'
+    KINETIC_LUNAR_RETURN_SINGLE = 'Kinetic Lunar Return Single Wheel'
     DEMI_KINETIC_LUNAR_RETURN = 'Kinetic Demi-Lunar Return'
+    DEMI_KINETIC_LUNAR_RETURN_SINGLE = 'Kinetic Demi-Lunar Return Single Wheel'
 
     KINETIC_SOLAR_RETURN = 'Kinetic Solar Return'
+    KINETIC_SOLAR_RETURN_SINGLE = 'Kinetic Solar Return Single Wheel'
     DEMI_KINETIC_SOLAR_RETURN = 'Kinetic Demi-Solar Return'
+    DEMI_KINETIC_SOLAR_RETURN_SINGLE = 'Kinetic Demi-Solar Return Single Wheel'
 
     NOVIENIC_SOLAR_RETURN = 'Novienic Solar Return'
+    NOVIENIC_SOLAR_RETURN_SINGLE = 'Novienic Solar Return Single Wheel'
     TEN_DAY_SOLAR_RETURN = '10-Day Solar Return'
+    TEN_DAY_SOLAR_RETURN_SINGLE = '10-Day Solar Return Single Wheel'
 
     NOVIENIC_LUNAR_RETURN = 'Novienic Lunar Return'
+    NOVIENIC_LUNAR_RETURN_SINGLE = 'Novienic Lunar Return Single Wheel'
     EIGHTEEN_HOUR_LUNAR_RETURN = '18-Hour Lunar Return'
+    EIGHTEEN_HOUR_LUNAR_RETURN_SINGLE = '18-Hour Lunar Return Single Wheel'
 
     ANLUNAR_RETURN = 'Anlunar Return'
+    ANLUNAR_RETURN_SINGLE = 'Anlunar Return Single Wheel'
     DEMI_ANLUNAR_RETURN = 'Demi-Anlunar Return'
+    DEMI_ANLUNAR_RETURN_SINGLE = 'Demi-Anlunar Return Single Wheel'
 
     KINETIC_ANULAR_RETURN = 'Kinetic Anlunar Return'
+    KINETIC_ANLUNAR_RETURN_SINGLE = 'Kinetic Anlunar Return Single Wheel'
     KINETIC_DEMI_ANLUNAR_RETURN = 'Kinetic Demi-Anlunar Return'
+    KINETIC_DEMI_ANLUNAR_RETURN_SINGLE = (
+        'Kinetic Demi-Anlunar Return Single Wheel'
+    )
 
     SOLILUNAR_RETURN = 'Solilunar Return'
+    SOLILUNAR_RETURN_SINGLE = 'Solilunar Return Single Wheel'
     DEMI_SOLILUNAR_RETURN = 'Demi-Solilunar Return'
+    DEMI_SOLILUNAR_RETURN_SINGLE = 'Demi-Solilunar Return Single Wheel'
     LUNISOLAR_RETURN = 'Lunisolar Return'
+    LUNISOLAR_RETURN_SINGLE = 'Lunisolar Return Single Wheel'
     DEMI_LUNISOLAR_RETURN = 'Demi-Lunisolar Return'
+    DEMI_LUNISOLAR_RETURN_SINGLE = 'Demi-Lunisolar Return Single Wheel'
 
     CAP_SOLAR = 'Capsolar'
     ARI_SOLAR = 'Arisolar'
