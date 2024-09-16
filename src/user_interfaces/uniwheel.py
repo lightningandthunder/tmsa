@@ -37,8 +37,8 @@ from src.utils.chart_utils import (
     make_chart_path,
     minor_angularity_curve,
     right_align,
-    s_dm,
-    s_ms,
+    signed_degree_minute,
+    signed_minute_second,
     zod_min,
     zod_sec,
 )
@@ -219,9 +219,9 @@ class Uniwheel:
                 chartfile.write(zod_sec(planet_data[0]) + ' ')
                 chartfile.write(fmt_lat(planet_data[1], True) + ' ')
                 if abs(planet_data[2]) >= 1:
-                    chartfile.write(s_dm(planet_data[2]) + ' ')
+                    chartfile.write(signed_degree_minute(planet_data[2]) + ' ')
                 else:
-                    chartfile.write(s_ms(planet_data[2]) + ' ')
+                    chartfile.write(signed_minute_second(planet_data[2]) + ' ')
                 chartfile.write(
                     right_align(fmt_dm(planet_data[3], True), 7) + ' '
                 )
@@ -234,7 +234,9 @@ class Uniwheel:
                 )
 
                 # Altitude
-                chartfile.write(right_align(s_dm(planet_data[6]), 7) + ' ')
+                chartfile.write(
+                    right_align(signed_degree_minute(planet_data[6]), 7) + ' '
+                )
 
                 # Meridian Longitude
                 chartfile.write(fmt_dm(planet_data[7], True) + ' ')

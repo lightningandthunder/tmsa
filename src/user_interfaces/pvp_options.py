@@ -18,9 +18,7 @@ class PVPOptions(Frame):
         self.pvp_opts = pvp_opts
         self.func = func
 
-        self.enable_pvp = Checkbutton(
-            self, 'Enable PVP Aspects', 0.4, 0.35, 0.215
-        )
+        self.enable_pvp = Checkbutton(self, 'Enable', 0.4, 0.35, 0.215)
         self.enable_pvp.checked = pvp_opts.get('enabled', False)
 
         Label(self, f'Prime Vertical Paran Options For {name}', 0, 0, 1)

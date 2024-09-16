@@ -438,12 +438,16 @@ class CoreChart(object, metaclass=ABCMeta):
             raw_orb = abs(primary_planet.azimuth - secondary_planet.azimuth)
 
             conjunction_orb = (
-                self.options.pvp_aspects['0'][0]
+                chart_utils.greatest_nonzero_class_orb(
+                    self.options.pvp_aspects['0']
+                )
                 if self.options.pvp_aspects
                 else 3
             )
             opposition_orb = (
-                self.options.pvp_aspects['180'][0]
+                chart_utils.greatest_nonzero_class_orb(
+                    self.options.pvp_aspects['180']
+                )
                 if self.options.pvp_aspects
                 else 3
             )
@@ -482,7 +486,9 @@ class CoreChart(object, metaclass=ABCMeta):
             return None
 
         square_orb = (
-            self.options.pvp_aspects['90'][0]
+            chart_utils.greatest_nonzero_class_orb(
+                self.options.pvp_aspects['90']
+            )
             if self.options.pvp_aspects
             else 3
         )
@@ -499,11 +505,12 @@ class CoreChart(object, metaclass=ABCMeta):
             )
 
         normalized_orb = None
-        if aspect_type == chart_models.AspectType.CONJUNCTION:
+        aspect_class = 1
+        if aspect_type.value == chart_models.AspectType.CONJUNCTION.value:
             normalized_orb = raw_orb
-        elif aspect_type == chart_models.AspectType.OPPOSITION:
+        elif aspect_type.value == chart_models.AspectType.OPPOSITION.value:
             normalized_orb = abs(180 - raw_orb)
-        elif aspect_type == chart_models.AspectType.SQUARE:
+        elif aspect_type.value == chart_models.AspectType.SQUARE.value:
             if chart_utils.inrange(raw_orb, 0, square_orb):
                 normalized_orb = raw_orb
             if chart_utils.inrange(raw_orb, 90, square_orb):
@@ -515,6 +522,32 @@ class CoreChart(object, metaclass=ABCMeta):
 
         if not normalized_orb:
             return None
+
+        aspect_type_string = str(
+            chart_models.AspectType.degrees_from_abbreviation(
+                aspect_type.value
+            )
+        )
+
+        if self.options.pvp_aspects:
+            if (
+                self.options.pvp_aspects[aspect_type_string][0] > 0
+                and normalized_orb
+                < self.options.pvp_aspects[aspect_type_string][0]
+            ):
+                aspect_class = 1
+            if (
+                self.options.pvp_aspects[aspect_type_string][1] > 0
+                and normalized_orb
+                < self.options.pvp_aspects[aspect_type_string][1]
+            ):
+                aspect_class = 2
+            elif (
+                self.options.pvp_aspects[aspect_type_string][2] > 0
+                and normalized_orb
+                < self.options.pvp_aspects[aspect_type_string][2]
+            ):
+                aspect_class = 3
 
         aspect = (
             chart_models.Aspect()
@@ -528,7 +561,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 role=lesser_planet.role,
             )
             .as_type(aspect_type)
-            .with_class(1)
+            .with_class(aspect_class)
         )
         aspect_strength = chart_utils.calc_aspect_strength_percent(
             square_orb, normalized_orb
@@ -989,7 +1022,7 @@ class CoreChart(object, metaclass=ABCMeta):
 
     def write_info_table(self, chartfile: TextIOWrapper):
         chartfile.write(
-            'Pl Longitude   Lat   Speed    RA     Decl   Azi     Alt      ML     PVL    Ang G\n'
+            '      Long     Lat   Speed    RA     Dec    Azi     Alt      ML     PVL    Ang  \n'
         )
 
         # Default to true if this is an ingress chart
@@ -1063,10 +1096,23 @@ class CoreChart(object, metaclass=ABCMeta):
             chartfile.write(
                 chart_utils.fmt_lat(planet_data.latitude, True) + ' '
             )
+
             if abs(planet_data.speed) >= 1:
-                chartfile.write(chart_utils.s_dm(planet_data.speed) + ' ')
+                chartfile.write(
+                    chart_utils.signed_degree_minute(planet_data.speed) + ' '
+                )
             else:
-                chartfile.write(chart_utils.s_ms(planet_data.speed) + ' ')
+                signed_speed = chart_utils.signed_minute_second(
+                    planet_data.speed
+                )
+                if planet_data.is_stationary:
+                    chartfile.write(f'S{signed_speed[1:]} ')
+                else:
+                    chartfile.write(
+                        chart_utils.signed_minute_second(planet_data.speed)
+                        + ' '
+                    )
+
             chartfile.write(
                 chart_utils.right_align(
                     chart_utils.fmt_dm(planet_data.right_ascension, True), 7
@@ -1088,7 +1134,7 @@ class CoreChart(object, metaclass=ABCMeta):
             # Altitude
             chartfile.write(
                 chart_utils.right_align(
-                    chart_utils.s_dm(planet_data.altitude), 7
+                    chart_utils.signed_degree_minute(planet_data.altitude), 7
                 )
                 + ' '
             )
@@ -1291,6 +1337,8 @@ class CoreChart(object, metaclass=ABCMeta):
                         + '\n'
                     )
 
+            strength_hierarchy_written = False
+
             moon_sign = chart_utils.SIGNS_SHORT[
                 int(chart.planets['Moon'].longitude // 30)
             ]
@@ -1323,18 +1371,18 @@ class CoreChart(object, metaclass=ABCMeta):
                 angle = str(planet_data.angle.value)
 
                 if angle.strip() == '':
-                    angle = ' '
-                elif str(planet_data.angle.value).strip() in [
+                    angle = '  '
+                elif angle.strip() in [
                     a.value.strip().upper()
                     for a in angles_models.ForegroundAngles
                 ]:
-                    angle = 'F'
+                    angle = 'F '
                 else:
-                    angle = 'B'
-                chartfile.write(angle + ' |')
+                    angle = 'B '
+
+                chartfile.write(angle)
 
                 # Write needs hierarchy strength for natals
-                strength_hierarchy_written = False
                 if (
                     len(self.charts) == 1
                     and chart.type.value == chart_models.ChartType.NATAL.value
@@ -1342,8 +1390,10 @@ class CoreChart(object, metaclass=ABCMeta):
                     strength = self.calc_planetary_needs_strength(
                         planet_data, chart, aspects_by_class
                     )
-                    chartfile.write((f' ({int(strength)}%)').ljust(16))
+                    chartfile.write((f'{int(strength): >3}%'))
                     strength_hierarchy_written = True
+
+                chartfile.write('|')
 
                 need_another_row = False
 
@@ -1396,7 +1446,10 @@ class CoreChart(object, metaclass=ABCMeta):
 
                 if aspect_list:
                     if need_another_row:
-                        chartfile.write('\n' + (' ' * 9) + '| ')
+                        if strength_hierarchy_written:
+                            chartfile.write('\n' + (' ' * 13) + '| ')
+                        else:
+                            chartfile.write('\n' + (' ' * 9) + '| ')
                         need_another_row = False
                     else:
                         chartfile.write(' ')
@@ -1419,7 +1472,7 @@ class CoreChart(object, metaclass=ABCMeta):
                                 and aspect_index != len(aspect_list) - 1
                             )
                         ):
-                            chartfile.write('\n' + (' ' * 9) + '| ')
+                            chartfile.write('\n' + (' ' * 13) + '| ')
 
                     else:
                         if (

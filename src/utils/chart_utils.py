@@ -422,7 +422,7 @@ def fmt_dm(value, noz=False, degree_digits=2):
         return f"{deg:>03d}{DS}{minute:>02}'"
 
 
-def s_dm(value):
+def signed_degree_minute(value):
     if value < 0:
         return f'-{fmt_dm(-value, True)}'
     elif value > 0:
@@ -431,7 +431,7 @@ def s_dm(value):
         return f' {fmt_dm(0)}'
 
 
-def s_ms(value):
+def signed_minute_second(value):
     if value < 0:
         s = '-'
     elif value > 0:
