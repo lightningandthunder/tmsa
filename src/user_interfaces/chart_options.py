@@ -42,13 +42,13 @@ class ChartOptions(Frame):
         Radiobutton(self, self.node, 2, 'Use Mean Node', 0.6, 0.15, 0.2)
         Label(self, 'Background   ', 0, 0.2, 0.2)
         self.bgcurve = Radiogroup(self)
-        Radiobutton(self, self.bgcurve, 0, 'TMSA Classic', 0.2, 0.2, 0.2)
+        Radiobutton(self, self.bgcurve, 2, 'At Cadent Cusps', 0.2, 0.2, 0.2)
         Radiobutton(self, self.bgcurve, 1, 'At Mid-quadrant', 0.4, 0.2, 0.2)
         Radiobutton(
             self,
             self.bgcurve,
-            2,
-            'At Cadent Cusps',
+            0,
+            'TMSA Classic',
             0.6,
             0.2,
             0.2,

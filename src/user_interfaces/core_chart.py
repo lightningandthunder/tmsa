@@ -430,10 +430,11 @@ class CoreChart(object, metaclass=ABCMeta):
             else secondary_planet
         )
 
-        if (
+        both_planets_on_prime_vertical = (
             primary_planet.is_on_prime_vertical
             and secondary_planet.is_on_prime_vertical
-        ):
+        )
+        if both_planets_on_prime_vertical:
             # check prime vertical to prime vertical in azimuth
             raw_orb = abs(primary_planet.azimuth - secondary_planet.azimuth)
 
@@ -453,10 +454,8 @@ class CoreChart(object, metaclass=ABCMeta):
             )
             if chart_utils.inrange(raw_orb, 0, conjunction_orb):
                 aspect_type = chart_models.AspectType.CONJUNCTION
-                raw_orb = conjunction_orb
             elif chart_utils.inrange(raw_orb, 180, opposition_orb):
                 aspect_type = chart_models.AspectType.OPPOSITION
-                raw_orb = opposition_orb
 
         planet_on_prime_vertical = (
             primary_planet
@@ -482,7 +481,11 @@ class CoreChart(object, metaclass=ABCMeta):
             == angles_models.ForegroundAngles.DESCENDANT.value
         )
 
-        if not planet_is_on_meridian and not planet_is_on_horizon:
+        if (
+            not planet_is_on_meridian
+            and not planet_is_on_horizon
+            and not both_planets_on_prime_vertical
+        ):
             return None
 
         square_orb = (
@@ -510,6 +513,7 @@ class CoreChart(object, metaclass=ABCMeta):
             normalized_orb = raw_orb
         elif aspect_type.value == chart_models.AspectType.OPPOSITION.value:
             normalized_orb = abs(180 - raw_orb)
+            print('Normalized opp orb: ', normalized_orb)
         elif aspect_type.value == chart_models.AspectType.SQUARE.value:
             if chart_utils.inrange(raw_orb, 0, square_orb):
                 normalized_orb = raw_orb
@@ -535,19 +539,19 @@ class CoreChart(object, metaclass=ABCMeta):
                 and normalized_orb
                 < self.options.pvp_aspects[aspect_type_string][0]
             ):
-                aspect_class = 1
+                aspect_class = 0
             if (
                 self.options.pvp_aspects[aspect_type_string][1] > 0
                 and normalized_orb
                 < self.options.pvp_aspects[aspect_type_string][1]
             ):
-                aspect_class = 2
+                aspect_class = 1
             elif (
                 self.options.pvp_aspects[aspect_type_string][2] > 0
                 and normalized_orb
                 < self.options.pvp_aspects[aspect_type_string][2]
             ):
-                aspect_class = 3
+                aspect_class = 2
 
         aspect = (
             chart_models.Aspect()
@@ -844,6 +848,19 @@ class CoreChart(object, metaclass=ABCMeta):
             whole_chart_is_dormant,
         )
 
+        # Skip aspects from transiting planet to itself
+        # TODO - this won't work for LS or SL
+        if primary_planet_data.name == secondary_planet_data.name:
+            if primary_planet_data.name in ['Sun', 'Moon']:
+                if (
+                    primary_planet_data.role.value
+                    == chart_models.ChartWheelRole.TRANSIT.value
+                    or secondary_planet_data.role.value
+                    == chart_models.ChartWheelRole.TRANSIT.value
+                ):
+                    if ecliptical_aspect and ecliptical_aspect.orb < 0.0002:
+                        return None
+
         # Skip existing ecliptical aspects between radical planets
         if (
             primary_planet_data.role.value
@@ -853,7 +870,7 @@ class CoreChart(object, metaclass=ABCMeta):
         ):
             if ecliptical_aspect and (
                 not mundane_aspect
-                or mundane_aspect.orb < ecliptical_aspect.orb
+                or mundane_aspect.orb > ecliptical_aspect.orb
             ):
                 # For now, we also don't allow PVP aspects if there's already an ecliptical aspect
                 return None
@@ -866,12 +883,17 @@ class CoreChart(object, metaclass=ABCMeta):
                 mundane_aspect,
                 key=lambda x: 1 - x.strength if x else 1000,
             )
-        elif self.options.pvp_aspects.get('enabled', False):
-            # This may also be None; that's fine
-            tightest_aspect = self.find_pvp_aspect(
+
+        if tightest_aspect and not tightest_aspect.aspect_class == 4:
+            return tightest_aspect
+
+        if self.options.pvp_aspects.get('enabled', False):
+            pvp_aspect = self.find_pvp_aspect(
                 primary_planet_data,
                 secondary_planet_data,
             )
+
+            tightest_aspect = pvp_aspect or tightest_aspect
 
         return tightest_aspect
 
@@ -1199,9 +1221,9 @@ class CoreChart(object, metaclass=ABCMeta):
             f'Mc {chart_utils.decimal_longitude_to_sign(chart.cusps[10])} '
         )
         # Latitude
-        chartfile.write(' ' * 7)
+        chartfile.write('.' * 7)
         # Speed
-        chartfile.write(' ' * 7)
+        chartfile.write('.' * 7)
         # Right Ascension
         ra = chart_utils.right_ascension_from_zodiacal(
             chart.cusps[10], chart.obliquity
@@ -1214,12 +1236,15 @@ class CoreChart(object, metaclass=ABCMeta):
         chartfile.write(chart_utils.fmt_lat(dec, True) + ' ')
         # Azimuth
         chartfile.write("180° 0' ")
-        # Altitude - TODO
-        chartfile.write(' ' * 8)
+        # Altitude
+        alt = (90 - chart.geo_latitude) + dec
+        chartfile.write(chart_utils.signed_degree_minute(alt))
         # Meridian Longitude
-        chartfile.write(' ' * 8)
+        chartfile.write(' ' + '.' * 7 + ' ')
         # PVL
-        chartfile.write("270° 0'")
+        chartfile.write("270° 0' ")
+        # Angle
+        chartfile.write(' ...')
 
         chartfile.write('\n')
 
@@ -1230,27 +1255,26 @@ class CoreChart(object, metaclass=ABCMeta):
             f'As {chart_utils.decimal_longitude_to_sign(chart.cusps[1])} '
         )
         # Latitude
-        chartfile.write(' ' * 7)
+        chartfile.write('.' * 7)
         # Speed
-        chartfile.write(' ' * 7)
+        chartfile.write('.' * 7)
         # Right Ascension
-        ra = chart_utils.right_ascension_from_zodiacal(
-            chart.cusps[1], chart.obliquity
-        )
-        chartfile.write(chart_utils.fmt_dm(ra, True, degree_digits=3) + ' ')
+        chartfile.write('.' * 7 + ' ')
         # Declination
         dec = chart_utils.declination_from_zodiacal(
             chart.cusps[1], chart.obliquity
         )
         chartfile.write(chart_utils.fmt_lat(dec, True) + ' ')
         # Azimuth
-        chartfile.write(' ' * 7)
+        chartfile.write('.' * 7)
         # Altitude
         chartfile.write("   0° 0' ")
         # Meridian Longitude
-        chartfile.write(' ' * 8)
+        chartfile.write('.' * 7 + ' ')
         # PVL
-        chartfile.write("  0° 0'")
+        chartfile.write("  0° 0' ")
+        # Angle
+        chartfile.write(' ...')
 
         chartfile.write('\n')
 
@@ -1261,9 +1285,9 @@ class CoreChart(object, metaclass=ABCMeta):
             f'Ep {chart_utils.decimal_longitude_to_sign(chart.angles[2])} '
         )
         # Latitude
-        chartfile.write(' ' * 7)
+        chartfile.write('.' * 7)
         # Speed
-        chartfile.write(' ' * 7)
+        chartfile.write('.' * 6 + ' ')
         # Right Ascension
         ra = to360(chart.ramc - 90)
         chartfile.write(chart_utils.fmt_dm(ra, True, degree_digits=3) + ' ')
@@ -1274,6 +1298,7 @@ class CoreChart(object, metaclass=ABCMeta):
         )
         chartfile.write(chart_utils.fmt_lat(dec, True))
 
+        chartfile.write(' ' + '.' * 36)
         chartfile.write('\n')
 
         # Vertex
@@ -1283,11 +1308,11 @@ class CoreChart(object, metaclass=ABCMeta):
                 f'Vx {chart_utils.decimal_longitude_to_sign(chart.angles[1])} '
             )
             # Latitude
-            chartfile.write(' ' * 7)
+            chartfile.write('.' * 7)
             # Speed
-            chartfile.write(' ' * 7)
+            chartfile.write('.' * 7)
             # Right Ascension
-            chartfile.write(' ' * 8)
+            chartfile.write('.' * 7 + ' ')
 
             # Declination
             dec = chart_utils.declination_from_zodiacal(
@@ -1296,8 +1321,10 @@ class CoreChart(object, metaclass=ABCMeta):
             chartfile.write(chart_utils.fmt_lat(dec, True) + ' ')
             # Azimuth
             chartfile.write("270° 0' ")
-            # Altitude - TODO
-            chartfile.write(' ' * 7)
+            chartfile.write(
+                chart_utils.fmt_dm(to360(chart.vertex[0] - 180), True) + ' '
+            )
+            chartfile.write('.' * 20)
             chartfile.write('\n')
 
         return whole_chart_is_dormant

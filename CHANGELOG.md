@@ -10,6 +10,10 @@
 - New midpoint calculations are now written to the Cosmic State report
 - Added angles (Ascendant, Midheaven, Eastpoint, and Vertex) to the data table
 - Added calculation for planetary stations
+- Removed same-planet aspects in solunar returns
+- Added needs hierarchy scores for natal charts
+- Shortened column headers
+- Ecliptical/mundane aspects are compared by strength %, not raw orb
 
 ### 0.5.7
 - Fixed bug where mundane midpoints were using meridian longitude instead of prime vertical longitude
