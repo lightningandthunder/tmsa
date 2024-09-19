@@ -572,7 +572,12 @@ class CoreChart(object, metaclass=ABCMeta):
     def calc_angle_and_strength(
         self,
         planet: chart_models.PlanetData,
-    ) -> tuple[angles_models.ForegroundAngles, float, bool, bool]:
+    ) -> tuple[
+        angles_models.ForegroundAngles | angles_models.NonForegroundAngles,
+        float,
+        bool,
+        bool,
+    ]:
         # I should be able to rewrite this mostly using self. variables
 
         chart = self.find_outermost_chart()
@@ -830,6 +835,8 @@ class CoreChart(object, metaclass=ABCMeta):
         self,
         primary_planet_data: chart_models.PlanetData,
         secondary_planet_data: chart_models.PlanetData,
+        from_chart_type: chart_models.ChartType,
+        to_chart_type: chart_models.ChartType,
         whole_chart_is_dormant: bool,
     ) -> chart_models.Aspect | None:
 
@@ -845,17 +852,49 @@ class CoreChart(object, metaclass=ABCMeta):
         )
 
         # Skip aspects from transiting planet to itself
-        # TODO - this won't work for LS or SL
-        if primary_planet_data.name == secondary_planet_data.name:
-            if primary_planet_data.name in ['Sun', 'Moon']:
-                if (
-                    primary_planet_data.role.value
-                    == chart_models.ChartWheelRole.TRANSIT.value
-                    or secondary_planet_data.role.value
-                    == chart_models.ChartWheelRole.TRANSIT.value
-                ):
+        if primary_planet_data.name in ['Sun', 'Moon']:
+            if (
+                primary_planet_data.role.value
+                == chart_models.ChartWheelRole.TRANSIT.value
+                or secondary_planet_data.role.value
+                == chart_models.ChartWheelRole.TRANSIT.value
+            ):
+                if primary_planet_data.name == secondary_planet_data.name:
                     if ecliptical_aspect and ecliptical_aspect.orb < 0.0002:
                         return None
+
+        # Skip ecliptical aspects by transiting solunar planets
+        if (
+            from_chart_type.value in chart_models.SOLAR_RETURNS
+            or to_chart_type.value in chart_models.SOLAR_RETURNS
+        ):
+            if (
+                primary_planet_data.name == 'Sun'
+                and primary_planet_data.role.value
+                == chart_models.ChartWheelRole.TRANSIT.value
+            ) or (
+                secondary_planet_data.name == 'Sun'
+                and secondary_planet_data.role.value
+                == chart_models.ChartWheelRole.TRANSIT.value
+            ):
+                if ecliptical_aspect and not mundane_aspect:
+                    return None
+
+        if (
+            from_chart_type.value in chart_models.LUNAR_RETURNS
+            or to_chart_type.value in chart_models.LUNAR_RETURNS
+        ):
+            if (
+                primary_planet_data.name == 'Moon'
+                and primary_planet_data.role.value
+                == chart_models.ChartWheelRole.TRANSIT.value
+            ) or (
+                secondary_planet_data.name == 'Moon'
+                and secondary_planet_data.role.value
+                == chart_models.ChartWheelRole.TRANSIT.value
+            ):
+                if ecliptical_aspect and not mundane_aspect:
+                    return None
 
         # Skip existing ecliptical aspects between radical planets
         if (
@@ -928,6 +967,8 @@ class CoreChart(object, metaclass=ABCMeta):
                         maybe_aspect = self.parse_aspect(
                             primary_planet,
                             secondary_planet,
+                            from_chart.type,
+                            to_chart.type,
                             whole_chart_is_dormant,
                         )
 
@@ -943,7 +984,9 @@ class CoreChart(object, metaclass=ABCMeta):
             'Other Partile Aspects ',
         ]
 
-        aspect_width = len(str(aspects_by_class[0][0])) if aspects_by_class[0] else 0
+        aspect_width = (
+            len(str(aspects_by_class[0][0])) if aspects_by_class[0] else 0
+        )
 
         # Remove empty aspect classes
         if len(aspects_by_class[3]) == 0 or whole_chart_is_dormant:
@@ -963,12 +1006,13 @@ class CoreChart(object, metaclass=ABCMeta):
 
             # Write the first 3 headers
             left_header = aspect_class_headers[0] or ' ' * 26
-            chartfile.write(                    
+            chartfile.write(
                 chart_utils.center_align(
-                    aspect_class_headers[0] or ' ' * 26, 
-                    width=max(aspect_width, len(left_header)))
+                    aspect_class_headers[0] or ' ' * 26,
+                    width=max(aspect_width, len(left_header)),
+                )
             )
-            
+
             center_header = aspect_class_headers[1] or ' ' * 26
 
             # This represents how much of a shift right there is between
@@ -976,23 +1020,23 @@ class CoreChart(object, metaclass=ABCMeta):
             gap = (26 - aspect_width) + ((26 - aspect_width) // 2)
             if gap > 0:
                 chartfile.write(' ' * gap)
-        
-            chartfile.write(                    
+
+            chartfile.write(
                 chart_utils.center_align(
-                    center_header, 
-                    width=max(aspect_width, len(center_header)))
+                    center_header, width=max(aspect_width, len(center_header))
+                )
             )
-            
+
             # The same math applies to the gap between the center-aligned second column
             # and the right-aligned third column
             if gap > 0:
                 chartfile.write(' ' * gap)
 
             right_header = aspect_class_headers[2] or ' ' * 26
-            chartfile.write(                    
+            chartfile.write(
                 chart_utils.center_align(
-                    right_header, 
-                    width=max(aspect_width, len(right_header)))
+                    right_header, width=max(aspect_width, len(right_header))
+                )
             )
             chartfile.write('\n')
 
@@ -1217,20 +1261,34 @@ class CoreChart(object, metaclass=ABCMeta):
             # Conjunctions to Vertex/Antivertex
             minor_limit = angularity_options.minor_angles or [1.0, 2.0, 3.0]
 
-            if (
-                angularity == angles_models.NonForegroundAngles.BLANK
-                or is_mundanely_background
+            if chart_utils.inrange(
+                planet_data.azimuth,
+                270,
+                chart_utils.greatest_nonzero_class_orb(minor_limit),
             ):
-                if chart_utils.inrange(
-                    planet_data.azimuth, 270, minor_limit[-1]
-                ):
+                if angularity.value in [
+                    angles_models.NonForegroundAngles.BLANK.value,
+                    angles_models.NonForegroundAngles.BACKGROUND.value,
+                ]:
                     angularity = angles_models.NonForegroundAngles.VERTEX
-                    planet_data.prime_vertical_angle = angularity
-                elif chart_utils.inrange(
-                    planet_data.azimuth, 90, minor_limit[-1]
-                ):
-                    angularity = angles_models.NonForegroundAngles.ANTIVERTEX
-                    planet_data.prime_vertical_angle = angularity
+
+                planet_data.prime_vertical_angle = (
+                    angles_models.NonForegroundAngles.VERTEX
+                )
+            elif chart_utils.inrange(
+                planet_data.azimuth,
+                90,
+                chart_utils.greatest_nonzero_class_orb(minor_limit),
+            ):
+                if angularity.value in [
+                    angles_models.NonForegroundAngles.BLANK.value,
+                    angles_models.NonForegroundAngles.BACKGROUND.value,
+                ]:
+                    angularity = angles_models.NonForegroundAngles.VERTEX
+
+                planet_data.prime_vertical_angle = (
+                    angles_models.NonForegroundAngles.ANTIVERTEX
+                )
 
             chartfile.write(f'{strength_percent:3d}% {angularity}')
             chartfile.write('\n')
@@ -1510,10 +1568,7 @@ class CoreChart(object, metaclass=ABCMeta):
                         chartfile.write(' ')
 
                 for aspect_index, aspect in enumerate(aspect_list):
-                    chartfile.write(
-                        aspect[0]
-                        + ' ' * 3
-                    )
+                    chartfile.write(aspect[0] + ' ' * 3)
 
                     if strength_hierarchy_written:
                         if (

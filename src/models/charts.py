@@ -174,6 +174,7 @@ class PlanetData:
     def name_with_role(self):
         return f'{self.role.value}{self.short_name}'
 
+
 @dataclass
 class AngleData:
     name: str = ''
@@ -769,11 +770,13 @@ class AspectType(Enum):
                 continue
             yield (member, cls.degrees_from_abbreviation(member.value))
 
+
 class AspectFramework(Enum):
     ECLIPTICAL = ' '
     MUNDANE = 'M'
     PRIME_VERTICAL_PARAN = 'p'
     POTENTIAL_PARAN = 'P'
+
 
 @dataclass
 class Aspect:
@@ -865,7 +868,7 @@ class Aspect:
         text = (
             f'{planet_1_role}{self.from_planet_short_name} '
             + f'{self.type.value} {planet_2_role}{self.to_planet_short_name} '
-            + f"{self.get_formatted_orb()} {self.strength:>3}% {self.framework.value}"
+            + f'{self.get_formatted_orb()} {self.strength:>3}% {self.framework.value}'
         )
 
         return text if len(text) % 2 == 0 else text + ' '
@@ -938,6 +941,45 @@ class MidpointAspect:
 
         return f"{self.to_midpoint} {self.orb_minutes: >2}'{self.midpoint_type.value}{framework_suffix}"
 
+
+SOLAR_RETURNS = [
+    ChartType.SOLAR_RETURN.value,
+    ChartType.DEMI_SOLAR_RETURN.value,
+    ChartType.LAST_QUARTI_SOLAR_RETURN.value,
+    ChartType.FIRST_QUARTI_SOLAR_RETURN.value,
+    ChartType.KINETIC_SOLAR_RETURN.value,
+    ChartType.DEMI_KINETIC_SOLAR_RETURN.value,
+    ChartType.NOVIENIC_SOLAR_RETURN.value,
+    ChartType.TEN_DAY_SOLAR_RETURN.value,
+    ChartType.SOLILUNAR_RETURN.value,
+    ChartType.DEMI_SOLILUNAR_RETURN.value,
+]
+
+LUNAR_RETURNS = [
+    ChartType.LUNAR_RETURN.value,
+    ChartType.DEMI_LUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_LUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_LUNAR_RETURN.value,
+    ChartType.KINETIC_LUNAR_RETURN.value,
+    ChartType.DEMI_KINETIC_LUNAR_RETURN.value,
+    ChartType.NOVIENIC_LUNAR_RETURN.value,
+    ChartType.EIGHTEEN_HOUR_LUNAR_RETURN.value,
+    ChartType.ANLUNAR_RETURN.value,
+    ChartType.DEMI_ANLUNAR_RETURN.value,
+    ChartType.KINETIC_ANULAR_RETURN.value,
+    ChartType.KINETIC_DEMI_ANLUNAR_RETURN.value,
+    ChartType.LUNISOLAR_RETURN.value,
+    ChartType.DEMI_LUNISOLAR_RETURN.value,
+]
+
+KINETIC_RETURNS = [
+    ChartType.KINETIC_LUNAR_RETURN.value,
+    ChartType.DEMI_KINETIC_LUNAR_RETURN.value,
+    ChartType.KINETIC_SOLAR_RETURN.value,
+    ChartType.DEMI_KINETIC_SOLAR_RETURN.value,
+    ChartType.KINETIC_ANULAR_RETURN.value,
+    ChartType.KINETIC_DEMI_ANLUNAR_RETURN.value,
+]
 
 SOLUNAR_RETURNS = [
     ChartType.SOLAR_RETURN.value,

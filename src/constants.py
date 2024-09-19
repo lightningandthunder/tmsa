@@ -74,9 +74,11 @@ class PlanetInfo(TypedDict):
     number: int
     stationary_period_hours: float
 
+
 class AngleInfo(TypedDict):
     short_name: str
     long_name: str
+
 
 ANGLES: dict[str, AngleInfo] = {
     'Ascendant': {
