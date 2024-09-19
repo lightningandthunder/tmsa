@@ -174,9 +174,82 @@ class PlanetData:
     def name_with_role(self):
         return f'{self.role.value}{self.short_name}'
 
+@dataclass
+class AngleData:
+    name: str = ''
+    short_name: str = ''
+    longitude: float = 0
+    latitude: float = 0
+    right_ascension: float = 0
+    declination: float = 0
+    azimuth: float = 0
+    altitude: float = 0
+    prime_vertical_longitude: float = 0
+    role: ChartWheelRole = ChartWheelRole.NATAL
+
+    def with_ecliptic_and_equatorial_data(
+        self,
+        longitude: float,
+        latitude: float,
+        right_ascension: float,
+        declination: float,
+    ):
+        self.longitude = longitude
+        self.latitude = latitude
+        self.right_ascension = right_ascension
+        self.declination = declination
+        return self
+
+    def with_azimuth_and_altitude(self, azimuth: float, altitude: float):
+        self.azimuth = azimuth
+        self.altitude = altitude
+        return self
+
+    def with_house_position(self, house: float):
+        self.prime_vertical_longitude = convert_house_to_pvl(house)
+        return self
+
+    def with_role(self, role: ChartWheelRole):
+        self.role = role
+        return self
+
+    def precess_to(self, to_chart: T):
+        (right_ascension, declination) = swe.cotrans(
+            [self.longitude + to_chart.ayanamsa, self.latitude, 0],
+            to_chart.obliquity,
+        )
+        self.right_ascension = right_ascension
+        self.declination = declination
+
+        (azimuth, altitude) = swe.calc_azimuth(
+            to_chart.julian_day_utc,
+            to_chart.geo_longitude,
+            to_chart.geo_latitude,
+            to360(to_chart.ayanamsa + self.longitude),
+            self.latitude,
+        )
+        self.azimuth = azimuth
+        self.altitude = altitude
+
+        self.prime_vertical_longitude = swe.calc_house_pos(
+            to_chart.ramc,
+            to_chart.geo_latitude,
+            to_chart.obliquity,
+            to360(self.longitude + to_chart.ayanamsa),
+            self.latitude,
+        )
+
+        return self
+
+    @property
+    def name_with_role(self):
+        return f'{self.role.value}{self.short_name}'
+
 
 @dataclass
 class ChartType(Enum):
+    EVENT = 'Event'
+
     RADIX = 'Radix'
     NATAL = 'Natal'
     SOLAR_RETURN = 'Solar Return'
@@ -283,7 +356,7 @@ class ChartObject:
     ramc: float
     planets: dict[str, PlanetData]
     cusps: list[float]
-    angles: dict[str, float]
+    angles: dict[str, AngleData]
     vertex: list[float]
     eastpoint: list[float]
     role: ChartWheelRole
@@ -304,7 +377,6 @@ class ChartObject:
         self.zone = data['zone']
         self.correction = data['correction']
 
-        planet_data = data['Sun'][0]
         planet = PlanetData()
 
         self.sun_sign = SIGNS_SHORT[int(data['Sun'][0] // 30)]
@@ -343,19 +415,18 @@ class ChartObject:
         else:
             self.lst = self.ramc / 15
 
-        if data.get('Vertex'):
-            self.vertex = data['Vertex']
-        else:
-            self.vertex = [
-                angles[1],
-                swe.calc_house_pos(
-                    self.ramc,
-                    self.geo_latitude,
-                    self.obliquity,
-                    to360(angles[1] + self.ayanamsa),
-                    0,
-                ),
-            ]
+        # TODO: calculate angles
+
+        self.vertex = [
+            angles[1],
+            swe.calc_house_pos(
+                self.ramc,
+                self.geo_latitude,
+                self.obliquity,
+                to360(angles[1] + self.ayanamsa),
+                0,
+            ),
+        ]
 
         if data.get('Eastpoint'):
             self.eastpoint = data['Eastpoint']
@@ -576,6 +647,9 @@ class ChartObject:
         for planet in self.planets:
             self.planets[planet].precess_to(to_chart)
 
+        # for angle in self.angles:
+        #     self.angles[angle].precess_to(to_chart)
+
         return self
 
 
@@ -695,13 +769,11 @@ class AspectType(Enum):
                 continue
             yield (member, cls.degrees_from_abbreviation(member.value))
 
-
 class AspectFramework(Enum):
-    ECLIPTICAL = ''
+    ECLIPTICAL = ' '
     MUNDANE = 'M'
     PRIME_VERTICAL_PARAN = 'p'
     POTENTIAL_PARAN = 'P'
-
 
 @dataclass
 class Aspect:
@@ -785,16 +857,18 @@ class Aspect:
 
     def __str__(self):
         # This will read something like this:
-        # t.Ur co r.Su 1°23' 95% M
+        # tUr co rSu  1°23'  95% M
+        # It should always be an even number of characters
+        # to make alignment consistent
         planet_1_role = self.from_planet_role.value
         planet_2_role = self.to_planet_role.value
         text = (
             f'{planet_1_role}{self.from_planet_short_name} '
-            f'{self.type.value} {planet_2_role}{self.to_planet_short_name} '
-            f"{self.get_formatted_orb()} {self.strength}%{(' ' + self.framework.value) if self.framework else ' '}"
+            + f'{self.type.value} {planet_2_role}{self.to_planet_short_name} '
+            + f"{self.get_formatted_orb()} {self.strength:>3}% {self.framework.value}"
         )
 
-        return text
+        return text if len(text) % 2 == 0 else text + ' '
 
     def cosmic_state_format(self, planet_short_name: str):
         # Exclude the given planet name from the aspect.

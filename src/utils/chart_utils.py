@@ -13,6 +13,7 @@ from typing import Iterator
 
 from src import *
 from src import constants
+from src import swe
 from src.models.options import NodeTypes, Options
 from src.user_interfaces.widgets import *
 from src.utils.format_utils import to360
@@ -572,3 +573,13 @@ def right_ascension_from_zodiacal(longitude: float, obliquity: float) -> float:
         math.radians(obliquity)
     )
     return to360(math.degrees(math.atan(tan_ra)))
+
+
+def precess_mc(
+    longitude: float, ayanamsa: float, obliquity: float
+) -> tuple[float, float]:
+    (right_ascension, declination) = swe.cotrans(
+        [longitude + ayanamsa, 0, 0],
+        obliquity,
+    )
+    return (right_ascension, declination)

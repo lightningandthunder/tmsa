@@ -513,7 +513,6 @@ class CoreChart(object, metaclass=ABCMeta):
             normalized_orb = raw_orb
         elif aspect_type.value == chart_models.AspectType.OPPOSITION.value:
             normalized_orb = abs(180 - raw_orb)
-            print('Normalized opp orb: ', normalized_orb)
         elif aspect_type.value == chart_models.AspectType.SQUARE.value:
             if chart_utils.inrange(raw_orb, 0, square_orb):
                 normalized_orb = raw_orb
@@ -534,24 +533,21 @@ class CoreChart(object, metaclass=ABCMeta):
         )
 
         if self.options.pvp_aspects:
-            if (
-                self.options.pvp_aspects[aspect_type_string][0] > 0
-                and normalized_orb
+            if (self.options.pvp_aspects[aspect_type_string][0] > 0) and (
+                normalized_orb
                 < self.options.pvp_aspects[aspect_type_string][0]
             ):
-                aspect_class = 0
-            if (
-                self.options.pvp_aspects[aspect_type_string][1] > 0
-                and normalized_orb
+                aspect_class = 1
+            elif (self.options.pvp_aspects[aspect_type_string][1] > 0) and (
+                normalized_orb
                 < self.options.pvp_aspects[aspect_type_string][1]
             ):
-                aspect_class = 1
-            elif (
-                self.options.pvp_aspects[aspect_type_string][2] > 0
-                and normalized_orb
+                aspect_class = 2
+            elif (self.options.pvp_aspects[aspect_type_string][2] > 0) and (
+                normalized_orb
                 < self.options.pvp_aspects[aspect_type_string][2]
             ):
-                aspect_class = 2
+                aspect_class = 3
 
         aspect = (
             chart_models.Aspect()
@@ -941,11 +937,13 @@ class CoreChart(object, metaclass=ABCMeta):
                             ].append(maybe_aspect)
 
         aspect_class_headers = [
-            'Class 1',
-            'Class 2',
-            'Class 3',
-            'Other Partile',
+            'Class 1 Aspects ',
+            'Class 2 Aspects ',
+            'Class 3 Aspects ',
+            'Other Partile Aspects ',
         ]
+
+        aspect_width = len(str(aspects_by_class[0][0])) if aspects_by_class[0] else 0
 
         # Remove empty aspect classes
         if len(aspects_by_class[3]) == 0 or whole_chart_is_dormant:
@@ -962,15 +960,40 @@ class CoreChart(object, metaclass=ABCMeta):
 
         if any(aspect_class_headers):
             chartfile.write('-' * self.table_width + '\n')
-            for class_index in range(0, 3):
-                chartfile.write(
-                    chart_utils.center_align(
-                        f'{aspect_class_headers[class_index]} Aspects'
-                        if aspect_class_headers[class_index]
-                        else '',
-                        24,
-                    )
-                )
+
+            # Write the first 3 headers
+            left_header = aspect_class_headers[0] or ' ' * 26
+            chartfile.write(                    
+                chart_utils.center_align(
+                    aspect_class_headers[0] or ' ' * 26, 
+                    width=max(aspect_width, len(left_header)))
+            )
+            
+            center_header = aspect_class_headers[1] or ' ' * 26
+
+            # This represents how much of a shift right there is between
+            # the left-aligned first column and the center-aligned second column
+            gap = (26 - aspect_width) + ((26 - aspect_width) // 2)
+            if gap > 0:
+                chartfile.write(' ' * gap)
+        
+            chartfile.write(                    
+                chart_utils.center_align(
+                    center_header, 
+                    width=max(aspect_width, len(center_header)))
+            )
+            
+            # The same math applies to the gap between the center-aligned second column
+            # and the right-aligned third column
+            if gap > 0:
+                chartfile.write(' ' * gap)
+
+            right_header = aspect_class_headers[2] or ' ' * 26
+            chartfile.write(                    
+                chart_utils.center_align(
+                    right_header, 
+                    width=max(aspect_width, len(right_header)))
+            )
             chartfile.write('\n')
 
         # For each aspect class, insert dividers where the roles change
@@ -982,7 +1005,7 @@ class CoreChart(object, metaclass=ABCMeta):
                     aspect.from_planet_role.value != previous_roles[0]
                     or aspect.to_planet_role.value != previous_roles[1]
                 ):
-                    aspect_class.insert(index, '-' * 24)
+                    aspect_class.insert(index, '-' * 23 + ' ')
                 previous_roles[0] = aspect.from_planet_role.value
                 previous_roles[1] = aspect.to_planet_role.value
 
@@ -999,36 +1022,36 @@ class CoreChart(object, metaclass=ABCMeta):
                 chartfile.write(
                     chart_utils.left_align(
                         str(aspects_by_class_with_dividers[0][aspect_index]),
-                        width=24,
+                        width=26,
                     )
                 )
             else:
-                chartfile.write(' ' * 24)
+                chartfile.write(' ' * 26)
             if aspect_index < len(aspects_by_class_with_dividers[1]):
                 chartfile.write(
                     chart_utils.center_align(
                         str(aspects_by_class_with_dividers[1][aspect_index]),
-                        width=24,
+                        width=26,
                     )
                 )
             else:
-                chartfile.write(' ' * 24)
+                chartfile.write(' ' * 26)
             if aspect_index < len(aspects_by_class_with_dividers[2]):
                 chartfile.write(
                     chart_utils.right_align(
                         str(aspects_by_class_with_dividers[2][aspect_index]),
-                        width=24,
+                        width=26,
                     )
                 )
             else:
-                chartfile.write(' ' * 24)
+                chartfile.write(' ' * 26)
             chartfile.write('\n')
 
         chartfile.write('-' * self.table_width + '\n')
         if aspects_by_class_with_dividers[3]:
             chartfile.write(
                 chart_utils.center_align(
-                    f'{aspects_by_class_with_dividers[3]} Aspects',
+                    aspect_class_headers[3],
                     width=self.table_width,
                 )
                 + '\n'
@@ -1216,6 +1239,8 @@ class CoreChart(object, metaclass=ABCMeta):
 
         # Midheaven
 
+        outermost_chart = self.find_outermost_chart()
+
         # Longitude
         chartfile.write(
             f'Mc {chart_utils.decimal_longitude_to_sign(chart.cusps[10])} '
@@ -1223,17 +1248,17 @@ class CoreChart(object, metaclass=ABCMeta):
         # Latitude
         chartfile.write('.' * 7)
         # Speed
-        chartfile.write('.' * 7)
+        chartfile.write('.' * 6 + ' ')
         # Right Ascension
-        ra = chart_utils.right_ascension_from_zodiacal(
-            chart.cusps[10], chart.obliquity
+        # Declination
+        (ra, dec) = chart_utils.precess_mc(
+            chart.cusps[10],
+            outermost_chart.ayanamsa,
+            outermost_chart.obliquity,
         )
         chartfile.write(chart_utils.fmt_dm(ra, True, degree_digits=3) + ' ')
-        # Declination
-        dec = chart_utils.declination_from_zodiacal(
-            chart.cusps[10], chart.obliquity
-        )
         chartfile.write(chart_utils.fmt_lat(dec, True) + ' ')
+
         # Azimuth
         chartfile.write("180° 0' ")
         # Altitude
@@ -1321,8 +1346,10 @@ class CoreChart(object, metaclass=ABCMeta):
             chartfile.write(chart_utils.fmt_lat(dec, True) + ' ')
             # Azimuth
             chartfile.write("270° 0' ")
+
+            # Altitude
             chartfile.write(
-                chart_utils.fmt_dm(to360(chart.vertex[0] - 180), True) + ' '
+                chart_utils.signed_degree_minute(chart.vertex[1] - 180) + ' '
             )
             chartfile.write('.' * 20)
             chartfile.write('\n')
@@ -1422,9 +1449,13 @@ class CoreChart(object, metaclass=ABCMeta):
 
                 chartfile.write('|')
 
+                pipe_indent = (
+                    (' ' * 13) if strength_hierarchy_written else (' ' * 9)
+                )
+
                 need_another_row = False
 
-                if chart.type not in chart_models.INGRESSES:
+                if chart.type.value not in chart_models.INGRESSES:
                     if planet_short_name != 'Mo':
                         if (
                             moon_sign
@@ -1473,10 +1504,7 @@ class CoreChart(object, metaclass=ABCMeta):
 
                 if aspect_list:
                     if need_another_row:
-                        if strength_hierarchy_written:
-                            chartfile.write('\n' + (' ' * 13) + '| ')
-                        else:
-                            chartfile.write('\n' + (' ' * 9) + '| ')
+                        chartfile.write('\n' + pipe_indent + '| ')
                         need_another_row = False
                     else:
                         chartfile.write(' ')
@@ -1484,14 +1512,12 @@ class CoreChart(object, metaclass=ABCMeta):
                 for aspect_index, aspect in enumerate(aspect_list):
                     chartfile.write(
                         aspect[0]
-                        + ' '
-                        + ('' if aspect[0][-1] in ['M', 'p'] else ' ')
-                        + ' ' * 2
+                        + ' ' * 3
                     )
 
                     if strength_hierarchy_written:
                         if (
-                            aspect_index == 2
+                            aspect_index == 3
                             and aspect_index != len(aspect_list) - 1
                             or (
                                 aspect_index >= 5
@@ -1499,58 +1525,61 @@ class CoreChart(object, metaclass=ABCMeta):
                                 and aspect_index != len(aspect_list) - 1
                             )
                         ):
-                            chartfile.write('\n' + (' ' * 13) + '| ')
+                            chartfile.write('\n' + pipe_indent + '| ')
 
                     else:
                         if (
                             aspect_index % 4 == 3
                             and aspect_index != len(aspect_list) - 1
                         ):
-                            chartfile.write('\n' + (' ' * 9) + '| ')
+                            chartfile.write('\n' + pipe_indent + '| ')
 
                 # Midpoints
                 related_midpoints = midpoints.get(
                     f'{planet_data.role.value}{planet_data.name}', []
                 )
                 if len(related_midpoints) > 0:
-                    chartfile.write('\n' + (' ' * 9) + '|    ')
-                for (midpoint_index, midpoint) in enumerate(related_midpoints):
-                    chartfile.write(str(midpoint) + (' ' * 6))
-                    if (
-                        midpoint_index % 4 == 3
-                        and midpoint_index != len(related_midpoints) - 1
-                    ):
-                        chartfile.write('\n' + (' ' * 9) + '|    ')
+                    chartfile.write('\n' + pipe_indent + '|    ')
+
+                self.write_midpoint_cosmic_state(
+                    chartfile,
+                    pipe_indent,
+                    related_midpoints,
+                    strength_hierarchy_written,
+                )
 
             chartfile.write('\n')
+
+            angle_indent = (
+                (' ' * 8) if strength_hierarchy_written else (' ' * 4)
+            ) + '|    '
+
             # Write midpoints for Ascendant/MC
             ascendant_midpoints = midpoints.get(f'{chart.role.value}As', [])
             if len(ascendant_midpoints) > 0:
                 ascendant_sign = chart_utils.SIGNS_SHORT[
                     int(chart.cusps[1] // 30)
                 ]
-                chartfile.write(f'As {ascendant_sign}    |    ')
-            for (midpoint_index, midpoint) in enumerate(ascendant_midpoints):
-                chartfile.write(str(midpoint) + (' ' * 6))
-                if (
-                    midpoint_index % 4 == 3
-                    and midpoint_index != len(ascendant_midpoints) - 1
-                ):
-                    chartfile.write('\n' + (' ' * 9) + '|    ')
+                chartfile.write(f'As {ascendant_sign}{angle_indent}')
+                self.write_midpoint_cosmic_state(
+                    chartfile,
+                    pipe_indent,
+                    ascendant_midpoints,
+                    strength_hierarchy_written,
+                )
 
             midheaven_midpoints = midpoints.get(f'{chart.role.value}Mc', [])
             if len(midheaven_midpoints) > 0:
                 midheaven_sign = chart_utils.SIGNS_SHORT[
                     int(chart.cusps[10] // 30)
                 ]
-                chartfile.write(f'\nMc {midheaven_sign}    |    ')
-            for (midpoint_index, midpoint) in enumerate(midheaven_midpoints):
-                chartfile.write(str(midpoint) + (' ' * 6))
-                if (
-                    midpoint_index % 4 == 3
-                    and midpoint_index != len(midheaven_midpoints) - 1
-                ):
-                    chartfile.write('\n' + (' ' * 9) + '|    ')
+                chartfile.write(f'\nMc {midheaven_sign}{angle_indent}')
+                self.write_midpoint_cosmic_state(
+                    chartfile,
+                    pipe_indent,
+                    midheaven_midpoints,
+                    strength_hierarchy_written,
+                )
 
             angle_midpoints = midpoints.get(f'Angle', [])
             ra_midpoints = midpoints.get(f'Ea', [])
@@ -1563,48 +1592,71 @@ class CoreChart(object, metaclass=ABCMeta):
                 or len(zenith_midpoints) > 0
                 or len(eastpoint_midpoints) > 0
             ):
-                chartfile.write((' ' * 9) + '|    ')
+                chartfile.write('\n' + pipe_indent + '|    ')
 
             # Write mundane midpoints
             if len(angle_midpoints) > 0:
-                chartfile.write(f'\nAngle    |    ')
-            for (midpoint_index, midpoint) in enumerate(angle_midpoints):
-                chartfile.write(str(midpoint) + (' ' * 6))
-                if (
-                    midpoint_index % 4 == 3
-                    and midpoint_index != len(angle_midpoints) - 1
-                ):
-                    chartfile.write('\n' + (' ' * 9) + '|    ')
+                chartfile.write(f'\nAngle{angle_indent}')
+                self.write_midpoint_cosmic_state(
+                    chartfile,
+                    pipe_indent,
+                    angle_midpoints,
+                    strength_hierarchy_written,
+                )
 
             if len(ra_midpoints) > 0:
-                chartfile.write(f'\nEa       |    ')
-            for (midpoint_index, midpoint) in enumerate(ra_midpoints):
-                chartfile.write(str(midpoint) + (' ' * 6))
-                if (
-                    midpoint_index % 4 == 3
-                    and midpoint_index != len(ra_midpoints) - 1
-                ):
-                    chartfile.write('\n' + (' ' * 9) + '|    ')
+                chartfile.write(f'\nEa    {angle_indent}')
+                self.write_midpoint_cosmic_state(
+                    chartfile,
+                    pipe_indent,
+                    ra_midpoints,
+                    strength_hierarchy_written,
+                )
 
             if len(zenith_midpoints) > 0:
-                chartfile.write(f'\nZ        |    ')
-            for (midpoint_index, midpoint) in enumerate(zenith_midpoints):
-                chartfile.write(str(midpoint) + (' ' * 6))
-                if (
-                    midpoint_index % 4 == 3
-                    and midpoint_index != len(zenith_midpoints) - 1
-                ):
-                    chartfile.write('\n' + (' ' * 9) + '|    ')
+                chartfile.write(f'\nZ    {angle_indent}')
+                self.write_midpoint_cosmic_state(
+                    chartfile,
+                    pipe_indent,
+                    zenith_midpoints,
+                    strength_hierarchy_written,
+                )
 
             if len(eastpoint_midpoints) > 0:
-                chartfile.write(f'\nE        |    ')
-            for (midpoint_index, midpoint) in enumerate(eastpoint_midpoints):
-                chartfile.write(str(midpoint) + (' ' * 6))
+                chartfile.write(f'\nE    {angle_indent}')
+                self.write_midpoint_cosmic_state(
+                    chartfile,
+                    pipe_indent,
+                    eastpoint_midpoints,
+                    strength_hierarchy_written,
+                )
+
+    def write_midpoint_cosmic_state(
+        self,
+        chartfile: TextIOWrapper,
+        indent: str,
+        midpoints: list,
+        strength_hierarchy_written: bool,
+    ):
+        for (midpoint_index, midpoint) in enumerate(midpoints):
+            chartfile.write(str(midpoint) + (' ' * 6))
+            if strength_hierarchy_written:
+                if (
+                    midpoint_index == 3
+                    and midpoint_index != len(midpoints) - 1
+                    or (
+                        midpoint_index >= 5
+                        and midpoint_index % 4 == 3
+                        and midpoint_index != len(midpoints) - 1
+                    )
+                ):
+                    chartfile.write('\n' + indent + '|    ')
+            else:
                 if (
                     midpoint_index % 4 == 3
-                    and midpoint_index != len(eastpoint_midpoints) - 1
+                    and midpoint_index != len(midpoints) - 1
                 ):
-                    chartfile.write('\n' + (' ' * 9) + '|    ')
+                    chartfile.write('\n' + indent + '|    ')
 
     def get_return_class(self, t: chart_models.ChartType) -> str:
         t = t.type.value.lower()

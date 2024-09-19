@@ -11,7 +11,7 @@ import os
 import sys
 from typing import TypedDict
 
-VERSION = '0.6.0a3'
+VERSION = '0.6.0a5'
 OLDEST_SUPPORTED_VERSION = '0.5.7'
 
 DS = '\N{DEGREE SIGN}'
@@ -74,6 +74,32 @@ class PlanetInfo(TypedDict):
     number: int
     stationary_period_hours: float
 
+class AngleInfo(TypedDict):
+    short_name: str
+    long_name: str
+
+ANGLES: dict[str, AngleInfo] = {
+    'Ascendant': {
+        'short_name': 'As',
+        'long_name': 'Ascendant',
+    },
+    'Midheaven': {
+        'short_name': 'Mc',
+        'long_name': 'Midheaven',
+    },
+    'Eastpoint': {
+        'short_name': 'Ep',
+        'long_name': 'Eastpoint',
+    },
+    'Vertex': {
+        'short_name': 'Ve',
+        'long_name': 'Vertex',
+    },
+    'AntiVertex': {
+        'short_name': 'Av',
+        'long_name': 'AntiVertex',
+    },
+}
 
 PLANETS: dict[str, PlanetInfo] = {
     'Moon': {
