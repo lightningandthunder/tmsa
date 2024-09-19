@@ -378,6 +378,7 @@ class ChartObject:
         self.zone = data['zone']
         self.correction = data['correction']
 
+        planet_data = data['Sun'][0]
         planet = PlanetData()
 
         self.sun_sign = SIGNS_SHORT[int(data['Sun'][0] // 30)]
@@ -416,18 +417,19 @@ class ChartObject:
         else:
             self.lst = self.ramc / 15
 
-        # TODO: calculate angles
-
-        self.vertex = [
-            angles[1],
-            swe.calc_house_pos(
-                self.ramc,
-                self.geo_latitude,
-                self.obliquity,
-                to360(angles[1] + self.ayanamsa),
-                0,
-            ),
-        ]
+        if data.get('Vertex'):
+            self.vertex = data['Vertex']
+        else:
+            self.vertex = [
+                angles[1],
+                swe.calc_house_pos(
+                    self.ramc,
+                    self.geo_latitude,
+                    self.obliquity,
+                    to360(angles[1] + self.ayanamsa),
+                    0,
+                ),
+            ]
 
         if data.get('Eastpoint'):
             self.eastpoint = data['Eastpoint']
