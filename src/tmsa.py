@@ -32,6 +32,7 @@ from src.utils.gui_utils import (
     newline_if_past_breakpoint,
     show_not_implemented,
 )
+from src.utils.os_utils import open_file
 
 TITLE = f'Time Matters {VERSION}'
 INTRO = f"""A freeware program for calculating geometrically
@@ -176,7 +177,7 @@ class StartPage(Frame):
         )
 
         self.predictive_options = Button(
-            self, 'Predictive Options', 0.6, 0.45, 0.2, font=base_font
+            self, 'Predictive Options', 0.6, 0.45, 0.2, font=base_font, button_color=DISABLED_BUTTON_COLOR
         )
         self.predictive_options.bind(
             '<Button-1>', lambda _: delay(show_not_implemented)
@@ -190,6 +191,12 @@ class StartPage(Frame):
         )
         self.program_options.bind(
             '<Button-1>', lambda _: delay(ProgramOptions)
+        )
+        self.show_errors = Button(
+            self, 'Show Errors', 0.4, 0.55, 0.2, font=base_font, button_color=BTN_COLOR
+        )
+        self.show_errors.bind(
+            '<Button-1>', lambda _: delay(lambda: open_file(ERROR_FILE))
         )
 
         Button(self, 'Exit Program', 0.6, 0.5, 0.2).bind(

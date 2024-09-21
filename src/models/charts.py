@@ -417,19 +417,19 @@ class ChartObject:
         else:
             self.lst = self.ramc / 15
 
-        if data.get('Vertex'):
+        if data.get('Vertex') and len(data.get('Vertex')) > 2:
             self.vertex = data['Vertex']
         else:
-            self.vertex = [
-                angles[1],
-                swe.calc_house_pos(
-                    self.ramc,
-                    self.geo_latitude,
-                    self.obliquity,
-                    to360(angles[1] + self.ayanamsa),
-                    0,
-                ),
-            ]
+            self.vertex = AngleData(name='Vertex', short_name='Vx', longitude=angles[1], latitude=0)
+            vertex_longitude = angles[1]
+            # vertex? I don't know what this is
+            # swe.calc_house_pos(
+            #         self.ramc,
+            #         self.geo_latitude,
+            #         self.obliquity,
+            #         to360(angles[1] + self.ayanamsa),
+            #         0,
+            #     )
 
         if data.get('Eastpoint'):
             self.eastpoint = data['Eastpoint']

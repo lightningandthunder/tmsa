@@ -243,10 +243,10 @@ class Label(PropertyMixin, tk.Label):
 
 class Button(PropertyMixin, tk.Button):
     def __init__(
-        self, root, text, x, y, width=0.25, height=0.05, font=base_font
+        self, root, text, x, y, width=0.25, height=0.05, font=base_font, button_color=BTN_COLOR
     ):
         super().__init__(
-            root, text=text, foreground=TXT_COLOR, background=BTN_COLOR
+            root, text=text, foreground=TXT_COLOR, background=button_color
         )
         self['font'] = font
         self.x = x

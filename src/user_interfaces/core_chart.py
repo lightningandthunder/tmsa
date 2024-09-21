@@ -851,19 +851,6 @@ class CoreChart(object, metaclass=ABCMeta):
             whole_chart_is_dormant,
         )
 
-        # Skip aspects from transiting planet to itself
-        if primary_planet_data.name in ['Sun', 'Moon']:
-            if (
-                primary_planet_data.role.value
-                == chart_models.ChartWheelRole.TRANSIT.value
-                or secondary_planet_data.role.value
-                == chart_models.ChartWheelRole.TRANSIT.value
-            ):
-                if primary_planet_data.name == secondary_planet_data.name:
-                    if ecliptical_aspect and ecliptical_aspect.orb < 0.0002:
-                        return None
-
-        # Skip ecliptical aspects by transiting solunar planets
         if (
             from_chart_type.value in chart_models.SOLAR_RETURNS
             or to_chart_type.value in chart_models.SOLAR_RETURNS
@@ -877,7 +864,13 @@ class CoreChart(object, metaclass=ABCMeta):
                 and secondary_planet_data.role.value
                 == chart_models.ChartWheelRole.TRANSIT.value
             ):
-                if ecliptical_aspect and not mundane_aspect:
+                # Skip aspects between the transiting planet and its base planet, even mundane ones
+                if ((primary_planet_data.name == 'Sun' and primary_planet_data.role.value in [chart_models.ChartWheelRole.RADIX.value, chart_models.ChartWheelRole.PROGRESSED.value]) or
+                    (secondary_planet_data.name == 'Sun' and secondary_planet_data.role.value in [chart_models.ChartWheelRole.RADIX.value, chart_models.ChartWheelRole.PROGRESSED.value])
+                    ):
+                    return None
+                # Skip any other ecliptical aspects by transiting solunar planet to anything
+                if (ecliptical_aspect and not mundane_aspect) or (ecliptical_aspect and mundane_aspect and ecliptical_aspect.strength > mundane_aspect.strength):
                     return None
 
         if (
@@ -893,22 +886,24 @@ class CoreChart(object, metaclass=ABCMeta):
                 and secondary_planet_data.role.value
                 == chart_models.ChartWheelRole.TRANSIT.value
             ):
-                if ecliptical_aspect and not mundane_aspect:
+                # Skip aspects between the transiting planet and its base planet, even mundane ones
+                if ((primary_planet_data.name == 'Moon' and primary_planet_data.role.value in [chart_models.ChartWheelRole.RADIX.value, chart_models.ChartWheelRole.PROGRESSED.value]) or
+                    (secondary_planet_data.name == 'Moon' and secondary_planet_data.role.value in [chart_models.ChartWheelRole.RADIX.value, chart_models.ChartWheelRole.PROGRESSED.value])
+                    ):
+                    return None
+                # Skip any other ecliptical aspects by transiting solunar planet to anything
+                if (ecliptical_aspect and not mundane_aspect) or (ecliptical_aspect and mundane_aspect and ecliptical_aspect.strength > mundane_aspect.strength):
                     return None
 
-        # Skip existing ecliptical aspects between radical planets
+        # Skip existing ecliptical aspects between radical planets if they're "other partile"
         if (
             primary_planet_data.role.value
             == chart_models.ChartWheelRole.RADIX.value
             and secondary_planet_data.role.value
             == chart_models.ChartWheelRole.RADIX.value
+            and ecliptical_aspect and ecliptical_aspect.aspect_class == 4
         ):
-            if ecliptical_aspect and (
-                not mundane_aspect
-                or mundane_aspect.orb > ecliptical_aspect.orb
-            ):
-                # For now, we also don't allow PVP aspects if there's already an ecliptical aspect
-                return None
+            return None
 
         tightest_aspect = None
 
@@ -922,6 +917,7 @@ class CoreChart(object, metaclass=ABCMeta):
         if tightest_aspect and not tightest_aspect.aspect_class == 4:
             return tightest_aspect
 
+        # Allow PVP aspects to override other "other partile" aspects
         if self.options.pvp_aspects.get('enabled', False):
             pvp_aspect = self.find_pvp_aspect(
                 primary_planet_data,
@@ -1293,12 +1289,11 @@ class CoreChart(object, metaclass=ABCMeta):
             chartfile.write(f'{strength_percent:3d}% {angularity}')
             chartfile.write('\n')
 
+        outermost_chart = self.find_outermost_chart()
+
         # Write angles to info table
 
         # Midheaven
-
-        outermost_chart = self.find_outermost_chart()
-
         # Longitude
         chartfile.write(
             f'Mc {chart_utils.decimal_longitude_to_sign(chart.cusps[10])} '
@@ -1314,7 +1309,7 @@ class CoreChart(object, metaclass=ABCMeta):
             outermost_chart.ayanamsa,
             outermost_chart.obliquity,
         )
-        chartfile.write(chart_utils.fmt_dm(ra, True, degree_digits=3) + ' ')
+        chartfile.write(chart_utils.fmt_dm(to360(ra - 180), True, degree_digits=3) + ' ')
         chartfile.write(chart_utils.fmt_lat(dec, True) + ' ')
 
         # Azimuth
@@ -1541,9 +1536,13 @@ class CoreChart(object, metaclass=ABCMeta):
 
                 for class_index in range(3):
                     for aspect in aspects_by_class[class_index]:
-                        if aspect.includes_planet(planet_short_name) and (
-                            aspect.from_planet_role.value == chart.role.value
-                            or aspect.to_planet_role.value == chart.role.value
+                        if (
+                            aspect.from_planet_short_name == planet_short_name
+                            and aspect.from_planet_role.value
+                            == chart.role.value
+                        ) or (
+                            aspect.to_planet_short_name == planet_short_name
+                            and aspect.to_planet_role.value == chart.role.value
                         ):
                             # This lets us sort by strength descending, basically;
                             # The sort is still ascending, but the strength is inverted.

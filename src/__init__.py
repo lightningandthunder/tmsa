@@ -170,6 +170,7 @@ if not os.path.exists(RECENT_FILE):
 default_colors = {
     'bg_color': 'black',
     'button_color': 'blue',
+    'disabled_button': 'gray25',
     'text_color': 'yellow',
     'error_color': 'red',
 }
@@ -198,10 +199,11 @@ if default:
 if colors is None or colors == [] or colors == {}:
     colors = default_colors
 
-BG_COLOR = colors['bg_color']
-BTN_COLOR = colors['button_color']
-TXT_COLOR = colors['text_color']
-ERR_COLOR = colors['error_color']
+BG_COLOR = colors.get('bg_color', default_colors['bg_color'])
+BTN_COLOR = colors.get('button_color', default_colors['button_color'])
+DISABLED_BUTTON_COLOR = colors.get('disabled_button', default_colors['disabled_button'])
+TXT_COLOR = colors.get('text_color', default_colors['text_color'])
+ERR_COLOR = colors.get('error_color', default_colors['error_color'])
 
 DATA_ENTRY_FILE = os.path.join(OPTION_PATH, 'data_entry.json')
 
