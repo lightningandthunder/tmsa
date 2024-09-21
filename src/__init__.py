@@ -201,7 +201,9 @@ if colors is None or colors == [] or colors == {}:
 
 BG_COLOR = colors.get('bg_color', default_colors['bg_color'])
 BTN_COLOR = colors.get('button_color', default_colors['button_color'])
-DISABLED_BUTTON_COLOR = colors.get('disabled_button', default_colors['disabled_button'])
+DISABLED_BUTTON_COLOR = colors.get(
+    'disabled_button', default_colors['disabled_button']
+)
 TXT_COLOR = colors.get('text_color', default_colors['text_color'])
 ERR_COLOR = colors.get('error_color', default_colors['error_color'])
 

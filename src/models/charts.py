@@ -420,7 +420,9 @@ class ChartObject:
         if data.get('Vertex') and len(data.get('Vertex')) > 2:
             self.vertex = data['Vertex']
         else:
-            self.vertex = AngleData(name='Vertex', short_name='Vx', longitude=angles[1], latitude=0)
+            self.vertex = AngleData(
+                name='Vertex', short_name='Vx', longitude=angles[1], latitude=0
+            )
             vertex_longitude = angles[1]
             # vertex? I don't know what this is
             # swe.calc_house_pos(

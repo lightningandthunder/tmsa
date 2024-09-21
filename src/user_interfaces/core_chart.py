@@ -865,12 +865,28 @@ class CoreChart(object, metaclass=ABCMeta):
                 == chart_models.ChartWheelRole.TRANSIT.value
             ):
                 # Skip aspects between the transiting planet and its base planet, even mundane ones
-                if ((primary_planet_data.name == 'Sun' and primary_planet_data.role.value in [chart_models.ChartWheelRole.RADIX.value, chart_models.ChartWheelRole.PROGRESSED.value]) or
-                    (secondary_planet_data.name == 'Sun' and secondary_planet_data.role.value in [chart_models.ChartWheelRole.RADIX.value, chart_models.ChartWheelRole.PROGRESSED.value])
-                    ):
+                if (
+                    primary_planet_data.name == 'Sun'
+                    and primary_planet_data.role.value
+                    in [
+                        chart_models.ChartWheelRole.RADIX.value,
+                        chart_models.ChartWheelRole.PROGRESSED.value,
+                    ]
+                ) or (
+                    secondary_planet_data.name == 'Sun'
+                    and secondary_planet_data.role.value
+                    in [
+                        chart_models.ChartWheelRole.RADIX.value,
+                        chart_models.ChartWheelRole.PROGRESSED.value,
+                    ]
+                ):
                     return None
                 # Skip any other ecliptical aspects by transiting solunar planet to anything
-                if (ecliptical_aspect and not mundane_aspect) or (ecliptical_aspect and mundane_aspect and ecliptical_aspect.strength > mundane_aspect.strength):
+                if (ecliptical_aspect and not mundane_aspect) or (
+                    ecliptical_aspect
+                    and mundane_aspect
+                    and ecliptical_aspect.strength > mundane_aspect.strength
+                ):
                     return None
 
         if (
@@ -887,12 +903,28 @@ class CoreChart(object, metaclass=ABCMeta):
                 == chart_models.ChartWheelRole.TRANSIT.value
             ):
                 # Skip aspects between the transiting planet and its base planet, even mundane ones
-                if ((primary_planet_data.name == 'Moon' and primary_planet_data.role.value in [chart_models.ChartWheelRole.RADIX.value, chart_models.ChartWheelRole.PROGRESSED.value]) or
-                    (secondary_planet_data.name == 'Moon' and secondary_planet_data.role.value in [chart_models.ChartWheelRole.RADIX.value, chart_models.ChartWheelRole.PROGRESSED.value])
-                    ):
+                if (
+                    primary_planet_data.name == 'Moon'
+                    and primary_planet_data.role.value
+                    in [
+                        chart_models.ChartWheelRole.RADIX.value,
+                        chart_models.ChartWheelRole.PROGRESSED.value,
+                    ]
+                ) or (
+                    secondary_planet_data.name == 'Moon'
+                    and secondary_planet_data.role.value
+                    in [
+                        chart_models.ChartWheelRole.RADIX.value,
+                        chart_models.ChartWheelRole.PROGRESSED.value,
+                    ]
+                ):
                     return None
                 # Skip any other ecliptical aspects by transiting solunar planet to anything
-                if (ecliptical_aspect and not mundane_aspect) or (ecliptical_aspect and mundane_aspect and ecliptical_aspect.strength > mundane_aspect.strength):
+                if (ecliptical_aspect and not mundane_aspect) or (
+                    ecliptical_aspect
+                    and mundane_aspect
+                    and ecliptical_aspect.strength > mundane_aspect.strength
+                ):
                     return None
 
         # Skip existing ecliptical aspects between radical planets if they're "other partile"
@@ -901,7 +933,8 @@ class CoreChart(object, metaclass=ABCMeta):
             == chart_models.ChartWheelRole.RADIX.value
             and secondary_planet_data.role.value
             == chart_models.ChartWheelRole.RADIX.value
-            and ecliptical_aspect and ecliptical_aspect.aspect_class == 4
+            and ecliptical_aspect
+            and ecliptical_aspect.aspect_class == 4
         ):
             return None
 
@@ -1309,7 +1342,9 @@ class CoreChart(object, metaclass=ABCMeta):
             outermost_chart.ayanamsa,
             outermost_chart.obliquity,
         )
-        chartfile.write(chart_utils.fmt_dm(to360(ra - 180), True, degree_digits=3) + ' ')
+        chartfile.write(
+            chart_utils.fmt_dm(to360(ra - 180), True, degree_digits=3) + ' '
+        )
         chartfile.write(chart_utils.fmt_lat(dec, True) + ' ')
 
         # Azimuth

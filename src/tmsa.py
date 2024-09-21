@@ -177,7 +177,13 @@ class StartPage(Frame):
         )
 
         self.predictive_options = Button(
-            self, 'Predictive Options', 0.6, 0.45, 0.2, font=base_font, button_color=DISABLED_BUTTON_COLOR
+            self,
+            'Predictive Options',
+            0.6,
+            0.45,
+            0.2,
+            font=base_font,
+            button_color=DISABLED_BUTTON_COLOR,
         )
         self.predictive_options.bind(
             '<Button-1>', lambda _: delay(show_not_implemented)
@@ -193,7 +199,13 @@ class StartPage(Frame):
             '<Button-1>', lambda _: delay(ProgramOptions)
         )
         self.show_errors = Button(
-            self, 'Show Errors', 0.4, 0.55, 0.2, font=base_font, button_color=BTN_COLOR
+            self,
+            'Show Errors',
+            0.4,
+            0.55,
+            0.2,
+            font=base_font,
+            button_color=BTN_COLOR,
         )
         self.show_errors.bind(
             '<Button-1>', lambda _: delay(lambda: open_file(ERROR_FILE))
