@@ -1013,9 +1013,12 @@ class CoreChart(object, metaclass=ABCMeta):
             'Other Partile Aspects ',
         ]
 
-        aspect_width = (
-            len(str(aspects_by_class[0][0])) if aspects_by_class[0] else 0
-        )
+        # find aspect width by finding the longest aspect name
+        aspect_width = 0
+        for aspect_class in aspects_by_class:
+            if aspect_class:
+                aspect_width = len(str(aspect_class[0]))
+                break
 
         # Remove empty aspect classes
         if len(aspects_by_class[3]) == 0 or whole_chart_is_dormant:
@@ -1033,8 +1036,18 @@ class CoreChart(object, metaclass=ABCMeta):
         if any(aspect_class_headers):
             chartfile.write('-' * self.table_width + '\n')
 
+            aspect_header_index = 0
+            while not any(aspect_class_headers[aspect_header_index]):
+                aspect_header_index += 1
+
             # Write the first 3 headers
-            left_header = aspect_class_headers[0] or ' ' * 26
+            if aspect_class_headers[aspect_header_index]:
+                left_header = aspect_class_headers[aspect_header_index]
+            else:
+                left_header = ' ' * 26
+
+            aspect_header_index += 1
+
             chartfile.write(
                 chart_utils.center_align(
                     left_header,
@@ -1042,7 +1055,12 @@ class CoreChart(object, metaclass=ABCMeta):
                 )
             )
 
-            center_header = aspect_class_headers[1] or ' ' * 26
+            if aspect_class_headers[aspect_header_index]:
+                center_header = aspect_class_headers[aspect_header_index]
+            else:
+                center_header = ' ' * 26
+
+            aspect_header_index += 1
 
             # This represents how much of a shift right there is between
             # the left-aligned first column and the center-aligned second column
@@ -1061,7 +1079,13 @@ class CoreChart(object, metaclass=ABCMeta):
             if gap > 0:
                 chartfile.write(' ' * gap)
 
-            right_header = aspect_class_headers[2] or ' ' * 26
+            if aspect_class_headers[aspect_header_index]:
+                right_header = aspect_class_headers[aspect_header_index]
+            else:
+                right_header = ' ' * 26
+
+            aspect_header_index += 1
+
             chartfile.write(
                 chart_utils.center_align(
                     right_header, width=max(aspect_width, len(right_header))
@@ -1121,15 +1145,19 @@ class CoreChart(object, metaclass=ABCMeta):
             chartfile.write('\n')
 
         chartfile.write('-' * self.table_width + '\n')
-        if aspects_by_class_with_dividers[3]:
+        if (
+            aspect_header_index <= len(aspect_class_headers) - 1
+            and aspect_header_index <= len(aspects_by_class_with_dividers) - 1
+            and aspects_by_class_with_dividers[aspect_header_index]
+        ):
             chartfile.write(
                 chart_utils.center_align(
-                    aspect_class_headers[3],
+                    aspect_class_headers[aspect_header_index],
                     width=self.table_width,
                 )
                 + '\n'
             )
-            for aspect in aspects_by_class_with_dividers[3]:
+            for aspect in aspects_by_class_with_dividers[aspect_header_index]:
                 chartfile.write(
                     chart_utils.center_align(str(aspect), self.table_width)
                     + '\n'
