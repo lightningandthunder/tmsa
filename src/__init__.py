@@ -9,6 +9,7 @@
 
 import json
 import os
+from datetime import datetime as dt
 
 from src.constants import PLATFORM
 from src.defaults.option_defaults import (
@@ -22,15 +23,22 @@ from src.utils.os_utils import (
     app_path,
     create_directory,
     migrate_from_file,
-    write_to_path,
 )
 
 STILL_STARTING_UP = True
 
 
-def log_error(error: str):
-    print(error)
-    write_to_path(ERROR_FILE, error)
+def log_startup_error(e):
+    contents = ''
+    with open(ERROR_FILE, 'r') as file:
+        contents = file.read()
+    with open(ERROR_FILE, 'w') as file:
+        timestamped_error = (
+            f'----------{dt.now().strftime("%Y-%m-%d %H:%M:%S")}----------\n'
+            + 'STARTUP ERROR:\n'
+            + str(e)
+        )
+        file.write(timestamped_error + '\n' + contents)
 
 
 EPHE_PATH = app_path('ephe')
@@ -154,7 +162,7 @@ if not os.path.exists(LOCATIONS_FILE):
         with open(LOCATIONS_FILE, 'w') as datafile:
             json.dump([], datafile, indent=4)
     except Exception as e:
-        log_error(e)
+        log_startup_error(e)
 
 RECENT_FILE = os.path.join(OPTION_PATH, 'recent.json')
 
@@ -165,7 +173,7 @@ if not os.path.exists(RECENT_FILE):
         with open(COLOR_FILE, 'w') as datafile:
             json.dump([], datafile, indent=4)
     except Exception as e:
-        log_error(e)
+        log_startup_error(e)
 
 default_colors = {
     'bg_color': 'black',
@@ -183,7 +191,7 @@ if os.path.exists(COLOR_FILE):
             colors = json.load(datafile)
         default = False
     except Exception as e:
-        log_error(e)
+        log_startup_error(e)
 
 if default:
     try:
@@ -194,7 +202,7 @@ if default:
                 indent=4,
             )
     except Exception as e:
-        log_error(e)
+        log_startup_error(e)
 
 if colors is None or colors == [] or colors == {}:
     colors = default_colors
@@ -217,14 +225,14 @@ if os.path.exists(DATA_ENTRY_FILE):
             data_entry = json.load(datafile)
         default = False
     except Exception as e:
-        log_error(e)
+        log_startup_error(e)
 
 if default:
     try:
         with open(DATA_ENTRY_FILE, 'w') as datafile:
             json.dump(data_entry, datafile, indent=4)
     except Exception as e:
-        log_error(e)
+        log_startup_error(e)
 
 DATE_FMT = data_entry['date_fmt']
 TIME_FMT = data_entry['time_fmt']
@@ -237,6 +245,6 @@ if os.path.exists(HOME_LOC_FILE):
             HOME_LOC = json.load(datafile)
     except Exception as e:
         HOME_LOC = None
-        log_error(e)
+        log_startup_error(e)
 else:
     HOME_LOC = None

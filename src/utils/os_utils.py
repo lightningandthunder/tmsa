@@ -62,7 +62,7 @@ def open_file(file: str):
 
 def write_to_path(path: str, text: str):
     try:
-        with open(path, 'w') as file:
+        with open(path, 'a') as file:
             file.write(text)
     except:
         pass

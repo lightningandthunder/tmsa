@@ -2,7 +2,7 @@ import json
 from dataclasses import dataclass, field
 from enum import Enum
 
-from src import log_error
+from src import log_startup_error
 
 
 @dataclass
@@ -85,7 +85,7 @@ class Options:
                 data = json.load(file)
                 return Options(data)
             except json.JSONDecodeError:
-                log_error(f'Error reading {file_path}')
+                log_startup_error(f'Error reading {file_path}')
 
     def __init__(self, data: dict[str, any]):
         self.extra_bodies = data.get('extra_bodies', [])

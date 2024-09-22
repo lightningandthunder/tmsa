@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Iterator, TypeVar, TypedDict
 
-from src import log_error, swe
+from src import log_startup_error, swe
 from src.constants import PLANETS, VERSION
 from src.models.angles import AngleAxes, ForegroundAngles, NonForegroundAngles
 from src.models.options import NodeTypes, Options
@@ -420,18 +420,21 @@ class ChartObject:
         if data.get('Vertex') and len(data.get('Vertex')) > 2:
             self.vertex = data['Vertex']
         else:
-            self.vertex = AngleData(
-                name='Vertex', short_name='Vx', longitude=angles[1], latitude=0
-            )
+            # self.vertex = AngleData(
+            #     name='Vertex', short_name='Vx', longitude=angles[1], latitude=0
+            # )
             vertex_longitude = angles[1]
             # vertex? I don't know what this is
-            # swe.calc_house_pos(
-            #         self.ramc,
-            #         self.geo_latitude,
-            #         self.obliquity,
-            #         to360(angles[1] + self.ayanamsa),
-            #         0,
-            #     )
+            self.vertex = [
+                angles[1],
+                swe.calc_house_pos(
+                    self.ramc,
+                    self.geo_latitude,
+                    self.obliquity,
+                    to360(angles[1] + self.ayanamsa),
+                    0,
+                ),
+            ]
 
         if data.get('Eastpoint'):
             self.eastpoint = data['Eastpoint']
@@ -578,7 +581,7 @@ class ChartObject:
                 data = json.load(file)
                 return ChartObject(data)
             except json.JSONDecodeError:
-                log_error(f'Error reading {file_path}')
+                log_startup_error(f'Error reading {file_path}')
 
     @staticmethod
     def from_calculation(params: ChartParams) -> 'ChartObject':

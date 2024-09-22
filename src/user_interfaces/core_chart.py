@@ -408,6 +408,7 @@ class CoreChart(object, metaclass=ABCMeta):
         primary_planet: chart_models.PlanetData,
         secondary_planet: chart_models.PlanetData,
     ):
+        raw_orb = 360
         # At least one planet must be on the prime vertical
         if (
             not primary_planet.is_on_prime_vertical
@@ -495,13 +496,12 @@ class CoreChart(object, metaclass=ABCMeta):
             if self.options.pvp_aspects
             else 3
         )
-
-        if planet_is_on_meridian:
+        if planet_is_on_meridian and not both_planets_on_prime_vertical:
             raw_orb = abs(
                 planet_on_other_axis.azimuth - planet_on_prime_vertical.azimuth
             )
 
-        elif planet_is_on_horizon:
+        elif planet_is_on_horizon and not both_planets_on_prime_vertical:
             raw_orb = abs(
                 planet_on_other_axis.meridian_longitude
                 - planet_on_prime_vertical.meridian_longitude
@@ -512,7 +512,7 @@ class CoreChart(object, metaclass=ABCMeta):
         if aspect_type.value == chart_models.AspectType.CONJUNCTION.value:
             normalized_orb = raw_orb
         elif aspect_type.value == chart_models.AspectType.OPPOSITION.value:
-            normalized_orb = abs(180 - raw_orb)
+            normalized_orb = abs(180.0 - raw_orb)
         elif aspect_type.value == chart_models.AspectType.SQUARE.value:
             if chart_utils.inrange(raw_orb, 0, square_orb):
                 normalized_orb = raw_orb
@@ -1037,7 +1037,7 @@ class CoreChart(object, metaclass=ABCMeta):
             left_header = aspect_class_headers[0] or ' ' * 26
             chartfile.write(
                 chart_utils.center_align(
-                    aspect_class_headers[0] or ' ' * 26,
+                    left_header,
                     width=max(aspect_width, len(left_header)),
                 )
             )
@@ -1210,7 +1210,14 @@ class CoreChart(object, metaclass=ABCMeta):
             chartfile.write(chart_utils.left_align(planet_data.short_name, 3))
 
             # Write planet data to info table
-            chartfile.write(chart_utils.zod_sec(planet_data.longitude) + ' ')
+            chartfile.write(chart_utils.zod_sec(planet_data.longitude))
+
+            # Put stationary marker if necessary
+            if planet_data.is_stationary:
+                chartfile.write('S')
+            else:
+                chartfile.write(' ')
+
             chartfile.write(
                 chart_utils.fmt_lat(planet_data.latitude, True) + ' '
             )
@@ -1220,16 +1227,9 @@ class CoreChart(object, metaclass=ABCMeta):
                     chart_utils.signed_degree_minute(planet_data.speed) + ' '
                 )
             else:
-                signed_speed = chart_utils.signed_minute_second(
-                    planet_data.speed
+                chartfile.write(
+                    chart_utils.signed_minute_second(planet_data.speed) + ' '
                 )
-                if planet_data.is_stationary:
-                    chartfile.write(f'S{signed_speed[1:]} ')
-                else:
-                    chartfile.write(
-                        chart_utils.signed_minute_second(planet_data.speed)
-                        + ' '
-                    )
 
             chartfile.write(
                 chart_utils.right_align(

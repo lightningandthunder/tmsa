@@ -9,8 +9,10 @@
 
 import tkinter as tk
 import tkinter.messagebox as tkmessagebox
-import traceback
 from tkinter.font import Font as tkFont
+import traceback
+from datetime import datetime as dt
+import io
 
 from src import *
 from src.constants import PLATFORM, VERSION
@@ -18,9 +20,29 @@ from src.constants import PLATFORM, VERSION
 main = tk.Tk()
 main.minsize(800, 600)
 
+
+def show_error(exception, value, tb):
+    contents = ''
+    tkmessagebox.showerror(
+        'Exception',
+        f'{value}\n\nPlease see error file for details.\n(On the main screen, click "Show Error")',
+    )
+    with open(ERROR_FILE, 'r') as file:
+        contents = file.read()
+    with open(ERROR_FILE, 'w') as file:
+        output = io.StringIO()
+        traceback.print_exception(exception, value, tb, file=output)
+        pretty_error = (
+            f'----------{dt.now().strftime("%Y-%m-%d %H:%M:%S")}----------\n'
+            + output.getvalue()
+        )
+        file.write(pretty_error + '\n' + contents)
+
+
+main.report_callback_exception = show_error
+
 if not os.environ.get('TMSA_TEST'):
     if PLATFORM == 'Win32GUI':
-
         main.state('zoomed')
         main.iconbitmap(app_path(os.path.join('assets', 'tmsa3.ico')))
     elif PLATFORM == 'linux':
@@ -106,16 +128,6 @@ def on_exit():
 
 
 main.protocol('WM_DELETE_WINDOW', on_exit)
-
-
-def show_error(self, *args):
-    err = traceback.format_exception(*args)
-    tkmessagebox.showerror('Exception', err)
-    with open(ERROR_FILE, 'w') as ef:
-        ef.write(str(err))
-
-
-tk.Tk.report_callback_exception = show_error
 
 
 def delay(func, *args, **kwargs):
