@@ -104,7 +104,7 @@ INGRESS_DEFAULT = {
     },
     'midpoints': {'0': 0, '90': 0, '45': 0, 'M': 60, 'is90': 'd'},
     'pvp_aspects': {
-        'enabled': False,
+        'enabled': True,
         '0': [1.25, 2.0, 3.0],
         '180': [1.25, 2.0, 3.0],
         '90': [1.25, 2.0, 3.0],

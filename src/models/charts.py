@@ -395,7 +395,7 @@ class ChartObject:
             )
         if data['zone'] == 'LAT':
             self.julian_day_utc = swe.calc_lat_to_lmt(
-                self.jd, data['longitude']
+                self.julian_day_utc, data['longitude']
             )
         self.ayanamsa = data.get('ayan', swe.calc_ayan(self.julian_day_utc))
         self.obliquity = data.get(

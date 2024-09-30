@@ -115,7 +115,7 @@ options = {
             (os.path.join("copy", "dll"), "dll"),
             (os.path.join("copy", "ephe"), "ephe"),
             (os.path.join("src", "assets"), "assets"),
-            "help",
+            (os.path.join("src", "help"), "help"),
             *source_files
         ],
         "packages": [

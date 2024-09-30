@@ -1033,10 +1033,11 @@ class CoreChart(object, metaclass=ABCMeta):
                 aspects_by_class.append([])
                 aspect_class_headers.append('')
 
+        aspect_header_index = 0
+
         if any(aspect_class_headers):
             chartfile.write('-' * self.table_width + '\n')
 
-            aspect_header_index = 0
             while not any(aspect_class_headers[aspect_header_index]):
                 aspect_header_index += 1
 
@@ -1341,7 +1342,7 @@ class CoreChart(object, metaclass=ABCMeta):
                     angles_models.NonForegroundAngles.BLANK.value,
                     angles_models.NonForegroundAngles.BACKGROUND.value,
                 ]:
-                    angularity = angles_models.NonForegroundAngles.VERTEX
+                    angularity = angles_models.NonForegroundAngles.ANTIVERTEX
 
                 planet_data.prime_vertical_angle = (
                     angles_models.NonForegroundAngles.ANTIVERTEX
