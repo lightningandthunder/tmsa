@@ -303,9 +303,11 @@ class CoreChart(object, metaclass=ABCMeta):
 
             # If the aspect is a sesquisquare, we need to use the orb for semisquare,
             # as it's the only orb in options
-            aspect_degrees_for_options = (
-                45 if aspect_degrees == 135 else aspect_degrees
-            )
+            aspect_degrees_for_options = aspect_degrees
+            if aspect_degrees == 135:
+                 aspect_degrees_for_options = 45
+            if aspect_degrees == 150:
+                aspect_degrees_for_options = 30    
 
             if aspect_framework == chart_models.AspectFramework.ECLIPTICAL:
                 if str(aspect_degrees_for_options) in ecliptic_orbs:
@@ -1595,6 +1597,10 @@ class CoreChart(object, metaclass=ABCMeta):
                         ):
                             chartfile.write(f' Su {sun_sign}-')
                             need_another_row = True
+
+                    if planet_data.is_stationary:
+                        chartfile.write(' Stationary')
+                        need_another_row = True
 
                 aspect_list = []
 

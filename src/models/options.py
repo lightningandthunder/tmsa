@@ -1,5 +1,5 @@
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 
 from src import log_startup_error
@@ -95,7 +95,7 @@ class Options:
             self.extra_bodies.append('Se')
         self.use_vertex = True if data.get('use_Vertex') else False
 
-        self.node_type = NodeTypes.from_number(data.get('node_type', 0))
+        self.node_type = NodeTypes.from_number(data.get('Node', data.get('node_type', 0)))
         self.show_aspects = ShowAspect.from_number(data.get('show_aspects', 0))
         self.partile_nf = True if data.get('partile_nf') else False
         if 'angularity' in data:

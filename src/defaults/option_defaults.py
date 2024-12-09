@@ -80,7 +80,7 @@ INGRESS_DEFAULT = {
     'use_Vertex': 0,
     'Node': 0,
     'show_aspects': 1,
-    'partile_nf': 1,
+    'partile_nf': 0,
     'angularity': {
         'model': 1,
         'no_bg': 0,

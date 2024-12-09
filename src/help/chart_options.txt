@@ -40,7 +40,7 @@ You may also choose orbs for the foreground both for major angles and minor angl
 
 Inconsistent orb choices will be rejected (example setting class 1 conjuctions to 5 degrees and class 2 to only 3 degrees).
 
-Aspects offer three choices: All, at least 1 foregroung planet, 2 foreground planet. There is an 
+Aspects offer three choices: All, at least 1 foreground planet, 2 foreground planet. There is an 
 option to always list partile aspects (1 degree or less separation from exact) -- this is ignored if
 "all" is selected. 
 

@@ -563,7 +563,7 @@ class ChartObject:
                 continue
 
             elif point == 1:
-                yield 'As', data
+                yield 'As', data                                                                                                                
 
             elif point == 10:
                 yield 'Mc', data
@@ -668,6 +668,7 @@ class AspectType(Enum):
     SQUARE = 'sq'
     TRINE = 'tr'
     OPPOSITION = 'op'
+    INCONJUNCT = 'in'
 
     def __str__(self):
         return self.value
@@ -687,6 +688,8 @@ class AspectType(Enum):
             return cls.SQUARE
         elif string == 'tr':
             return cls.TRINE
+        elif string == 'in':
+            return cls.INCONJUNCT
         elif string == 'op':
             return cls.OPPOSITION
         else:
@@ -709,6 +712,8 @@ class AspectType(Enum):
             return cls.TRINE
         elif degrees == 135:
             return cls.OCTILE
+        elif degrees == 150:
+            return cls.QUINCUNX
         elif degrees == 180:
             return cls.OPPOSITION
         else:
@@ -726,6 +731,8 @@ class AspectType(Enum):
             return 90
         elif abbreviation == 'tr':
             return 120
+        elif abbreviation == 'in':
+            return 150
         elif abbreviation == 'op':
             return 180
         else:
@@ -745,6 +752,8 @@ class AspectType(Enum):
             return 'tr'
         elif degrees == 135:
             return 'oc'
+        elif degrees == 150:
+            return 'in'
         elif degrees == 180:
             return 'op'
         else:
