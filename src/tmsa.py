@@ -161,7 +161,7 @@ class StartPage(Frame):
             '<Button-1>', lambda _: delay(NewChart)
         )
         Button(self, 'Select Chart', 0.6, 0.4, 0.2).bind(
-            '<Button-1>', lambda _: delay(SelectChart)
+            '<Button-1>', lambda _: delay(SelectChart, main)
         )
         Button(self, 'Ingresses', 0.2, 0.45, 0.2).bind(
             '<Button-1>', lambda _: delay(Ingresses)

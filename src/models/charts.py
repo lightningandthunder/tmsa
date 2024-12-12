@@ -563,7 +563,7 @@ class ChartObject:
                 continue
 
             elif point == 1:
-                yield 'As', data                                                                                                                
+                yield 'As', data
 
             elif point == 10:
                 yield 'Mc', data

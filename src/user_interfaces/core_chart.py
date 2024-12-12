@@ -305,9 +305,9 @@ class CoreChart(object, metaclass=ABCMeta):
             # as it's the only orb in options
             aspect_degrees_for_options = aspect_degrees
             if aspect_degrees == 135:
-                 aspect_degrees_for_options = 45
+                aspect_degrees_for_options = 45
             if aspect_degrees == 150:
-                aspect_degrees_for_options = 30    
+                aspect_degrees_for_options = 30
 
             if aspect_framework == chart_models.AspectFramework.ECLIPTICAL:
                 if str(aspect_degrees_for_options) in ecliptic_orbs:
@@ -1545,7 +1545,7 @@ class CoreChart(object, metaclass=ABCMeta):
 
                 if angle.strip() == '':
                     angle = '  '
-                elif angle.strip() in [
+                elif angle.strip().upper() in [
                     a.value.strip().upper()
                     for a in angles_models.ForegroundAngles
                 ]:

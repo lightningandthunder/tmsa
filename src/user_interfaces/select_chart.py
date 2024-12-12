@@ -23,13 +23,20 @@ from src.user_interfaces.solunarsV2 import SolunarsV2
 from src.user_interfaces.widgets import *
 from src.utils.chart_utils import make_chart_path
 from src.utils.format_utils import display_name, parse_version_from_txt_file
-from src.utils.gui_utils import ShowHelp, show_not_implemented
+from src.utils.gui_utils import (
+    ShowHelp,
+    newline_if_past_breakpoint,
+    show_not_implemented,
+)
 from src.utils.os_utils import open_file
 
 
 class SelectChart(Frame):
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__()
+        self.parent = parent
+        self.parent.bind('<Configure>', self.resize)
+
         self.fnlbl = Label(self, '', 0, 0, 1)
         self.filename = ''
         self.first = Button(self, 'Find Chart', 0.3, 0.05, 0.2)
@@ -41,9 +48,13 @@ class SelectChart(Frame):
         Button(self, 'Export Chart', 0.3, 0.1, 0.2).bind(
             '<Button-1>', lambda _: delay(self.export_file)
         )
-        Button(self, 'Recalculate Chart', 0.5, 0.1, 0.2).bind(
+        self.recalculate_button = Button(
+            self, 'Recalculate Chart', 0.5, 0.1, 0.2
+        )
+        self.recalculate_button.bind(
             '<Button-1>', lambda _: delay(self.recalculate)
         )
+
         Button(self, 'Delete Chart', 0.3, 0.15, 0.2).bind(
             '<Button-1>', lambda _: delay(self.delete_file)
         )
@@ -53,7 +64,15 @@ class SelectChart(Frame):
         Button(self, 'Clear History', 0.3, 0.2, 0.2).bind(
             '<Button-1>', lambda _: delay(self.clear_history)
         )
-        Button(self, 'Predictive Methods', 0.5, 0.2, 0.2).bind(
+        self.predictive_methods_button = Button(
+            self,
+            'Predictive Methods',
+            0.5,
+            0.2,
+            0.2,
+            button_color=DISABLED_BUTTON_COLOR,
+        )
+        self.predictive_methods_button.bind(
             '<Button-1>', lambda _: delay(show_not_implemented)
         )
         Button(self, 'Help', 0.3, 0.25, 0.2).bind(
@@ -85,6 +104,30 @@ class SelectChart(Frame):
         self.morebtn.bind('<Button-1>', lambda _: delay(self.more_files))
         self.morebtn.disabled = True
         self.load_files()
+
+    def resize_recalculate(self):
+        width = self.parent.winfo_width()
+
+        text = newline_if_past_breakpoint(
+            self.recalculate_button.text, 1350, width
+        )
+        self.recalculate_button.configure(
+            text=text, font=font_16 if width < 1350 else base_font
+        )
+
+    def resize_predictive_methods(self):
+        width = self.parent.winfo_width()
+
+        text = newline_if_past_breakpoint(
+            self.predictive_methods_button.text, 1350, width
+        )
+        self.predictive_methods_button.configure(
+            text=text, font=font_16 if width < 1350 else base_font
+        )
+
+    def resize(self, event):
+        self.resize_recalculate()
+        self.resize_predictive_methods()
 
     def load_files(self):
         try:

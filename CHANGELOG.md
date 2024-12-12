@@ -14,6 +14,7 @@
 - Added needs hierarchy scores for natal charts
 - Shortened column headers
 - Ecliptical/mundane aspects are compared by strength %, not raw orb
+- Added button text auto-resizing
 
 ### 0.5.7
 - Fixed bug where mundane midpoints were using meridian longitude instead of prime vertical longitude
