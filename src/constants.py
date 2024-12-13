@@ -11,7 +11,7 @@ import os
 import sys
 from typing import TypedDict
 
-VERSION = '0.6.0b1'
+VERSION = '0.6.0b2'
 OLDEST_SUPPORTED_VERSION = '0.5.7'
 
 DS = '\N{DEGREE SIGN}'
