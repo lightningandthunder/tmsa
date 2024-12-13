@@ -29,13 +29,13 @@ from src.utils.gui_utils import (
     show_not_implemented,
 )
 from src.utils.os_utils import open_file
+from src.user_interfaces.widgets import main
 
 
 class SelectChart(Frame):
-    def __init__(self, parent):
+    def __init__(self):
         super().__init__()
-        self.parent = parent
-        self.parent.bind('<Configure>', self.resize)
+        main.bind('<Configure>', self.resize)
 
         self.fnlbl = Label(self, '', 0, 0, 1)
         self.filename = ''
@@ -106,7 +106,7 @@ class SelectChart(Frame):
         self.load_files()
 
     def resize_recalculate(self):
-        width = self.parent.winfo_width()
+        width = main.winfo_width()
 
         text = newline_if_past_breakpoint(
             self.recalculate_button.text, 1350, width
@@ -116,7 +116,7 @@ class SelectChart(Frame):
         )
 
     def resize_predictive_methods(self):
-        width = self.parent.winfo_width()
+        width = main.winfo_width()
 
         text = newline_if_past_breakpoint(
             self.predictive_methods_button.text, 1350, width
@@ -126,8 +126,10 @@ class SelectChart(Frame):
         )
 
     def resize(self, event):
-        self.resize_recalculate()
-        self.resize_predictive_methods()
+        if self.recalculate_button.winfo_exists():
+            self.resize_recalculate()
+        if self.predictive_methods_button.winfo_exists():
+            self.resize_predictive_methods()
 
     def load_files(self):
         try:
@@ -323,7 +325,7 @@ class SelectChart(Frame):
             self.sort_recent()
             if chart.get('base_chart', None):
                 chart['basechart'] = None
-            self.destroy()
+            main.after(0,self.destroy())
             if DEV_MODE:
                 SolunarsV2(chart, self.filename)
             else:
