@@ -236,7 +236,6 @@ class CoreChart(object, metaclass=ABCMeta):
         whole_chart_is_dormant: bool,
         aspect_framework: chart_models.AspectFramework,
     ) -> chart_models.Aspect:
-
         show_aspects = (
             self.options.show_aspects or option_models.ShowAspect.ALL
         )
@@ -275,9 +274,8 @@ class CoreChart(object, metaclass=ABCMeta):
         raw_orb = None
         aspect = None
 
-        if whole_chart_is_dormant:
-            if primary_planet.name != 'Moon':
-                return None
+        if whole_chart_is_dormant and primary_planet.name != 'Moon':
+            return None
 
         if aspect_framework == chart_models.AspectFramework.ECLIPTICAL:
             raw_orb = (
@@ -841,7 +839,6 @@ class CoreChart(object, metaclass=ABCMeta):
         to_chart_type: chart_models.ChartType,
         whole_chart_is_dormant: bool,
     ) -> chart_models.Aspect | None:
-
         ecliptical_aspect = self.find_ecliptical_aspect(
             primary_planet_data,
             secondary_planet_data,
@@ -968,7 +965,6 @@ class CoreChart(object, metaclass=ABCMeta):
         chartfile: TextIOWrapper,
         whole_chart_is_dormant: bool,
     ) -> list[list[chart_models.Aspect]]:
-
         aspects_by_class = [[], [], [], []]
 
         for (from_index, from_chart) in enumerate(self.charts):
@@ -1216,17 +1212,17 @@ class CoreChart(object, metaclass=ABCMeta):
                 chart_utils.center_align('Dormant Ingress', self.table_width)
                 + '\n'
             )
-            return
 
         aspects_by_class = self.write_aspects(
             chartfile,
             whole_chart_is_dormant,
         )
 
-        self.write_cosmic_state(
-            chartfile,
-            aspects_by_class,
-        )
+        if not whole_chart_is_dormant:
+            self.write_cosmic_state(
+                chartfile,
+                aspects_by_class,
+            )
 
     def write_info_table_section(
         self,
@@ -1368,13 +1364,13 @@ class CoreChart(object, metaclass=ABCMeta):
         chartfile.write('.' * 6 + ' ')
         # Right Ascension
         # Declination
-        (ra, dec) = chart_utils.precess_mc(
+        (_, dec) = chart_utils.precess_mc(
             chart.cusps[10],
             outermost_chart.ayanamsa,
             outermost_chart.obliquity,
         )
         chartfile.write(
-            chart_utils.fmt_dm(to360(ra - 180), True, degree_digits=3) + ' '
+            chart_utils.fmt_dm(chart.ramc, True, degree_digits=3) + ' '
         )
         chartfile.write(chart_utils.fmt_lat(dec, True) + ' ')
 
@@ -1405,6 +1401,7 @@ class CoreChart(object, metaclass=ABCMeta):
         # Right Ascension
         chartfile.write('.' * 7 + ' ')
         # Declination
+
         dec = chart_utils.declination_from_zodiacal(
             chart.cusps[1], chart.obliquity
         )
@@ -1433,7 +1430,7 @@ class CoreChart(object, metaclass=ABCMeta):
         # Speed
         chartfile.write('.' * 6 + ' ')
         # Right Ascension
-        ra = to360(chart.ramc - 90)
+        ra = to360(chart.ramc - 270)
         chartfile.write(chart_utils.fmt_dm(ra, True, degree_digits=3) + ' ')
 
         # Declination

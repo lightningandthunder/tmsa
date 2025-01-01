@@ -325,7 +325,7 @@ class SelectChart(Frame):
             self.sort_recent()
             if chart.get('base_chart', None):
                 chart['basechart'] = None
-            main.after(0,self.destroy())
+            main.after(0, self.destroy())
             if DEV_MODE:
                 SolunarsV2(chart, self.filename)
             else:

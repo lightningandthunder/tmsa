@@ -658,7 +658,8 @@ class NewChart(Frame):
             hour += 1
         if TIME_FMT == 'AM/PM':
             time = chart['time']
-            if time > 12:
+            if time >= 12:
+                self.tmfmt.value = 1
                 if hour > 12:
                     hour -= 12
                 self.tmfmt.value = 1

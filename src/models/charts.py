@@ -702,6 +702,8 @@ class AspectType(Enum):
 
         if degrees == 0:
             return cls.CONJUNCTION
+        elif degrees == 30:
+            return cls.INCONJUNCT
         elif degrees == 45:
             return cls.OCTILE
         elif degrees == 60:
@@ -713,7 +715,7 @@ class AspectType(Enum):
         elif degrees == 135:
             return cls.OCTILE
         elif degrees == 150:
-            return cls.QUINCUNX
+            return cls.INCONJUNCT
         elif degrees == 180:
             return cls.OPPOSITION
         else:
@@ -742,6 +744,8 @@ class AspectType(Enum):
     def abbreviation_from_degrees(degrees: int):
         if degrees == 0:
             return 'co'
+        if degrees == 30:
+            return 'in'
         elif degrees == 45:
             return 'oc'
         elif degrees == 60:
@@ -765,6 +769,8 @@ class AspectType(Enum):
             yield (member, cls.degrees_from_abbreviation(member.value))
             if member == AspectType.OCTILE:
                 yield (member, 135)
+            elif member == AspectType.INCONJUNCT:
+                yield (member, 30)
 
     @classmethod
     def iterate_harmonic_8(cls) -> Iterator[tuple['AspectType', int]]:
