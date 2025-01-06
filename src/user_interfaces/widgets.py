@@ -65,6 +65,7 @@ if not os.environ.get('TMSA_TEST'):
 
 if PLATFORM == 'Win32GUI':
     base_font = tkFont(family='Lucida Console', size=18, weight='normal')
+    font_24 = tkFont(family='Lucida Console', size=24, weight='normal')
     font_16 = tkFont(family='Lucida Console', size=16, weight='normal')
     font_14 = tkFont(family='Lucida Console', size=14, weight='normal')
     font_12 = tkFont(family='Lucida Console', size=12, weight='normal')
@@ -78,6 +79,9 @@ elif PLATFORM == 'linux':
 
     base_font = root_font.copy()
     base_font.configure(size=18)
+
+    font_20 = root_font.copy()
+    font_20.configure(size=20)
 
     font_16 = root_font.copy()
     font_16.configure(size=16)
@@ -102,6 +106,9 @@ elif PLATFORM == 'darwin':
 
     base_font = root_font.copy()
     base_font.configure(size=18)
+
+    font_20 = root_font.copy()
+    font_20.configure(size=20)
 
     font_16 = root_font.copy()
     font_16.configure(size=16)

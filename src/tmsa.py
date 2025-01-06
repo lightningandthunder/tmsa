@@ -36,6 +36,7 @@ from src.utils.gui_utils import (
 from src.utils.os_utils import open_file
 
 TITLE = f'Time Matters {VERSION}'
+BETA_FEATURES_ENABLED = 'Beta Features Enabled'
 INTRO = f"""A freeware program for calculating geometrically
 accurate astrological charts in the Sidereal Zodiac,
 as rediscovered by Cyril Fagan and Donald Bradley."""
@@ -56,6 +57,8 @@ class StartPage(Frame):
     def __init__(self):
         super().__init__()
         global STILL_STARTING_UP
+        global DEV_MODE
+        print(DEV_MODE)
 
         self.parent = main
         self.parent.bind('<Configure>', self.resize)
@@ -63,6 +66,16 @@ class StartPage(Frame):
         self.title = Label(
             self, TITLE, LABEL_X_COORD, 0.025, LABEL_WIDTH, font=title_font
         )
+        if DEV_MODE:
+            Label(
+                self,
+                BETA_FEATURES_ENABLED,
+                LABEL_X_COORD,
+                0.08,
+                LABEL_WIDTH,
+                LABEL_HEIGHT_UNIT,
+                font=font_12,
+            )
         self.intro = Label(
             self,
             INTRO,

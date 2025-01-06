@@ -19,6 +19,7 @@ from geopy import Nominatim
 
 from src import *
 from src.constants import DQ, DS, VERSION
+from src.user_interfaces.beta_features import BetaFeatures
 from src.user_interfaces.locations import Locations
 from src.user_interfaces.widgets import *
 from src.utils.format_utils import normalize_text
@@ -63,12 +64,20 @@ class ProgramOptions(Frame):
         self.tmfmt = Radiogroup(self)
         Radiobutton(self, self.tmfmt, 0, 'AM/PM', 0.4, 0.35, 0.1)
         Radiobutton(self, self.tmfmt, 1, '24 Hour', 0.5, 0.35, 0.1)
+
+        Label(self, 'Enable Beta Features', 0.2, 0.40, 0.2, anchor=tk.W)
+        self.dev_mode = Radiogroup(self)
+        self.dev_mode.value = 1 if DEV_MODE else 0
+        Radiobutton(self, self.dev_mode, 1, 'Yes', 0.4, 0.40, 0.1)
+        Radiobutton(self, self.dev_mode, 0, 'No', 0.5, 0.40, 0.1)
+
         Label(self, 'Student Options', 0.2, 0.45, 0.2, anchor=tk.W)
         self.isstudent = Radiogroup(self)
         Radiobutton(self, self.isstudent, 1, 'Yes', 0.4, 0.45, 0.1)
         Radiobutton(self, self.isstudent, 0, 'No', 0.5, 0.45, 0.1)
         if os.path.exists(STUDENT_FILE):
             self.isstudent.value = 1
+
         Label(self, 'Home Location', 0.15, 0.55, 0.15, anchor=tk.W)
         self.loc = Entry(self, '', 0.3, 0.55, 0.3)
         self.loc.bind('<KeyRelease>', lambda _: self.enable_find)
@@ -98,17 +107,20 @@ class ProgramOptions(Frame):
         Radiobutton(self, self.longdir, 0, 'East ', 0.6, 0.65, 0.1)
         Radiobutton(self, self.longdir, 1, 'West ', 0.7, 0.65, 0.1)
         self.longdir.value = '1'
-        Button(self, 'Save', 0.2, 0.75, 0.15).bind(
+        Button(self, 'Save', 0.2, 0.75, 0.125).bind(
             '<Button-1>', lambda _: delay(self.save)
         )
-        Button(self, 'Restart', 0.35, 0.75, 0.15).bind(
+        Button(self, 'Restart', 0.325, 0.75, 0.125).bind(
             '<Button-1>', lambda _: delay(self.restart)
         )
-        Button(self, 'Help', 0.5, 0.75, 0.15).bind(
+        Button(self, 'Help', 0.45, 0.75, 0.125).bind(
             '<Button-1>',
             lambda _: delay(ShowHelp, HELP_PATH + r'\program_options.txt'),
         )
-        Button(self, 'Back', 0.65, 0.75, 0.15).bind(
+        Button(self, 'See Beta\nFeatures', 0.575, 0.75, 0.125).bind(
+            '<Button-1>', lambda _: delay(BetaFeatures)
+        )
+        Button(self, 'Back', 0.7, 0.75, 0.125).bind(
             '<Button-1>', lambda _: delay(self.destroy)
         )
         self.status = Label(self, '', 0, 0.8, 1)
@@ -423,6 +435,21 @@ class ProgramOptions(Frame):
             self.status.error('Unable to save home location.')
             return False
 
+    def save_dev_mode(self):
+        dev_mode = {}
+        dev_mode['dev_mode'] = self.dev_mode.value
+        global DEV_MODE
+        DEV_MODE = self.dev_mode.value
+        if not os.path.exists(DEV_MODE_FILE):
+            os.makedirs(os.path.dirname(DEV_MODE_FILE), exist_ok=True)
+        try:
+            with open(DEV_MODE_FILE, 'w') as datafile:
+                json.dump(dev_mode, datafile, indent=4)
+            return True
+        except Exception as e:
+            self.status.error('Unable to save dev mode options: ' + str(e))
+            return False
+
     def save(self):
         if not self.save_colors():
             return False
@@ -431,6 +458,8 @@ class ProgramOptions(Frame):
         if not self.save_student():
             return False
         if not self.save_home():
+            return False
+        if not self.save_dev_mode():
             return False
         self.status.text = 'Program options saved.'
         return True

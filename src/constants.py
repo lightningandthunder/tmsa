@@ -11,7 +11,7 @@ import os
 import sys
 from typing import TypedDict
 
-VERSION = '0.6.0b3'
+VERSION = '0.6.0b4'
 OLDEST_SUPPORTED_VERSION = '0.5.7'
 
 DS = '\N{DEGREE SIGN}'
@@ -247,12 +247,6 @@ PLANETS: dict[str, PlanetInfo] = {
         'short_name': 'Qu',
         'long_name': 'Quaoar',
         'number': 60000,
-        'stationary_period_hours': 72,
-    },
-    'Salacia': {
-        'short_name': 'Sl',
-        'long_name': 'Salacia',
-        'number': 130347,
         'stationary_period_hours': 72,
     },
 }

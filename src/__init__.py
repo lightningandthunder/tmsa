@@ -207,6 +207,16 @@ if default:
 if colors is None or colors == [] or colors == {}:
     colors = default_colors
 
+DEV_MODE_FILE = os.path.join(OPTION_PATH, 'dev_mode.json')
+
+DEV_MODE = False
+try:
+    with open(DEV_MODE_FILE) as datafile:
+        dev_opts = json.load(datafile)
+        DEV_MODE = dev_opts.get('dev_mode', False)
+except Exception as e:
+    log_startup_error(e)
+
 BG_COLOR = colors.get('bg_color', default_colors['bg_color'])
 BTN_COLOR = colors.get('button_color', default_colors['button_color'])
 DISABLED_BUTTON_COLOR = colors.get(
@@ -216,6 +226,7 @@ TXT_COLOR = colors.get('text_color', default_colors['text_color'])
 ERR_COLOR = colors.get('error_color', default_colors['error_color'])
 
 DATA_ENTRY_FILE = os.path.join(OPTION_PATH, 'data_entry.json')
+
 
 data_entry = {'date_fmt': 'M D Y', 'time_fmt': 'AM/PM'}
 default = True
