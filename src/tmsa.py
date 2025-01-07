@@ -58,7 +58,6 @@ class StartPage(Frame):
         super().__init__()
         global STILL_STARTING_UP
         global DEV_MODE
-        print(DEV_MODE)
 
         self.parent = main
         self.parent.bind('<Configure>', self.resize)

@@ -13,6 +13,7 @@ import tkinter.filedialog as tkfiledialog
 import tkinter.messagebox as tkmessagebox
 
 from src import *
+from src.user_interfaces.extra_planet_options import ExtraPlanetOptions
 from src.user_interfaces.pvp_options import PVPOptions
 from src.user_interfaces.widgets import *
 from src.utils.format_utils import normalize_text
@@ -32,9 +33,6 @@ class ChartOptions(Frame):
         Button(self, 'Load', 0.6, 0.05, 0.1).bind(
             '<Button-1>', lambda _: delay(self.load)
         )
-        self.eris = Checkbutton(self, 'Include Eris', 0.2, 0.1, 0.2)
-        self.eris.checked = True
-        self.sedna = Checkbutton(self, 'Include Sedna', 0.4, 0.1, 0.2)
         self.vertex = Checkbutton(self, 'Include Vertex', 0.6, 0.1, 0.2)
         self.node = Radiogroup(self)
         Radiobutton(self, self.node, 0, "Don't Use Node", 0.2, 0.15, 0.2)
@@ -151,17 +149,23 @@ class ChartOptions(Frame):
         self.pvp_button = Button(self, 'PVP Aspects', 0.775, 0.85, 0.175).bind(
             '<Button-1>', lambda _: delay(self.prime_vertical_parans)
         )
+
         self.status = Label(self, '', 0, 0.9, 1)
-        Button(self, 'Save', 0.2, 0.95, 0.2).bind(
+        Button(self, 'Save', 0.1, 0.95, 0.2).bind(
             '<Button-1>', lambda _: delay(self.save)
         )
-        Button(self, 'Help', 0.4, 0.95, 0.2).bind(
+        Button(self, 'Help', 0.3, 0.95, 0.2).bind(
             '<Button-1>',
             lambda _: delay(
                 ShowHelp, os.path.join(HELP_PATH, 'chart_options.txt')
             ),
         )
-        backbtn = Button(self, 'Back', 0.6, 0.95, 0.2)
+
+        Button(self, 'Extra Planets', 0.5, 0.95, 0.2).bind(
+            '<Button-1>', lambda _: delay(self.extra_planets)
+        )
+
+        backbtn = Button(self, 'Back', 0.7, 0.95, 0.2)
         backbtn.bind('<Button-1>', lambda _: delay(self.destroy))
         backbtn.bind('<Tab>', lambda _: delay(self.optfile.focus))
         optfile = normalize_text(optname).replace(' ', '_') + '.opt'
@@ -187,8 +191,6 @@ class ChartOptions(Frame):
             self.status.error(f"Unable to load option file: '{filename}'.")
             return
         self.optfile.text = filename[0:-4].replace('_', ' ')
-        self.eris.checked = options.get('use_Eris', True)
-        self.sedna.checked = options.get('use_Sedna', False)
         self.vertex.checked = options.get('use_Vertex', False)
         self.node.value = options.get('Node', 0)
         self.showasp.value = options.get('show_aspects', 0)
@@ -212,6 +214,12 @@ class ChartOptions(Frame):
                 '90': [1.25, 2.0, 3.0],
             },
         )
+
+        self.extra_bodies = options.get('extra_bodies', [])
+        if 'Use_Eris' in options and 'Er' not in self.extra_bodies:
+            self.extra_bodies.append('Er')
+        if 'Use_Sedna' in options and 'Se' not in self.extra_bodies:
+            self.extra_bodies.append('Se')
 
         for i in range(3):
             if maja[i] == 0:
@@ -451,8 +459,6 @@ class ChartOptions(Frame):
         ang = 'angularity'
         ea = 'ecliptic_aspects'
         ma = 'mundane_aspects'
-        options['use_Eris'] = self.eris.checked
-        options['use_Sedna'] = self.sedna.checked
         options['use_Vertex'] = self.vertex.checked
         options['Node'] = self.node.value
         options['show_aspects'] = self.showasp.value
@@ -462,6 +468,7 @@ class ChartOptions(Frame):
         options[ang]['no_bg'] = self.nobg.checked
         options[ang]['major_angles'] = majangs
         options[ang]['minor_angles'] = minangs
+        options['extra_bodies'] = self.extra_bodies
         ex = ['0', '180', '90', '45', '120', '60', '30']
         options[ea] = {}
         for i in range(7):
@@ -515,8 +522,20 @@ class ChartOptions(Frame):
                 '90': [1.25, 2.0, 3.0],
             }
 
+    def finish_extra_bodies(self, extra_bodies):
+        if sorted(self.extra_bodies) != sorted(extra_bodies):
+            self.status.text = 'Extra planet options changed.'
+            self.extra_bodies = extra_bodies
+        else:
+            self.status.text = 'Extra planet options unchanged.'
+
     def midpoints(self):
         MidpointOptions(self.optfile.text, self.mpopt, self.finish_mp)
+
+    def extra_planets(self):
+        ExtraPlanetOptions(
+            self.optfile.text, self.extra_bodies, self.finish_extra_bodies
+        )
 
     def prime_vertical_parans(self):
         PVPOptions(

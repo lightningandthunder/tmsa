@@ -23,7 +23,7 @@ from src.user_interfaces.beta_features import BetaFeatures
 from src.user_interfaces.locations import Locations
 from src.user_interfaces.widgets import *
 from src.utils.format_utils import normalize_text
-from src.utils.gui_utils import ShowHelp
+from src.utils.gui_utils import ShowHelp, show_not_implemented
 
 
 class ProgramOptions(Frame):
@@ -117,9 +117,14 @@ class ProgramOptions(Frame):
             '<Button-1>',
             lambda _: delay(ShowHelp, HELP_PATH + r'\program_options.txt'),
         )
-        Button(self, 'See Beta\nFeatures', 0.575, 0.75, 0.125).bind(
-            '<Button-1>', lambda _: delay(BetaFeatures)
-        )
+        Button(
+            self,
+            'See Beta\nFeatures',
+            0.575,
+            0.75,
+            0.125,
+            button_color=DISABLED_BUTTON_COLOR,
+        ).bind('<Button-1>', lambda _: delay(show_not_implemented))
         Button(self, 'Back', 0.7, 0.75, 0.125).bind(
             '<Button-1>', lambda _: delay(self.destroy)
         )

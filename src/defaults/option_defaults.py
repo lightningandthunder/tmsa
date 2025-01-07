@@ -1,6 +1,4 @@
 NATAL_DEFAULT = {
-    'use_Eris': 1,
-    'use_Sedna': 0,
     'use_Vertex': 1,
     'Node': 0,
     'show_aspects': 0,
@@ -37,8 +35,6 @@ NATAL_DEFAULT = {
 }
 
 RETURN_DEFAULT = {
-    'use_Eris': 1,
-    'use_Sedna': 0,
     'use_Vertex': 0,
     'Node': 0,
     'show_aspects': 2,
@@ -75,8 +71,6 @@ RETURN_DEFAULT = {
 }
 
 INGRESS_DEFAULT = {
-    'use_Eris': 1,
-    'use_Sedna': 0,
     'use_Vertex': 0,
     'Node': 0,
     'show_aspects': 1,
@@ -113,8 +107,6 @@ INGRESS_DEFAULT = {
 }
 
 COSMOBIOLOGY = {
-    'use_Eris': 0,
-    'use_Sedna': 0,
     'use_Vertex': 0,
     'Node': 1,
     'show_aspects': 0,
@@ -151,8 +143,6 @@ COSMOBIOLOGY = {
 }
 
 STUDENT_NATAL = {
-    'use_Eris': 0,
-    'use_Sedna': 0,
     'use_Vertex': 0,
     'Node': 0,
     'show_aspects': 0,

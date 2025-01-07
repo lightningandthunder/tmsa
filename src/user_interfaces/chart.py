@@ -22,24 +22,6 @@ from src.utils.format_utils import (
     version_str_to_tuple,
 )
 
-planet_names = [
-    'Moon',
-    'Sun',
-    'Mercury',
-    'Venus',
-    'Mars',
-    'Jupiter',
-    'Saturn',
-    'Uranus',
-    'Neptune',
-    'Pluto',
-    'Eris',
-    'Sedna',
-    'Mean Node',
-    'True Node',
-]
-planet_indices = [1, 0] + [i for i in range(2, 10)] + [146199, 100377, 10, 11]
-
 
 class Chart:
     def __init__(self, chart, temporary, burst=False):
@@ -79,10 +61,9 @@ class Chart:
                 self.ramc, self.lat, self.oe, to360(angles[2] + self.ayan), 0
             ),
         ]
-        for i in range(len(planet_indices)):
-            planet_index = planet_indices[i]
-            planet_name = planet_names[i]
 
+        for [long_name, planet_definition] in PLANETS.items():
+            planet_index = planet_definition['number']
             [
                 longitude,
                 latitude,
@@ -118,7 +99,7 @@ class Chart:
                 house_position,
             ]
 
-            chart[planet_name] = data
+            chart[long_name] = data
 
         self.save_and_print(chart, temporary, burst)
 
@@ -158,6 +139,7 @@ class Chart:
                 pass
 
         options = Options(options)
+
         if chart.get('base_chart', None):
             return_chart = ChartObject(chart).with_role(ChartWheelRole.TRANSIT)
             radix = ChartObject(chart['base_chart']).with_role(

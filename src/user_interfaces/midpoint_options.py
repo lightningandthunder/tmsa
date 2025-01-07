@@ -36,6 +36,7 @@ class MidpointOptions(Frame):
         Label(self, 'Mundane', 0, 0.35, 1)
         self.mpm = Entry(self, '', 0.475, 0.4, 0.05)
         self.mpm.bind('<KeyRelease>', lambda _: delay(check_num, self.mpm))
+
         Button(self, 'Save', 0.1, 0.55, 0.2).bind(
             '<Button-1>', lambda _: delay(self.save)
         )

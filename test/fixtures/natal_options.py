@@ -4,8 +4,6 @@ import pytest
 @pytest.fixture
 def natal_options():
     return {
-        'use_Eris': 1,
-        'use_Sedna': 0,
         'use_Vertex': 1,
         'Node': 0,
         'show_aspects': 0,
