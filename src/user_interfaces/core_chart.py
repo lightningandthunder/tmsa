@@ -1389,7 +1389,6 @@ class CoreChart(object, metaclass=ABCMeta):
         chartfile.write('\n')
 
         # Ascendant
-
         # Longitude
         chartfile.write(
             f'As {chart_utils.decimal_longitude_to_sign(chart.cusps[1])} '
@@ -1404,7 +1403,7 @@ class CoreChart(object, metaclass=ABCMeta):
 
         dec = chart_utils.declination_from_zodiacal(
             # Must use tropical longitude
-            to360(chart.cusps[1] - chart.ayanamsa),
+            to360(chart.cusps[1] + chart.ayanamsa),
             chart.obliquity,
         )
         chartfile.write(chart_utils.fmt_lat(dec, True) + ' ')
@@ -1458,10 +1457,9 @@ class CoreChart(object, metaclass=ABCMeta):
             chartfile.write('.' * 7 + ' ')
 
             # Declination
-            chart
             dec = chart_utils.declination_from_zodiacal(
                 # This is the TROPICAL longitude, which is needed for this calc
-                to360(chart.angles[1] - chart.ayanamsa),
+                to360(chart.angles[1] + chart.ayanamsa),
                 chart.obliquity,
             )
             chartfile.write(chart_utils.fmt_lat(dec, True) + ' ')
