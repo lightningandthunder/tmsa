@@ -1363,8 +1363,8 @@ class CoreChart(object, metaclass=ABCMeta):
         # Speed
         chartfile.write('.' * 6 + ' ')
         # Right Ascension
-        # Declination
-        (_, dec) = chart_utils.precess_mc(
+        # Declination - RA will be used later
+        (ramc, dec) = chart_utils.precess_mc(
             chart.cusps[10],
             outermost_chart.ayanamsa,
             outermost_chart.obliquity,
@@ -1430,8 +1430,8 @@ class CoreChart(object, metaclass=ABCMeta):
         chartfile.write('.' * 7)
         # Speed
         chartfile.write('.' * 6 + ' ')
-        # Right Ascension
-        ra = to360(chart.ramc - 270)
+        # Right Ascension - using the RA for the MC we just calculated
+        ra = to360(ramc - 270)
         chartfile.write(chart_utils.fmt_dm(ra, True, degree_digits=3) + ' ')
 
         # Declination
