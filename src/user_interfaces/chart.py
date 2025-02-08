@@ -147,7 +147,7 @@ class Chart:
             )
             if not version_is_supported(radix.version):
                 if not tkmessagebox.askyesno(
-                    'Radix chart version is needs to be updated',
+                    'Radix chart version is out of date and needs to be updated',
                     f'Do you want to recalculate the radix chart to the newest version?',
                 ):
                     return None

@@ -8,6 +8,7 @@ from src import log_startup_error, swe
 from src.constants import PLANETS, VERSION
 from src.models.angles import AngleAxes, ForegroundAngles, NonForegroundAngles
 from src.models.options import NodeTypes, Options
+from src.utils import chart_utils
 from src.utils.chart_utils import (
     SIGNS_SHORT,
     convert_house_to_pvl,
@@ -185,8 +186,8 @@ class AngleData:
     declination: float = 0
     azimuth: float = 0
     altitude: float = 0
+    meridian_longitude: float = 0
     prime_vertical_longitude: float = 0
-    role: ChartWheelRole = ChartWheelRole.NATAL
 
     def with_ecliptic_and_equatorial_data(
         self,
@@ -216,7 +217,7 @@ class AngleData:
 
     def precess_to(self, to_chart: T):
         (right_ascension, declination) = swe.cotrans(
-            [self.longitude + to_chart.ayanamsa, self.latitude, 0],
+            [to360(self.longitude + to_chart.ayanamsa), 0, 0],
             to_chart.obliquity,
         )
         self.right_ascension = right_ascension
@@ -227,7 +228,7 @@ class AngleData:
             to_chart.geo_longitude,
             to_chart.geo_latitude,
             to360(to_chart.ayanamsa + self.longitude),
-            self.latitude,
+            0,
         )
         self.azimuth = azimuth
         self.altitude = altitude
@@ -237,7 +238,7 @@ class AngleData:
             to_chart.geo_latitude,
             to_chart.obliquity,
             to360(self.longitude + to_chart.ayanamsa),
-            self.latitude,
+            0,
         )
 
         return self
@@ -357,7 +358,8 @@ class ChartObject:
     ramc: float
     planets: dict[str, PlanetData]
     cusps: list[float]
-    angles: dict[str, AngleData]
+    angles: dict[str, float]
+    angle_data: dict[str, AngleData]
     vertex: list[float]
     eastpoint: list[float]
     role: ChartWheelRole
@@ -420,11 +422,6 @@ class ChartObject:
         if data.get('Vertex') and len(data.get('Vertex')) > 2:
             self.vertex = data['Vertex']
         else:
-            # self.vertex = AngleData(
-            #     name='Vertex', short_name='Vx', longitude=angles[1], latitude=0
-            # )
-            vertex_longitude = angles[1]
-            # vertex? I don't know what this is
             self.vertex = [
                 angles[1],
                 swe.calc_house_pos(
@@ -503,6 +500,81 @@ class ChartObject:
         self.notes = data.get('notes', None)
 
         self.version = data.get('version', (0, 0, 0))
+
+        # Populate angle_data
+        # MC, AS, EP, VX
+        self.angle_data = {}
+        (ramc, dec) = chart_utils.precess_mc(
+            self.cusps[10],
+            self.ayanamsa,
+            self.obliquity,
+        )
+        self.angle_data['Mc'] = AngleData(
+            name='Midheaven',
+            short_name='Mc',
+            longitude=self.cusps[10],
+            latitude=None,
+            right_ascension=ramc,
+            declination=dec,
+            azimuth=180,
+            altitude=(90 - self.geo_latitude) + dec,
+            meridian_longitude=None,
+            prime_vertical_longitude=270,
+        )
+
+        ascendant_declination = chart_utils.declination_from_zodiacal(
+            # Must use tropical longitude
+            to360(self.cusps[1] + self.ayanamsa),
+            self.obliquity,
+        )
+
+        self.angle_data['As'] = AngleData(
+            name='Ascendant',
+            short_name='As',
+            longitude=self.cusps[1],
+            latitude=None,
+            right_ascension=None,
+            declination=ascendant_declination,
+            azimuth=None,
+            altitude=0,
+            meridian_longitude=None,
+            prime_vertical_longitude=0,
+        )
+
+        eastpoint_declination = chart_utils.declination_from_zodiacal(
+            to360(self.angles[2] + self.ayanamsa), self.obliquity
+        )
+        self.angle_data['Ep'] = AngleData(
+            name='Eastpoint',
+            short_name='Ep',
+            longitude=self.angles[2],
+            latitude=None,
+            right_ascension=to360(ramc - 270),
+            declination=eastpoint_declination,
+            azimuth=None,
+            altitude=None,
+            meridian_longitude=None,
+            prime_vertical_longitude=None,
+        )
+
+        vertex_declination = chart_utils.declination_from_zodiacal(
+            # This is the TROPICAL longitude, which is needed for this calc
+            to360(self.angles[1] + self.ayanamsa),
+            self.obliquity,
+        )
+
+        self.angle_data['Vx'] = AngleData(
+            name='Vertex',
+            short_name='Vx',
+            longitude=self.angles[1],
+            latitude=None,
+            right_ascension=None,
+            declination=vertex_declination,
+            azimuth=270,
+            altitude=self.vertex[1] - 180,
+            meridian_longitude=None,
+            prime_vertical_longitude=None,
+        )
 
         def __dict__(self):
             return {
@@ -583,6 +655,7 @@ class ChartObject:
             except json.JSONDecodeError:
                 log_startup_error(f'Error reading {file_path}')
 
+    # TODO - this doesn't work yet; it's missing a lot of stuff
     @staticmethod
     def from_calculation(params: ChartParams) -> 'ChartObject':
         chart = ChartObject(params)
@@ -655,8 +728,13 @@ class ChartObject:
         for planet in self.planets:
             self.planets[planet].precess_to(to_chart)
 
-        # for angle in self.angles:
-        #     self.angles[angle].precess_to(to_chart)
+        print('to chart: ', to_chart)
+
+        # Precess angles
+        for angle in self.angle_data:
+            print('before: ', angle, self.angle_data[angle].declination)
+            self.angle_data[angle].precess_to(to_chart)
+            print('after: ', angle, self.angle_data[angle].declination)
 
         return self
 

@@ -200,7 +200,7 @@ class CoreChart(object, metaclass=ABCMeta):
         else:
             if radix and progressed:
                 radix.precess_to(progressed)
-            if solar and progressed:
+            elif solar and progressed:
                 solar.precess_to(progressed)
 
     def find_ecliptical_aspect(
@@ -1356,29 +1356,32 @@ class CoreChart(object, metaclass=ABCMeta):
         # Midheaven
         # Longitude
         chartfile.write(
-            f'Mc {chart_utils.decimal_longitude_to_sign(chart.cusps[10])} '
+            f'Mc {chart_utils.decimal_longitude_to_sign(chart.angle_data["Mc"].longitude)} '
         )
         # Latitude
         chartfile.write('.' * 7)
         # Speed
         chartfile.write('.' * 6 + ' ')
-        # Right Ascension
-        # Declination - RA will be used later
-        (ramc, dec) = chart_utils.precess_mc(
-            chart.cusps[10],
-            outermost_chart.ayanamsa,
-            outermost_chart.obliquity,
+        # Right Ascension, Declination
+
+        chartfile.write(
+            chart_utils.fmt_dm(
+                chart.angle_data['Mc'].right_ascension, True, degree_digits=3
+            )
+            + ' '
         )
         chartfile.write(
-            chart_utils.fmt_dm(chart.ramc, True, degree_digits=3) + ' '
+            chart_utils.fmt_lat(chart.angle_data['Mc'].declination, True) + ' '
         )
-        chartfile.write(chart_utils.fmt_lat(dec, True) + ' ')
 
         # Azimuth
         chartfile.write("180° 0' ")
         # Altitude
-        alt = (90 - chart.geo_latitude) + dec
-        chartfile.write(chart_utils.signed_degree_minute(alt))
+        chartfile.write(
+            chart_utils.signed_degree_minute(
+                chart.angle_data['Mc'].altitude,
+            )
+        )
         # Meridian Longitude
         chartfile.write(' ' + '.' * 7 + ' ')
         # PVL
@@ -1391,7 +1394,7 @@ class CoreChart(object, metaclass=ABCMeta):
         # Ascendant
         # Longitude
         chartfile.write(
-            f'As {chart_utils.decimal_longitude_to_sign(chart.cusps[1])} '
+            f'As {chart_utils.decimal_longitude_to_sign(chart.angle_data["As"].longitude)} '
         )
         # Latitude
         chartfile.write('.' * 7)
@@ -1401,12 +1404,9 @@ class CoreChart(object, metaclass=ABCMeta):
         chartfile.write('.' * 7 + ' ')
         # Declination
 
-        dec = chart_utils.declination_from_zodiacal(
-            # Must use tropical longitude
-            to360(chart.cusps[1] + chart.ayanamsa),
-            chart.obliquity,
+        chartfile.write(
+            chart_utils.fmt_lat(chart.angle_data['As'].declination, True) + ' '
         )
-        chartfile.write(chart_utils.fmt_lat(dec, True) + ' ')
         # Azimuth
         chartfile.write('.' * 7)
         # Altitude
@@ -1424,21 +1424,26 @@ class CoreChart(object, metaclass=ABCMeta):
 
         # Longitudes
         chartfile.write(
-            f'Ep {chart_utils.decimal_longitude_to_sign(chart.angles[2])} '
+            f'Ep {chart_utils.decimal_longitude_to_sign(chart.angle_data["Ep"].longitude)} '
         )
         # Latitude
         chartfile.write('.' * 7)
         # Speed
         chartfile.write('.' * 6 + ' ')
-        # Right Ascension - using the RA for the MC we just calculated
-        ra = to360(ramc - 270)
-        chartfile.write(chart_utils.fmt_dm(ra, True, degree_digits=3) + ' ')
+        # Right Ascension
+        chartfile.write(
+            chart_utils.fmt_dm(
+                to360(chart.angle_data['Mc'].right_ascension - 270),
+                True,
+                degree_digits=3,
+            )
+            + ' '
+        )
 
         # Declination
-        dec = chart_utils.declination_from_zodiacal(
-            chart.angles[2], chart.obliquity
+        chartfile.write(
+            chart_utils.fmt_lat(chart.angle_data['Ep'].declination, True)
         )
-        chartfile.write(chart_utils.fmt_lat(dec, True))
 
         chartfile.write(' ' + '.' * 36)
         chartfile.write('\n')
@@ -1447,7 +1452,7 @@ class CoreChart(object, metaclass=ABCMeta):
         if self.options.use_vertex:
             # Longitude
             chartfile.write(
-                f'Vx {chart_utils.decimal_longitude_to_sign(chart.angles[1])} '
+                f'Vx {chart_utils.decimal_longitude_to_sign(chart.angle_data["Vx"].longitude)} '
             )
             # Latitude
             chartfile.write('.' * 7)
@@ -1457,18 +1462,19 @@ class CoreChart(object, metaclass=ABCMeta):
             chartfile.write('.' * 7 + ' ')
 
             # Declination
-            dec = chart_utils.declination_from_zodiacal(
-                # This is the TROPICAL longitude, which is needed for this calc
-                to360(chart.angles[1] + chart.ayanamsa),
-                chart.obliquity,
+            chartfile.write(
+                chart_utils.fmt_lat(chart.angle_data['Vx'].declination, True)
+                + ' '
             )
-            chartfile.write(chart_utils.fmt_lat(dec, True) + ' ')
             # Azimuth
             chartfile.write("270° 0' ")
 
             # Altitude
             chartfile.write(
-                chart_utils.signed_degree_minute(chart.vertex[1] - 180) + ' '
+                chart_utils.signed_degree_minute(
+                    chart.angle_data['Vx'].altitude
+                )
+                + ' '
             )
             chartfile.write('.' * 20)
             chartfile.write('\n')

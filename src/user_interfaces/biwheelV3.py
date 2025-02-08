@@ -8,8 +8,6 @@
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
 from io import TextIOWrapper
-import tkinter.messagebox as tkmessagebox
-from datetime import datetime
 
 import src.models.charts as chart_models
 import src.models.options as option_models
@@ -17,7 +15,6 @@ import src.constants as constants
 from src.user_interfaces.core_chart import CoreChart
 import src.utils.chart_utils as chart_utils
 from src.utils.chart_utils import (
-    zod_min,
     zod_sec,
     center_align,
     fmt_dms,
@@ -25,7 +22,6 @@ from src.utils.chart_utils import (
     fmt_lat,
     fmt_long,
 )
-import src.models.angles as angles_models
 
 
 class BiwheelV3(CoreChart):
