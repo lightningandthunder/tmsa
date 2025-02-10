@@ -728,13 +728,9 @@ class ChartObject:
         for planet in self.planets:
             self.planets[planet].precess_to(to_chart)
 
-        print('to chart: ', to_chart)
-
         # Precess angles
         for angle in self.angle_data:
-            print('before: ', angle, self.angle_data[angle].declination)
             self.angle_data[angle].precess_to(to_chart)
-            print('after: ', angle, self.angle_data[angle].declination)
 
         return self
 

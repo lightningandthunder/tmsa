@@ -22,42 +22,42 @@ class ExtraPlanetOptions(Frame):
         Label(self, f'Extra Planets For {name}', 0, 0, 1)
 
         Label(self, 'Asteroids', 0.1, 0.1, 0.3, anchor='w')
-        self.chiron = Checkbutton(self, 'Chiron (Ch)', 0.1, 0.15, 0.3)
-        self.chiron.checked = 'Ch' in extra_bodies
+        self.vesta = Checkbutton(self, 'Vesta (Vs)', 0.1, 0.15, 0.3)
+        self.vesta.checked = 'Vs' in extra_bodies
 
-        self.ceres = Checkbutton(self, 'Ceres (Ce)', 0.1, 0.2, 0.3)
-        self.ceres.checked = 'Ce' in extra_bodies
-
-        self.juno = Checkbutton(self, 'Juno (Jn)', 0.1, 0.25, 0.3)
+        self.juno = Checkbutton(self, 'Juno (Jn)', 0.1, 0.20, 0.3)
         self.juno.checked = 'Jn' in extra_bodies
+
+        self.ceres = Checkbutton(self, 'Ceres (Ce)', 0.1, 0.25, 0.3)
+        self.ceres.checked = 'Ce' in extra_bodies
 
         self.pallas = Checkbutton(self, 'Pallas (Pa)', 0.1, 0.3, 0.3)
         self.pallas.checked = 'Pa' in extra_bodies
 
-        self.vesta = Checkbutton(self, 'Vesta (Vs)', 0.1, 0.35, 0.3)
-        self.vesta.checked = 'Vs' in extra_bodies
+        self.chiron = Checkbutton(self, 'Chiron (Ch)', 0.1, 0.35, 0.3)
+        self.chiron.checked = 'Ch' in extra_bodies
 
         Label(self, 'Trans-Neptunian Objects', 0.4, 0.1, 0.3, anchor='w')
 
-        self.eris = Checkbutton(self, 'Eris (Er)', 0.4, 0.15, 0.3)
-        self.eris.checked = 'Er' in extra_bodies
+        self.orcus = Checkbutton(self, 'Orcus (Or)', 0.4, 0.15, 0.3)
+        self.orcus.checked = 'Or' in extra_bodies
 
         self.haumea = Checkbutton(self, 'Haumea (Ha)', 0.4, 0.2, 0.3)
         self.haumea.checked = 'Ha' in extra_bodies
 
-        self.makemake = Checkbutton(self, 'Makemake (Mk)', 0.4, 0.25, 0.3)
-        self.makemake.checked = 'Mk' in extra_bodies
-
-        self.gonggong = Checkbutton(self, 'Gonggong (Go)', 0.4, 0.3, 0.3)
-        self.gonggong.checked = 'Go' in extra_bodies
-
-        self.quaoar = Checkbutton(self, 'Quaoar (Qu)', 0.4, 0.35, 0.3)
+        self.quaoar = Checkbutton(self, 'Quaoar (Qu)', 0.4, 0.25, 0.3)
         self.quaoar.checked = 'Qu' in extra_bodies
 
-        self.orcus = Checkbutton(self, 'Orcus (Or)', 0.4, 0.4, 0.3)
-        self.orcus.checked = 'Or' in extra_bodies
+        self.makemake = Checkbutton(self, 'Makemake (Mk)', 0.4, 0.30, 0.3)
+        self.makemake.checked = 'Mk' in extra_bodies
 
-        self.sedna = Checkbutton(self, 'Sedna (Se)', 0.4, 0.4, 0.3)
+        self.gonggong = Checkbutton(self, 'Gonggong (Go)', 0.4, 0.35, 0.3)
+        self.gonggong.checked = 'Go' in extra_bodies
+
+        self.eris = Checkbutton(self, 'Eris (Er)', 0.4, 0.40, 0.3)
+        self.eris.checked = 'Er' in extra_bodies
+
+        self.sedna = Checkbutton(self, 'Sedna (Se)', 0.4, 0.45, 0.3)
         self.sedna.checked = 'Se' in extra_bodies
 
         Button(self, 'Save', 0.1, 0.95, 0.2).bind(
