@@ -1041,8 +1041,8 @@ class MidpointAspect:
 SOLAR_RETURNS = [
     ChartType.SOLAR_RETURN.value,
     ChartType.DEMI_SOLAR_RETURN.value,
-    ChartType.LAST_QUARTI_SOLAR_RETURN.value,
     ChartType.FIRST_QUARTI_SOLAR_RETURN.value,
+    ChartType.LAST_QUARTI_SOLAR_RETURN.value,
     ChartType.KINETIC_SOLAR_RETURN.value,
     ChartType.DEMI_KINETIC_SOLAR_RETURN.value,
     ChartType.NOVIENIC_SOLAR_RETURN.value,

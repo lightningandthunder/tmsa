@@ -1713,15 +1713,8 @@ class CoreChart(object, metaclass=ABCMeta):
 
             angle_midpoints = midpoints.get(f'Angle', [])
             ra_midpoints = midpoints.get(f'Ea', [])
-            zenith_midpoints = midpoints.get(f'Z', [])
-            eastpoint_midpoints = midpoints.get(f'E', [])
 
-            if (
-                len(angle_midpoints) > 0
-                or len(ra_midpoints) > 0
-                or len(zenith_midpoints) > 0
-                or len(eastpoint_midpoints) > 0
-            ):
+            if len(angle_midpoints) > 0 or len(ra_midpoints) > 0:
                 chartfile.write('\n' + pipe_indent + '|    ')
 
             # Write mundane midpoints
@@ -1740,24 +1733,6 @@ class CoreChart(object, metaclass=ABCMeta):
                     chartfile,
                     pipe_indent,
                     ra_midpoints,
-                    strength_hierarchy_written,
-                )
-
-            if len(zenith_midpoints) > 0:
-                chartfile.write(f'\nZ    {angle_indent}')
-                self.write_midpoint_cosmic_state(
-                    chartfile,
-                    pipe_indent,
-                    zenith_midpoints,
-                    strength_hierarchy_written,
-                )
-
-            if len(eastpoint_midpoints) > 0:
-                chartfile.write(f'\nE    {angle_indent}')
-                self.write_midpoint_cosmic_state(
-                    chartfile,
-                    pipe_indent,
-                    eastpoint_midpoints,
                     strength_hierarchy_written,
                 )
 
@@ -1810,6 +1785,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 self.options,
                 include_angles=True,
             ):
+
                 for (
                     _,
                     aspect_degrees,
@@ -1834,6 +1810,9 @@ class CoreChart(object, metaclass=ABCMeta):
                         ]
                     else:
                         continue
+
+                    point_longitude = None
+
                     for halfsum in self.halfsums:
                         if halfsum.contains(
                             point.short_name
@@ -1861,17 +1840,22 @@ class CoreChart(object, metaclass=ABCMeta):
                                     raw_orb_225,
                                     raw_orb_315,
                                 )
-                                * 60
+                            ) * 60
+                        elif aspect_degrees == 90:
+                            raw_orb_90 = abs(
+                                abs(halfsum.longitude - point_longitude) - 90
                             )
+                            raw_orb_270 = abs(
+                                abs(halfsum.longitude - point_longitude) - 270
+                            )
+                            raw_orb = min(raw_orb_90, raw_orb_270) * 60
                         else:
                             raw_orb = (
                                 abs(
                                     abs(halfsum.longitude - point_longitude)
                                     - aspect_degrees
                                 )
-                                * 60
-                            )
-
+                            ) * 60
                         if raw_orb <= max_orb:
                             midpoint_direction = None
                             if aspect_degrees in [0, 180]:
@@ -1892,6 +1876,19 @@ class CoreChart(object, metaclass=ABCMeta):
                                 to_midpoint=str(halfsum),
                                 from_point_role=chart.role,
                             )
+                            # This shouldn't happen here, as those should be "mundane" midpoints
+                            # # Rewrite Zenith and Nadir as square to Ascendant
+                            # if midpoint.from_point in ['Z', 'N']:
+                            #     midpoint.from_point = 'As'
+                            #     midpoint.midpoint_type = square_direction
+                            #     point_name = 'As'
+
+                            # # Rewrite Ep and Wp as square to MC
+                            # elif midpoint.from_point in ['E', 'W']:
+                            #     midpoint.from_point = 'Mc'
+                            #     midpoint.midpoint_type = square_direction
+                            #     point_name = 'Mc'
+
                             midpoint_name = f'{chart.role.value}{point_name}'
                             if midpoint_name not in midpoints:
                                 midpoints[midpoint_name] = [midpoint]
@@ -1917,6 +1914,12 @@ class CoreChart(object, metaclass=ABCMeta):
         eastpoint = outermost_chart.eastpoint[0]
         zenith = to360(eastpoint + 90)
         eastpoint_ra = to360(outermost_chart.ramc - 90)
+
+        square_direction = (
+            chart_models.MidpointAspectType.DIRECT
+            if self.options.midpoints['is90'] == 'd'
+            else chart_models.MidpointAspectType.INDIRECT
+        )
 
         max_orb = self.options.midpoints.get('M', 0)
         if max_orb == 0:
@@ -1949,101 +1952,102 @@ class CoreChart(object, metaclass=ABCMeta):
                 ):
                     continue
 
-                closest_orb = 360
-                closest_angle = ''
+            closest_orb = 360
+            closest_angle = ''
 
-                for (
-                    _,
-                    aspect_degrees,
-                ) in chart_models.AspectType.iterate_harmonic_4():
+            for (
+                _,
+                aspect_degrees,
+            ) in chart_models.AspectType.iterate_harmonic_4():
 
-                    # Find closest angle that is contacted by both points
-                    pvl_orb = 360
-                    ra_orb = 360
-                    eastpoint_orb = 360
-                    zenith_orb = 360
+                # Find closest angle that is contacted by both points
+                pvl_orb = 360
+                ra_orb = 360
+                eastpoint_orb = 360
+                zenith_orb = 360
 
-                    if (
-                        angles_models.AngleAxes.MUNDOSCOPE_ANGLE.value
-                        in planet_a.angle_axes_contacted
-                        and angles_models.AngleAxes.MUNDOSCOPE_ANGLE.value
-                        in planet_b.angle_axes_contacted
-                    ):
-                        pvl_orb = (
-                            abs(
-                                halfsum.prime_vertical_longitude
-                                - aspect_degrees
-                            )
-                            * 60
-                        )
-                    if (
-                        angles_models.AngleAxes.EASTPOINT_IN_RA.value
-                        in planet_a.angle_axes_contacted
-                        and angles_models.AngleAxes.EASTPOINT_IN_RA.value
-                        in planet_b.angle_axes_contacted
-                    ):
-                        ra_orb = (
-                            abs(
-                                abs(halfsum.right_ascension - eastpoint_ra)
-                                - aspect_degrees
-                            )
-                            * 60
-                        )
-                    if (
-                        angles_models.AngleAxes.ZENITH_NADIR.value
-                        in planet_a.angle_axes_contacted
-                        and angles_models.AngleAxes.ZENITH_NADIR.value
-                        in planet_b.angle_axes_contacted
-                    ):
-                        zenith_orb = (
-                            abs(
-                                abs(zenith - halfsum.longitude)
-                                - aspect_degrees
-                            )
-                            * 60
-                        )
-                    if (
-                        angles_models.AngleAxes.EASTPOINT_WESTPOINT.value
-                        in planet_a.angle_axes_contacted
-                        and angles_models.AngleAxes.EASTPOINT_WESTPOINT.value
-                        in planet_b.angle_axes_contacted
-                    ):
-                        eastpoint_orb = (
-                            abs(
-                                abs(eastpoint - halfsum.longitude)
-                                - aspect_degrees
-                            )
-                            * 60
-                        )
-
-                    (closest_orb, closest_angle) = min(
-                        (closest_orb, closest_angle),
-                        (pvl_orb, 'Angle'),
-                        (ra_orb, 'Ea'),
-                        (eastpoint_orb, 'E'),
-                        (zenith_orb, 'Z'),
-                        key=lambda x: x[0],
+                if (
+                    angles_models.AngleAxes.MUNDOSCOPE_ANGLE.value
+                    in planet_a.angle_axes_contacted
+                    and angles_models.AngleAxes.MUNDOSCOPE_ANGLE.value
+                    in planet_b.angle_axes_contacted
+                ):
+                    pvl_orb = (
+                        abs(halfsum.prime_vertical_longitude - aspect_degrees)
+                        * 60
                     )
-
-                if closest_orb <= max_orb:
-                    midpoint = chart_models.MidpointAspect(
-                        midpoint_type=chart_models.MidpointAspectType.DIRECT,
-                        orb_minutes=int(round(closest_orb, 0)),
-                        framework=chart_models.AspectFramework.MUNDANE,
-                        from_point=closest_angle,
-                        to_midpoint=str(halfsum),
-                        from_point_role=outermost_chart.role,
-                        is_mundane=True,
-                    )
-                    if closest_angle not in midpoints:
-                        midpoints[closest_angle] = [midpoint]
-                    else:
-                        # make sure it stays sorted
-                        bisect.insort(
-                            midpoints[closest_angle],
-                            midpoint,
-                            key=lambda x: x.orb_minutes,
+                if (
+                    angles_models.AngleAxes.EASTPOINT_IN_RA.value
+                    in planet_a.angle_axes_contacted
+                    and angles_models.AngleAxes.EASTPOINT_IN_RA.value
+                    in planet_b.angle_axes_contacted
+                ):
+                    ra_orb = (
+                        abs(
+                            abs(halfsum.right_ascension - eastpoint_ra)
+                            - aspect_degrees
                         )
+                        * 60
+                    )
+                if (
+                    angles_models.AngleAxes.ZENITH_NADIR.value
+                    in planet_a.angle_axes_contacted
+                    and angles_models.AngleAxes.ZENITH_NADIR.value
+                    in planet_b.angle_axes_contacted
+                ):
+                    zenith_orb = (
+                        abs(abs(zenith - halfsum.longitude) - aspect_degrees)
+                        * 60
+                    )
+                if (
+                    angles_models.AngleAxes.EASTPOINT_WESTPOINT.value
+                    in planet_a.angle_axes_contacted
+                    and angles_models.AngleAxes.EASTPOINT_WESTPOINT.value
+                    in planet_b.angle_axes_contacted
+                ):
+                    eastpoint_orb = (
+                        abs(
+                            abs(eastpoint - halfsum.longitude) - aspect_degrees
+                        )
+                    ) * 60
+
+                (closest_orb, closest_angle) = min(
+                    (closest_orb, closest_angle),
+                    (pvl_orb, 'Angle'),
+                    (ra_orb, 'Ea'),
+                    (eastpoint_orb, 'E'),
+                    (zenith_orb, 'Z'),
+                    key=lambda x: x[0],
+                )
+
+            if closest_orb <= max_orb:
+                midpoint = chart_models.MidpointAspect(
+                    midpoint_type=chart_models.MidpointAspectType.DIRECT,
+                    orb_minutes=int(round(closest_orb, 0)),
+                    framework=chart_models.AspectFramework.MUNDANE,
+                    from_point=closest_angle,
+                    to_midpoint=str(halfsum),
+                    from_point_role=outermost_chart.role,
+                    is_mundane=True,
+                )
+                if closest_angle == 'Z':
+                    midpoint.from_point = 'As'
+                    midpoint.midpoint_type = square_direction
+                    closest_angle = 'As'
+                elif closest_angle == 'E':
+                    midpoint.from_point = 'Mc'
+                    midpoint.midpoint_type = square_direction
+                    closest_angle = 'Mc'
+
+                if closest_angle not in midpoints:
+                    midpoints[closest_angle] = [midpoint]
+                else:
+                    # make sure it stays sorted
+                    bisect.insort(
+                        midpoints[closest_angle],
+                        midpoint,
+                        key=lambda x: x.orb_minutes,
+                    )
 
         return midpoints
 
