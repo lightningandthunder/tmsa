@@ -33,6 +33,9 @@ class CoreChart(object, metaclass=ABCMeta):
     halfsums: list[chart_models.HalfSum]
     temporary: bool
 
+    # New, top-level state for some matters
+    midpoints = {}
+
     def __init__(
         self,
         charts: list[chart_models.ChartObject],
@@ -50,7 +53,7 @@ class CoreChart(object, metaclass=ABCMeta):
             == 1
             # and self.options.enable_natal_midpoints
         ):
-            self.halfsums = self.calc_halfsums()
+            self.halfsums = chart_utils.calc_halfsums()
         else:
             self.halfsums = []
 
@@ -71,9 +74,9 @@ class CoreChart(object, metaclass=ABCMeta):
         self.try_precess_charts()
 
         self.filename = chart_utils.make_chart_path(
-            self.find_outermost_chart(),
+            chart_utils.find_outermost_chart(),
             temporary,
-            is_ingress=self.find_outermost_chart().type.value
+            is_ingress=chart_utils.find_outermost_chart().type.value
             in chart_models.INGRESSES
             or not chart.name,
         )
@@ -580,7 +583,7 @@ class CoreChart(object, metaclass=ABCMeta):
     ]:
         # I should be able to rewrite this mostly using self. variables
 
-        chart = self.find_outermost_chart()
+        chart = chart_utils.find_outermost_chart()
 
         angularity_options = self.options.angularity
 
@@ -777,13 +780,6 @@ class CoreChart(object, metaclass=ABCMeta):
             is_mundanely_background,
         )
 
-    def find_outermost_chart(self):
-        outermost_chart = self.charts[0]
-        for chart in self.charts:
-            if chart.role > outermost_chart.role:
-                outermost_chart = chart
-        return outermost_chart
-
     def find_innermost_chart(self):
         innermost_chart = self.charts[0]
         for chart in self.charts:
@@ -794,7 +790,7 @@ class CoreChart(object, metaclass=ABCMeta):
     def make_chart_grid(self, rows: int, cols: int):
         chart_grid = [[' ' for _ in range(cols)] for _ in range(rows)]
 
-        chart = self.find_outermost_chart()
+        chart = chart_utils.find_outermost_chart()
 
         for column_index in range(cols):
             chart_grid[0][column_index] = '-'
@@ -1349,7 +1345,7 @@ class CoreChart(object, metaclass=ABCMeta):
             chartfile.write(f'{strength_percent:3d}% {angularity}')
             chartfile.write('\n')
 
-        outermost_chart = self.find_outermost_chart()
+        outermost_chart = chart_utils.find_outermost_chart()
 
         # Write angles to info table
 
@@ -1566,7 +1562,7 @@ class CoreChart(object, metaclass=ABCMeta):
                     len(self.charts) == 1
                     and chart.type.value == chart_models.ChartType.NATAL.value
                 ):
-                    strength = self.calc_planetary_needs_strength(
+                    strength = chart_utils.calc_planetary_needs_strength(
                         planet_data, chart, aspects_by_class
                     )
                     chartfile.write((f'{int(strength): >3}%'))
@@ -1771,6 +1767,13 @@ class CoreChart(object, metaclass=ABCMeta):
             return 'SR' if 'solar' in t else 'LR'
         return 'N'
 
+    # TODO -
+    # Calculate all midpoints in all measuring frameworks if any is within within orb.
+    # This means combining the two midpoint functions into one.
+    # If mundane midpoints are not enabled, only use longitude.
+
+    # For each line, decide if the related midpoints should be printed or not.
+
     def calc_midpoints(self):
         midpoints = {}
 
@@ -1780,6 +1783,8 @@ class CoreChart(object, metaclass=ABCMeta):
             if self.options.midpoints['is90'] == 'd'
             else chart_models.MidpointAspectType.INDIRECT
         )
+
+        # Iterate over each point in each chart, checking it against all halfsums
         for chart in self.charts:
             for (point_name, point) in chart.iterate_points(
                 self.options,
@@ -1820,6 +1825,7 @@ class CoreChart(object, metaclass=ABCMeta):
                             else point_name
                         ):
                             continue
+
                         point_longitude = (
                             point.longitude
                             if hasattr(point, 'longitude')
@@ -1910,7 +1916,7 @@ class CoreChart(object, metaclass=ABCMeta):
     def calc_mundane_midpoints(self):
         midpoints = {}
 
-        outermost_chart = self.find_outermost_chart()
+        outermost_chart = chart_utils.find_outermost_chart()
         eastpoint = outermost_chart.eastpoint[0]
         zenith = to360(eastpoint + 90)
         eastpoint_ra = to360(outermost_chart.ramc - 90)
@@ -2050,173 +2056,6 @@ class CoreChart(object, metaclass=ABCMeta):
                     )
 
         return midpoints
-
-    def calc_halfsums(self):
-        halfsums = []
-        for from_chart in self.charts:
-            for to_chart in self.charts:
-                for (
-                    primary_index,
-                    (primary_point_name, primary_point),
-                ) in enumerate(
-                    from_chart.iterate_points(
-                        self.options, include_angles=True
-                    )
-                ):
-                    for (
-                        secondary_index,
-                        (secondary_point_name, secondary_point),
-                    ) in enumerate(
-                        to_chart.iterate_points(
-                            self.options, include_angles=True
-                        )
-                    ):
-                        if (
-                            secondary_index <= primary_index
-                            and from_chart == to_chart
-                        ):
-                            continue
-                        primary_point_is_angle = (
-                            primary_point_name in constants.ANGLE_ABBREVIATIONS
-                        )
-                        secondary_point_is_angle = (
-                            secondary_point_name
-                            in constants.ANGLE_ABBREVIATIONS
-                        )
-                        if primary_point_is_angle and secondary_point_is_angle:
-                            continue
-                        elif (
-                            primary_point_is_angle or secondary_point_is_angle
-                        ):
-                            longitude = (
-                                (
-                                    primary_point.longitude
-                                    if secondary_point_is_angle
-                                    else primary_point
-                                )
-                                + (
-                                    secondary_point.longitude
-                                    if primary_point_is_angle
-                                    else secondary_point
-                                )
-                            ) / 2
-                            prime_vertical_longitude = 0
-                            right_ascension = 0
-                        else:
-                            longitude = (
-                                primary_point.longitude
-                                + secondary_point.longitude
-                            ) / 2
-                            prime_vertical_longitude = (
-                                primary_point.prime_vertical_longitude
-                                + secondary_point.prime_vertical_longitude
-                            ) / 2
-                            right_ascension = (
-                                primary_point.right_ascension
-                                + secondary_point.right_ascension
-                            ) / 2
-
-                        halfsums.append(
-                            chart_models.HalfSum(
-                                point_a=primary_point.short_name
-                                if hasattr(primary_point, 'short_name')
-                                else primary_point_name,
-                                point_b=secondary_point.short_name
-                                if hasattr(secondary_point, 'short_name')
-                                else secondary_point_name,
-                                longitude=longitude,
-                                prime_vertical_longitude=prime_vertical_longitude,
-                                right_ascension=right_ascension,
-                            )
-                        )
-
-        return halfsums
-
-    def calc_planetary_needs_strength(
-        self,
-        planet: chart_models.PlanetData,
-        chart: chart_models.ChartObject,
-        aspects_by_class: list[list[chart_models.Aspect]],
-    ) -> int:
-        luminary_strength = 0
-        rules_sun_sign = (
-            chart.sun_sign in chart_utils.POS_SIGN[planet.short_name]
-        )
-        rules_moon_sign = (
-            chart.moon_sign in chart_utils.POS_SIGN[planet.short_name]
-        )
-        if rules_sun_sign and rules_moon_sign:
-            luminary_strength = 95
-        elif rules_sun_sign or rules_moon_sign:
-            luminary_strength = 90
-
-        max_luminary_aspect_strength = 0
-        for aspect in aspects_by_class[0]:
-            if (
-                aspect.includes_planet(planet.short_name)
-                and aspect.is_hard_aspect()
-            ):
-                if (
-                    (planet.name == 'Sun' and aspect.includes_planet('Mo'))
-                    or (planet.name == 'Moon' and aspect.includes_planet('Su'))
-                    or (
-                        planet.name not in ['Sun', 'Moon']
-                        and (
-                            aspect.includes_planet('Su')
-                            or aspect.includes_planet('Mo')
-                        )
-                    )
-                ):
-                    max_luminary_aspect_strength = max(
-                        max_luminary_aspect_strength, aspect.strength
-                    )
-
-        if luminary_strength > 0 and max_luminary_aspect_strength > 0:
-            max_luminary_aspect_strength = max(
-                95, max_luminary_aspect_strength
-            )
-
-        if max_luminary_aspect_strength == 0:
-            for aspect in aspects_by_class[1]:
-                if (
-                    aspect.includes_planet(planet.short_name)
-                    and aspect.is_hard_aspect()
-                ):
-                    if (
-                        (planet.name == 'Sun' and aspect.includes_planet('Mo'))
-                        or (
-                            planet.name == 'Moon'
-                            and aspect.includes_planet('Su')
-                        )
-                        or (
-                            planet.name not in ['Sun', 'Moon']
-                            and (
-                                aspect.includes_planet('Su')
-                                or aspect.includes_planet('Mo')
-                            )
-                        )
-                    ):
-                        max_luminary_aspect_strength = max(
-                            max_luminary_aspect_strength, aspect.strength
-                        )
-
-        if luminary_strength > 0 and max_luminary_aspect_strength > 0:
-            max_luminary_aspect_strength = max(
-                92, max_luminary_aspect_strength
-            )
-
-        stationary_strength = 75 if planet.is_stationary else 0
-        if stationary_strength > 0 and luminary_strength > 0:
-            stationary_strength = 90
-
-        strength = max(
-            planet.angularity_strength,
-            luminary_strength,
-            max_luminary_aspect_strength,
-            stationary_strength,
-        )
-
-        return min(strength, 100)
 
     @abstractmethod
     def draw_chart(
