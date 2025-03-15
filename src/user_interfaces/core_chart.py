@@ -47,16 +47,6 @@ class CoreChart(object, metaclass=ABCMeta):
         self.charts = sorted(charts, key=lambda x: x.role, reverse=True)
         self.temporary = temporary
 
-        # For now, only enable natal midpoints
-        if (
-            len(charts)
-            == 1
-            # and self.options.enable_natal_midpoints
-        ):
-            self.halfsums = chart_utils.calc_halfsums()
-        else:
-            self.halfsums = []
-
         for chart in self.charts:
             for (
                 planet_name,
@@ -72,6 +62,18 @@ class CoreChart(object, metaclass=ABCMeta):
                     chart.planets[planet_name].treat_as_foreground = True
 
         self.try_precess_charts()
+
+        self.halfsums = chart_utils.calc_halfsums()
+        ecliptic_midpoints = chart_utils.calc_midpoints_2(
+            self.options, self.charts, self.halfsums
+        )
+        mundane_midpoints = chart_utils.calc_mundane_midpoints_2(
+            self.options, self.charts, self.halfsums
+        )
+
+        self.midpoints = chart_utils.merge_midpoints(
+            ecliptic_midpoints, mundane_midpoints
+        )
 
         self.filename = chart_utils.make_chart_path(
             chart_utils.find_outermost_chart(),
@@ -1486,11 +1488,6 @@ class CoreChart(object, metaclass=ABCMeta):
             chart_utils.center_align('Cosmic State', self.table_width) + '\n'
         )
 
-        midpoints = {}
-        if self.options.enable_natal_midpoints:
-            midpoints = self.calc_midpoints()
-            midpoints |= self.calc_mundane_midpoints()
-
         # Iterate from transiting chart to radix
         for (index, chart) in enumerate(self.charts):
             if index != 0:
@@ -1660,19 +1657,39 @@ class CoreChart(object, metaclass=ABCMeta):
                         ):
                             chartfile.write('\n' + pipe_indent + '| ')
 
-                # Midpoints
-                related_midpoints = midpoints.get(
-                    f'{planet_data.role.value}{planet_data.name}', []
-                )
-                if len(related_midpoints) > 0:
-                    chartfile.write('\n' + pipe_indent + '|    ')
+                # Midpoints - decide if we need to write midpoints or not
+                # If there's just 1 chart that isn't an ingress, just write the midpoints
+                if (
+                    len(self.charts) == 1
+                    and chart.type.value not in chart_models.INGRESSES
+                ):
+                    related_midpoints = self.midpoints.get(
+                        f'{planet_data.role.value}{planet_data.name}', []
+                    )
 
-                self.write_midpoint_cosmic_state(
-                    chartfile,
-                    pipe_indent,
-                    related_midpoints,
-                    strength_hierarchy_written,
-                )
+                    if len(related_midpoints) > 0:
+                        chartfile.write('\n' + pipe_indent + '|    ')
+
+                    self.write_midpoint_cosmic_state(
+                        chartfile,
+                        pipe_indent,
+                        related_midpoints,
+                        strength_hierarchy_written,
+                    )
+
+                # Otherwise, decide if we need to write the midpoints
+                else:
+                    # If the point is a foreground planet, and both other points are foreground planets: write it
+                    # If the point is a foreground planet, and one other point is a foreground planet, and the other point is some inner chart angle: write it
+
+                    # If the point is a major angle, and both planets are foreground somehow, and the halfsum uses PVL: write it
+                    # If the point is EP-a, and both planets are foreground in RA, and the halfsum uses RA: write it
+                    # If the point is Z or EP:
+                    # If ecliptic midpoints are enabled, list As or MC
+                    # If ecliptic midpoints are disabled, and squares are direct, list as Zenith/EP.
+                    # If ecliptic midpoints are disabled, and squares are indirect, do not list, but leave this comment.
+
+                    pass
 
             chartfile.write('\n')
 
@@ -1681,7 +1698,9 @@ class CoreChart(object, metaclass=ABCMeta):
             ) + '|    '
 
             # Write midpoints for Ascendant/MC
-            ascendant_midpoints = midpoints.get(f'{chart.role.value}As', [])
+            ascendant_midpoints = self.midpoints.get(
+                f'{chart.role.value}As', []
+            )
             if len(ascendant_midpoints) > 0:
                 ascendant_sign = chart_utils.SIGNS_SHORT[
                     int(chart.cusps[1] // 30)
@@ -1694,7 +1713,9 @@ class CoreChart(object, metaclass=ABCMeta):
                     strength_hierarchy_written,
                 )
 
-            midheaven_midpoints = midpoints.get(f'{chart.role.value}Mc', [])
+            midheaven_midpoints = self.midpoints.get(
+                f'{chart.role.value}Mc', []
+            )
             if len(midheaven_midpoints) > 0:
                 midheaven_sign = chart_utils.SIGNS_SHORT[
                     int(chart.cusps[10] // 30)
@@ -1707,8 +1728,8 @@ class CoreChart(object, metaclass=ABCMeta):
                     strength_hierarchy_written,
                 )
 
-            angle_midpoints = midpoints.get(f'Angle', [])
-            ra_midpoints = midpoints.get(f'Ea', [])
+            angle_midpoints = self.midpoints.get(f'Angle', [])
+            ra_midpoints = self.midpoints.get(f'Ea', [])
 
             if len(angle_midpoints) > 0 or len(ra_midpoints) > 0:
                 chartfile.write('\n' + pipe_indent + '|    ')

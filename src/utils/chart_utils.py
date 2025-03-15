@@ -906,6 +906,48 @@ def calc_mundane_midpoints_2(
     return midpoints
 
 
+def merge_midpoints(
+    ecliptic_midpoints: dict[str, list[chart_models.MidpointAspect]],
+    mundane_midpoints: dict[str, list[chart_models.MidpointAspect]],
+) -> list[chart_models.MidpointAspect]:
+    keys = set(ecliptic_midpoints.keys()).union(set(mundane_midpoints.keys()))
+    merged_midpoints = {}
+    for key in keys:
+        if key not in merged_midpoints:
+            merged_midpoints[key] = []
+
+        ecliptic_index = 0
+        mundane_index = 0
+        while ecliptic_index < len(
+            ecliptic_midpoints[key]
+        ) and mundane_index < len(mundane_midpoints[key]):
+            if (
+                ecliptic_midpoints[key][ecliptic_index].orb_minutes
+                < mundane_midpoints[key][mundane_index].orb_minutes
+            ):
+                merged_midpoints[key].append(
+                    ecliptic_midpoints[key][ecliptic_index]
+                )
+                ecliptic_index += 1
+            else:
+                merged_midpoints[key].append(
+                    mundane_midpoints[key][mundane_index]
+                )
+                mundane_index += 1
+
+        # Deal with leftovers from one or the other list
+        if ecliptic_index < len(ecliptic_midpoints[key]):
+            merged_midpoints[key].extend(
+                ecliptic_midpoints[key][ecliptic_index:]
+            )
+        if mundane_index < len(mundane_midpoints[key]):
+            merged_midpoints[key].extend(
+                mundane_midpoints[key][mundane_index:]
+            )
+
+    return merged_midpoints
+
+
 def find_outermost_chart(
     charts: list[chart_models.ChartObject],
 ) -> chart_models.ChartObject:

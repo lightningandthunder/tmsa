@@ -11,7 +11,6 @@ import json
 import math
 import os
 import shutil
-import traceback
 import webbrowser
 
 from src import *

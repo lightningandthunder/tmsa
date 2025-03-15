@@ -211,7 +211,7 @@ DEV_MODE_FILE = os.path.join(OPTION_PATH, 'dev_mode.json')
 
 DEV_MODE = False
 try:
-    with open(DEV_MODE_FILE) as datafile:
+    with open(DEV_MODE_FILE, 'w') as datafile:
         dev_opts = json.load(datafile)
         DEV_MODE = dev_opts.get('dev_mode', False)
 except Exception as e:
