@@ -17,6 +17,7 @@ import src.models.charts as chart_models
 import src.models.options as option_models
 import src.constants as constants
 import src.utils.chart_utils as chart_utils
+import src.utils.calculation_utils as calc_utils
 from src.utils.format_utils import to360
 from src.utils.os_utils import open_file
 import tkinter.messagebox as tkmessagebox
@@ -63,22 +64,25 @@ class CoreChart(object, metaclass=ABCMeta):
 
         self.try_precess_charts()
 
-        self.halfsums = chart_utils.calc_halfsums()
-        ecliptic_midpoints = chart_utils.calc_midpoints_2(
-            self.options, self.charts, self.halfsums
-        )
-        mundane_midpoints = chart_utils.calc_mundane_midpoints_2(
-            self.options, self.charts, self.halfsums
-        )
+        self.midpoints = {}
+        self.halfsums = []
 
-        self.midpoints = chart_utils.merge_midpoints(
-            ecliptic_midpoints, mundane_midpoints
-        )
+        # self.halfsums = calc_utils.calc_halfsums(self.options, self.charts)
+        # ecliptic_midpoints = calc_utils.calc_midpoints_2(
+        #     self.options, self.charts, self.halfsums
+        # )
+        # mundane_midpoints = calc_utils.calc_mundane_midpoints_2(
+        #     self.options, self.charts, self.halfsums
+        # )
+
+        # self.midpoints = calc_utils.merge_midpoints(
+        #     ecliptic_midpoints, mundane_midpoints
+        # )
 
         self.filename = chart_utils.make_chart_path(
-            chart_utils.find_outermost_chart(),
+            calc_utils.find_outermost_chart(self.charts),
             temporary,
-            is_ingress=chart_utils.find_outermost_chart().type.value
+            is_ingress=calc_utils.find_outermost_chart(self.charts).type.value
             in chart_models.INGRESSES
             or not chart.name,
         )
@@ -475,16 +479,16 @@ class CoreChart(object, metaclass=ABCMeta):
         )
 
         planet_is_on_meridian = (
-            planet_on_other_axis.angle.value
-            == angles_models.ForegroundAngles.MC.value
-            or planet_on_other_axis.angle.value
-            == angles_models.ForegroundAngles.IC.value
+            angles_models.ForegroundAngles.MC.value.strip()
+            in planet_on_other_axis.angle_axes_contacted
+            or angles_models.ForegroundAngles.IC.value.strip()
+            in planet_on_other_axis.angle_axes_contacted
         )
         planet_is_on_horizon = (
-            planet_on_other_axis.angle.value
-            == angles_models.ForegroundAngles.ASCENDANT.value
-            or planet_on_other_axis.angle.value
-            == angles_models.ForegroundAngles.DESCENDANT.value
+            angles_models.ForegroundAngles.ASCENDANT.value.strip()
+            in planet_on_other_axis.angle_axes_contacted
+            or angles_models.ForegroundAngles.DESCENDANT.value.strip()
+            in planet_on_other_axis.angle_axes_contacted
         )
 
         if (
@@ -585,7 +589,7 @@ class CoreChart(object, metaclass=ABCMeta):
     ]:
         # I should be able to rewrite this mostly using self. variables
 
-        chart = chart_utils.find_outermost_chart()
+        chart = calc_utils.find_outermost_chart(self.charts)
 
         angularity_options = self.options.angularity
 
@@ -792,7 +796,7 @@ class CoreChart(object, metaclass=ABCMeta):
     def make_chart_grid(self, rows: int, cols: int):
         chart_grid = [[' ' for _ in range(cols)] for _ in range(rows)]
 
-        chart = chart_utils.find_outermost_chart()
+        chart = calc_utils.find_outermost_chart(self.charts)
 
         for column_index in range(cols):
             chart_grid[0][column_index] = '-'
@@ -953,7 +957,6 @@ class CoreChart(object, metaclass=ABCMeta):
                 primary_planet_data,
                 secondary_planet_data,
             )
-
             tightest_aspect = pvp_aspect or tightest_aspect
 
         return tightest_aspect
@@ -1347,7 +1350,7 @@ class CoreChart(object, metaclass=ABCMeta):
             chartfile.write(f'{strength_percent:3d}% {angularity}')
             chartfile.write('\n')
 
-        outermost_chart = chart_utils.find_outermost_chart()
+        outermost_chart = calc_utils.find_outermost_chart(self.charts)
 
         # Write angles to info table
 
@@ -1559,7 +1562,7 @@ class CoreChart(object, metaclass=ABCMeta):
                     len(self.charts) == 1
                     and chart.type.value == chart_models.ChartType.NATAL.value
                 ):
-                    strength = chart_utils.calc_planetary_needs_strength(
+                    strength = calc_utils.calc_planetary_needs_strength(
                         planet_data, chart, aspects_by_class
                     )
                     chartfile.write((f'{int(strength): >3}%'))
@@ -1937,7 +1940,7 @@ class CoreChart(object, metaclass=ABCMeta):
     def calc_mundane_midpoints(self):
         midpoints = {}
 
-        outermost_chart = chart_utils.find_outermost_chart()
+        outermost_chart = calc_utils.find_outermost_chart(self.charts)
         eastpoint = outermost_chart.eastpoint[0]
         zenith = to360(eastpoint + 90)
         eastpoint_ra = to360(outermost_chart.ramc - 90)

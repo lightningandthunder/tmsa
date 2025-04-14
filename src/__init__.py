@@ -162,6 +162,9 @@ if not os.path.exists(LOCATIONS_FILE):
         with open(LOCATIONS_FILE, 'w') as datafile:
             json.dump([], datafile, indent=4)
     except Exception as e:
+        e.args = (e.args[0] + ' - unable to open locations file.',) + e.args[
+            1:
+        ]
         log_startup_error(e)
 
 RECENT_FILE = os.path.join(OPTION_PATH, 'recent.json')
@@ -170,9 +173,10 @@ COLOR_FILE = os.path.join(OPTION_PATH, 'colors.json')
 
 if not os.path.exists(RECENT_FILE):
     try:
-        with open(COLOR_FILE, 'w') as datafile:
+        with open(RECENT_FILE, 'w') as datafile:
             json.dump([], datafile, indent=4)
     except Exception as e:
+        e.args = (e.args[0] + ' - unable to open recent file.',) + e.args[1:]
         log_startup_error(e)
 
 default_colors = {
@@ -191,6 +195,9 @@ if os.path.exists(COLOR_FILE):
             colors = json.load(datafile)
         default = False
     except Exception as e:
+        e.args = (
+            e.args[0] + ' - unable to open color file to load colors.',
+        ) + e.args[1:]
         log_startup_error(e)
 
 if default:
@@ -202,6 +209,9 @@ if default:
                 indent=4,
             )
     except Exception as e:
+        e.args = (
+            e.args[0] + ' - unable to open color file to save colors.',
+        ) + e.args[1:]
         log_startup_error(e)
 
 if colors is None or colors == [] or colors == {}:
@@ -211,10 +221,26 @@ DEV_MODE_FILE = os.path.join(OPTION_PATH, 'dev_mode.json')
 
 DEV_MODE = False
 try:
-    with open(DEV_MODE_FILE, 'w') as datafile:
-        dev_opts = json.load(datafile)
-        DEV_MODE = dev_opts.get('dev_mode', False)
+    dev_mode_error = False
+    if os.path.exists(DEV_MODE_FILE):
+        with open(DEV_MODE_FILE, 'r') as datafile:
+            try:
+                dev_opts = json.load(datafile)
+                DEV_MODE = dev_opts.get('dev_mode', False)
+            except Exception as e:
+                e.args = (
+                    e.args[0]
+                    + ' - unable to load dev mode file; rewriting with default data.',
+                ) + e.args[1:]
+                log_startup_error(e)
+                DEV_MODE = False
+                dev_mode_error = True
+
+    if not os.path.exists(DEV_MODE_FILE) or dev_mode_error:
+        with open(DEV_MODE_FILE, 'w') as datafile:
+            json.dump({'dev_mode': False}, datafile, indent=4)
 except Exception as e:
+    e.args = (e.args[0] + ' - unable to open dev mode file.',) + e.args[1:]
     log_startup_error(e)
 
 BG_COLOR = colors.get('bg_color', default_colors['bg_color'])
@@ -236,6 +262,9 @@ if os.path.exists(DATA_ENTRY_FILE):
             data_entry = json.load(datafile)
         default = False
     except Exception as e:
+        e.args = (
+            e.args[0] + ' - unable to open data entry file to load data.',
+        ) + e.args[1:]
         log_startup_error(e)
 
 if default:
@@ -243,6 +272,9 @@ if default:
         with open(DATA_ENTRY_FILE, 'w') as datafile:
             json.dump(data_entry, datafile, indent=4)
     except Exception as e:
+        e.args = (
+            e.args[0] + ' - unable to open data entry file to save data.',
+        ) + e.args[1:]
         log_startup_error(e)
 
 DATE_FMT = data_entry['date_fmt']
@@ -256,6 +288,9 @@ if os.path.exists(HOME_LOC_FILE):
             HOME_LOC = json.load(datafile)
     except Exception as e:
         HOME_LOC = None
+        e.args = (
+            e.args[0] + ' - unable to open home location file.',
+        ) + e.args[1:]
         log_startup_error(e)
 else:
     HOME_LOC = None

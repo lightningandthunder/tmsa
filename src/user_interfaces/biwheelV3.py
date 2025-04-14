@@ -14,6 +14,7 @@ import src.models.options as option_models
 import src.constants as constants
 from src.user_interfaces.core_chart import CoreChart
 import src.utils.chart_utils as chart_utils
+import src.utils.calculation_utils as calc_utils
 from src.utils.chart_utils import (
     zod_sec,
     center_align,
@@ -45,7 +46,7 @@ class BiwheelV3(CoreChart):
         cols = 69
         chart_grid = [[' ' for _ in range(cols)] for _ in range(rows)]
 
-        return_chart = self.find_outermost_chart()
+        return_chart = calc_utils.find_outermost_chart(self.charts)
         self.cclass = self.get_return_class(return_chart)
 
         chartfile.write('\n')
