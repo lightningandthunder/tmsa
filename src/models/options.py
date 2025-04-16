@@ -100,6 +100,9 @@ class Options:
         )
         self.show_aspects = ShowAspect.from_number(data.get('show_aspects', 0))
         self.partile_nf = True if data.get('partile_nf') else False
+        self.include_fg_under_aspects = (
+            True if data.get('include_fg_under_aspects') else False
+        )
         if 'angularity' in data:
             self.angularity = AngularitySubOptions(
                 AngularityModel.from_number(data['angularity']['model']),

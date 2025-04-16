@@ -640,11 +640,9 @@ class CoreChart(object, metaclass=ABCMeta):
         if aspect_to_asc > 180:
             aspect_to_asc = 360 - aspect_to_asc
 
-        aspect_to_asc_signed_orb = (
-            -1 * (90 - (aspect_to_asc % 90))
-            if (aspect_to_asc % 90) > 45
-            else (aspect_to_asc % 90)
-        )
+        normalized_longitude = to360(planet.longitude - chart.cusps[1])
+        aspect_to_asc_signed_orb = -1 * ((normalized_longitude % 180) - 90)
+
         if chart_utils.inrange(aspect_to_asc, 90, 3):
             square_asc_strength = chart_utils.minor_angularity_curve(
                 abs(aspect_to_asc - 90)
@@ -656,11 +654,9 @@ class CoreChart(object, metaclass=ABCMeta):
         if aspect_to_mc > 180:
             aspect_to_mc = 360 - aspect_to_mc
 
-        aspect_to_mc_signed_orb = (
-            -1 * (90 - (aspect_to_mc % 90))
-            if (aspect_to_mc % 90) > 45
-            else (aspect_to_mc % 90)
-        )
+        normalized_longitude = to360(planet.longitude - chart.cusps[10])
+        aspect_to_mc_signed_orb = -1 * ((normalized_longitude % 180) - 90)
+
         if chart_utils.inrange(aspect_to_mc, 90, 3):
             square_mc_strength = chart_utils.minor_angularity_curve(
                 abs(aspect_to_mc - 90)
@@ -672,11 +668,8 @@ class CoreChart(object, metaclass=ABCMeta):
         if ramc_aspect > 180:
             ramc_aspect = 360 - ramc_aspect
 
-        ramc_signed_orb = (
-            -1 * (90 - (ramc_aspect % 90))
-            if (ramc_aspect % 90) > 45
-            else (ramc_aspect % 90)
-        )
+        normalized_longitude = to360(planet.right_ascension - chart.ramc)
+        ramc_signed_orb = -1 * ((normalized_longitude % 180) - 90)
 
         if chart_utils.inrange(ramc_aspect, 90, 3):
             ramc_square_strength = chart_utils.minor_angularity_curve(
@@ -1000,7 +993,7 @@ class CoreChart(object, metaclass=ABCMeta):
     ) -> list[list[chart_models.Aspect]]:
         aspects_by_class = [[], [], [], []]
 
-        if self.options.get('include_fg_under_aspects', False):
+        if self.options.include_fg_under_aspects:
             for angularity in angularities_as_aspects:
                 index = angularity.aspect_class - 1
                 aspects_by_class[index].append(angularity)
