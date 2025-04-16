@@ -584,6 +584,7 @@ class CoreChart(object, metaclass=ABCMeta):
     ) -> tuple[
         angles_models.ForegroundAngles | angles_models.NonForegroundAngles,
         float,
+        float,
         bool,
         bool,
     ]:
@@ -596,6 +597,8 @@ class CoreChart(object, metaclass=ABCMeta):
         major_angle_orbs = angularity_options.major_angles
         minor_angle_orbs = angularity_options.minor_angles
 
+        signed_orb = 0
+
         for orb_class in range(3):
             if major_angle_orbs[orb_class] == 0:
                 major_angle_orbs[orb_class] = -3
@@ -603,6 +606,11 @@ class CoreChart(object, metaclass=ABCMeta):
                 minor_angle_orbs[orb_class] = -3
 
         house_quadrant_position = planet.house % 90
+        mundane_angularity_signed_orb = (
+            90 - (house_quadrant_position % 90)
+            if house_quadrant_position > 45
+            else -1 * house_quadrant_position
+        )
         if (
             angularity_options.model
             == option_models.AngularityModel.MIDQUADRANT
@@ -631,6 +639,12 @@ class CoreChart(object, metaclass=ABCMeta):
         aspect_to_asc = abs(chart.cusps[1] - planet.longitude)
         if aspect_to_asc > 180:
             aspect_to_asc = 360 - aspect_to_asc
+
+        aspect_to_asc_signed_orb = (
+            -1 * (90 - (aspect_to_asc % 90))
+            if (aspect_to_asc % 90) > 45
+            else (aspect_to_asc % 90)
+        )
         if chart_utils.inrange(aspect_to_asc, 90, 3):
             square_asc_strength = chart_utils.minor_angularity_curve(
                 abs(aspect_to_asc - 90)
@@ -641,6 +655,12 @@ class CoreChart(object, metaclass=ABCMeta):
         aspect_to_mc = abs(chart.cusps[10] - planet.longitude)
         if aspect_to_mc > 180:
             aspect_to_mc = 360 - aspect_to_mc
+
+        aspect_to_mc_signed_orb = (
+            -1 * (90 - (aspect_to_mc % 90))
+            if (aspect_to_mc % 90) > 45
+            else (aspect_to_mc % 90)
+        )
         if chart_utils.inrange(aspect_to_mc, 90, 3):
             square_mc_strength = chart_utils.minor_angularity_curve(
                 abs(aspect_to_mc - 90)
@@ -651,6 +671,13 @@ class CoreChart(object, metaclass=ABCMeta):
         ramc_aspect = abs(chart.ramc - planet.right_ascension)
         if ramc_aspect > 180:
             ramc_aspect = 360 - ramc_aspect
+
+        ramc_signed_orb = (
+            -1 * (90 - (ramc_aspect % 90))
+            if (ramc_aspect % 90) > 45
+            else (ramc_aspect % 90)
+        )
+
         if chart_utils.inrange(ramc_aspect, 90, 3):
             ramc_square_strength = chart_utils.minor_angularity_curve(
                 abs(ramc_aspect - 90)
@@ -658,11 +685,12 @@ class CoreChart(object, metaclass=ABCMeta):
         else:
             ramc_square_strength = -2
 
-        angularity_strength = max(
-            mundane_angularity_strength,
-            square_asc_strength,
-            square_mc_strength,
-            ramc_square_strength,
+        (angularity_strength, signed_orb) = max(
+            (mundane_angularity_strength, mundane_angularity_signed_orb),
+            (square_asc_strength, aspect_to_asc_signed_orb),
+            (square_mc_strength, aspect_to_mc_signed_orb),
+            (ramc_square_strength, ramc_signed_orb),
+            key=lambda x: x[0],
         )
 
         planet.angularity_strength = angularity_strength
@@ -782,6 +810,7 @@ class CoreChart(object, metaclass=ABCMeta):
         return (
             angularity,
             angularity_strength,
+            signed_orb,
             planet_negates_dormancy,
             is_mundanely_background,
         )
@@ -965,8 +994,16 @@ class CoreChart(object, metaclass=ABCMeta):
         self,
         chartfile: TextIOWrapper,
         whole_chart_is_dormant: bool,
+        angularities_as_aspects: list[
+            chart_models.ForegroundPlanetListedAsAspect
+        ],
     ) -> list[list[chart_models.Aspect]]:
         aspects_by_class = [[], [], [], []]
+
+        if self.options.get('include_fg_under_aspects', False):
+            for angularity in angularities_as_aspects:
+                index = angularity.aspect_class - 1
+                aspects_by_class[index].append(angularity)
 
         for (from_index, from_chart) in enumerate(self.charts):
             for to_index in range(from_index, len(self.charts)):
@@ -1179,6 +1216,7 @@ class CoreChart(object, metaclass=ABCMeta):
             else False
         )
 
+        angularities_as_aspects = []
         for (chart_index, chart) in enumerate(self.charts):
             if chart_index > 0:
                 chartfile.write('-' * self.table_width + '\n')
@@ -1200,10 +1238,15 @@ class CoreChart(object, metaclass=ABCMeta):
                     + '\n'
                 )
 
-            chart_is_dormant = self.write_info_table_section(
+            (
+                chart_is_dormant,
+                angularities_for_section,
+            ) = self.write_info_table_section(
                 chartfile,
                 chart,
             )
+            if angularities_for_section:
+                angularities_as_aspects.extend(angularities_for_section)
             if not chart_is_dormant:
                 whole_chart_is_dormant = False
 
@@ -1217,6 +1260,7 @@ class CoreChart(object, metaclass=ABCMeta):
         aspects_by_class = self.write_aspects(
             chartfile,
             whole_chart_is_dormant,
+            angularities_as_aspects,
         )
 
         if not whole_chart_is_dormant:
@@ -1232,6 +1276,7 @@ class CoreChart(object, metaclass=ABCMeta):
     ):
         whole_chart_is_dormant = True
         angularity_options = self.options.angularity
+        angularities_as_aspects = []
         for planet_name, _ in chart.iterate_points(self.options):
             planet_data = chart.planets[planet_name]
 
@@ -1305,10 +1350,23 @@ class CoreChart(object, metaclass=ABCMeta):
             (
                 angularity,
                 strength_percent,
+                signed_angularity_orb,
                 planet_negates_dormancy,
                 is_mundanely_background,
             ) = self.calc_angle_and_strength(planet_data)
 
+            angularity_as_aspect = None
+            if angularity.value.strip().upper() in [
+                a.value.strip().upper() for a in angles_models.ForegroundAngles
+            ]:
+                angularity_as_aspect = (
+                    chart_models.ForegroundPlanetListedAsAspect()
+                    .as_type(chart_models.AspectType.CONJUNCTION)
+                    .from_planet(planet_data.short_name, planet_data.role)
+                    .to_planet(angularity.value.strip().upper())
+                    .with_orb(signed_angularity_orb)
+                    .with_strength(strength_percent)
+                )
             if planet_negates_dormancy:
                 whole_chart_is_dormant = False
 
@@ -1317,6 +1375,31 @@ class CoreChart(object, metaclass=ABCMeta):
 
             # Conjunctions to Vertex/Antivertex
             minor_limit = angularity_options.minor_angles or [1.0, 2.0, 3.0]
+
+            major_limit = angularity_options.major_angles or [3.0, 6.0, 10.0]
+
+            if angularity_as_aspect:
+                if angles_models.MinorAngles.contains(
+                    angularity_as_aspect.to_planet_short_name
+                ):
+                    if abs(angularity_as_aspect.orb) < minor_limit[0]:
+                        angularity_as_aspect.with_class(1)
+                    elif abs(angularity_as_aspect.orb) < minor_limit[1]:
+                        angularity_as_aspect.with_class(2)
+                    elif abs(angularity_as_aspect.orb) < minor_limit[2]:
+                        angularity_as_aspect.with_class(3)
+
+                elif angles_models.MajorAngles.contains(
+                    angularity_as_aspect.to_planet_short_name
+                ):
+                    if abs(angularity_as_aspect.orb) < major_limit[0]:
+                        angularity_as_aspect.with_class(1)
+                    elif abs(angularity_as_aspect.orb) < major_limit[1]:
+                        angularity_as_aspect.with_class(2)
+                    elif abs(angularity_as_aspect.orb) < major_limit[2]:
+                        angularity_as_aspect.with_class(3)
+
+                angularities_as_aspects.append(angularity_as_aspect)
 
             if chart_utils.inrange(
                 planet_data.azimuth,
@@ -1480,7 +1563,7 @@ class CoreChart(object, metaclass=ABCMeta):
             chartfile.write('.' * 20)
             chartfile.write('\n')
 
-        return whole_chart_is_dormant
+        return (whole_chart_is_dormant, angularities_as_aspects)
 
     def write_cosmic_state(
         self,

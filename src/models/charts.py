@@ -996,6 +996,118 @@ class Aspect:
 
 
 @dataclass
+class ForegroundPlanetListedAsAspect:
+    type: AspectType = AspectType.CONJUNCTION
+    aspect_class: int = 0
+    strength: int = 0
+    orb: float = 0
+    framework: AspectFramework = AspectFramework.ECLIPTICAL
+    from_planet_short_name: str = ''
+    to_planet_short_name: str = ''
+    from_planet_role: ChartWheelRole = ''
+    to_planet_role: ChartWheelRole = ChartWheelRole.NATAL
+
+    def as_ecliptical(self):
+        self.framework = AspectFramework.ECLIPTICAL
+        return self
+
+    def as_mundane(self):
+        self.framework = AspectFramework.MUNDANE
+        return self
+
+    def as_prime_vertical_paran(self):
+        self.framework = AspectFramework.PRIME_VERTICAL_PARAN
+        return self
+
+    def from_planet(self, planet: str, role: ChartWheelRole = None):
+        self.from_planet_short_name = planet
+        if role:
+            self.from_planet_role = role
+        return self
+
+    def to_planet(self, angle: str, role: ChartWheelRole = None):
+        self.to_planet_short_name = angle
+        if role:
+            self.to_planet_role = role
+        return self
+
+    def with_orb(self, orb: float):
+        self.orb = float(orb)
+        return self
+
+    def with_class(self, aspect_class: int):
+        self.aspect_class = int(aspect_class)
+        return self
+
+    def with_strength(self, strength: int):
+        self.strength = int(strength)
+        return self
+
+    def as_type(self, type: AspectType):
+        self.type = type
+        return self
+
+    def get_formatted_orb(self):
+        return fmt_dm(abs(self.orb), True).lstrip()
+
+    def is_hard_aspect(self):
+        return True
+
+    def __str__(self):
+        # This will read something like this:
+        # tUr co Mc  +1°23'  99%
+        # vs:
+        # tUr co rSu  1°23'  95% M
+        # It should always be an even number of characters
+        # to make alignment consistent
+        planet_1_role = self.from_planet_role.value
+        angle_name = {
+            'A': 'As',
+            'M': 'Mc',
+            'D': 'Ds',
+            'I': 'Ic',
+            'E': 'Ep',
+            'EA': 'Ea',
+            'W': 'Wp',
+            'WA': 'Wa',
+            'Z': 'Z ',
+            'N': 'N ',
+        }[self.to_planet_short_name.strip().upper()]
+        text = (
+            f'{planet_1_role}{self.from_planet_short_name} '
+            + f'{self.type.value} {self.to_planet_role.value}{angle_name} '
+            + f'{"+" if self.orb >= 0 else "-"}{self.get_formatted_orb()} {self.strength:>3}% {self.framework.value}'
+        )
+
+        return text if len(text) % 2 == 0 else text + ' '
+
+    def cosmic_state_format(self, planet_short_name: str):
+        # Exclude the given planet name from the aspect.
+        # This will read: "aspect_type other_planet dm_orb framework"
+        if self.from_planet_short_name == planet_short_name:
+            return f'{self.type.value} {self.to_planet_role.value}{self.to_planet_short_name} {self.get_formatted_orb()}{self.framework.value}'
+        return f'{self.type.value} {self.from_planet_role.value}{self.from_planet_short_name} {self.get_formatted_orb()}{self.framework.value}'
+
+    def includes_planet(self, planet_name: str) -> bool:
+        # This would be short name
+        if (
+            self.from_planet_short_name == planet_name
+            or self.to_planet_short_name == planet_name
+        ):
+            return True
+
+        # Otherwise, it might be long name
+        if planet_name in PLANETS:
+            planet_short_name = PLANETS[planet_name]['short_name']
+            return (
+                self.from_planet_short_name == planet_short_name
+                or self.to_planet_short_name == planet_short_name
+            )
+
+        return False
+
+
+@dataclass
 class HalfSum:
     point_a: str = ''
     point_b: str = ''

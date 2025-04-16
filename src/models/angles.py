@@ -47,6 +47,50 @@ class ForegroundAngles(Enum):
 
 
 @dataclass
+class MajorAngles(Enum):
+    ASCENDANT = 'A '
+    DESCENDANT = 'D '
+    MC = 'M '
+    IC = 'I '
+
+    def __str__(self):
+        return self.value
+
+    @staticmethod
+    def contains(value):
+        return value.strip().upper() in [
+            'A',
+            'D',
+            'M',
+            'I',
+        ]
+
+
+@dataclass
+class MinorAngles(Enum):
+    ZENITH = 'Z '
+    NADIR = 'N '
+    EASTPOINT = 'E '
+    WESTPOINT = 'W '
+    EASTPOINT_RA = 'Ea'
+    WESTPOINT_RA = 'Wa'
+
+    def __str__(self):
+        return self.value
+
+    @staticmethod
+    def contains(value):
+        return value.strip().upper() in [
+            'Z',
+            'N',
+            'E',
+            'W',
+            'EA',
+            'WA',
+        ]
+
+
+@dataclass
 class NonForegroundAngles(Enum):
     VERTEX = 'Vx'
     ANTIVERTEX = 'Av'

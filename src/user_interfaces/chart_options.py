@@ -143,11 +143,8 @@ class ChartOptions(Frame):
         Radiobutton(self, self.showasp, 1, '1+ FG', 0.3, 0.85, 0.1)
         Radiobutton(self, self.showasp, 2, '2 FG', 0.4, 0.85, 0.1)
         self.partile = Checkbutton(self, 'Partile', 0.5, 0.85, 0.1)
-        self.mps = Button(self, 'Midpoints', 0.6, 0.85, 0.175).bind(
-            '<Button-1>', lambda _: delay(self.midpoints)
-        )
-        self.pvp_button = Button(self, 'PVP Aspects', 0.775, 0.85, 0.175).bind(
-            '<Button-1>', lambda _: delay(self.prime_vertical_parans)
+        self.include_fg_under_aspects = Checkbutton(
+            self, 'Include FG in aspects', 0.6, 0.85, 0.3
         )
 
         self.status = Label(self, '', 0, 0.9, 1)
@@ -161,10 +158,16 @@ class ChartOptions(Frame):
             ),
         )
 
+        self.mps = Button(self, 'Midpoints', 0.5, 0.90, 0.2).bind(
+            '<Button-1>', lambda _: delay(self.midpoints)
+        )
         Button(self, 'Extra Planets', 0.5, 0.95, 0.2).bind(
             '<Button-1>', lambda _: delay(self.extra_planets)
         )
 
+        self.pvp_button = Button(self, 'PVP Aspects', 0.7, 0.90, 0.2).bind(
+            '<Button-1>', lambda _: delay(self.prime_vertical_parans)
+        )
         backbtn = Button(self, 'Back', 0.7, 0.95, 0.2)
         backbtn.bind('<Button-1>', lambda _: delay(self.destroy))
         backbtn.bind('<Tab>', lambda _: delay(self.optfile.focus))
@@ -204,6 +207,9 @@ class ChartOptions(Frame):
         maja = ang.get('major_angles', [3.0, 7.0, 10.0])
         mina = ang.get('minor_angles', [1.0, 2.0, 3.0])
         self.mpopt = options.get('midpoints', {})
+        self.include_fg_under_aspects.checked = options.get(
+            'include_fg_under_aspects', False
+        )
 
         self.pvp_aspects = options.get(
             'pvp_aspects',
@@ -469,6 +475,9 @@ class ChartOptions(Frame):
         options[ang]['major_angles'] = majangs
         options[ang]['minor_angles'] = minangs
         options['extra_bodies'] = self.extra_bodies
+        options[
+            'include_fg_under_aspects'
+        ] = self.include_fg_under_aspects.checked
         ex = ['0', '180', '90', '45', '120', '60', '30']
         options[ea] = {}
         for i in range(7):

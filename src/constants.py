@@ -11,10 +11,10 @@ import os
 import sys
 from typing import TypedDict
 
-VERSION = '0.6.0b8'
+VERSION = '0.6.0b9'
 OLDEST_SUPPORTED_VERSION = '0.5.7'
 
-DS = '\N{DEGREE SIGN}'
+DS = '\u00B0'
 DQ = '"'
 SQ = "'"
 
