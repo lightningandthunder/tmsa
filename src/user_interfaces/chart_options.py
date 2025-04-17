@@ -51,6 +51,9 @@ class ChartOptions(Frame):
             0.2,
             0.2,
         )
+        self.use_raw_angularity_score = Checkbutton(
+            self, 'Use Raw FG Score', 0.05, 0.3, 0.15
+        )
         self.nobg = Checkbutton(self, "Don't Mark", 0.8, 0.2, 0.15)
         Label(self, 'C1 Orb', 0.225, 0.25, 0.1)
         Label(self, 'C2 0rb', 0.325, 0.25, 0.1)
@@ -209,6 +212,9 @@ class ChartOptions(Frame):
         self.mpopt = options.get('midpoints', {})
         self.include_fg_under_aspects.checked = options.get(
             'include_fg_under_aspects', False
+        )
+        self.use_raw_angularity_score.checked = options.get(
+            'use_raw_angularity_score', False
         )
 
         self.pvp_aspects = options.get(
@@ -478,6 +484,9 @@ class ChartOptions(Frame):
         options[
             'include_fg_under_aspects'
         ] = self.include_fg_under_aspects.checked
+        options[
+            'use_raw_angularity_score'
+        ] = self.use_raw_angularity_score.checked
         ex = ['0', '180', '90', '45', '120', '60', '30']
         options[ea] = {}
         for i in range(7):

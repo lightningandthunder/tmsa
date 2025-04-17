@@ -7,6 +7,7 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
+from io import TextIOWrapper
 import math
 import os
 from typing import Iterator
@@ -175,7 +176,9 @@ DQ = '"'
 SQ = "'"
 
 
-def major_angularity_curve_cadent_background(orb):
+def major_angularity_curve_cadent_background(
+    orb: float, use_raw: bool = False
+):
     if orb <= 10:
         orb *= 6
     elif orb > 10 and orb <= 40:
@@ -185,10 +188,12 @@ def major_angularity_curve_cadent_background(orb):
     else:
         orb = 6 * orb - 180
 
-    return _major_angle_angularity_strength_percent(orb)
+    return _major_angle_angularity_strength_percent(orb, use_raw)
 
 
-def major_angularity_curve_midquadrant_background(orb):
+def major_angularity_curve_midquadrant_background(
+    orb: float, use_raw: bool = False
+):
     if orb > 45:
         orb = 90 - orb
     if orb <= 10:
@@ -198,47 +203,61 @@ def major_angularity_curve_midquadrant_background(orb):
     else:
         orb = 6 * orb - 90
 
-    return _major_angle_angularity_strength_percent(orb)
+    return _major_angle_angularity_strength_percent(orb, use_raw)
 
 
-def _major_angle_angularity_strength_percent(orb: float) -> float:
+def _major_angle_angularity_strength_percent(
+    orb: float, use_raw: bool = False
+) -> float:
     # Normalize the -1 to +1 range to a percentage
     raw = math.cos(math.radians(orb))
+
+    if use_raw:
+        return round(raw * 100)
+
     # Convert from -1 to +1 to 0 to +2
     raw = raw + 1
+
     # Reduce to 0 to +1
     raw /= 2
+
     # Convert to percentage
     return round(raw * 100)
 
 
-def major_angularity_curve_eureka_formula(orb):
+def major_angularity_curve_eureka_formula(orb: float, use_raw: bool = False):
     initial_angularity = math.cos(math.radians(orb * 4))
-    # Reduce the weight - this essentially is a square of the calculated score
-    faded_angularity = initial_angularity * ((initial_angularity + 1) / 2)
+
     # Same curve as angularity, but shifted 60 degrees
     cadency_strength = -1 * math.cos(math.radians(4 * (orb - 60)))
+
+    # Reduce the weight - this essentially is a square of the calculated score
+    initial_angularity = initial_angularity * ((initial_angularity + 1) / 2)
     # Reduce the weight of this term as before
-    faded_cadency_strength = cadency_strength * (
-        1 - ((cadency_strength + 1) / 2)
-    )
+    cadency_strength = cadency_strength * (1 - ((cadency_strength + 1) / 2))
 
     # This is a curve that moves between -1.125 and +1.125
-    penultimate_score = faded_angularity + faded_cadency_strength
+    # (At least when not using the raw score)
+    penultimate_score = initial_angularity + cadency_strength
+
     # Convert to -1 to +1
-    penultimate_score /= 1.125
-    # Convert to 0 to +1
-    raw_decimal = (penultimate_score + 1) / 2
-    return round(raw_decimal * 100)
+    penultimate_score = penultimate_score / 1.125
+
+    if not use_raw:
+        # Convert to 0 to +1
+        raw_decimal = (penultimate_score + 1) / 2
+        return round(raw_decimal * 100)
+
+    return round(penultimate_score * 100)
 
 
-def calculate_angularity_curve(orb_degrees: float):
-    return math.cos(math.radians(orb_degrees * 4))
-
-
-def minor_angularity_curve(orb_degrees: float):
+def minor_angularity_curve(orb_degrees: float, use_raw: bool = False):
     # Cosine curve
     raw = math.cos(math.radians(orb_degrees * 30))
+
+    if use_raw:
+        return raw * 100
+
     # Convert from -1 to +1 to 0 to +2
     raw += 1
     # Spread this curve across 50 percentage points
@@ -583,3 +602,43 @@ def precess_mc(
         obliquity,
     )
     return (right_ascension, declination)
+
+
+def write_triple_columns_to_file(
+    classes: list[list], chartfile: TextIOWrapper
+):
+    for aspect_index in range(
+        max(
+            len(classes[0]),
+            len(classes[1]),
+            len(classes[2]),
+        )
+    ):
+        if aspect_index < len(classes[0]):
+            chartfile.write(
+                left_align(
+                    str(classes[0][aspect_index]),
+                    width=26,
+                )
+            )
+        else:
+            chartfile.write(' ' * 26)
+        if aspect_index < len(classes[1]):
+            chartfile.write(
+                center_align(
+                    str(classes[1][aspect_index]),
+                    width=26,
+                )
+            )
+        else:
+            chartfile.write(' ' * 26)
+        if aspect_index < len(classes[2]):
+            chartfile.write(
+                right_align(
+                    str(classes[2][aspect_index]),
+                    width=26,
+                )
+            )
+        else:
+            chartfile.write(' ' * 26)
+        chartfile.write('\n')

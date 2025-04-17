@@ -611,13 +611,17 @@ class CoreChart(object, metaclass=ABCMeta):
             if house_quadrant_position > 45
             else -1 * house_quadrant_position
         )
+
+        use_raw = self.options.use_raw_angularity_score
+
         if (
             angularity_options.model
             == option_models.AngularityModel.MIDQUADRANT
         ):
             mundane_angularity_strength = (
                 chart_utils.major_angularity_curve_midquadrant_background(
-                    house_quadrant_position
+                    house_quadrant_position,
+                    use_raw,
                 )
             )
         elif (
@@ -626,13 +630,15 @@ class CoreChart(object, metaclass=ABCMeta):
         ):
             mundane_angularity_strength = (
                 chart_utils.major_angularity_curve_cadent_background(
-                    house_quadrant_position
+                    house_quadrant_position,
+                    use_raw,
                 )
             )
         else:   # model == eureka
             mundane_angularity_strength = (
                 chart_utils.major_angularity_curve_eureka_formula(
-                    house_quadrant_position
+                    house_quadrant_position,
+                    use_raw,
                 )
             )
 
@@ -648,7 +654,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 abs(aspect_to_asc - 90)
             )
         else:
-            square_asc_strength = -2
+            square_asc_strength = -200
 
         aspect_to_mc = abs(chart.cusps[10] - planet.longitude)
         if aspect_to_mc > 180:
@@ -662,7 +668,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 abs(aspect_to_mc - 90)
             )
         else:
-            square_mc_strength = -2
+            square_mc_strength = -200
 
         ramc_aspect = abs(chart.ramc - planet.right_ascension)
         if ramc_aspect > 180:
@@ -676,7 +682,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 abs(ramc_aspect - 90)
             )
         else:
-            ramc_square_strength = -2
+            ramc_square_strength = -200
 
         (angularity_strength, signed_orb) = max(
             (mundane_angularity_strength, mundane_angularity_signed_orb),
@@ -704,7 +710,13 @@ class CoreChart(object, metaclass=ABCMeta):
             )
 
         else:
-            if mundane_angularity_strength <= 25:
+            if (
+                self.options.use_raw_angularity_score
+                and mundane_angularity_strength <= -50
+            ) or (
+                not self.options.use_raw_angularity_score
+                and mundane_angularity_strength <= 25
+            ):
                 if not angularity_options.no_bg:
                     is_mundanely_background = True
 
@@ -993,10 +1005,11 @@ class CoreChart(object, metaclass=ABCMeta):
     ) -> list[list[chart_models.Aspect]]:
         aspects_by_class = [[], [], [], []]
 
+        angularities_by_class = [[], [], [], []]
         if self.options.include_fg_under_aspects:
             for angularity in angularities_as_aspects:
                 index = angularity.aspect_class - 1
-                aspects_by_class[index].append(angularity)
+                angularities_by_class[index].append(angularity)
 
         for (from_index, from_chart) in enumerate(self.charts):
             for to_index in range(from_index, len(self.charts)):
@@ -1036,9 +1049,9 @@ class CoreChart(object, metaclass=ABCMeta):
                             ].append(maybe_aspect)
 
         aspect_class_headers = [
-            'Class 1 Aspects ',
-            'Class 2 Aspects ',
-            'Class 3 Aspects ',
+            '   Class 1      ',
+            '   Class 2      ',
+            '   Class 3      ',
             'Other Partile Aspects ',
         ]
 
@@ -1063,6 +1076,12 @@ class CoreChart(object, metaclass=ABCMeta):
                 aspect_class_headers.append('')
 
         aspect_header_index = 0
+
+        if len(angularities_as_aspects):
+            chartfile.write('-' * self.table_width + '\n')
+            chart_utils.write_triple_columns_to_file(
+                angularities_by_class, chartfile
+            )
 
         if any(aspect_class_headers):
             chartfile.write('-' * self.table_width + '\n')
@@ -1121,7 +1140,7 @@ class CoreChart(object, metaclass=ABCMeta):
                     right_header, width=max(aspect_width, len(right_header))
                 )
             )
-            chartfile.write('\n')
+            chartfile.write('\n' + '-' * self.table_width + '\n')
 
         # For each aspect class, insert dividers where the roles change
         aspects_by_class_with_dividers = copy.deepcopy(aspects_by_class)
@@ -1137,44 +1156,13 @@ class CoreChart(object, metaclass=ABCMeta):
                 previous_roles[1] = aspect.to_planet_role.value
 
         # Write aspects from all classes to file
-        for aspect_index in range(
-            max(
-                len(aspects_by_class_with_dividers[0]),
-                len(aspects_by_class_with_dividers[1]),
-                len(aspects_by_class_with_dividers[2]),
-            )
-        ):
-            previous_roles = [None, None]
-            if aspect_index < len(aspects_by_class_with_dividers[0]):
-                chartfile.write(
-                    chart_utils.left_align(
-                        str(aspects_by_class_with_dividers[0][aspect_index]),
-                        width=26,
-                    )
-                )
-            else:
-                chartfile.write(' ' * 26)
-            if aspect_index < len(aspects_by_class_with_dividers[1]):
-                chartfile.write(
-                    chart_utils.center_align(
-                        str(aspects_by_class_with_dividers[1][aspect_index]),
-                        width=26,
-                    )
-                )
-            else:
-                chartfile.write(' ' * 26)
-            if aspect_index < len(aspects_by_class_with_dividers[2]):
-                chartfile.write(
-                    chart_utils.right_align(
-                        str(aspects_by_class_with_dividers[2][aspect_index]),
-                        width=26,
-                    )
-                )
-            else:
-                chartfile.write(' ' * 26)
-            chartfile.write('\n')
+        chart_utils.write_triple_columns_to_file(
+            aspects_by_class_with_dividers, chartfile
+        )
 
         chartfile.write('-' * self.table_width + '\n')
+
+        # If there's a fourth class, write it below and centered
         if (
             aspect_header_index <= len(aspect_class_headers) - 1
             and aspect_header_index <= len(aspects_by_class_with_dividers) - 1

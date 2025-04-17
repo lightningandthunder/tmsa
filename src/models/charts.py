@@ -1007,6 +1007,19 @@ class ForegroundPlanetListedAsAspect:
     from_planet_role: ChartWheelRole = ''
     to_planet_role: ChartWheelRole = ChartWheelRole.NATAL
 
+    __angle_name_map = {
+        'A': 'As',
+        'M': 'MC',
+        'D': 'Ds',
+        'I': 'IC',
+        'E': 'EP',
+        'EA': 'Ea',
+        'W': 'WP',
+        'WA': 'Wa',
+        'Z': 'Z ',
+        'N': 'N ',
+    }
+
     def as_ecliptical(self):
         self.framework = AspectFramework.ECLIPTICAL
         return self
@@ -1061,18 +1074,9 @@ class ForegroundPlanetListedAsAspect:
         # It should always be an even number of characters
         # to make alignment consistent
         planet_1_role = self.from_planet_role.value
-        angle_name = {
-            'A': 'As',
-            'M': 'Mc',
-            'D': 'Ds',
-            'I': 'Ic',
-            'E': 'Ep',
-            'EA': 'Ea',
-            'W': 'Wp',
-            'WA': 'Wa',
-            'Z': 'Z ',
-            'N': 'N ',
-        }[self.to_planet_short_name.strip().upper()]
+        angle_name = self.__angle_name_map[
+            self.to_planet_short_name.strip().upper()
+        ]
         text = (
             f'{planet_1_role}{self.from_planet_short_name} '
             + f'{self.type.value} {self.to_planet_role.value}{angle_name} '
@@ -1082,10 +1086,14 @@ class ForegroundPlanetListedAsAspect:
         return text if len(text) % 2 == 0 else text + ' '
 
     def cosmic_state_format(self, planet_short_name: str):
+        angle_name = self.__angle_name_map[
+            self.to_planet_short_name.strip().upper()
+        ]
+
         # Exclude the given planet name from the aspect.
         # This will read: "aspect_type other_planet dm_orb framework"
         if self.from_planet_short_name == planet_short_name:
-            return f'{self.type.value} {self.to_planet_role.value}{self.to_planet_short_name} {self.get_formatted_orb()}{self.framework.value}'
+            return f'{self.type.value} {self.to_planet_role.value}{angle_name} {self.get_formatted_orb()}{self.framework.value}'
         return f'{self.type.value} {self.from_planet_role.value}{self.from_planet_short_name} {self.get_formatted_orb()}{self.framework.value}'
 
     def includes_planet(self, planet_name: str) -> bool:
