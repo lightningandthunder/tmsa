@@ -1182,6 +1182,14 @@ class CoreChart(object, metaclass=ABCMeta):
                 )
             chartfile.write('-' * self.table_width + '\n')
 
+        # Add in angularities if there are any, so that they
+        # show up in Cosmic State
+        if len(angularities_as_aspects):
+            for index in range(0, 3):
+                if len(angularities_by_class[index]):
+                    # This prepends the angularities
+                    aspects_by_class[index][:0] = angularities_by_class[index]
+
         return aspects_by_class
 
     def write_info_table(self, chartfile: TextIOWrapper):
