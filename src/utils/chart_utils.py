@@ -248,6 +248,7 @@ def major_angularity_curve_eureka_formula(orb: float, use_raw: bool = False):
         raw_decimal = (penultimate_score + 1) / 2
         return round(raw_decimal * 100)
 
+    print(penultimate_score)
     return round(penultimate_score * 100)
 
 
@@ -256,7 +257,7 @@ def minor_angularity_curve(orb_degrees: float, use_raw: bool = False):
     raw = math.cos(math.radians(orb_degrees * 30))
 
     if use_raw:
-        return raw * 100
+        return round(raw * 100)
 
     # Convert from -1 to +1 to 0 to +2
     raw += 1
