@@ -684,10 +684,6 @@ class CoreChart(object, metaclass=ABCMeta):
         else:
             ramc_square_strength = -200
 
-        print(planet.role.value, planet.short_name, mundane_angularity_strength, mundane_angularity_signed_orb, planet.house % 90)
-        print(square_asc_strength, aspect_to_asc_signed_orb)
-        print(square_mc_strength, aspect_to_mc_signed_orb)
-        print(ramc_square_strength, ramc_signed_orb)
         (angularity_strength, signed_orb) = max(
             (mundane_angularity_strength, mundane_angularity_signed_orb),
             (square_asc_strength, aspect_to_asc_signed_orb),

@@ -227,28 +227,25 @@ def _major_angle_angularity_strength_percent(
 
 def major_angularity_curve_eureka_formula(orb: float, use_raw: bool = False):
     initial_angularity = math.cos(math.radians(orb * 4))
-
+    # Reduce the weight - this essentially is a square of the calculated score
+    faded_angularity = initial_angularity * ((initial_angularity + 1) / 2)
     # Same curve as angularity, but shifted 60 degrees
     cadency_strength = -1 * math.cos(math.radians(4 * (orb - 60)))
-
-    # Reduce the weight - this essentially is a square of the calculated score
-    initial_angularity = initial_angularity * ((initial_angularity + 1) / 2)
     # Reduce the weight of this term as before
-    cadency_strength = cadency_strength * (1 - ((cadency_strength + 1) / 2))
+    faded_cadency_strength = cadency_strength * (
+        1 - ((cadency_strength + 1) / 2)
+    )
 
     # This is a curve that moves between -1.125 and +1.125
-    # (At least when not using the raw score)
-    penultimate_score = initial_angularity + cadency_strength
-
+    penultimate_score = faded_angularity + faded_cadency_strength
     # Convert to -1 to +1
-    penultimate_score = penultimate_score / 1.125
+    penultimate_score /= 1.125
 
     if not use_raw:
         # Convert to 0 to +1
         raw_decimal = (penultimate_score + 1) / 2
         return round(raw_decimal * 100)
 
-    print(penultimate_score)
     return round(penultimate_score * 100)
 
 
