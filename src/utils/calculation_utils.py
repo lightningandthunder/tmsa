@@ -5,9 +5,8 @@ from src import *
 from src import constants
 from src.models.options import Options
 import src.models.charts as chart_models
-from src.utils.chart_utils import POS_SIGN, convert_raw_strength_to_modified
+from src.utils.chart_utils import POS_SIGN, convert_raw_strength_to_modified, inrange
 from src.utils.format_utils import to360
-
 
 def calc_halfsums(
     options: Options,
@@ -76,9 +75,11 @@ def calc_halfsums(
                             point_a=primary_point.short_name
                             if hasattr(primary_point, 'short_name')
                             else primary_point_name,
+                            point_a_role=charts[from_index].role,
                             point_b=secondary_point.short_name
                             if hasattr(secondary_point, 'short_name')
                             else secondary_point_name,
+                            point_b_role=charts[to_index].role,
                             longitude=longitude,
                             prime_vertical_longitude=prime_vertical_longitude,
                             right_ascension=right_ascension,
@@ -87,20 +88,57 @@ def calc_halfsums(
 
     return halfsums
 
+def extract_midpoint(options: Options, planet_data: chart_models.PlanetData | chart_models.AngleData, halfsum: chart_models.HalfSum, coordinates: str, use_mundane_orb=False):
+    raw_orb_mins = (abs(getattr(planet_data, coordinates) - getattr(halfsum, coordinates)) % 180) * 60
+
+    framework = chart_models.AspectFramework.ECLIPTICAL if not use_mundane_orb else chart_models.AspectFramework.MUNDANE
+
+    conjunction_orb = options.midpoints.get('0', 0) if not use_mundane_orb else options.midpoints.get('M', 0)
+
+    if inrange(value=raw_orb_mins, center=0, orb=conjunction_orb):
+        return chart_models.MidpointAspect(
+            midpoint_type=chart_models.MidpointAspectType.DIRECT,
+            orb_minutes=raw_orb_mins,
+            framework=framework,
+            from_point=planet_data.short_name,
+            to_midpoint=halfsum,
+            from_point_role=planet_data.role,
+        )
+
+    square_orb = options.midpoints.get('90', 0) if not use_mundane_orb else options.midpoints.get('M', 0)
+
+    if inrange(value=raw_orb_mins, center=90, orb=square_orb):
+        direction = chart_models.MidpointAspectType.DIRECT if options.midpoints.get('is90', 'd') == 'd' else chart_models.MidpointAspectType.INDIRECT
+        return chart_models.MidpointAspect(
+            midpoint_type=direction,
+            orb_minutes=raw_orb_mins,
+            framework=framework,
+            from_point=planet_data.short_name,
+            to_midpoint=halfsum,
+            from_point_role=planet_data.role,
+        )
+
+    if use_mundane_orb:
+        return
+
+    octile_orb = options.midpoints.get('45', 0) if not use_mundane_orb else options.midpoints.get('M', 0)
+
+    if inrange(value=raw_orb_mins, center=45, orb=octile_orb) or inrange(value=raw_orb_mins, center=135, orb=octile_orb):
+        return chart_models.MidpointAspect(
+            midpoint_type=chart_models.MidpointAspectType.INDIRECT,
+            orb_minutes=raw_orb_mins,
+            framework=framework,
+            from_point=planet_data.short_name,
+            to_midpoint=halfsum,
+            from_point_role=planet_data.role,
+        )
 
 def calc_midpoints_2(
     options: Options,
     charts: list[chart_models.ChartObject],
-    halfsums: dict[str, chart_models.HalfSum],
+    halfsums: list[chart_models.HalfSum],
 ) -> dict[str, list[dict[str, any]]]:
     midpoints = {}
-
-    midpoint_orbs = options.midpoints
-    square_direction = (
-        chart_models.MidpointAspectType.DIRECT
-        if options.midpoints['is90'] == 'd'
-        else chart_models.MidpointAspectType.INDIRECT
-    )
 
     # Iterate over each point in each chart, checking it against all halfsums
     for chart in charts:
@@ -108,107 +146,38 @@ def calc_midpoints_2(
             options,
             include_angles=True,
         ):
-
-            for (
-                _,
-                aspect_degrees,
-            ) in chart_models.AspectType.iterate():
-                max_orb = None
-                raw_orb = None
-
-                # If the aspect is a sesquisquare, we need to use the orb for semisquare,
-                # as it's the only orb in options
-                aspect_degrees_for_options = None
-                if aspect_degrees == 135:
-                    # We handle all 45° multiples at once
-                    continue
-                elif aspect_degrees == 180:
-                    aspect_degrees_for_options = 0
-                else:
-                    aspect_degrees_for_options = aspect_degrees
-
-                if str(aspect_degrees_for_options) in midpoint_orbs:
-                    max_orb = options.midpoints[
-                        str(aspect_degrees_for_options)
-                    ]
-                else:
+            point_short_name = (point.short_name
+                    if hasattr(point, 'short_name')
+                    else point_name)
+            for halfsum in halfsums:
+                if halfsum.contains(point_short_name, role=chart.role):
                     continue
 
-                point_longitude = None
+                point_longitude = (
+                    point.longitude
+                    if hasattr(point, 'longitude')
+                    else point
+                )
 
-                for halfsum in halfsums:
-                    if halfsum.contains(
-                        point.short_name
-                        if hasattr(point, 'short_name')
-                        else point_name
-                    ):
-                        continue
+                # Get all ecliptical midpoints
+                
+                # Get all PVL midpoints
+                
+                # Get all RA midpoints
+                
+                # Check if we need to use mundane orbs for ecliptical contacts
+                
 
-                    point_longitude = (
-                        point.longitude
-                        if hasattr(point, 'longitude')
-                        else point
+                midpoint_name = f'{chart.role.value}{point_name}'
+                if midpoint_name not in midpoints:
+                    midpoints[midpoint_name] = [midpoint]
+                else:
+                    # make sure it stays sorted
+                    bisect.insort(
+                        midpoints[midpoint_name],
+                        midpoint,
+                        key=lambda x: x.orb_minutes,
                     )
-                    if aspect_degrees == 45:
-                        raw_orb_0 = abs(halfsum.longitude - point_longitude)
-                        raw_orb_45 = abs(raw_orb_0 - 45)
-                        raw_orb_135 = abs(raw_orb_0 - 135)
-                        raw_orb_225 = abs(raw_orb_0 - 225)
-                        raw_orb_315 = abs(raw_orb_0 - 315)
-                        raw_orb = (
-                            min(
-                                raw_orb_45,
-                                raw_orb_135,
-                                raw_orb_225,
-                                raw_orb_315,
-                            )
-                        ) * 60
-                    elif aspect_degrees == 90:
-                        raw_orb_90 = abs(
-                            abs(halfsum.longitude - point_longitude) - 90
-                        )
-                        raw_orb_270 = abs(
-                            abs(halfsum.longitude - point_longitude) - 270
-                        )
-                        raw_orb = min(raw_orb_90, raw_orb_270) * 60
-                    else:
-                        raw_orb = (
-                            abs(
-                                abs(halfsum.longitude - point_longitude)
-                                - aspect_degrees
-                            )
-                        ) * 60
-                    if raw_orb <= max_orb:
-                        midpoint_direction = None
-                        if aspect_degrees in [0, 180]:
-                            midpoint_direction = (
-                                chart_models.MidpointAspectType.DIRECT
-                            )
-                        if aspect_degrees in [45, 135]:
-                            midpoint_direction = (
-                                chart_models.MidpointAspectType.INDIRECT
-                            )
-                        else:
-                            midpoint_direction = square_direction
-                        midpoint = chart_models.MidpointAspect(
-                            midpoint_type=midpoint_direction,
-                            orb_minutes=int(round(raw_orb, 0)),
-                            framework=chart_models.AspectFramework.ECLIPTICAL,
-                            from_point=point_name,
-                            to_midpoint=str(halfsum),
-                            from_point_role=chart.role,
-                        )
-
-                        midpoint_name = f'{chart.role.value}{point_name}'
-                        if midpoint_name not in midpoints:
-                            midpoints[midpoint_name] = [midpoint]
-                        else:
-                            # make sure it stays sorted
-                            bisect.insort(
-                                midpoints[midpoint_name],
-                                midpoint,
-                                key=lambda x: x.orb_minutes,
-                            )
 
     return midpoints
 

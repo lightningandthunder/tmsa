@@ -176,6 +176,7 @@ class PlanetData:
         return f'{self.role.value}{self.short_name}'
 
 
+# Not used anywhere currently
 @dataclass
 class AngleData:
     name: str = ''
@@ -1119,8 +1120,17 @@ class HalfSum:
     prime_vertical_longitude: float = 0
     right_ascension: float = 0
 
-    def contains(self, planet_name: str) -> bool:
-        return self.point_a == planet_name or self.point_b == planet_name
+    def contains(self, planet_name: str, role: ChartWheelRole | None) -> bool:
+        if not role:
+            return self.point_a == planet_name or self.point_b == planet_name
+        
+        if self.point_a == planet_name and self.point_a_role.value == role.value:
+            return True
+        
+        if self.point_b == planet_name and self.point_b_role.value == role.value:
+            return True
+        
+        return False
 
     def __str__(self):
         return f'{self.point_a_role.value}{self.point_a}/{self.point_b_role.value}{self.point_b}'
