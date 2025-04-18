@@ -5,7 +5,7 @@ from src import *
 from src import constants
 from src.models.options import Options
 import src.models.charts as chart_models
-from src.utils.chart_utils import POS_SIGN
+from src.utils.chart_utils import POS_SIGN, convert_raw_strength_to_modified
 from src.utils.format_utils import to360
 
 
@@ -381,6 +381,7 @@ def find_outermost_chart(
 
 
 def calc_planetary_needs_strength(
+    options: chart_models.Options,
     planet: chart_models.PlanetData,
     chart: chart_models.ChartObject,
     aspects_by_class: list[list[chart_models.Aspect]],
@@ -445,8 +446,16 @@ def calc_planetary_needs_strength(
     if stationary_strength > 0 and luminary_strength > 0:
         stationary_strength = 90
 
+    normalized_angularity_strength = planet.angularity_strength
+
+    if options.use_raw_angularity_score:
+        # Figure out which angularity model we're using and flesh out the 0-100 score
+        normalized_angularity_strength = convert_raw_strength_to_modified(
+            options, planet.angularity_strength, planet.angle
+        )
+
     strength = max(
-        planet.angularity_strength,
+        normalized_angularity_strength,
         luminary_strength,
         max_luminary_aspect_strength,
         stationary_strength,

@@ -81,7 +81,7 @@ class PlanetData:
     angle: ForegroundAngles | NonForegroundAngles = NonForegroundAngles.BLANK
     angle_axes_contacted: list[AngleAxes] = field(default_factory=list)
     prime_vertical_angle: NonForegroundAngles = NonForegroundAngles.BLANK
-    angularity_strength: int = 0
+    angularity_strength: float = 0.0
     is_stationary: bool = False
 
     __prime_vertical_angles = [
@@ -964,7 +964,7 @@ class Aspect:
         text = (
             f'{planet_1_role}{self.from_planet_short_name} '
             + f'{self.type.value} {planet_2_role}{self.to_planet_short_name} '
-            + f'{self.get_formatted_orb()} {self.strength:>3}% {self.framework.value}'
+            + f'{self.get_formatted_orb()} {round(self.strength):>3}% {self.framework.value}'
         )
 
         return text if len(text) % 2 == 0 else text + ' '
@@ -999,7 +999,7 @@ class Aspect:
 class ForegroundPlanetListedAsAspect:
     type: AspectType = AspectType.CONJUNCTION
     aspect_class: int = 0
-    strength: int = 0
+    strength: float = 0.0
     orb: float = 0
     framework: AspectFramework = AspectFramework.ECLIPTICAL
     from_planet_short_name: str = ''
@@ -1052,8 +1052,8 @@ class ForegroundPlanetListedAsAspect:
         self.aspect_class = int(aspect_class)
         return self
 
-    def with_strength(self, strength: int):
-        self.strength = int(strength)
+    def with_strength(self, strength: float):
+        self.strength = strength
         return self
 
     def as_type(self, type: AspectType):
@@ -1069,8 +1069,6 @@ class ForegroundPlanetListedAsAspect:
     def __str__(self):
         # This will read something like this:
         # tUr co Mc  +1°23'  99%
-        # vs:
-        # tUr co rSu  1°23'  95% M
         # It should always be an even number of characters
         # to make alignment consistent
         planet_1_role = self.from_planet_role.value
@@ -1079,22 +1077,18 @@ class ForegroundPlanetListedAsAspect:
         ]
         text = (
             f'{planet_1_role}{self.from_planet_short_name} '
-            + f'{self.type.value} {self.to_planet_role.value}{angle_name} '
-            + f'{"+" if self.orb >= 0 else "-"}{self.get_formatted_orb()} {self.strength:>3}% {self.framework.value}'
+            + f'{self.type.value} {" " if planet_1_role != "" else ""}{self.to_planet_role.value}{angle_name} '
+            + f'{"+" if self.orb >= 0 else "-"}{self.get_formatted_orb()} {round(self.strength):>3}% '
         )
 
         return text if len(text) % 2 == 0 else text + ' '
 
-    def cosmic_state_format(self, planet_short_name: str):
+    def cosmic_state_format(self):
         angle_name = self.__angle_name_map[
             self.to_planet_short_name.strip().upper()
         ]
 
-        # Exclude the given planet name from the aspect.
-        # This will read: "aspect_type other_planet dm_orb framework"
-        if self.from_planet_short_name == planet_short_name:
-            return f'{self.type.value} {self.to_planet_role.value}{angle_name} {self.get_formatted_orb()}{self.framework.value}'
-        return f'{self.type.value} {self.from_planet_role.value}{self.from_planet_short_name} {self.get_formatted_orb()}{self.framework.value}'
+        return f'{angle_name} {self.get_formatted_orb()}'
 
     def includes_planet(self, planet_name: str) -> bool:
         # This would be short name

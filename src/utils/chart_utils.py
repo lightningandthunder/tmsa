@@ -15,7 +15,12 @@ from typing import Iterator
 from src import *
 from src import constants
 from src import swe
-from src.models.options import NodeTypes, Options
+from src.models.angles import (
+    ForegroundAngles,
+    MinorAngles,
+    NonForegroundAngles,
+)
+from src.models.options import AngularityModel, NodeTypes, Options
 from src.user_interfaces.widgets import *
 from src.utils.format_utils import to360
 
@@ -213,7 +218,7 @@ def _major_angle_angularity_strength_percent(
     raw = math.cos(math.radians(orb))
 
     if use_raw:
-        return round(raw * 100)
+        return raw * 100
 
     # Convert from -1 to +1 to 0 to +2
     raw = raw + 1
@@ -222,7 +227,7 @@ def _major_angle_angularity_strength_percent(
     raw /= 2
 
     # Convert to percentage
-    return round(raw * 100)
+    return raw * 100
 
 
 def major_angularity_curve_eureka_formula(orb: float, use_raw: bool = False):
@@ -244,9 +249,46 @@ def major_angularity_curve_eureka_formula(orb: float, use_raw: bool = False):
     if not use_raw:
         # Convert to 0 to +1
         raw_decimal = (penultimate_score + 1) / 2
-        return round(raw_decimal * 100)
+        return raw_decimal * 100
 
-    return round(penultimate_score * 100)
+    return penultimate_score * 100
+
+
+def convert_raw_strength_to_modified(
+    options: Options,
+    strength: int,
+    angle: ForegroundAngles | NonForegroundAngles,
+):
+    # Finish out the calculations that were aborted using raw settings
+    strength /= 100
+
+    if MinorAngles.contains(angle.value):
+        # Convert from -1 to +1 to 0 to +2
+        strength += 1
+        # Spread this curve across 50 percentage points
+        strength *= 25
+        # Finally, add 50 get a percentage
+        strength += 50
+
+        return round(strength)
+
+    if options.angularity.model.value == AngularityModel.EUREKA.value:
+        # Convert to 0 to +1
+        strength = (strength + 1) / 2
+        return round(strength * 100)
+
+    if options.angularity.model.value in [
+        AngularityModel.CLASSIC_CADENT.value,
+        AngularityModel.MIDQUADRANT.value,
+    ]:
+        # Convert from -1 to +1 to 0 to +2
+        strength = strength + 1
+
+        # Reduce to 0 to +1
+        strength /= 2
+
+        # Convert to percentage
+        return round(strength * 100)
 
 
 def minor_angularity_curve(orb_degrees: float, use_raw: bool = False):
