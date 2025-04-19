@@ -882,6 +882,7 @@ class CoreChart(object, metaclass=ABCMeta):
             secondary_planet_data,
             whole_chart_is_dormant,
         )
+ 
         mundane_aspect = self.find_mundane_aspect(
             primary_planet_data,
             secondary_planet_data,
@@ -981,7 +982,7 @@ class CoreChart(object, metaclass=ABCMeta):
             tightest_aspect = min(
                 ecliptical_aspect,
                 mundane_aspect,
-                key=lambda x: 1 - x.strength if x else 1000,
+                key=lambda x: x.orb if x else 1000,
             )
 
         if tightest_aspect and not tightest_aspect.aspect_class == 4:
@@ -1565,6 +1566,12 @@ class CoreChart(object, metaclass=ABCMeta):
         chartfile.write(
             chart_utils.center_align('Cosmic State', self.table_width) + '\n'
         )
+        
+        angularities_lookup = {}
+        for angularity in angularities_as_aspects:
+            key = f'{angularity.from_planet_role}{angularity.from_planet_short_name}'
+            angularities_lookup[key] = angularity
+            
 
         # Iterate from transiting chart to radix
         for (index, chart) in enumerate(self.charts):
@@ -1676,12 +1683,8 @@ class CoreChart(object, metaclass=ABCMeta):
                             chartfile.write(f' Su {sun_sign}-')
                             need_another_row = True
 
-                    # Find matching angularity
-                    matching_angularity = None
-                    for angularity in angularities_as_aspects:
-                        if angularity.includes_planet(planet_short_name):
-                            matching_angularity = angularity
-                            break
+                    key = f'{planet_data.role}{planet_short_name}'
+                    matching_angularity = angularities_lookup.get(key)
 
                     if matching_angularity:
                         chartfile.write(

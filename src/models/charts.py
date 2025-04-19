@@ -977,21 +977,27 @@ class Aspect:
             return f'{self.type.value} {self.to_planet_role.value}{self.to_planet_short_name} {self.get_formatted_orb()}{self.framework.value}'
         return f'{self.type.value} {self.from_planet_role.value}{self.from_planet_short_name} {self.get_formatted_orb()}{self.framework.value}'
 
-    def includes_planet(self, planet_name: str) -> bool:
-        # This would be short name
-        if (
-            self.from_planet_short_name == planet_name
-            or self.to_planet_short_name == planet_name
-        ):
-            return True
+    def includes_planet(self, planet_name: str, role: ChartWheelRole | None = None) -> bool:
+        planet_short_name = planet_name
 
-        # Otherwise, it might be long name
+        # Normalize long name to short name
         if planet_name in PLANETS:
             planet_short_name = PLANETS[planet_name]['short_name']
-            return (
-                self.from_planet_short_name == planet_short_name
-                or self.to_planet_short_name == planet_short_name
-            )
+
+        if role:
+            if (
+                (self.from_planet_short_name == planet_short_name
+                and self.from_planet_role.value == role.value)
+                or (self.to_planet_short_name == planet_short_name
+                    and self.to_planet_role.value == role.value
+                    )
+            ):
+                return True
+        if (
+            self.from_planet_short_name == planet_short_name
+            or self.to_planet_short_name == planet_short_name
+        ):
+            return True
 
         return False
 
@@ -1091,24 +1097,29 @@ class ForegroundPlanetListedAsAspect:
 
         return f'{angle_name} {self.get_formatted_orb()}'
 
-    def includes_planet(self, planet_name: str) -> bool:
-        # This would be short name
+    def includes_planet(self, planet_name: str, role: ChartWheelRole | None = None) -> bool:
+        planet_short_name = planet_name
+
+        # Normalize long name to short name
+        if planet_name in PLANETS:
+            planet_short_name = PLANETS[planet_name]['short_name']
+
+        if role:
+            if (
+                (self.from_planet_short_name == planet_short_name
+                and self.from_planet_role.value == role.value)
+                or (self.to_planet_short_name == planet_short_name
+                    and self.to_planet_role.value == role.value
+                    )
+            ):
+                return True
         if (
-            self.from_planet_short_name == planet_name
-            or self.to_planet_short_name == planet_name
+            self.from_planet_short_name == planet_short_name
+            or self.to_planet_short_name == planet_short_name
         ):
             return True
 
-        # Otherwise, it might be long name
-        if planet_name in PLANETS:
-            planet_short_name = PLANETS[planet_name]['short_name']
-            return (
-                self.from_planet_short_name == planet_short_name
-                or self.to_planet_short_name == planet_short_name
-            )
-
         return False
-
 
 @dataclass
 class HalfSum:
