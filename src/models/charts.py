@@ -172,7 +172,7 @@ class PlanetData:
         return self.prime_vertical_angle.value in self.__prime_vertical_angles
 
     @property
-    def name_with_role(self):
+    def short_name_with_role(self):
         return f'{self.role.value}{self.short_name}'
 
 
