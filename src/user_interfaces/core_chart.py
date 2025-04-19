@@ -1016,7 +1016,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 bisect.insort(
                     angularities_by_class[index],
                     angularity,
-                    key=lambda x: -1 * (round(x.strength) - abs(x.orb)),
+                    key=lambda x: -1 * round(x.strength),
                 )
 
         for (from_index, from_chart) in enumerate(self.charts):

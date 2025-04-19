@@ -292,12 +292,13 @@ def convert_raw_strength_to_modified(
 
 
 def minor_angularity_curve(orb_degrees: float, use_raw: bool = False):
-    # Cosine curve
-    raw = math.cos(math.radians(orb_degrees * 30))
-
     if use_raw:
-        return round(raw * 100)
+        # Tighter cosine curve
+        raw = math.cos(math.radians(orb_degrees * 18.5))
+        return round((raw) * 100)
 
+    # Regular cosine curve
+    raw = math.cos(math.radians(orb_degrees * 30))
     # Convert from -1 to +1 to 0 to +2
     raw += 1
     # Spread this curve across 50 percentage points
