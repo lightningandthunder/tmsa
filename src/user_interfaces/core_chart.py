@@ -587,8 +587,6 @@ class CoreChart(object, metaclass=ABCMeta):
         bool,
         bool,
     ]:
-        # I should be able to rewrite this mostly using self. variables
-
         chart = calc_utils.find_outermost_chart(self.charts)
 
         angularity_options = self.options.angularity
@@ -650,7 +648,7 @@ class CoreChart(object, metaclass=ABCMeta):
 
         if chart_utils.inrange(aspect_to_asc, 90, 3):
             square_asc_strength = chart_utils.minor_angularity_curve(
-                abs(aspect_to_asc - 90), use_raw
+                abs(aspect_to_asc - 90), self.options, use_raw
             )
         else:
             square_asc_strength = -200
@@ -664,7 +662,7 @@ class CoreChart(object, metaclass=ABCMeta):
 
         if chart_utils.inrange(aspect_to_mc, 90, 3):
             square_mc_strength = chart_utils.minor_angularity_curve(
-                abs(aspect_to_mc - 90), use_raw
+                abs(aspect_to_mc - 90), self.options, use_raw
             )
         else:
             square_mc_strength = -200
@@ -678,7 +676,7 @@ class CoreChart(object, metaclass=ABCMeta):
 
         if chart_utils.inrange(ramc_aspect, 90, 3):
             ramc_square_strength = chart_utils.minor_angularity_curve(
-                abs(ramc_aspect - 90), use_raw
+                abs(ramc_aspect - 90), self.options, use_raw
             )
         else:
             ramc_square_strength = -200

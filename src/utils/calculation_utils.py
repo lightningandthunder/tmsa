@@ -8,7 +8,9 @@ import src.models.charts as chart_models
 from src.utils.chart_utils import (
     POS_SIGN,
     convert_raw_strength_to_modified,
+    in_harmonic_range,
     inrange,
+    greatest_nonzero_class_orb,
 )
 from src.utils.format_utils import to360
 
@@ -510,6 +512,42 @@ def find_outermost_chart(
         if chart.role > outermost_chart.role:
             outermost_chart = chart
     return outermost_chart
+
+
+def parse_aspect_type_and_class(
+    value: float, options: Options
+) -> tuple[chart_models.AspectType, int]:
+    normalized_value = to360(value)
+
+    definitions = [
+        # Hard aspects
+        (0, chart_models.AspectType.CONJUNCTION, 1)(
+            180, chart_models.AspectType.OPPOSITION, 2
+        ),
+        (90, chart_models.AspectType.SQUARE, 4),
+        (45, chart_models.AspectType.OCTILE, 8),
+        # Soft aspects
+        (120, chart_models.AspectType.TRINE, 3),
+        (60, chart_models.AspectType.SEXTILE, 6),
+        # Overlapping or niche cases
+        (150, chart_models.AspectType.INCONJUNCT, 2.4),
+        (72, chart_models.AspectType.QUINTILE, 5),
+        (7, chart_models.AspectType.SEPTILE, 7),
+        (40, chart_models.AspectType.NOVILE, 9),
+        (30, chart_models.AspectType.INCONJUNCT, 12),
+        (10, chart_models.AspectType.DECILE, 36),
+    ]
+
+    for (degrees, definition, harmonic) in definitions:
+        orbs = options.ecliptic_aspects.get(str(degrees))
+        for orb_index in range(len(orbs)):
+            if orbs[orb_index]:
+                if in_harmonic_range(
+                    normalized_value, orbs[orb_index], harmonic
+                ):
+                    return (definition, orb_index + 1)
+
+    return None
 
 
 def calc_planetary_needs_strength(

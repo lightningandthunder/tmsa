@@ -845,6 +845,13 @@ class AspectType(Enum):
     OPPOSITION = 'op'
     INCONJUNCT = 'in'
 
+    DECILE = 'dc'
+
+    # Not implemented anywhere
+    QUINTILE = 'qu'
+    SEPTILE = 'sp'
+    NOVILE = 'nv'
+
     def __str__(self):
         return self.value
 
@@ -867,6 +874,14 @@ class AspectType(Enum):
             return cls.INCONJUNCT
         elif string == 'op':
             return cls.OPPOSITION
+        elif string == 'dc':
+            return cls.DECILE
+        elif string == 'qu':
+            return cls.QUINTILE
+        elif string == 'sp':
+            return cls.SEPTILE
+        elif string == 'nv':
+            return cls.NOVILE
         else:
             return None
 
@@ -875,14 +890,21 @@ class AspectType(Enum):
         if isinstance(degrees, str):
             degrees = int(degrees)
 
+        # Does not handle septile
         if degrees == 0:
             return cls.CONJUNCTION
+        if degrees == 10:
+            return cls.DECILE
         elif degrees == 30:
             return cls.INCONJUNCT
+        elif degrees == 40:
+            return cls.NOVILE
         elif degrees == 45:
             return cls.OCTILE
         elif degrees == 60:
             return cls.SEXTILE
+        elif degrees == 72:
+            return cls.QUINTILE
         elif degrees == 90:
             return cls.SQUARE
         elif degrees == 120:
@@ -898,12 +920,19 @@ class AspectType(Enum):
 
     @staticmethod
     def degrees_from_abbreviation(abbreviation: str) -> int | None:
+        # Does not handle septiles
         if abbreviation == 'co':
             return 0
+        elif abbreviation == 'dc':
+            return 10
+        elif abbreviation == 'nv':
+            return 40
         elif abbreviation == 'oc':
             return 45
         elif abbreviation == 'sx':
             return 60
+        elif abbreviation == 'qu':
+            return 72
         elif abbreviation == 'sq':
             return 90
         elif abbreviation == 'tr':
@@ -912,29 +941,6 @@ class AspectType(Enum):
             return 150
         elif abbreviation == 'op':
             return 180
-        else:
-            return None
-
-    @staticmethod
-    def abbreviation_from_degrees(degrees: int):
-        if degrees == 0:
-            return 'co'
-        if degrees == 30:
-            return 'in'
-        elif degrees == 45:
-            return 'oc'
-        elif degrees == 60:
-            return 'sx'
-        elif degrees == 90:
-            return 'sq'
-        elif degrees == 120:
-            return 'tr'
-        elif degrees == 135:
-            return 'oc'
-        elif degrees == 150:
-            return 'in'
-        elif degrees == 180:
-            return 'op'
         else:
             return None
 

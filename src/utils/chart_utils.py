@@ -254,49 +254,19 @@ def major_angularity_curve_eureka_formula(orb: float, use_raw: bool = False):
     return penultimate_score * 100
 
 
-def convert_raw_strength_to_modified(
-    options: Options,
-    strength: int,
-    angle: ForegroundAngles | NonForegroundAngles,
+def minor_angularity_curve(
+    orb_degrees: float, options: Options, use_raw: bool = False
 ):
-    # Finish out the calculations that were aborted using raw settings
-    strength /= 100
+    max_orb = calc_class_3_orb(options.angularity.minor_angles)
+    curve_width = 360.0 / (max_orb * 4)
 
-    if MinorAngles.contains(angle.value):
-        # Revert the intial "raw" operations
-        radians_value = math.acos(strength)
-        degrees_value = math.degrees(radians_value)
-        orb_degrees = degrees_value / 18.5
+    # Regular cosine curve
+    raw = math.cos(math.radians(orb_degrees * curve_width))
 
-        return round(minor_angularity_curve(orb_degrees))
-
-    if options.angularity.model.value == AngularityModel.EUREKA.value:
-        # Convert to 0 to +1
-        strength = (strength + 1) / 2
-        return round(strength * 100)
-
-    if options.angularity.model.value in [
-        AngularityModel.CLASSIC_CADENT.value,
-        AngularityModel.MIDQUADRANT.value,
-    ]:
-        # Convert from -1 to +1 to 0 to +2
-        strength = strength + 1
-
-        # Reduce to 0 to +1
-        strength /= 2
-
-        # Convert to percentage
-        return round(strength * 100)
-
-
-def minor_angularity_curve(orb_degrees: float, use_raw: bool = False):
     if use_raw:
-        raw = math.cos(math.radians(orb_degrees * 30))
         # Make it comparable to major angle contacts
         return (0.5 * raw + 0.5) * 100
 
-    # Regular cosine curve
-    raw = math.cos(math.radians(orb_degrees * 30))
     # Convert from -1 to +1 to 0 to +2
     raw += 1
     # Spread this curve across 50 percentage points
@@ -307,8 +277,82 @@ def minor_angularity_curve(orb_degrees: float, use_raw: bool = False):
     return raw
 
 
-def inrange(value: float, center: float, orb: float) -> bool:
-    return value >= center - orb and value <= center + orb
+def convert_raw_strength_to_modified(
+    options: Options,
+    strength: int,
+    angle: ForegroundAngles | NonForegroundAngles,
+):
+    # Finish out the calculations that were aborted using raw settings
+    output_strength = strength / 100
+
+    if MinorAngles.contains(angle.value):
+        max_orb = calc_class_3_orb(options.angularity.minor_angles)
+        curve_width = 360.0 / (max_orb * 4)
+
+        output_strength -= 0.5
+        output_strength *= 2
+
+        # Revert the intial "raw" operations
+        radians_value = math.acos(output_strength)
+        degrees_value = math.degrees(radians_value)
+        orb_degrees = degrees_value / curve_width
+
+        return round(minor_angularity_curve(orb_degrees, options))
+
+    if options.angularity.model.value == AngularityModel.EUREKA.value:
+        # Convert to 0 to +1
+        output_strength = (output_strength + 1) / 2
+        return round(output_strength * 100)
+
+    if options.angularity.model.value in [
+        AngularityModel.CLASSIC_CADENT.value,
+        AngularityModel.MIDQUADRANT.value,
+    ]:
+        # Convert from -1 to +1 to 0 to +2
+        output_strength = output_strength + 1
+
+        # Reduce to 0 to +1
+        output_strength /= 2
+
+        # Convert to percentage
+        return round(output_strength * 100)
+
+
+def calc_class_3_orb(orbs: list[float]) -> float:
+    if orbs[2] is not None and orbs[2] > 0:
+        return float(orbs[2])
+
+    if orbs[1] is not None and orbs[1] > 0:
+        return float(orbs[1]) * 1.5
+
+    return float(orbs[0]) * 2.5
+
+
+def inrange(
+    value: float,
+    center: float,
+    orb: float,
+    use_rem: bool = False,
+    circle_division: float | None = None,
+) -> bool:
+    if not use_rem:
+        return value >= center - orb and value <= center + orb
+
+    if circle_division is not None:
+        center = 360 / circle_division
+
+    remainder_value = value % center
+    return remainder_value <= orb or remainder_value >= center - orb
+
+
+def in_harmonic_range(value: float, orb: float, harmonic: float) -> bool:
+    harmonic_degree_width = 360 / harmonic
+
+    remainder_value = value % harmonic_degree_width
+    return (
+        remainder_value <= orb
+        or remainder_value >= harmonic_degree_width - orb
+    )
 
 
 def zod_min(value):
