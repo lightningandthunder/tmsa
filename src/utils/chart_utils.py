@@ -263,14 +263,12 @@ def convert_raw_strength_to_modified(
     strength /= 100
 
     if MinorAngles.contains(angle.value):
-        # Convert from -1 to +1 to 0 to +2
-        strength += 1
-        # Spread this curve across 50 percentage points
-        strength *= 25
-        # Finally, add 50 get a percentage
-        strength += 50
+        # Revert the intial "raw" operations
+        radians_value = math.acos(strength)
+        degrees_value = math.degrees(radians_value)
+        orb_degrees = degrees_value / 18.5
 
-        return round(strength)
+        return round(minor_angularity_curve(orb_degrees))
 
     if options.angularity.model.value == AngularityModel.EUREKA.value:
         # Convert to 0 to +1
@@ -293,9 +291,9 @@ def convert_raw_strength_to_modified(
 
 def minor_angularity_curve(orb_degrees: float, use_raw: bool = False):
     if use_raw:
-        # Tighter cosine curve
-        raw = math.cos(math.radians(orb_degrees * 18.5))
-        return round((raw) * 100)
+        raw = math.cos(math.radians(orb_degrees * 30))
+        # Make it comparable to major angle contacts
+        return (0.5 * raw + 0.5) * 100
 
     # Regular cosine curve
     raw = math.cos(math.radians(orb_degrees * 30))
@@ -306,7 +304,7 @@ def minor_angularity_curve(orb_degrees: float, use_raw: bool = False):
     # Finally, add 50 get a percentage
     raw += 50
 
-    return round(raw)
+    return raw
 
 
 def inrange(value: float, center: float, orb: float) -> bool:
@@ -562,30 +560,6 @@ def make_chart_path(chart, temporary, is_ingress=False):
         filepath = os.path.join(first[0], first, filename)
     path = TEMP_CHARTS if temporary else CHART_PATH
     return os.path.abspath(os.path.join(path, filepath))
-
-
-def iterate_allowed_planets(
-    options: Options,
-) -> Iterator[tuple[str, dict[str, any]]]:
-    for planet_name, data in constants.PLANETS.items():
-        if (
-            data['number'] > 11
-            and data['short_name'] not in options.extra_bodies
-        ):
-            continue
-        elif (
-            planet_name == 'True Node'
-            and options.node_type.value != NodeTypes.TRUE_NODE.value
-        ):
-            continue
-        elif (
-            planet_name == 'Mean Node'
-            and options.node_type.value != NodeTypes.MEAN_NODE.value
-        ):
-            continue
-
-        else:
-            yield planet_name, data
 
 
 def calc_aspect_strength_percent(max_orb: int, raw_orb: float) -> str:

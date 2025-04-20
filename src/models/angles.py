@@ -75,19 +75,30 @@ class MinorAngles(Enum):
     EASTPOINT_RA = 'Ea'
     WESTPOINT_RA = 'Wa'
 
+    __points_without_whitespace = [
+        'Z',
+        'N',
+        'E',
+        'W',
+        'EA',
+        'WA',
+    ]
+
     def __str__(self):
         return self.value
 
     @staticmethod
-    def contains(value):
-        return value.strip().upper() in [
-            'Z',
-            'N',
-            'E',
-            'W',
-            'EA',
-            'WA',
-        ]
+    def contains(enum_or_str):
+        if hasattr(enum_or_str, 'value'):
+            return (
+                enum_or_str.value.strip().upper()
+                in MinorAngles.__points_without_whitespace.value
+            )
+
+        return (
+            enum_or_str.strip().upper()
+            in MinorAngles.__points_without_whitespace.value
+        )
 
 
 @dataclass

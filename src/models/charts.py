@@ -6,7 +6,13 @@ from typing import Iterator, TypeVar, TypedDict
 
 from src import log_startup_error, swe
 from src.constants import PLANETS, VERSION
-from src.models.angles import AngleAxes, ForegroundAngles, NonForegroundAngles
+from src.models.angles import (
+    AngleAxes,
+    ForegroundAngles,
+    MajorAngles,
+    MinorAngles,
+    NonForegroundAngles,
+)
 from src.models.options import NodeTypes, Options
 from src.utils import chart_utils
 from src.utils.chart_utils import (
@@ -61,8 +67,67 @@ class ChartWheelRole(Enum):
         return NotImplemented
 
 
+class __PointData:
+    name: str = ''
+    short_name: str = ''
+    number: int = -1
+    longitude: float = 0
+    latitude: float = 0
+    speed: float = 0
+    right_ascension: float = 0
+    declination: float = 0
+    azimuth: float = 0
+    altitude: float = 0
+    house: float = 0
+    prime_vertical_longitude: float = 0
+    meridian_longitude: float = 0
+    treat_as_foreground: bool = False
+    role: ChartWheelRole = ChartWheelRole.NATAL
+    angle: ForegroundAngles | NonForegroundAngles = NonForegroundAngles.BLANK
+    angle_axes_contacted: list[AngleAxes] = field(default_factory=list)
+    prime_vertical_angle: NonForegroundAngles = NonForegroundAngles.BLANK
+    angularity_strength: float = 0.0
+    is_stationary: bool = False
+
+    @property
+    def is_foreground(self):
+        return False
+
+    @property
+    def contacted_angle_axis_values_stripped(self):
+        return []
+
+    @property
+    def is_on_vx_or_av(self):
+        return False
+
+    @property
+    def is_on_major_angle(self):
+        return False
+
+    @property
+    def is_square_ramc(self):
+        return False
+
+    @property
+    def is_on_zenith(self):
+        return False
+
+    @property
+    def is_on_ep_or_wp(self):
+        return False
+
+    @property
+    def is_square_asc_or_mc(self):
+        return False
+
+    @property
+    def short_name_with_role(self):
+        return False
+
+
 @dataclass
-class PlanetData:
+class PlanetData(__PointData):
     name: str = ''
     short_name: str = ''
     number: int = -1
@@ -165,20 +230,54 @@ class PlanetData:
 
     @property
     def is_foreground(self):
-        return self.angle != NonForegroundAngles.BLANK
+        return MajorAngles.contains(self.angle.value) or MinorAngles.contains(
+            self.angle.value
+        )
 
     @property
-    def is_on_prime_vertical(self):
+    def contacted_angle_axis_values_stripped(self):
+        return [a.value.strip() for a in self.angle_axes_contacted]
+
+    @property
+    def is_on_vx_or_av(self):
         return self.prime_vertical_angle.value in self.__prime_vertical_angles
+
+    @property
+    def is_on_major_angle(self):
+        return MajorAngles.contains(self.angle.value)
+
+    @property
+    def is_square_ramc(self):
+        return (
+            AngleAxes.EASTPOINT_IN_RA.value.strip()
+            in self.contacted_angle_axis_values_stripped
+        )
+
+    @property
+    def is_on_zenith(self):
+        return (
+            AngleAxes.ZENITH_NADIR.value.strip()
+            in self.contacted_angle_axis_values_stripped
+        )
+
+    @property
+    def is_on_ep_or_wp(self):
+        return (
+            AngleAxes.EASTPOINT_WESTPOINT.value.strip()
+            in self.contacted_angle_axis_values_stripped
+        )
+
+    @property
+    def is_square_asc_or_mc(self):
+        return self.is_on_zenith or self.is_on_ep_or_wp
 
     @property
     def short_name_with_role(self):
         return f'{self.role.value}{self.short_name}'
 
 
-# Not used anywhere currently
 @dataclass
-class AngleData:
+class AngleData(__PointData):
     name: str = ''
     short_name: str = ''
     longitude: float = 0
@@ -189,6 +288,7 @@ class AngleData:
     altitude: float = 0
     meridian_longitude: float = 0
     prime_vertical_longitude: float = 0
+    role: ChartWheelRole = ChartWheelRole.NATAL
 
     def with_ecliptic_and_equatorial_data(
         self,
@@ -977,7 +1077,9 @@ class Aspect:
             return f'{self.type.value} {self.to_planet_role.value}{self.to_planet_short_name} {self.get_formatted_orb()}{self.framework.value}'
         return f'{self.type.value} {self.from_planet_role.value}{self.from_planet_short_name} {self.get_formatted_orb()}{self.framework.value}'
 
-    def includes_planet(self, planet_name: str, role: ChartWheelRole | None = None) -> bool:
+    def includes_planet(
+        self, planet_name: str, role: ChartWheelRole | None = None
+    ) -> bool:
         planet_short_name = planet_name
 
         # Normalize long name to short name
@@ -986,11 +1088,11 @@ class Aspect:
 
         if role:
             if (
-                (self.from_planet_short_name == planet_short_name
-                and self.from_planet_role.value == role.value)
-                or (self.to_planet_short_name == planet_short_name
-                    and self.to_planet_role.value == role.value
-                    )
+                self.from_planet_short_name == planet_short_name
+                and self.from_planet_role.value == role.value
+            ) or (
+                self.to_planet_short_name == planet_short_name
+                and self.to_planet_role.value == role.value
             ):
                 return True
         if (
@@ -1003,7 +1105,7 @@ class Aspect:
 
 
 @dataclass
-class ForegroundPlanetListedAsAspect:
+class AngleContactAspect:
     type: AspectType = AspectType.CONJUNCTION
     aspect_class: int = 0
     strength: float = 0.0
@@ -1097,7 +1199,9 @@ class ForegroundPlanetListedAsAspect:
 
         return f'{angle_name} {self.get_formatted_orb()}'
 
-    def includes_planet(self, planet_name: str, role: ChartWheelRole | None = None) -> bool:
+    def includes_planet(
+        self, planet_name: str, role: ChartWheelRole | None = None
+    ) -> bool:
         planet_short_name = planet_name
 
         # Normalize long name to short name
@@ -1106,11 +1210,11 @@ class ForegroundPlanetListedAsAspect:
 
         if role:
             if (
-                (self.from_planet_short_name == planet_short_name
-                and self.from_planet_role.value == role.value)
-                or (self.to_planet_short_name == planet_short_name
-                    and self.to_planet_role.value == role.value
-                    )
+                self.from_planet_short_name == planet_short_name
+                and self.from_planet_role.value == role.value
+            ) or (
+                self.to_planet_short_name == planet_short_name
+                and self.to_planet_role.value == role.value
             ):
                 return True
         if (
@@ -1121,30 +1225,38 @@ class ForegroundPlanetListedAsAspect:
 
         return False
 
+
 @dataclass
 class HalfSum:
-    point_a: str = ''
-    point_b: str = ''
-    point_a_role: ChartWheelRole = ChartWheelRole.NATAL
-    point_b_role: ChartWheelRole = ChartWheelRole.NATAL
+    point_a: PlanetData | AngleData
+    point_b: PlanetData | AngleData
     longitude: float = 0
     prime_vertical_longitude: float = 0
     right_ascension: float = 0
 
     def contains(self, planet_name: str, role: ChartWheelRole | None) -> bool:
         if not role:
-            return self.point_a == planet_name or self.point_b == planet_name
-        
-        if self.point_a == planet_name and self.point_a_role.value == role.value:
+            return (
+                self.point_a.short_name == planet_name
+                or self.point_b.short_name == planet_name
+            )
+
+        if (
+            self.point_a.short_name == planet_name
+            and self.point_a.role.value == role.value
+        ):
             return True
-        
-        if self.point_b == planet_name and self.point_b_role.value == role.value:
+
+        if (
+            self.point_b.short_name == planet_name
+            and self.point_b.role.value == role.value
+        ):
             return True
-        
+
         return False
 
     def __str__(self):
-        return f'{self.point_a_role.value}{self.point_a}/{self.point_b_role.value}{self.point_b}'
+        return f'{self.point_a.role.value}{self.point_a.short_name}/{self.point_b.role.value}{self.point_b.short_name}'
 
 
 class MidpointAspectType(Enum):
@@ -1154,12 +1266,11 @@ class MidpointAspectType(Enum):
 
 @dataclass
 class MidpointAspect:
+    from_point_data: PlanetData | AngleData
     midpoint_type: MidpointAspectType = MidpointAspectType.DIRECT
     orb_minutes: int = 0
     framework: AspectFramework = AspectFramework.ECLIPTICAL
-    from_point: str = ''
     to_midpoint: HalfSum = None
-    from_point_role: ChartWheelRole = ''
     is_mundane: bool = False
 
     def __str__(self):

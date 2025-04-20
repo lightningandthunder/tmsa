@@ -5,8 +5,13 @@ from src import *
 from src import constants
 from src.models.options import Options
 import src.models.charts as chart_models
-from src.utils.chart_utils import POS_SIGN, convert_raw_strength_to_modified, inrange
+from src.utils.chart_utils import (
+    POS_SIGN,
+    convert_raw_strength_to_modified,
+    inrange,
+)
 from src.utils.format_utils import to360
+
 
 def calc_halfsums(
     options: Options,
@@ -34,52 +39,52 @@ def calc_halfsums(
                         and from_chart == to_chart
                     ):
                         continue
+
                     primary_point_is_angle = (
                         primary_point_name in constants.ANGLE_ABBREVIATIONS
                     )
                     secondary_point_is_angle = (
                         secondary_point_name in constants.ANGLE_ABBREVIATIONS
                     )
+
                     if primary_point_is_angle and secondary_point_is_angle:
                         continue
-                    elif primary_point_is_angle or secondary_point_is_angle:
-                        longitude = (
-                            (
-                                primary_point.longitude
-                                if secondary_point_is_angle
-                                else primary_point
-                            )
-                            + (
-                                secondary_point.longitude
-                                if primary_point_is_angle
-                                else secondary_point
-                            )
-                        ) / 2
-                        prime_vertical_longitude = 0
-                        right_ascension = 0
-                    else:
-                        longitude = (
-                            primary_point.longitude + secondary_point.longitude
-                        ) / 2
-                        prime_vertical_longitude = (
-                            primary_point.prime_vertical_longitude
-                            + secondary_point.prime_vertical_longitude
-                        ) / 2
-                        right_ascension = (
-                            primary_point.right_ascension
-                            + secondary_point.right_ascension
-                        ) / 2
+
+                    primary_data = primary_point
+                    secondary_data = secondary_point
+
+                    if primary_point_is_angle:
+                        primary_data = chart_models.AngleData(
+                            name=primary_point_name,
+                            short_name=primary_point_name,
+                            longitude=primary_point,
+                            role=from_chart.role,
+                        )
+
+                    if secondary_point_is_angle:
+                        secondary_data = chart_models.AngleData(
+                            name=secondary_point_name,
+                            short_name=secondary_point_name,
+                            longitude=secondary_point,
+                            role=to_chart.role,
+                        )
+
+                    longitude = (
+                        primary_data.longitude + secondary_data.longitude
+                    ) / 2
+                    prime_vertical_longitude = (
+                        primary_data.prime_vertical_longitude
+                        + secondary_data.prime_vertical_longitude
+                    ) / 2
+                    right_ascension = (
+                        primary_data.right_ascension
+                        + secondary_data.right_ascension
+                    ) / 2
 
                     halfsums.append(
                         chart_models.HalfSum(
-                            point_a=primary_point.short_name
-                            if hasattr(primary_point, 'short_name')
-                            else primary_point_name,
-                            point_a_role=charts[from_index].role,
-                            point_b=secondary_point.short_name
-                            if hasattr(secondary_point, 'short_name')
-                            else secondary_point_name,
-                            point_b_role=charts[to_index].role,
+                            point_a=primary_data,
+                            point_b=secondary_data,
                             longitude=longitude,
                             prime_vertical_longitude=prime_vertical_longitude,
                             right_ascension=right_ascension,
@@ -88,57 +93,108 @@ def calc_halfsums(
 
     return halfsums
 
-def extract_midpoint(options: Options, planet_data: chart_models.PlanetData | chart_models.AngleData, halfsum: chart_models.HalfSum, coordinates: str, use_mundane_orb=False):
-    raw_orb_mins = (abs(getattr(planet_data, coordinates) - getattr(halfsum, coordinates)) % 180) * 60
 
-    framework = chart_models.AspectFramework.ECLIPTICAL if not use_mundane_orb else chart_models.AspectFramework.MUNDANE
+# TODO - make this use PlanetData and AngleData instead of loose info
+def parse_midpoint(
+    options: Options,
+    point_data: chart_models.PlanetData | chart_models.AngleData,
+    halfsum: chart_models.HalfSum,
+    coordinates: str,
+    use_mundane_orb=False,
+):
+    raw_orb_mins = (
+        abs(getattr(point_data, coordinates) - getattr(halfsum, coordinates))
+        % 180
+    ) * 60
 
-    conjunction_orb = options.midpoints.get('0', 0) if not use_mundane_orb else options.midpoints.get('M', 0)
+    framework = (
+        chart_models.AspectFramework.ECLIPTICAL
+        if not use_mundane_orb
+        else chart_models.AspectFramework.MUNDANE
+    )
+
+    conjunction_orb = (
+        options.midpoints.get('0', 0)
+        if not use_mundane_orb
+        else options.midpoints.get('M', 0)
+    )
 
     if inrange(value=raw_orb_mins, center=0, orb=conjunction_orb):
         return chart_models.MidpointAspect(
             midpoint_type=chart_models.MidpointAspectType.DIRECT,
             orb_minutes=raw_orb_mins,
             framework=framework,
-            from_point=planet_data.short_name,
+            from_point_data=point_data,
             to_midpoint=halfsum,
-            from_point_role=planet_data.role,
         )
 
-    square_orb = options.midpoints.get('90', 0) if not use_mundane_orb else options.midpoints.get('M', 0)
+    square_orb = (
+        options.midpoints.get('90', 0)
+        if not use_mundane_orb
+        else options.midpoints.get('M', 0)
+    )
 
     if inrange(value=raw_orb_mins, center=90, orb=square_orb):
-        direction = chart_models.MidpointAspectType.DIRECT if options.midpoints.get('is90', 'd') == 'd' else chart_models.MidpointAspectType.INDIRECT
+        direction = (
+            chart_models.MidpointAspectType.DIRECT
+            if options.midpoints.get('is90', 'd') == 'd'
+            else chart_models.MidpointAspectType.INDIRECT
+        )
         return chart_models.MidpointAspect(
             midpoint_type=direction,
             orb_minutes=raw_orb_mins,
             framework=framework,
-            from_point=planet_data.short_name,
+            from_point_data=point_data,
             to_midpoint=halfsum,
-            from_point_role=planet_data.role,
         )
 
     if use_mundane_orb:
         return
 
-    octile_orb = options.midpoints.get('45', 0) if not use_mundane_orb else options.midpoints.get('M', 0)
+    octile_orb = (
+        options.midpoints.get('45', 0)
+        if not use_mundane_orb
+        else options.midpoints.get('M', 0)
+    )
 
-    if inrange(value=raw_orb_mins, center=45, orb=octile_orb) or inrange(value=raw_orb_mins, center=135, orb=octile_orb):
+    if inrange(value=raw_orb_mins, center=45, orb=octile_orb) or inrange(
+        value=raw_orb_mins, center=135, orb=octile_orb
+    ):
         return chart_models.MidpointAspect(
             midpoint_type=chart_models.MidpointAspectType.INDIRECT,
             orb_minutes=raw_orb_mins,
             framework=framework,
-            from_point=planet_data.short_name,
+            from_point_data=point_data,
             to_midpoint=halfsum,
-            from_point_role=planet_data.role,
         )
 
-def calc_midpoints_2(
+
+def make_midpoint_key(short_name, role: chart_models.ChartWheelRole):
+    return f'{role.value}{short_name}'
+
+
+def calc_midpoints_3(
     options: Options,
     charts: list[chart_models.ChartObject],
     halfsums: list[chart_models.HalfSum],
-) -> dict[str, list[dict[str, any]]]:
+) -> dict[str, list[chart_models.MidpointAspect]]:
     midpoints = {}
+
+    def insert_sorted(key, midpoint):
+        if key not in midpoints:
+            midpoints[key] = [midpoint]
+        else:
+            bisect.insort(
+                midpoints[key],
+                midpoint,
+                key=lambda x: x.orb_minutes,
+            )
+
+    only_mundane_enabled = (
+        not options.midpoints.get('0')
+        and not options.midpoints.get('90')
+        and bool(options.midpoints.get('M'))
+    )
 
     # Iterate over each point in each chart, checking it against all halfsums
     for chart in charts:
@@ -146,40 +202,147 @@ def calc_midpoints_2(
             options,
             include_angles=True,
         ):
-            point_short_name = (point.short_name
-                    if hasattr(point, 'short_name')
-                    else point_name)
+            point_short_name = (
+                point.short_name
+                if hasattr(point, 'short_name')
+                else point_name
+            )
+            key = make_midpoint_key(point_short_name, chart.role)
+            midpoints[key] = []
+
             for halfsum in halfsums:
                 if halfsum.contains(point_short_name, role=chart.role):
                     continue
 
                 point_longitude = (
-                    point.longitude
-                    if hasattr(point, 'longitude')
-                    else point
+                    point.longitude if hasattr(point, 'longitude') else point
                 )
 
-                # Get all ecliptical midpoints
-                
-                # Get all PVL midpoints
-                
-                # Get all RA midpoints
-                
-                # Check if we need to use mundane orbs for ecliptical contacts
-                
+                point_is_angle = False
+                planet_data = point
 
-                midpoint_name = f'{chart.role.value}{point_name}'
-                if midpoint_name not in midpoints:
-                    midpoints[midpoint_name] = [midpoint]
-                else:
-                    # make sure it stays sorted
-                    bisect.insort(
-                        midpoints[midpoint_name],
-                        midpoint,
-                        key=lambda x: x.orb_minutes,
+                if point_short_name in constants.ANGLE_ABBREVIATIONS:
+                    point_is_angle = True
+                    planet_data = chart_models.AngleData(
+                        name=point_name,
+                        short_name=point_short_name,
+                        longitude=point_longitude,
+                        role=None,
                     )
 
+                # Get all ecliptical midpoints
+                ecliptical_midpoint = parse_midpoint(
+                    options, planet_data, halfsum, 'longitude'
+                )
+                if ecliptical_midpoint:
+                    insert_sorted(key, ecliptical_midpoint)
+
+                # Get all PVL midpoints
+                pvl_midpoint = parse_midpoint(
+                    options,
+                    planet_data,
+                    halfsum,
+                    'prime_vertical_longitude',
+                    use_mundane_orb=True,
+                )
+                if pvl_midpoint:
+                    insert_sorted(key, pvl_midpoint)
+
+                # Get all RA midpoints
+                ra_midpoint = parse_midpoint(
+                    options,
+                    planet_data,
+                    halfsum,
+                    'right_ascension',
+                    use_mundane_orb=True,
+                )
+                if ra_midpoint:
+                    insert_sorted(key, ra_midpoint)
+
+                # Check if we need to use mundane orbs for ecliptical contacts
+                if only_mundane_enabled and point_is_angle:
+                    pseudo_mundane_midpoint = parse_midpoint(
+                        options,
+                        planet_data,
+                        halfsum,
+                        'longitude',
+                        use_mundane_orb=True,
+                    )
+                    if pseudo_mundane_midpoint:
+                        temp_key = make_midpoint_key(
+                            short_name='Z'
+                            if point_short_name == 'As'
+                            else 'EP',
+                            role=chart.role,
+                        )
+                        insert_sorted(temp_key, pseudo_mundane_midpoint)
+
     return midpoints
+
+
+# TODO - still need to calculate mundane contacts to major angles
+def find_applicable_midpoints_for_point(
+    midpoints: dict[str, list[chart_models.MidpointAspect]],
+    options: Options,
+    planet_data: chart_models.PlanetData | chart_models.AngleData,
+    must_be_foreground: bool = False,
+) -> list[chart_models.MidpointAspect]:
+
+    only_mundane_enabled = (
+        not options.midpoints.get('0')
+        and not options.midpoints.get('90')
+        and bool(options.midpoints.get('M'))
+    )
+
+    square_is_direct = options.midpoints.get('is90') == 'd'
+
+    if planet_data.short_name in constants.ANGLE_ABBREVIATIONS:
+        pass
+
+    key = make_midpoint_key(planet_data.short_name, planet_data.role)
+
+    # TODO - these midpoints should be getting inserted in order
+
+    applicable_midpoints = []
+    # In natals, all ecliptical midpoints apply
+    if not must_be_foreground and not only_mundane_enabled:
+        for mid in midpoints[key]:
+            if (
+                mid.framework.value
+                == chart_models.AspectFramework.ECLIPTICAL.value
+            ):
+                applicable_midpoints.append(mid)
+
+    # In natal: Ecliptic On: Any ecliptic contact to Asc/MC counts.
+    # In natal: List all mundane contacts to major angles.
+
+    # Assume 2 planets are straddling ascendant...
+    # Ecliptic On / Direct: list as Asc.
+    # Ecliptic On / Indirect: list as Asc.
+    # Ecliptic No / Direct: list as Zenith.
+    #   (i.e. include even if ecliptic is off)
+    # Ecliptic No / Indirect: Not listed.
+
+    # Ingress PVL, at least one planet angular in PVL: counts.
+    # Ingress PVL, neither planet angular in PVL: doesn't count.
+    # Ingress RA, both planets angular in RA: counts.
+    # Ingress RA, one planet angular in RA: doesn't count.
+    # In ingress: Both foreground on Z/N: ecliptic contact counts.
+    # In ingress: Planets not foreground: doesn't count.
+
+    # In ingress: ecliptic planet=planet/planet:
+    #   if planet is foreground somehow, counts.
+    #   if planet is not foreground somehow, doesn't count.
+
+    pass
+
+
+def planet_aspecting_halfsum_is_foreground(
+    planet: chart_models.PlanetData,
+    midpoint: chart_models.MidpointAspect,
+    require_same_framework: bool = False,
+):
+    return True
 
 
 def calc_mundane_midpoints_2(

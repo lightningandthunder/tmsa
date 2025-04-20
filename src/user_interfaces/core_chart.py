@@ -420,8 +420,8 @@ class CoreChart(object, metaclass=ABCMeta):
         raw_orb = 360
         # At least one planet must be on the prime vertical
         if (
-            not primary_planet.is_on_prime_vertical
-            and not secondary_planet.is_on_prime_vertical
+            not primary_planet.is_on_vx_or_av
+            and not secondary_planet.is_on_vx_or_av
         ):
             return None
 
@@ -441,8 +441,7 @@ class CoreChart(object, metaclass=ABCMeta):
         )
 
         both_planets_on_prime_vertical = (
-            primary_planet.is_on_prime_vertical
-            and secondary_planet.is_on_prime_vertical
+            primary_planet.is_on_vx_or_av and secondary_planet.is_on_vx_or_av
         )
         if both_planets_on_prime_vertical:
             # check prime vertical to prime vertical in azimuth
@@ -469,12 +468,12 @@ class CoreChart(object, metaclass=ABCMeta):
 
         planet_on_prime_vertical = (
             primary_planet
-            if primary_planet.is_on_prime_vertical
+            if primary_planet.is_on_vx_or_av
             else secondary_planet
         )
         planet_on_other_axis = (
             primary_planet
-            if secondary_planet.is_on_prime_vertical
+            if secondary_planet.is_on_vx_or_av
             else secondary_planet
         )
 
@@ -882,7 +881,7 @@ class CoreChart(object, metaclass=ABCMeta):
             secondary_planet_data,
             whole_chart_is_dormant,
         )
- 
+
         mundane_aspect = self.find_mundane_aspect(
             primary_planet_data,
             secondary_planet_data,
@@ -1002,9 +1001,7 @@ class CoreChart(object, metaclass=ABCMeta):
         self,
         chartfile: TextIOWrapper,
         whole_chart_is_dormant: bool,
-        angularities_as_aspects: list[
-            chart_models.ForegroundPlanetListedAsAspect
-        ],
+        angularities_as_aspects: list[chart_models.AngleContactAspect],
     ) -> list[list[chart_models.Aspect]]:
         aspects_by_class = [[], [], [], []]
 
@@ -1350,7 +1347,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 a.value.strip().upper() for a in angles_models.ForegroundAngles
             ]:
                 angularity_as_aspect = (
-                    chart_models.ForegroundPlanetListedAsAspect()
+                    chart_models.AngleContactAspect()
                     .as_type(chart_models.AspectType.CONJUNCTION)
                     .from_planet(planet_data.short_name, planet_data.role)
                     .to_planet(angularity.value.strip().upper())
@@ -1559,19 +1556,16 @@ class CoreChart(object, metaclass=ABCMeta):
         self,
         chartfile: TextIOWrapper,
         aspects_by_class: list[list[chart_models.Aspect]],
-        angularities_as_aspects: list[
-            chart_models.ForegroundPlanetListedAsAspect
-        ],
+        angularities_as_aspects: list[chart_models.AngleContactAspect],
     ):
         chartfile.write(
             chart_utils.center_align('Cosmic State', self.table_width) + '\n'
         )
-        
+
         angularities_lookup = {}
         for angularity in angularities_as_aspects:
             key = f'{angularity.from_planet_role}{angularity.from_planet_short_name}'
             angularities_lookup[key] = angularity
-            
 
         # Iterate from transiting chart to radix
         for (index, chart) in enumerate(self.charts):

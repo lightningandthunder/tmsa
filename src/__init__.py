@@ -40,6 +40,7 @@ def log_startup_error(e):
         )
         file.write(timestamped_error + '\n' + contents)
 
+
 EPHE_PATH = app_path('ephe')
 HELP_PATH = app_path('help')
 
