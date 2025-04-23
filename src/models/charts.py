@@ -88,6 +88,7 @@ class __PointData:
     prime_vertical_angle: NonForegroundAngles = NonForegroundAngles.BLANK
     angularity_strength: float = 0.0
     is_stationary: bool = False
+    is_angle: bool = False
 
     @property
     def is_foreground(self):
@@ -148,6 +149,7 @@ class PlanetData(__PointData):
     prime_vertical_angle: NonForegroundAngles = NonForegroundAngles.BLANK
     angularity_strength: float = 0.0
     is_stationary: bool = False
+    is_angle: False
 
     __prime_vertical_angles = [
         NonForegroundAngles.VERTEX.value,
@@ -289,6 +291,7 @@ class AngleData(__PointData):
     meridian_longitude: float = 0
     prime_vertical_longitude: float = 0
     role: ChartWheelRole = ChartWheelRole.NATAL
+    is_angle: True
 
     def with_ecliptic_and_equatorial_data(
         self,
@@ -1261,6 +1264,28 @@ class HalfSum:
 
         return False
 
+    @property
+    def both_points_are_foreground(self):
+        return self.point_a.is_foreground and self.point_b.is_foreground
+
+    @property
+    def both_points_foreground_square_ramc(self):
+        return (
+            not self.point_a.is_angle and self.point_a.is_square_ramc
+        ) and (not self.point_b.is_angle and self.point_b.is_square_ramc)
+
+    @property
+    def both_points_on_zenith(self):
+        return (not self.point_a.is_angle and self.point_a.is_on_zenith) and (
+            not self.point_b.is_angle and self.point_b.is_on_zenith
+        )
+
+    @property
+    def both_points_on_ep(self):
+        return (
+            not self.point_a.is_angle and self.point_a.is_on_ep_or_wp
+        ) and (not self.point_b.is_angle and self.point_b.is_on_ep_or_wp)
+
     def __str__(self):
         return f'{self.point_a.role.value}{self.point_a.short_name}/{self.point_b.role.value}{self.point_b.short_name}'
 
@@ -1277,17 +1302,24 @@ class MidpointAspect:
     orb_minutes: int = 0
     framework: AspectFramework = AspectFramework.ECLIPTICAL
     to_midpoint: HalfSum = None
-    is_mundane: bool = False
+
+    @property
+    def is_ecliptical(self):
+        return self.framework.value == AspectFramework.ECLIPTICAL.value
+
+    @property
+    def is_mundane(self):
+        return self.framework.value == AspectFramework.MUNDANE.value
 
     def __str__(self):
         framework_suffix = ''
         if (
             self.framework.value != AspectFramework.ECLIPTICAL.value
-            and self.from_point not in ['Angle', 'Ea', 'E', 'Z']
+            and self.from_point_data not in ['Angle', 'Ea', 'E', 'Z']
         ):
             framework_suffix = f' {self.framework.value}'
 
-        return f"{self.to_midpoint} {self.orb_minutes: >2}'{self.midpoint_type.value}{framework_suffix}"
+        return f"{self.to_midpoint} {round(self.orb_minutes): >2}'{self.midpoint_type.value}{framework_suffix}"
 
 
 SOLAR_RETURNS = [

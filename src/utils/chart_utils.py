@@ -346,6 +346,9 @@ def inrange(
 
 
 def in_harmonic_range(value: float, orb: float, harmonic: float) -> bool:
+    if value > orb:
+        return False
+
     harmonic_degree_width = 360 / harmonic
 
     remainder_value = value % harmonic_degree_width
