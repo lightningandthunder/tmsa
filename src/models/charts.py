@@ -1266,7 +1266,9 @@ class HalfSum:
 
     @property
     def both_points_are_foreground(self):
-        return self.point_a.is_foreground and self.point_b.is_foreground
+        return (
+            self.point_a.is_foreground or self.point_a.treat_as_foreground
+        ) and (self.point_b.is_foreground or self.point_b.treat_as_foreground)
 
     @property
     def both_points_foreground_square_ramc(self):
@@ -1285,6 +1287,10 @@ class HalfSum:
         return (
             not self.point_a.is_angle and self.point_a.is_on_ep_or_wp
         ) and (not self.point_b.is_angle and self.point_b.is_on_ep_or_wp)
+
+    @property
+    def contains_angle(self):
+        return self.point_a.is_angle or self.point_b.is_angle
 
     def __str__(self):
         return f'{self.point_a.role.value}{self.point_a.short_name}/{self.point_b.role.value}{self.point_b.short_name}'
@@ -1312,7 +1318,7 @@ class MidpointAspect:
         return self.framework.value == AspectFramework.MUNDANE.value
 
     def __str__(self):
-        framework_suffix = ''
+        framework_suffix = '  '
         if (
             self.framework.value != AspectFramework.ECLIPTICAL.value
             and self.from_point_data not in ['Angle', 'Ea', 'E', 'Z']

@@ -60,6 +60,7 @@ def calc_halfsums(
                             short_name=primary_point_name,
                             longitude=primary_point,
                             role=from_chart.role,
+                            is_angle=True,
                         )
 
                     if secondary_point_is_angle:
@@ -68,6 +69,7 @@ def calc_halfsums(
                             short_name=secondary_point_name,
                             longitude=secondary_point,
                             role=to_chart.role,
+                            is_angle=True,
                         )
 
                     longitude = (
@@ -102,9 +104,12 @@ def parse_midpoint(
     coordinates: str,
     use_mundane_orb=False,
 ):
-    raw_orb_mins = (
-        abs(getattr(point_data, coordinates) - getattr(halfsum, coordinates))
-        % 180
+    raw_orb_degree_decimal = abs(
+        getattr(point_data, coordinates) - getattr(halfsum, coordinates)
+    )
+
+    raw_orb_degree_decimal = min(
+        raw_orb_degree_decimal, to360(360 - raw_orb_degree_decimal)
     )
 
     framework = (
@@ -122,24 +127,26 @@ def parse_midpoint(
         / 60.0
     )
 
-    if in_harmonic_range(
-        value=raw_orb_mins, orb=conjunction_orb, harmonic=1
-    ) or in_harmonic_range(
-        value=raw_orb_mins, orb=conjunction_orb, harmonic=2
-    ):
-        print(
-            f'{point_data.short_name} to {halfsum.point_a.short_name}/{halfsum.point_b.short_name}: '
-        )
-        print(
-            f'{getattr(point_data, coordinates)} / {getattr(halfsum, coordinates)}'
-        )
-        print(
-            f'   Raw orb degrees: {raw_orb_mins} ; mins: {raw_orb_mins * 60}'
-        )
-        print('In co/op range')
+    is_conjunction, conjunction_orb_degrees = in_harmonic_range(
+        value=raw_orb_degree_decimal, orb=conjunction_orb, harmonic=1
+    )
+
+    if is_conjunction:
         return chart_models.MidpointAspect(
             midpoint_type=chart_models.MidpointAspectType.DIRECT,
-            orb_minutes=raw_orb_mins * 60,
+            orb_minutes=round(conjunction_orb_degrees * 60),
+            framework=framework,
+            from_point_data=point_data,
+            to_midpoint=halfsum,
+        )
+
+    is_opposition, opposition_orb_degrees = in_harmonic_range(
+        value=raw_orb_degree_decimal, orb=conjunction_orb, harmonic=2
+    )
+    if is_opposition:
+        return chart_models.MidpointAspect(
+            midpoint_type=chart_models.MidpointAspectType.DIRECT,
+            orb_minutes=round(opposition_orb_degrees * 60),
             framework=framework,
             from_point_data=point_data,
             to_midpoint=halfsum,
@@ -154,17 +161,10 @@ def parse_midpoint(
         / 60.0
     )
 
-    if in_harmonic_range(value=raw_orb_mins, orb=square_orb, harmonic=4):
-        print(
-            f'{point_data.short_name} to {halfsum.point_a.short_name}/{halfsum.point_b.short_name}: '
-        )
-        print(
-            f'{getattr(point_data, coordinates)} / {getattr(halfsum, coordinates)}'
-        )
-        print(
-            f'   Raw orb degrees: {raw_orb_mins} ; mins: {raw_orb_mins * 60}'
-        )
-        print('In sq range')
+    is_square, square_orb_degrees = in_harmonic_range(
+        value=raw_orb_degree_decimal, orb=square_orb, harmonic=4
+    )
+    if is_square:
         direction = (
             chart_models.MidpointAspectType.DIRECT
             if options.midpoints.get('is90', 'd') == 'd'
@@ -172,7 +172,7 @@ def parse_midpoint(
         )
         return chart_models.MidpointAspect(
             midpoint_type=direction,
-            orb_minutes=raw_orb_mins * 60,
+            orb_minutes=round(square_orb_degrees * 60),
             framework=framework,
             from_point_data=point_data,
             to_midpoint=halfsum,
@@ -183,20 +183,13 @@ def parse_midpoint(
 
     octile_orb = float(options.midpoints.get('45', 0)) / 60.0
 
-    if in_harmonic_range(value=raw_orb_mins, orb=octile_orb, harmonic=8):
-        print(
-            f'{point_data.short_name} to {halfsum.point_a.short_name}/{halfsum.point_b.short_name}: '
-        )
-        print(
-            f'{getattr(point_data, coordinates)} / {getattr(halfsum, coordinates)}'
-        )
-        print(
-            f'   Raw orb degrees: {raw_orb_mins} ; mins: {raw_orb_mins * 60}'
-        )
-        print('In oct range')
+    is_octile, octile_orb_degrees = in_harmonic_range(
+        value=raw_orb_degree_decimal, orb=octile_orb, harmonic=8
+    )
+    if is_octile:
         return chart_models.MidpointAspect(
             midpoint_type=chart_models.MidpointAspectType.INDIRECT,
-            orb_minutes=raw_orb_mins * 60,
+            orb_minutes=round(octile_orb_degrees * 60),
             framework=framework,
             from_point_data=point_data,
             to_midpoint=halfsum,
@@ -265,34 +258,38 @@ def calc_midpoints_3(
                     )
 
                 # Get all ecliptical midpoints
-                ecliptical_midpoint = parse_midpoint(
-                    options, planet_data, halfsum, 'longitude'
-                )
-                if ecliptical_midpoint:
-                    insert_sorted(key, ecliptical_midpoint)
 
-                # Get all PVL midpoints
-                pvl_midpoint = parse_midpoint(
-                    options,
-                    planet_data,
-                    halfsum,
-                    'prime_vertical_longitude',
-                    use_mundane_orb=True,
-                )
-                if pvl_midpoint:
-                    insert_sorted(key, pvl_midpoint)
+                ecliptical_midpoint = None
 
-                # Get all RA midpoints IF THE ORIGINATING POINT IS AN ANGLE
-                if point_is_angle:
-                    ra_midpoint = parse_midpoint(
+                if not only_mundane_enabled:
+                    ecliptical_midpoint = parse_midpoint(
+                        options, planet_data, halfsum, 'longitude'
+                    )
+
+                mundane_midpoint = None
+
+                if not point_is_angle and not halfsum.contains_angle:
+                    # Get all PVL midpoints
+                    mundane_midpoint = parse_midpoint(
                         options,
                         planet_data,
                         halfsum,
-                        'right_ascension',
+                        'prime_vertical_longitude',
                         use_mundane_orb=True,
                     )
-                    if ra_midpoint:
-                        insert_sorted(key, ra_midpoint)
+
+                if ecliptical_midpoint and mundane_midpoint:
+                    if (
+                        ecliptical_midpoint.orb_minutes
+                        < mundane_midpoint.orb_minutes
+                    ):
+                        insert_sorted(key, ecliptical_midpoint)
+                    else:
+                        insert_sorted(key, mundane_midpoint)
+                elif ecliptical_midpoint and not mundane_midpoint:
+                    insert_sorted(key, ecliptical_midpoint)
+                elif mundane_midpoint and not ecliptical_midpoint:
+                    insert_sorted(key, mundane_midpoint)
 
                 # Check if we need to use mundane orbs for ecliptical contacts
                 if only_mundane_enabled and point_is_angle:
@@ -318,7 +315,7 @@ def calc_midpoints_3(
         # Check major angles
         for halfsum in halfsums:
             # Get all PVL midpoints
-            pvl_midpoint = parse_midpoint(
+            mundane_midpoint = parse_midpoint(
                 options,
                 mundane_angle,
                 halfsum,
@@ -326,8 +323,8 @@ def calc_midpoints_3(
                 use_mundane_orb=True,
             )
 
-            if pvl_midpoint:
-                insert_sorted(key, pvl_midpoint)
+            if mundane_midpoint:
+                insert_sorted(key, mundane_midpoint)
 
         eastpoint_ra_angle = chart_models.AngleData(
             name=ForegroundAngles.EASTPOINT_RA,

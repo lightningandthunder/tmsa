@@ -1756,6 +1756,11 @@ class CoreChart(object, metaclass=ABCMeta):
                     f'{planet_data.role.value}{planet_data.short_name}', []
                 )
 
+                outermost_chart = calc_utils.find_outermost_chart(self.charts)
+                if outermost_chart.type.value in chart_models.INGRESSES:
+                    if not planet_data.is_foreground:
+                        related_midpoints = []
+
                 if len(related_midpoints) > 0:
                     chartfile.write('\n' + pipe_indent + '|    ')
 
@@ -1772,11 +1777,6 @@ class CoreChart(object, metaclass=ABCMeta):
                 (' ' * 8) if strength_hierarchy_written else (' ' * 4)
             ) + '|    '
 
-            # If the point is Z or EP:
-            # If ecliptic midpoints are enabled, list As or MC
-            # If ecliptic midpoints are disabled, and squares are direct, list as Zenith/EP.
-            # If ecliptic midpoints are disabled, and squares are indirect, do not list, but leave this comment.
-
             only_mundane_enabled = (
                 not self.options.midpoints.get('0')
                 and not self.options.midpoints.get('90')
@@ -1788,9 +1788,11 @@ class CoreChart(object, metaclass=ABCMeta):
 
             ascendant_midpoints = []
             if not only_mundane_enabled or squares_are_direct:
-                ascendant_midpoints = self.midpoints.get(
-                    f'{chart.role.value}As', []
-                )
+                raw_midpoints = self.midpoints.get(f'{chart.role.value}As', [])
+
+                for midpoint in raw_midpoints:
+                    if midpoint.to_midpoint.both_points_are_foreground:
+                        ascendant_midpoints.append(midpoint)
 
             if len(ascendant_midpoints) > 0:
                 ascendant_sign = chart_utils.SIGNS_SHORT[
@@ -1814,9 +1816,10 @@ class CoreChart(object, metaclass=ABCMeta):
             midheaven_midpoints = []
 
             if not only_mundane_enabled or squares_are_direct:
-                midheaven_midpoints = self.midpoints.get(
-                    f'{chart.role.value}Mc', []
-                )
+                raw_midpoints = self.midpoints.get(f'{chart.role.value}Mc', [])
+                for midpoint in raw_midpoints:
+                    if midpoint.to_midpoint.both_points_are_foreground:
+                        midheaven_midpoints.append(midpoint)
 
             if len(midheaven_midpoints) > 0:
                 midheaven_sign = chart_utils.SIGNS_SHORT[
@@ -1827,7 +1830,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 if only_mundane_enabled and squares_are_direct:
                     mc_label = 'E '
 
-                chartfile.write(f'\{mc_label} {midheaven_sign}{angle_indent}')
+                chartfile.write(f'\n{mc_label} {midheaven_sign}{angle_indent}')
                 self.write_midpoint_cosmic_state(
                     chartfile,
                     pipe_indent,
@@ -1835,11 +1838,18 @@ class CoreChart(object, metaclass=ABCMeta):
                     strength_hierarchy_written,
                 )
 
-            angle_midpoints = self.midpoints.get(f'Angle', [])
-            ra_midpoints = self.midpoints.get(f'Ea', [])
+            raw_angle_midpoints = self.midpoints.get(f'Angle', [])
+            angle_midpoints = []
+            for midpoint in raw_angle_midpoints:
+                if midpoint.to_midpoint.both_points_are_foreground:
+                    angle_midpoints.append(midpoint)
 
-            if len(angle_midpoints) > 0 or len(ra_midpoints) > 0:
-                chartfile.write('\n' + pipe_indent + '|    ')
+            raw_ra_midpoints = self.midpoints.get(f'Ea', [])
+            ra_midpoints = []
+
+            for midpoint in raw_ra_midpoints:
+                if midpoint.to_midpoint.both_points_foreground_square_ramc:
+                    angle_midpoints.append(midpoint)
 
             # Write mundane midpoints
             if len(angle_midpoints) > 0:
@@ -1868,7 +1878,7 @@ class CoreChart(object, metaclass=ABCMeta):
         strength_hierarchy_written: bool,
     ):
         for (midpoint_index, midpoint) in enumerate(midpoints):
-            chartfile.write(str(midpoint) + (' ' * 6))
+            chartfile.write(str(midpoint) + (' ' * 4))
             if strength_hierarchy_written:
                 if (
                     midpoint_index == 3

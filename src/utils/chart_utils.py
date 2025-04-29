@@ -345,17 +345,18 @@ def inrange(
     return remainder_value <= orb or remainder_value >= center - orb
 
 
-def in_harmonic_range(value: float, orb: float, harmonic: float) -> bool:
-    if value > orb:
-        return False
-
+def in_harmonic_range(
+    value: float, orb: float, harmonic: float
+) -> tuple[bool, float]:
     harmonic_degree_width = 360 / harmonic
 
     remainder_value = value % harmonic_degree_width
-    return (
-        remainder_value <= orb
-        or remainder_value >= harmonic_degree_width - orb
+
+    offset_from_exact = min(
+        remainder_value, harmonic_degree_width - remainder_value
     )
+
+    return (offset_from_exact <= orb, offset_from_exact)
 
 
 def zod_min(value):
