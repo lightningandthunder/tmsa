@@ -67,23 +67,11 @@ class CoreChart(object, metaclass=ABCMeta):
         self.midpoints = {}
         self.halfsums = []
 
-        if [len(self.charts) == 1]:
+        if self.options.midpoints.get('enabled'):
             self.halfsums = calc_utils.calc_halfsums(self.options, self.charts)
             self.midpoints = calc_utils.calc_midpoints_3(
                 self.options, self.charts, self.halfsums
             )
-
-        # self.halfsums = calc_utils.calc_halfsums(self.options, self.charts)
-        # ecliptic_midpoints = calc_utils.calc_midpoints_2(
-        #     self.options, self.charts, self.halfsums
-        # )
-        # mundane_midpoints = calc_utils.calc_mundane_midpoints_2(
-        #     self.options, self.charts, self.halfsums
-        # )
-
-        # self.midpoints = calc_utils.merge_midpoints(
-        #     ecliptic_midpoints, mundane_midpoints
-        # )
 
         self.filename = chart_utils.make_chart_path(
             calc_utils.find_outermost_chart(self.charts),
@@ -1093,7 +1081,7 @@ class CoreChart(object, metaclass=ABCMeta):
             )
 
         if any(aspect_class_headers):
-            chartfile.write('-' * self.table_width + '\n')
+            # chartfile.write('-' * self.table_width + '\n')
 
             while not any(aspect_class_headers[aspect_header_index]):
                 aspect_header_index += 1
@@ -1757,9 +1745,27 @@ class CoreChart(object, metaclass=ABCMeta):
                 )
 
                 outermost_chart = calc_utils.find_outermost_chart(self.charts)
-                if outermost_chart.type.value in chart_models.INGRESSES:
-                    if not planet_data.is_foreground:
+
+                # Are we using ingress or return chart rules?
+                use_restricted_midpoints = (
+                    self.charts[0].type.value in chart_models.INGRESSES
+                    or outermost_chart.type.value
+                    in chart_models.SOLUNAR_RETURNS
+                )
+
+                if use_restricted_midpoints:
+                    if (
+                        not planet_data.is_foreground
+                        and not planet_data.treat_as_foreground
+                    ):
                         related_midpoints = []
+
+                    filtered_midpoints = []
+                    for midpoint in related_midpoints:
+                        if midpoint.to_midpoint.both_points_are_foreground:
+                            filtered_midpoints.append(midpoint)
+
+                    related_midpoints = filtered_midpoints
 
                 if len(related_midpoints) > 0:
                     chartfile.write('\n' + pipe_indent + '|    ')
@@ -1791,7 +1797,10 @@ class CoreChart(object, metaclass=ABCMeta):
                 raw_midpoints = self.midpoints.get(f'{chart.role.value}As', [])
 
                 for midpoint in raw_midpoints:
-                    if midpoint.to_midpoint.both_points_are_foreground:
+                    if (
+                        not use_restricted_midpoints
+                        or midpoint.to_midpoint.both_points_are_foreground
+                    ):
                         ascendant_midpoints.append(midpoint)
 
             if len(ascendant_midpoints) > 0:
@@ -1818,7 +1827,10 @@ class CoreChart(object, metaclass=ABCMeta):
             if not only_mundane_enabled or squares_are_direct:
                 raw_midpoints = self.midpoints.get(f'{chart.role.value}Mc', [])
                 for midpoint in raw_midpoints:
-                    if midpoint.to_midpoint.both_points_are_foreground:
+                    if (
+                        not use_restricted_midpoints
+                        or midpoint.to_midpoint.both_points_are_foreground
+                    ):
                         midheaven_midpoints.append(midpoint)
 
             if len(midheaven_midpoints) > 0:
@@ -1841,14 +1853,10 @@ class CoreChart(object, metaclass=ABCMeta):
             raw_angle_midpoints = self.midpoints.get(f'Angle', [])
             angle_midpoints = []
             for midpoint in raw_angle_midpoints:
-                if midpoint.to_midpoint.both_points_are_foreground:
-                    angle_midpoints.append(midpoint)
-
-            raw_ra_midpoints = self.midpoints.get(f'Ea', [])
-            ra_midpoints = []
-
-            for midpoint in raw_ra_midpoints:
-                if midpoint.to_midpoint.both_points_foreground_square_ramc:
+                if (
+                    not use_restricted_midpoints
+                    or midpoint.to_midpoint.both_points_are_foreground
+                ):
                     angle_midpoints.append(midpoint)
 
             # Write mundane midpoints
@@ -1860,6 +1868,16 @@ class CoreChart(object, metaclass=ABCMeta):
                     angle_midpoints,
                     strength_hierarchy_written,
                 )
+
+            raw_ra_midpoints = self.midpoints.get(f'Ea', [])
+            ra_midpoints = []
+
+            for midpoint in raw_ra_midpoints:
+                if (
+                    not use_restricted_midpoints
+                    or midpoint.to_midpoint.both_points_foreground_square_ramc
+                ):
+                    ra_midpoints.append(midpoint)
 
             if len(ra_midpoints) > 0:
                 chartfile.write(f'\nEa    {angle_indent}')

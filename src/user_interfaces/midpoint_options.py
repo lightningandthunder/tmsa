@@ -37,6 +37,14 @@ class MidpointOptions(Frame):
         self.mpm = Entry(self, '', 0.475, 0.4, 0.05)
         self.mpm.bind('<KeyRelease>', lambda _: delay(check_num, self.mpm))
 
+        self.enabled = Checkbutton(self, 'Enable', 0.1, 0.2, 0.2)
+        self.mundane_only_to_angles = Checkbutton(
+            self, 'Mundane midpoints only to angles', 0.1, 0.3, 0.2
+        )
+        self.cross_wheel_enabled = Checkbutton(
+            self, 'Allow cross-wheel midpoints', 0.1, 0.4, 0.2
+        )
+
         Button(self, 'Save', 0.1, 0.55, 0.2).bind(
             '<Button-1>', lambda _: delay(self.save)
         )
@@ -65,6 +73,13 @@ class MidpointOptions(Frame):
             self.mpm.text = mpm
         mis90 = retdict.get('is90', 'd')
         self.is90.value = 0 if mis90 == 'd' else 1
+        self.enabled.checked = retdict.get('enabled', False)
+        self.mundane_only_to_angles.checked = retdict.get(
+            'mundane_only_to_angles', True
+        )
+        self.cross_wheel_enabled.checked = retdict.get(
+            'cross_wheel_enabled', False
+        )
 
     def clear(self):
         self.mp0.text = ''
@@ -109,6 +124,14 @@ class MidpointOptions(Frame):
                 )
             self.retdict['M'] = m
             self.retdict['is90'] = 'i' if self.is90.value else 'd'
+            self.retdict['enabled'] = self.enabled.checked
+            self.retdict[
+                'mundane_only_to_angles'
+            ] = self.mundane_only_to_angles.checked
+            self.retdict[
+                'cross_wheel_enabled'
+            ] = self.cross_wheel_enabled.checked
+
             self.destroy()
             self.func()
         except Exception:

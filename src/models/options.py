@@ -123,21 +123,6 @@ class Options:
             self.pvp_aspects = data['pvp_aspects']
         if 'midpoints' in data:
             self.midpoints = data['midpoints']
-        if 'enable_natal_midpoints' in data:
-            self.enable_natal_midpoints = data['enable_natal_midpoints']
-        else:
-            if 'midpoints' in data:
-                for key in data['midpoints']:
-                    maybe_number = data['midpoints'][key]
-                    if isinstance(maybe_number, int) and maybe_number > 0:
-                        self.enable_natal_midpoints = True
-                        break
-                    if (
-                        isinstance(maybe_number, str)
-                        and maybe_number.isnumeric()
-                    ):
-                        self.enable_natal_midpoints = True
-                        break
 
     def to_file(self, file_path: str):
         with open(file_path, 'w') as file:

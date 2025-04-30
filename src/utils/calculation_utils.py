@@ -223,6 +223,11 @@ def calc_midpoints_3(
         and bool(options.midpoints.get('M'))
     )
 
+    mundane_only_to_angles = options.midpoints.get(
+        'mundane_only_to_angles', False
+    )
+    cross_wheel_enabled = options.midpoints.get('cross_wheel_enabled', False)
+
     # Iterate over each point in each chart, checking it against all halfsums
     for chart in charts:
         for (point_name, point) in chart.iterate_points(
@@ -257,7 +262,12 @@ def calc_midpoints_3(
                         role=chart.role,
                     )
 
-                # Get all ecliptical midpoints
+                if not cross_wheel_enabled:
+                    if (
+                        halfsum.point_a.role.value != planet_data.role.value
+                        or halfsum.point_b.role.value != planet_data.role.value
+                    ):
+                        continue
 
                 ecliptical_midpoint = None
 
@@ -268,8 +278,13 @@ def calc_midpoints_3(
 
                 mundane_midpoint = None
 
-                if not point_is_angle and not halfsum.contains_angle:
-                    # Get all PVL midpoints
+                if (
+                    not point_is_angle
+                    and not halfsum.contains_angle
+                    and not options.midpoints.get(
+                        'mundane_only_to_angles', True
+                    )
+                ):
                     mundane_midpoint = parse_midpoint(
                         options,
                         planet_data,
@@ -286,9 +301,9 @@ def calc_midpoints_3(
                         insert_sorted(key, ecliptical_midpoint)
                     else:
                         insert_sorted(key, mundane_midpoint)
-                elif ecliptical_midpoint and not mundane_midpoint:
+                elif ecliptical_midpoint:
                     insert_sorted(key, ecliptical_midpoint)
-                elif mundane_midpoint and not ecliptical_midpoint:
+                elif mundane_midpoint:
                     insert_sorted(key, mundane_midpoint)
 
                 # Check if we need to use mundane orbs for ecliptical contacts
@@ -301,6 +316,9 @@ def calc_midpoints_3(
                         use_mundane_orb=True,
                     )
                     if pseudo_mundane_midpoint:
+                        pseudo_mundane_midpoint.framework = (
+                            chart_models.AspectFramework.ECLIPTICAL
+                        )
                         insert_sorted(key, pseudo_mundane_midpoint)
 
         mundane_angle = chart_models.AngleData(
@@ -314,6 +332,35 @@ def calc_midpoints_3(
         midpoints[key] = []
         # Check major angles
         for halfsum in halfsums:
+            if not cross_wheel_enabled:
+                # This would mean only natal midpoints would show here, and we don't care about those
+                if (
+                    len(charts) > 1
+                    and chart.role.value
+                    == chart_models.ChartWheelRole.NATAL.value
+                ):
+                    break
+
+                if (
+                    halfsum.point_a.role.value != mundane_angle.role.value
+                    or halfsum.point_b.role.value != mundane_angle.role.value
+                ):
+                    continue
+
+            # We still don't want natal-only midpoints to natal angles in polywheels, though
+            if (
+                len(charts) > 1
+                and chart.role.value == chart_models.ChartWheelRole.NATAL.value
+                and halfsum.point_a.role.value
+                == chart_models.ChartWheelRole.NATAL.value
+                and halfsum.point_b.role.value
+                == chart_models.ChartWheelRole.NATAL.value
+            ):
+                continue
+
+            if halfsum.contains_angle:
+                continue
+
             # Get all PVL midpoints
             mundane_midpoint = parse_midpoint(
                 options,
@@ -337,7 +384,36 @@ def calc_midpoints_3(
         midpoints[key] = []
 
         for halfsum in halfsums:
-            # Check RA midpoints
+            if not cross_wheel_enabled:
+                # This would mean only natal midpoints would show here, and we don't care about those
+                if (
+                    len(charts) > 1
+                    and chart.role.value
+                    == chart_models.ChartWheelRole.NATAL.value
+                ):
+                    break
+
+                if (
+                    halfsum.point_a.role.value != eastpoint_ra_angle.role.value
+                    or halfsum.point_b.role.value
+                    != eastpoint_ra_angle.role.value
+                ):
+                    continue
+
+            if halfsum.contains_angle:
+                continue
+
+            # We still don't want natal-only midpoints to natal angles in polywheels, though
+            if (
+                len(charts) > 1
+                and chart.role.value == chart_models.ChartWheelRole.NATAL.value
+                and halfsum.point_a.role.value
+                == chart_models.ChartWheelRole.NATAL.value
+                and halfsum.point_b.role.value
+                == chart_models.ChartWheelRole.NATAL.value
+            ):
+                continue
+
             ra_midpoint = parse_midpoint(
                 options,
                 eastpoint_ra_angle,

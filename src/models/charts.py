@@ -145,7 +145,7 @@ class PlanetData(__PointData):
     treat_as_foreground: bool = False
     role: ChartWheelRole = ChartWheelRole.NATAL
     angle: ForegroundAngles | NonForegroundAngles = NonForegroundAngles.BLANK
-    angle_axes_contacted: list[AngleAxes] = field(default_factory=list)
+    angle_axes_contacted: list[str] = field(default_factory=list)
     prime_vertical_angle: NonForegroundAngles = NonForegroundAngles.BLANK
     angularity_strength: float = 0.0
     is_stationary: bool = False
@@ -238,7 +238,7 @@ class PlanetData(__PointData):
 
     @property
     def contacted_angle_axis_values_stripped(self):
-        return [a.value.strip() for a in self.angle_axes_contacted]
+        return [a for a in self.angle_axes_contacted]
 
     @property
     def is_on_vx_or_av(self):
