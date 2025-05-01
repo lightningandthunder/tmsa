@@ -19,6 +19,7 @@ def calc_halfsums(
     charts: list[chart_models.ChartObject],
 ) -> list[chart_models.HalfSum]:
     halfsums = []
+    cross_wheel_enabled = options.midpoints.get('cross_wheel_enabled', False)
     for (from_index, from_chart) in enumerate(charts):
         for (to_index, to_chart) in enumerate(charts):
             if to_index < from_index:
@@ -35,6 +36,12 @@ def calc_halfsums(
                 ) in enumerate(
                     to_chart.iterate_points(options, include_angles=True)
                 ):
+                    if (
+                        not cross_wheel_enabled
+                        and from_chart.role.value != to_chart.role.value
+                    ):
+                        break
+
                     if (
                         secondary_index <= primary_index
                         and from_chart == to_chart
@@ -223,11 +230,6 @@ def calc_midpoints_3(
         and bool(options.midpoints.get('M'))
     )
 
-    mundane_only_to_angles = options.midpoints.get(
-        'mundane_only_to_angles', False
-    )
-    cross_wheel_enabled = options.midpoints.get('cross_wheel_enabled', False)
-
     # Iterate over each point in each chart, checking it against all halfsums
     for chart in charts:
         for (point_name, point) in chart.iterate_points(
@@ -261,13 +263,6 @@ def calc_midpoints_3(
                         longitude=point_longitude,
                         role=chart.role,
                     )
-
-                if not cross_wheel_enabled:
-                    if (
-                        halfsum.point_a.role.value != planet_data.role.value
-                        or halfsum.point_b.role.value != planet_data.role.value
-                    ):
-                        continue
 
                 ecliptical_midpoint = None
 
@@ -332,21 +327,6 @@ def calc_midpoints_3(
         midpoints[key] = []
         # Check major angles
         for halfsum in halfsums:
-            if not cross_wheel_enabled:
-                # This would mean only natal midpoints would show here, and we don't care about those
-                if (
-                    len(charts) > 1
-                    and chart.role.value
-                    == chart_models.ChartWheelRole.NATAL.value
-                ):
-                    break
-
-                if (
-                    halfsum.point_a.role.value != mundane_angle.role.value
-                    or halfsum.point_b.role.value != mundane_angle.role.value
-                ):
-                    continue
-
             # We still don't want natal-only midpoints to natal angles in polywheels, though
             if (
                 len(charts) > 1
@@ -384,22 +364,6 @@ def calc_midpoints_3(
         midpoints[key] = []
 
         for halfsum in halfsums:
-            if not cross_wheel_enabled:
-                # This would mean only natal midpoints would show here, and we don't care about those
-                if (
-                    len(charts) > 1
-                    and chart.role.value
-                    == chart_models.ChartWheelRole.NATAL.value
-                ):
-                    break
-
-                if (
-                    halfsum.point_a.role.value != eastpoint_ra_angle.role.value
-                    or halfsum.point_b.role.value
-                    != eastpoint_ra_angle.role.value
-                ):
-                    continue
-
             if halfsum.contains_angle:
                 continue
 

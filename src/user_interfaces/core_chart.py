@@ -1081,7 +1081,7 @@ class CoreChart(object, metaclass=ABCMeta):
             )
 
         if any(aspect_class_headers):
-            # chartfile.write('-' * self.table_width + '\n')
+            chartfile.write('-' * self.table_width + '\n')
 
             while not any(aspect_class_headers[aspect_header_index]):
                 aspect_header_index += 1
@@ -1137,7 +1137,10 @@ class CoreChart(object, metaclass=ABCMeta):
                     right_header, width=max(aspect_width, len(right_header))
                 )
             )
-            chartfile.write('\n' + '-' * self.table_width + '\n')
+            chartfile.write('\n')
+
+            # Dashed lines below the column headers; currently removed
+            # chartfile.write('\n' + '-' * self.table_width + '\n')
 
         # For each aspect class, insert dividers where the roles change
         aspects_by_class_with_dividers = copy.deepcopy(aspects_by_class)
