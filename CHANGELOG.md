@@ -1,22 +1,39 @@
 ### 0.6.0
-- Rewrote most chart code
+
+#### Data Table
+- Added angles (Ascendant, Midheaven, Eastpoint, and Vertex) to the data table
+
+#### Aspect Calculation
 - Enabled PVP aspects
-- Fixed natal ecliptical aspects from showing up in return charts
-- Background options: rename "Eureka curve" to "Cadent" and "Cadent" to "TMSA Classic"
+- Suppressed natal ecliptical aspects from showing up in return charts
+- Changed mundane midpoint calculation to use the closest angular contact among angle axes that both planets are foreground on
+- Required midpoint contacts to minor angles to have both planets in the halfsum be foreground on that angle
+- Added angle contacts above the aspectarian
+- Midpoints can now be calculated for polywheels
+- Removed same-planet aspects in solunar returns
+- Ecliptical/mundane aspects are now compared by strength %, not raw orb
+- Enabled Inconjunct aspect types (semisextile and quincunx)
+
+#### Cosmic State Report
+- Added calculations for planetary stations, which now appear in Cosmic State
+- Added a Needs Hierarchy score for natal charts to Cosmic State
+
+
+#### Look and Feel
+- Background options: renamed "Eureka curve" to "Cadent" and "Cadent" to "TMSA Classic"
+- Shortened column headers
+- Added button text auto-resizing
+- Added Show Errors button on the main page to open the error log file
+ 
+#### Other
+- Rewrote most chart code
+- Enabled experimental planets (Eris, Haumea, asteroids, other TNOs)
 - Switched from default options files to in-code data structures
 - Migrated "Default_XYZ" option files to "XYZ_Default"
-- Changed mundane midpoint calculation to use the closest angular contact among angle axes that both planets are foreground on
 - Included version number and option to recalculate the radix when version number is too low for solunars to be correctly calculated
-- New midpoint calculations are now written to the Cosmic State report
-- Added angles (Ascendant, Midheaven, Eastpoint, and Vertex) to the data table
-- Added calculation for planetary stations
-- Removed same-planet aspects in solunar returns
-- Added needs hierarchy scores for natal charts
-- Shortened column headers
-- Ecliptical/mundane aspects are compared by strength %, not raw orb
-- Added button text auto-resizing
-- Enabled experimental planets (Eris, Haumea, asteroids, other TNOs)
-- Fixed declination calculations for vertex and ascendant
+- Turned off "other partile aspects" by default for ingresses
+- Turned on PVP aspects by default for ingresses
+- And probably more!
 
 ### 0.5.7
 - Fixed bug where mundane midpoints were using meridian longitude instead of prime vertical longitude

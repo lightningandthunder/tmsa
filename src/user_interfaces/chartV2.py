@@ -1,4 +1,4 @@
-# Copyright 2021-2024 James Eshelman, Mike Nelson, Mike Verducci
+# Copyright 2025 James Eshelman, Mike Nelson, Mike Verducci
 
 # This file is part of Time Matters: A Sidereal Astrology Toolkit (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation,

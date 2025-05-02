@@ -1,4 +1,4 @@
-# Copyright 2021-2024 James Eshelman, Mike Nelson, Mike Verducci
+# Copyright 2025 James Eshelman, Mike Nelson, Mike Verducci
 
 # This file is part of Time Matters: A Sidereal Astrology Toolkit (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation,
@@ -39,9 +39,10 @@ BETA_FEATURES_ENABLED = 'Beta Features Enabled'
 INTRO = f"""A freeware program for calculating geometrically
 accurate astrological charts in the Sidereal Zodiac,
 as rediscovered by Cyril Fagan and Donald Bradley."""
-COPYRIGHT = f"""\u00a9 2021-2024 James A. Eshelman.
-Created by Mike Nelson (mikestar13)
-and developed further by Mike Verducci.
+COPYRIGHT = f"""\u00a9 2025 James A. Eshelman.
+Created by Mike Nelson (2021).
+Continuing development by Ember Volkov (Mike Verducci).
+
 Released under the GNU Affero General Public License"""
 LICENSE = 'www.gnu.org/licenses/agpl-3.0.en.html'
 DEDICATION = 'Dedicated to our colleagues and collaborators at'
@@ -129,14 +130,14 @@ class StartPage(Frame):
             LABEL_X_COORD,
             0.65,
             LABEL_WIDTH,
-            LABEL_HEIGHT_UNIT * 4,
+            LABEL_HEIGHT_UNIT * 5,
         )
 
         self.license = Label(
             self,
             LICENSE,
             LABEL_X_COORD,
-            0.74,
+            0.76,
             LABEL_WIDTH,
             LABEL_HEIGHT_UNIT,
             font=ulfont,
