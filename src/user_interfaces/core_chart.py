@@ -67,12 +67,6 @@ class CoreChart(object, metaclass=ABCMeta):
         self.midpoints = {}
         self.halfsums = []
 
-        if self.options.midpoints.get('enabled'):
-            self.halfsums = calc_utils.calc_halfsums(self.options, self.charts)
-            self.midpoints = calc_utils.calc_midpoints_3(
-                self.options, self.charts, self.halfsums
-            )
-
         self.filename = chart_utils.make_chart_path(
             calc_utils.find_outermost_chart(self.charts),
             temporary,
@@ -1224,7 +1218,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 angularities_for_section,
             ) = self.write_info_table_section(
                 chartfile,
-                chart,
+                chart_index,
             )
             if angularities_for_section:
                 angularities_as_aspects.extend(angularities_for_section)
@@ -1254,11 +1248,15 @@ class CoreChart(object, metaclass=ABCMeta):
     def write_info_table_section(
         self,
         chartfile: TextIOWrapper,
-        chart: chart_models.ChartObject,
+        chart_index: int,
     ):
+        chart = self.charts[chart_index]
+
         whole_chart_is_dormant = True
         angularity_options = self.options.angularity
         angularities_as_aspects = []
+
+        updated_points = {}
         for planet_name, _ in chart.iterate_points(self.options):
             planet_data = chart.planets[planet_name]
 
@@ -1414,8 +1412,9 @@ class CoreChart(object, metaclass=ABCMeta):
 
             chartfile.write(f'{round(strength_percent):3d}% {angularity}')
             chartfile.write('\n')
+            updated_points[planet_data.name] = planet_data
 
-        outermost_chart = calc_utils.find_outermost_chart(self.charts)
+        chart.planets.update(updated_points)
 
         # Write angles to info table
 
@@ -1545,6 +1544,8 @@ class CoreChart(object, metaclass=ABCMeta):
             chartfile.write('.' * 20)
             chartfile.write('\n')
 
+        self.charts[chart_index] = chart
+
         return (whole_chart_is_dormant, angularities_as_aspects)
 
     def write_cosmic_state(
@@ -1584,7 +1585,6 @@ class CoreChart(object, metaclass=ABCMeta):
                     )
 
             strength_hierarchy_written = False
-            angle_contact_written = False
 
             moon_sign = chart_utils.SIGNS_SHORT[
                 int(chart.planets['Moon'].longitude // 30)
@@ -1742,6 +1742,14 @@ class CoreChart(object, metaclass=ABCMeta):
                         ):
                             chartfile.write('\n' + pipe_indent + '| ')
 
+                if self.options.midpoints.get('enabled'):
+                    self.halfsums = calc_utils.calc_halfsums(
+                        self.options, self.charts
+                    )
+                    self.midpoints = calc_utils.calc_midpoints_3(
+                        self.options, self.charts, self.halfsums
+                    )
+
                 # Midpoints - decide if we need to write midpoints or not
                 related_midpoints = self.midpoints.get(
                     f'{planet_data.role.value}{planet_data.short_name}', []
@@ -1773,14 +1781,14 @@ class CoreChart(object, metaclass=ABCMeta):
                 if len(related_midpoints) > 0:
                     chartfile.write('\n' + pipe_indent + '|    ')
 
-                self.write_midpoint_cosmic_state(
-                    chartfile,
-                    pipe_indent,
-                    related_midpoints,
-                    strength_hierarchy_written,
-                )
+                    self.write_midpoint_cosmic_state(
+                        chartfile,
+                        pipe_indent,
+                        related_midpoints,
+                        strength_hierarchy_written,
+                    )
 
-            chartfile.write('\n')
+            # chartfile.write('\n')
 
             angle_indent = (
                 (' ' * 8) if strength_hierarchy_written else (' ' * 4)
@@ -1797,7 +1805,9 @@ class CoreChart(object, metaclass=ABCMeta):
 
             ascendant_midpoints = []
             if not only_mundane_enabled or squares_are_direct:
-                raw_midpoints = self.midpoints.get(f'{chart.role.value}As', [])
+                raw_midpoints = self.midpoints.get(
+                    calc_utils.make_midpoint_key('As', chart.role), []
+                )
 
                 for midpoint in raw_midpoints:
                     if (
@@ -1828,7 +1838,9 @@ class CoreChart(object, metaclass=ABCMeta):
             midheaven_midpoints = []
 
             if not only_mundane_enabled or squares_are_direct:
-                raw_midpoints = self.midpoints.get(f'{chart.role.value}Mc', [])
+                raw_midpoints = self.midpoints.get(
+                    calc_utils.make_midpoint_key('Mc', chart.role), []
+                )
                 for midpoint in raw_midpoints:
                     if (
                         not use_restricted_midpoints
@@ -1853,7 +1865,9 @@ class CoreChart(object, metaclass=ABCMeta):
                     strength_hierarchy_written,
                 )
 
-            raw_angle_midpoints = self.midpoints.get(f'Angle', [])
+            raw_angle_midpoints = self.midpoints.get(
+                calc_utils.make_midpoint_key('Angle', chart.role), []
+            )
             angle_midpoints = []
             for midpoint in raw_angle_midpoints:
                 if (
@@ -1872,18 +1886,17 @@ class CoreChart(object, metaclass=ABCMeta):
                     strength_hierarchy_written,
                 )
 
-            raw_ra_midpoints = self.midpoints.get(f'Ea', [])
+            raw_ra_midpoints = self.midpoints.get(
+                calc_utils.make_midpoint_key('Ea', chart.role), []
+            )
             ra_midpoints = []
 
             for midpoint in raw_ra_midpoints:
-                if (
-                    not use_restricted_midpoints
-                    or midpoint.to_midpoint.both_points_foreground_square_ramc
-                ):
+                if midpoint.to_midpoint.both_points_foreground_square_ramc:
                     ra_midpoints.append(midpoint)
 
             if len(ra_midpoints) > 0:
-                chartfile.write(f'\nEa    {angle_indent}')
+                chartfile.write(f'\nEa   {angle_indent}')
                 self.write_midpoint_cosmic_state(
                     chartfile,
                     pipe_indent,

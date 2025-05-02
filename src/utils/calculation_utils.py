@@ -150,6 +150,7 @@ def parse_midpoint(
     is_opposition, opposition_orb_degrees = in_harmonic_range(
         value=raw_orb_degree_decimal, orb=conjunction_orb, harmonic=2
     )
+
     if is_opposition:
         return chart_models.MidpointAspect(
             midpoint_type=chart_models.MidpointAspectType.DIRECT,
@@ -354,8 +355,8 @@ def calc_midpoints_3(
                 insert_sorted(key, mundane_midpoint)
 
         eastpoint_ra_angle = chart_models.AngleData(
-            name=ForegroundAngles.EASTPOINT_RA,
-            short_name=ForegroundAngles.EASTPOINT_RA,
+            name=ForegroundAngles.EASTPOINT_RA.value,
+            short_name=ForegroundAngles.EASTPOINT_RA.value,
             right_ascension=to360(chart.ramc - 90),
             role=chart.role,
         )

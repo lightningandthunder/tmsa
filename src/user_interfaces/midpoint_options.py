@@ -37,7 +37,7 @@ class MidpointOptions(Frame):
         self.mpm = Entry(self, '', 0.475, 0.4, 0.05)
         self.mpm.bind('<KeyRelease>', lambda _: delay(check_num, self.mpm))
 
-        self.enabled = Checkbutton(self, 'Enable Midpoints', 0.1, 0.2, 0.2)
+        self.enabled = Checkbutton(self, 'Enable midpoints', 0.1, 0.2, 0.2)
         self.mundane_only_to_angles = Checkbutton(
             self, 'Mundane midpoints only to angles', 0.1, 0.3, 0.3
         )

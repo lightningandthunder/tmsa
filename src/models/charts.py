@@ -237,10 +237,6 @@ class PlanetData(__PointData):
         )
 
     @property
-    def contacted_angle_axis_values_stripped(self):
-        return [a for a in self.angle_axes_contacted]
-
-    @property
     def is_on_vx_or_av(self):
         return self.prime_vertical_angle.value in self.__prime_vertical_angles
 
@@ -252,21 +248,20 @@ class PlanetData(__PointData):
     def is_square_ramc(self):
         return (
             AngleAxes.EASTPOINT_IN_RA.value.strip()
-            in self.contacted_angle_axis_values_stripped
+            in self.angle_axes_contacted
         )
 
     @property
     def is_on_zenith(self):
         return (
-            AngleAxes.ZENITH_NADIR.value.strip()
-            in self.contacted_angle_axis_values_stripped
+            AngleAxes.ZENITH_NADIR.value.strip() in self.angle_axes_contacted
         )
 
     @property
     def is_on_ep_or_wp(self):
         return (
             AngleAxes.EASTPOINT_WESTPOINT.value.strip()
-            in self.contacted_angle_axis_values_stripped
+            in self.angle_axes_contacted
         )
 
     @property
