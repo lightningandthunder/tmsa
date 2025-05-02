@@ -1788,7 +1788,7 @@ class CoreChart(object, metaclass=ABCMeta):
                         strength_hierarchy_written,
                     )
 
-            # chartfile.write('\n')
+            chartfile.write('\n')
 
             angle_indent = (
                 (' ' * 8) if strength_hierarchy_written else (' ' * 4)

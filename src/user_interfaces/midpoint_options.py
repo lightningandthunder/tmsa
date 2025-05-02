@@ -39,10 +39,10 @@ class MidpointOptions(Frame):
 
         self.enabled = Checkbutton(self, 'Enable midpoints', 0.1, 0.2, 0.2)
         self.mundane_only_to_angles = Checkbutton(
-            self, 'Mundane midpoints only to angles', 0.1, 0.3, 0.3
+            self, 'Mundane only to angles', 0.1, 0.3, 0.3
         )
         self.cross_wheel_enabled = Checkbutton(
-            self, 'Allow cross-wheel halfsums', 0.1, 0.4, 0.3
+            self, 'Allow cross-wheel', 0.1, 0.4, 0.3
         )
 
         Button(self, 'Save', 0.1, 0.55, 0.2).bind(
