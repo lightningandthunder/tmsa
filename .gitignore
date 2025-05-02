@@ -3,7 +3,6 @@ __pycache__/
 dist/
 build/
 copy/
-dll/
-ephe/
 venv/
 venv/*
+.pytest_cache/

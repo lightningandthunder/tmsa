@@ -1,0 +1,39 @@
+import pytest
+
+
+@pytest.fixture
+def return_options():
+    return {
+        'use_Vertex': 0,
+        'Node': 0,
+        'show_aspects': 2,
+        'partile_nf': 1,
+        'angularity': {
+            'model': 0,
+            'no_bg': 0,
+            'major_angles': [3.0, 7.0, 10.0],
+            'minor_angles': [1.0, 2.0, 3.0],
+        },
+        'ecliptic_aspects': {
+            '0': [3.0, 0, 0],
+            '180': [3.0, 0, 0],
+            '90': [3.0, 0, 0],
+            '45': [0, 0, 0],
+            '120': [0, 0, 0],
+            '60': [0, 0, 0],
+            '30': [0, 0, 0],
+        },
+        'mundane_aspects': {
+            '0': [3.0, 0, 0],
+            '180': [3.0, 0, 0],
+            '90': [3.0, 0, 0],
+            '45': [0, 0, 0],
+        },
+        'midpoints': {'0': 0, '90': 0, '45': 0, 'M': 0, 'is90': 'd'},
+        'pvp_aspects':  {
+            'enabled': 1,
+            '0': [3.0, 0, 0],
+            '180': [3.0, 0, 0],
+            '90': [3.0, 0, 0],
+        },
+    }

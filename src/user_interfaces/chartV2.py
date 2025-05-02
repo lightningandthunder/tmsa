@@ -1,0 +1,156 @@
+# Copyright 2025 James Eshelman, Mike Nelson, Mike Verducci
+
+# This file is part of Time Matters: A Sidereal Astrology Toolkit (TMSA).
+# TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+# TMSA is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+# without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+# You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
+
+from copy import deepcopy
+from src import *
+from src.models.charts import INGRESSES, ChartObject, ChartWheelRole
+from src.models.options import Options
+from src.swe import *
+from src.user_interfaces.biwheelV3 import BiwheelV3
+from src.user_interfaces.triwheel import Triwheel
+from src.user_interfaces.uniwheelV3 import UniwheelV3
+from src.user_interfaces.widgets import *
+from src.utils.chart_utils import make_chart_path
+from src.utils.format_utils import (
+    version_is_supported,
+    version_str_to_tuple,
+)
+
+planet_names = [
+    'Moon',
+    'Sun',
+    'Mercury',
+    'Venus',
+    'Mars',
+    'Jupiter',
+    'Saturn',
+    'Uranus',
+    'Neptune',
+    'Pluto',
+    'Eris',
+    'Sedna',
+    'Mean Node',
+    'True Node',
+]
+planet_indices = [1, 0] + [i for i in range(2, 10)] + [146199, 100377, 10, 11]
+
+
+class ChartV2:
+    def __init__(self, chart, temporary, burst=False):
+        self.chart = ChartObject.from_calculation(chart)
+        self.save_and_print(chart, temporary, burst)
+
+    def save_and_print(self, chart, temporary, burst):
+        try:
+            optfile = chart['options'].replace(' ', '_') + '.opt'
+            with open(os.path.join(OPTION_PATH, optfile)) as datafile:
+                options = json.load(datafile)
+        except Exception:
+            tkmessagebox.showerror(
+                'File Error', f"Unable to open '{optfile}'."
+            )
+            return
+        filename = make_chart_path(
+            chart,
+            temporary,
+            is_ingress=chart['type'] in INGRESSES or not chart['name'],
+        )
+        if not burst:
+            try:
+                with open(RECENT_FILE, 'r') as datafile:
+                    recent = json.load(datafile)
+            except Exception:
+                recent = []
+        if not os.path.exists(filename):
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
+        try:
+            with open(filename, 'w') as datafile:
+                json.dump(chart, datafile, indent=4)
+        except Exception as e:
+            tkmessagebox.showerror('Unable to save file', f'{e}')
+            return
+        if not burst:
+            if filename in recent:
+                recent.remove(filename)
+            recent.insert(0, filename)
+            try:
+                with open(RECENT_FILE, 'w') as datafile:
+                    json.dump(recent, datafile, indent=4)
+            except Exception:
+                pass
+
+        options = Options(options)
+
+        if chart.get('ssr_chart', None):
+            return_chart = ChartObject(chart).with_role(ChartWheelRole.TRANSIT)
+            ssr_chart = ChartObject(chart['ssr_chart']).with_role(
+                ChartWheelRole.SOLAR
+            )
+            radix = ChartObject(chart['base_chart']).with_role(
+                ChartWheelRole.RADIX
+            )
+
+            self.report = Triwheel(
+                [return_chart, ssr_chart, radix], temporary, options
+            )
+        elif chart.get('base_chart', None):
+            return_chart = ChartObject(chart).with_role(ChartWheelRole.TRANSIT)
+            radix = ChartObject(chart['base_chart']).with_role(
+                ChartWheelRole.RADIX
+            )
+            if not version_is_supported(radix.version):
+                if not tkmessagebox.askyesno(
+                    'Radix chart version is out of date and needs to be updated',
+                    f'Do you want to recalculate the radix chart to the newest version?',
+                ):
+                    return None
+
+                radix = self.recalculate_radix(chart['base_chart'])
+                if not radix:
+                    return None
+
+            self.report = BiwheelV3([return_chart, radix], temporary, options)
+        else:
+            single_chart = ChartObject(chart).with_role(ChartWheelRole.NATAL)
+            self.report = UniwheelV3([single_chart], temporary, options)
+
+    def recalculate_radix(self, chart):
+        recalculated_chart = deepcopy(chart)
+        recalculated_chart['version'] = version_str_to_tuple(VERSION)
+
+        # Write recalculated data file
+        filename = make_chart_path(recalculated_chart, False)
+        with open(filename, 'w') as datafile:
+            json.dump(recalculated_chart, datafile, indent=4)
+
+        # Write recalculated chart file
+        radix = ChartObject(recalculated_chart).with_role(ChartWheelRole.RADIX)
+        try:
+            optfile = recalculated_chart['options'].replace(' ', '_') + '.opt'
+            if not os.path.exists(os.path.join(OPTION_PATH, optfile)):
+                optfile = 'Natal_Default.opt'
+
+            with open(os.path.join(OPTION_PATH, optfile)) as datafile:
+                options = json.load(datafile)
+        except Exception:
+            tkmessagebox.showerror(
+                'File Error',
+                f"Unable to open '{optfile}' during recalculation of radix.",
+            )
+            return None
+
+        # This is important because it's not actually a radix;
+        # it is its own thing in this context.
+        recalculated_natal = ChartObject(recalculated_chart).with_role(
+            ChartWheelRole.NATAL
+        )
+        UniwheelV3([recalculated_natal], False, Options(options))
+
+        # But we still want to return the *radix* specifically
+        return radix

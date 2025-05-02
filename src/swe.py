@@ -1,4 +1,4 @@
-# Copyright 2021-2024 James Eshelman, Mike Nelson, Mike Verducci
+# Copyright 2025 James Eshelman, Mike Nelson, Mike Verducci
 
 # This file is part of Time Matters: A Sidereal Astrology Toolkit (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation,
@@ -20,9 +20,9 @@ from ctypes import (
     create_string_buffer,
 )
 
-from constants import PLATFORM
-from init import *
-from utils import (
+from src import *
+from src.constants import HOUR_FRACTION_OF_A_DAY, PLANETS, PLATFORM
+from src.utils.format_utils import (
     add_360_if_negative,
     arccotangent,
     cotangent,
@@ -37,6 +37,8 @@ if PLATFORM == 'Win32GUI':
     swe_set_ephe = getattr(dll, '_swe_set_ephe_path@4')
 elif PLATFORM == 'linux':
     swe_set_ephe = getattr(dll, 'swe_set_ephe_path')
+elif PLATFORM == 'darwin':
+    swe_set_ephe = getattr(dll, 'swe_set_ephe_path')
 swe_set_ephe.argtypes = [c_char_p]
 swe_set_ephe.restype = c_void_p
 swe_set_ephe(EPHE_PATH.encode())
@@ -46,6 +48,9 @@ def _get_handle_for_platform(dll: CDLL, windows_string: str):
     if PLATFORM == 'Win32GUI':
         handle = windows_string
     elif PLATFORM == 'linux':
+        [handle, _] = windows_string.split('@')
+        handle = handle.strip('_')
+    elif PLATFORM == 'darwin':
         [handle, _] = windows_string.split('@')
         handle = handle.strip('_')
 
@@ -139,7 +144,7 @@ swe_cotrans = _get_handle_for_platform(dll, '_swe_cotrans@16')
 swe_cotrans.argtypes = [POINTER(c_double * 3), POINTER(c_double * 3), c_double]
 
 
-def julday(year, month, day, hour, isgreg):
+def julday(year, month, day, hour, isgreg) -> float:
     return swe_julday(year, month, day, hour, isgreg)
 
 
@@ -197,19 +202,19 @@ def calc_ayan(ut):
 
 
 def calc_cusps(ut, lat, long):
-    cusps = (c_double * 13)()
-    angles = (c_double * 10)()
+    cusps_return_array = (c_double * 13)()
+    angles_return_array = (c_double * 10)()
     swe_houses_ex(
-        ut, 64 * 1024, lat, long, ord('C'), byref(cusps), byref(angles)
+        ut,
+        64 * 1024,
+        lat,
+        long,
+        ord('C'),
+        byref(cusps_return_array),
+        byref(angles_return_array),
     )
-    cc = []
-    for c in cusps:
-        cc.append(c)
-    aa = []
-    for i in range(len(angles)):
-        if i in [2, 3, 4]:
-            aa.append(angles[i])
-    return [cc, aa]
+    # The angles kept are RAMC, Vertex, Equatorial Ascendant
+    return [cusps_return_array[:], angles_return_array[2:5]]
 
 
 def calc_house_pos(ramc, geo_latitude, obliquity, tlong, elat):
@@ -283,6 +288,7 @@ def calc_sun_crossing(pos, ut):
     if sun > pos + 180:
         sun -= 360
     if sun < pos:
+        # interpolation given the speed of the sun
         cross += (pos - sun + 0.5 / 86400) / s[2]
     return cross
 
@@ -295,6 +301,7 @@ def calc_moon_crossing(pos, ut):
     if moon > pos + 180:
         moon -= 360
     if moon < pos:
+        # interpolation given the speed of the moon
         cross += (pos - moon + 0.5 / 86400) / m[2]
     return cross
 
@@ -344,3 +351,31 @@ def calc_meridian_longitude(azimuth: float, altitude: float):
         meridian_longitude = add_360_if_negative(meridian_longitude - 180)
 
     return meridian_longitude
+
+
+def is_planet_stationary(long_name: str, julian_day: float) -> bool:
+    stats = PLANETS[long_name]
+
+    # Planet cannot be stationary
+    if stats['stationary_period_hours'] < 0:
+        return False
+
+    maximum_time_difference = (
+        stats['stationary_period_hours'] * HOUR_FRACTION_OF_A_DAY
+    ) / 2
+
+    base_direction = calc_planet(julian_day, stats['number'])[2] > 0
+
+    beginning_time = julian_day - maximum_time_difference
+    beginning_period_direction = (
+        calc_planet(beginning_time, stats['number'])[2] > 0
+    )
+
+    # There was a station at some point
+    if base_direction != beginning_period_direction:
+        return True
+
+    ending_time = julian_day + maximum_time_difference
+    ending_period_direction = calc_planet(ending_time, stats['number'])[2] > 0
+
+    return base_direction != ending_period_direction

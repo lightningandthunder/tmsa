@@ -1,0 +1,47 @@
+CHART OPTIONS PAGE
+
+The Chart Options page allows you to load, edit and change option sets. The Default Natal options will be preloaded.
+
+Load button: opens a file dialog and opens the different option set selected.
+
+Save button: saves the option set and return to the opening page. First change the name of the option set in the 
+text box if you wish to create a new set.
+
+Help button: displays this document. 
+
+Back button: returns to the opening page without saving.
+
+The options available are:
+
+Eris (on by default)
+
+Sedna (off by default)
+
+Moon's Node: don't use (default), mean node, true node.
+
+Vertex (off by default)
+
+Either of two models for the location of the background may be chosen -- 
+Background centered on the cadent cusps (normal for natal charts).
+Background centered on the middle of the quadrant (normal for ingress charts).
+
+You may choose to not indicate background planets in the print out (check Don't Mark).
+
+For conjunctions, oppositions, squares, octiles (semi-squares and sesqui-squares), trines, sextiles, 
+and inconjuncts (semi-sextiles and quincunxes), the maximum orb may be set for ecliptic aspects for each
+class of aspects: 1 (close), 2 (moderate), or 3 (wide). 
+
+To not use an a particular aspect of certain class, leave that box blank.
+
+For conjunctions, oppositions, squares, and octiles you may choose the orbs for mundane aspects (measured in 
+prime vertical longitude) as well.
+
+You may also choose orbs for the foreground both for major angles and minor angles in simlar fashion.
+
+Inconsistent orb choices will be rejected (example setting class 1 conjuctions to 5 degrees and class 2 to only 3 degrees).
+
+Aspects offer three choices: All, at least 1 foreground planet, 2 foreground planet. There is an 
+option to always list partile aspects (1 degree or less separation from exact) -- this is ignored if
+"all" is selected. 
+
+Midpoint button: opens the midpoint options page. 

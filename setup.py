@@ -10,12 +10,16 @@ import shutil
 base = ""
 out_dir = "dist"
 build_dir = None
+copyright = "Copyright (C) 2024 James A. Eshelman"
+
 match sys.platform:
     case "win32":
         base = "Win32GUI"
     case "linux":
         base = None
         build_dir = os.path.join('build', 'exe.linux-x86_64-3.10')
+    case "darwin":
+        base = None
     case _:
         raise RuntimeError(f"Unsupported architecture {sys.platform}")
 
@@ -23,7 +27,7 @@ match sys.platform:
         case "win32":
             executable = Executable(
                     script=os.path.join("src", "tmsa.py"),
-                    copyright="Copyright (C) 2024 James A. Eshelman",
+                    copyright=copyright,
                     base=base,
                     icon=os.path.join("src", "assets", "tmsa3.ico"),
                     shortcut_name="Time Matters",
@@ -32,7 +36,13 @@ match sys.platform:
         case "linux":
             executable = Executable(
                     script=os.path.join("src", "tmsa.py"),
-                    copyright="Copyright (C) 2024 James A. Eshelman",
+                    copyright=copyright,
+                    base=base,
+                )
+        case "darwin":
+            executable = Executable(
+                    script=os.path.join("src", "tmsa.py"),
+                    copyright=copyright,
                     base=base,
                 )
 
@@ -92,6 +102,12 @@ match sys.platform:
 #     ],
 # }
 
+source_files = []
+for root, dirs, files in os.walk('src'):
+    for file in files:
+        if file.endswith('.py'):
+            source_files.append(os.path.join(root, file))
+
 options = {
     "build_exe": {
         "include_path": "src,public",
@@ -99,35 +115,11 @@ options = {
             (os.path.join("copy", "dll"), "dll"),
             (os.path.join("copy", "ephe"), "ephe"),
             (os.path.join("src", "assets"), "assets"),
-            "help",
+            (os.path.join("src", "help"), "help"),
+            *source_files
         ],
         "packages": [
             'distutils',    
-        ],
-        "includes": [
-            "biwheel",
-            "chart_options",
-            "chart_utils",
-            "chart",
-            "classes",
-            "constants",
-            "gui_utils",
-            "ingresses",
-            "init",
-            "libs",
-            "locations",
-            "midpoint_options",
-            "more_charts",
-            "new_chart",
-            "program_options",
-            "select_chart",
-            "solunars",
-            "swe",
-            "tmsa",
-            "uniwheel",
-            "uniwheelV2",
-            "utils",
-            "widgets",
         ],
         'include_msvcr': True,
     },
@@ -136,7 +128,11 @@ options = {
         # "data": msi_data,
         # "environment_variables": [],
         "upgrade_code": "{1b179824-25df-4630-80a7-b3930038f5e9}",
-    }
+    },
+    "bdist_dmg": {
+        "volume_label": f"Time Matters {VERSION}",
+        "applications_shortcut": True,
+    },
 }
 
 class BuildInstaller(Command):
