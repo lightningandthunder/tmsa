@@ -8,6 +8,7 @@ from src.models.options import Options
 import src.models.charts as chart_models
 from src.utils.chart_utils import (
     POS_SIGN,
+    calc_aspect_strength_percent,
     convert_raw_strength_to_modified,
     in_harmonic_range,
 )
@@ -392,274 +393,6 @@ def calc_midpoints_3(
     return midpoints
 
 
-def find_applicable_midpoints_for_point(
-    midpoints: dict[str, list[chart_models.MidpointAspect]],
-    options: Options,
-    planet_data: chart_models.PlanetData | chart_models.AngleData,
-    must_be_foreground: bool = False,
-) -> list[chart_models.MidpointAspect]:
-
-    only_mundane_enabled = (
-        not options.midpoints.get('0')
-        and not options.midpoints.get('90')
-        and bool(options.midpoints.get('M'))
-    )
-
-    mundane_disabled = options.midpoints.get('M') in [0, None]
-
-    planet_or_angle_data = planet_data
-    if planet_data.short_name in constants.ANGLE_ABBREVIATIONS:
-        planet_or_angle_data = chart_models.AngleData(
-            name=planet_data.name,
-            short_name=planet_data.short_name,
-            longitude=planet_data.longitude,
-            role=planet_data.role,
-        )
-
-    key = make_midpoint_key(
-        planet_or_angle_data.short_name, planet_or_angle_data.role
-    )
-
-    applicable_midpoints = []
-
-    for mid in midpoints[key]:
-        if mid.is_ecliptical:
-            # In natals, all ecliptical midpoints apply
-            if not must_be_foreground and not only_mundane_enabled:
-                bisect.insort(
-                    applicable_midpoints,
-                    mid,
-                    key=lambda x: x.orb_minutes,
-                )
-
-            # Everywhere else, the points must be foreground
-            elif (
-                must_be_foreground
-                and (
-                    planet_or_angle_data.is_foreground
-                    or planet_or_angle_data.is_angle
-                )
-                and mid.to_midpoint.both_points_are_foreground
-            ):
-                bisect.insort(
-                    applicable_midpoints,
-                    mid,
-                    key=lambda x: x.orb_minutes,
-                )
-
-        elif mid.is_mundane and not mundane_disabled:
-            # Allow mundane midpoints in natals
-            if not must_be_foreground:
-                bisect.insort(
-                    applicable_midpoints,
-                    mid,
-                    key=lambda x: x.orb_minutes,
-                )
-
-            # Require ingress mundane midpoints to be angles
-            elif must_be_foreground and planet_or_angle_data.is_angle:
-                # Check to see if both points are foreground on that angle
-
-                if planet_or_angle_data.short_name == 'Angle':
-                    if mid.to_midpoint.both_points_are_foreground:
-                        bisect.insort(
-                            applicable_midpoints,
-                            mid,
-                            key=lambda x: x.orb_minutes,
-                        )
-
-                elif (
-                    planet_or_angle_data.short_name
-                    == ForegroundAngles.EASTPOINT_RA.value
-                ):
-                    if mid.to_midpoint.both_points_foreground_square_ramc:
-                        bisect.insort(
-                            applicable_midpoints,
-                            mid,
-                            key=lambda x: x.orb_minutes,
-                        )
-
-                # Only remaining case is a "mundane" midpoint to Z/EP in longitude
-                elif planet_or_angle_data.short_name in [
-                    ForegroundAngles.ASCENDANT.value,
-                    ForegroundAngles.ZENITH.value,
-                ]:
-                    if mid.to_midpoint.both_points_on_zenith:
-                        bisect.insort(
-                            applicable_midpoints,
-                            mid,
-                            key=lambda x: x.orb_minutes,
-                        )
-
-                elif planet_or_angle_data.short_name in [
-                    ForegroundAngles.MC.value,
-                    ForegroundAngles.EASTPOINT.value,
-                ]:
-                    if mid.to_midpoint.both_points_on_ep:
-                        bisect.insort(
-                            applicable_midpoints,
-                            mid,
-                            key=lambda x: x.orb_minutes,
-                        )
-
-
-def calc_mundane_midpoints_2(
-    options: Options,
-    charts: list[chart_models.ChartObject],
-    halfsums: dict[str, chart_models.HalfSum],
-) -> dict[str, list[dict[str, any]]]:
-    midpoints = {}
-
-    outermost_chart = find_outermost_chart(charts)
-
-    max_mundane_orb = options.midpoints.get('M', None)
-    max_ecliptic_orb = options.midpoints.get('0', None)
-
-    if not max_mundane_orb and not max_ecliptic_orb:
-        return midpoints
-
-    eastpoint = outermost_chart.eastpoint[0]
-    zenith = to360(eastpoint + 90)
-    eastpoint_ra = to360(outermost_chart.ramc - 90)
-
-    square_direction = (
-        chart_models.MidpointAspectType.DIRECT
-        if options.midpoints['is90'] == 'd'
-        else chart_models.MidpointAspectType.INDIRECT
-    )
-
-    for halfsum in halfsums:
-        if halfsum.contains('As') or halfsum.contains('Mc'):
-            continue
-
-        for (
-            _,
-            aspect_degrees,
-        ) in chart_models.AspectType.iterate_harmonic_4():
-            direction = (
-                chart_models.MidpointAspectType.DIRECT
-                if aspect_degrees in [0, 180]
-                else square_direction
-            )
-            pvl_orb = 360
-            ra_orb = 360
-            eastpoint_orb = 360
-            zenith_orb = 360
-
-            pvl_orb = (
-                abs(halfsum.prime_vertical_longitude - aspect_degrees) * 60
-            )
-
-            ra_orb = (
-                abs(
-                    abs(halfsum.right_ascension - eastpoint_ra)
-                    - aspect_degrees
-                )
-                * 60
-            )
-
-            zenith_orb = (
-                abs(abs(zenith - halfsum.longitude) - aspect_degrees) * 60
-            )
-
-            eastpoint_orb = (
-                abs(abs(eastpoint - halfsum.longitude) - aspect_degrees)
-            ) * 60
-
-        for (orb, angle) in [
-            (pvl_orb, 'Angle'),
-            (ra_orb, 'Ea'),
-        ]:
-            if orb <= max_mundane_orb:
-                midpoint = chart_models.MidpointAspect(
-                    midpoint_type=direction,
-                    orb_minutes=int(round(orb, 0)),
-                    framework=chart_models.AspectFramework.MUNDANE,
-                    from_point=angle,
-                    to_midpoint=str(halfsum),
-                    from_point_role=outermost_chart.role,
-                    is_mundane=True,
-                )
-
-                if angle not in midpoints:
-                    midpoints[angle] = [midpoint]
-                else:
-                    bisect.insort(
-                        midpoints[angle],
-                        midpoint,
-                        key=lambda x: x.orb_minutes,
-                    )
-
-        max_orb_for_zenith_eastpoint = max_ecliptic_orb or max_mundane_orb
-
-        for (orb, angle) in [
-            (eastpoint_orb, 'E'),
-            (zenith_orb, 'Z'),
-        ]:
-            if orb <= max_orb_for_zenith_eastpoint:
-                midpoint = chart_models.MidpointAspect(
-                    midpoint_type=direction,
-                    orb_minutes=int(round(orb, 0)),
-                    framework=chart_models.AspectFramework.MUNDANE,
-                    from_point=angle,
-                    to_midpoint=str(halfsum),
-                    from_point_role=outermost_chart.role,
-                    is_mundane=True,
-                )
-                if angle not in midpoints:
-                    midpoints[angle] = [midpoint]
-                else:
-                    bisect.insort(
-                        midpoints[angle],
-                        midpoint,
-                        key=lambda x: x.orb_minutes,
-                    )
-
-    return midpoints
-
-
-def merge_midpoints(
-    ecliptic_midpoints: dict[str, list[chart_models.MidpointAspect]],
-    mundane_midpoints: dict[str, list[chart_models.MidpointAspect]],
-) -> list[chart_models.MidpointAspect]:
-    keys = set(ecliptic_midpoints.keys()).union(set(mundane_midpoints.keys()))
-    merged_midpoints = {}
-    for key in keys:
-        if key not in merged_midpoints:
-            merged_midpoints[key] = []
-
-        ecliptic_index = 0
-        mundane_index = 0
-        while ecliptic_index < len(
-            ecliptic_midpoints[key]
-        ) and mundane_index < len(mundane_midpoints[key]):
-            if (
-                ecliptic_midpoints[key][ecliptic_index].orb_minutes
-                < mundane_midpoints[key][mundane_index].orb_minutes
-            ):
-                merged_midpoints[key].append(
-                    ecliptic_midpoints[key][ecliptic_index]
-                )
-                ecliptic_index += 1
-            else:
-                merged_midpoints[key].append(
-                    mundane_midpoints[key][mundane_index]
-                )
-                mundane_index += 1
-
-        # Deal with leftovers from one or the other list
-        if ecliptic_index < len(ecliptic_midpoints[key]):
-            merged_midpoints[key].extend(
-                ecliptic_midpoints[key][ecliptic_index:]
-            )
-        if mundane_index < len(mundane_midpoints[key]):
-            merged_midpoints[key].extend(
-                mundane_midpoints[key][mundane_index:]
-            )
-
-    return merged_midpoints
-
-
 def find_outermost_chart(
     charts: list[chart_models.ChartObject],
 ) -> chart_models.ChartObject:
@@ -670,9 +403,10 @@ def find_outermost_chart(
     return outermost_chart
 
 
-def parse_aspect_type_and_class(
+def parse_aspect(
     value: float, options: Options
-) -> tuple[chart_models.AspectType, int]:
+) -> tuple[chart_models.AspectType, int, float]:
+    '''Returns an aspect type, aspect class (1-indexed), orb, and strength percent'''
     normalized_value = to360(value)
 
     definitions = [
@@ -695,14 +429,28 @@ def parse_aspect_type_and_class(
 
     for (degrees, definition, harmonic) in definitions:
         orbs = options.ecliptic_aspects.get(str(degrees))
+
+        if not orbs or not orbs[0]:
+            continue
+
         for orb_index in range(len(orbs)):
             if orbs[orb_index]:
-                if in_harmonic_range(
+                (is_in_range, aspect_orb) = in_harmonic_range(
                     normalized_value, orbs[orb_index], harmonic
-                ):
-                    return (definition, orb_index + 1)
+                )
+                if is_in_range:
+                    max_orb = 360
+                    if orbs[2]:
+                        max_orb = orbs[2]
+                    elif orbs[1]:
+                        max_orb = orbs[1] * 1.25
+                    else:
+                        max_orb = orbs[0] * 2.5
 
-    return None
+                    strength = calc_aspect_strength_percent(max_orb, aspect_orb)
+                    return (definition, orb_index + 1, aspect_orb, strength)
+
+    return (None, None, None, None)
 
 
 def calc_planetary_needs_strength(

@@ -233,13 +233,15 @@ class CoreChart(object, metaclass=ABCMeta):
         whole_chart_is_dormant: bool,
         aspect_framework: chart_models.AspectFramework,
     ) -> chart_models.Aspect:
-        show_aspects = (
+        show_aspects_type = (
             self.options.show_aspects or option_models.ShowAspect.ALL
         )
 
         aspect_is_not_foreground = False
 
-        if show_aspects == option_models.ShowAspect.ONE_PLUS_FOREGROUND:
+        # See if we can short-circuit by skipping non-foreground aspects
+        # when we have Show Partile Non-Foreground off
+        if show_aspects_type == option_models.ShowAspect.ONE_PLUS_FOREGROUND:
             if (
                 not primary_planet.is_foreground
                 and not primary_planet.treat_as_foreground
@@ -251,7 +253,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 else:
                     aspect_is_not_foreground = True
 
-        elif show_aspects == option_models.ShowAspect.BOTH_FOREGROUND:
+        elif show_aspects_type == option_models.ShowAspect.BOTH_FOREGROUND:
             if (
                 not primary_planet.treat_as_foreground
                 and not secondary_planet.treat_as_foreground
@@ -268,11 +270,14 @@ class CoreChart(object, metaclass=ABCMeta):
                     else:
                         aspect_is_not_foreground = True
 
-        raw_orb = None
-        aspect = None
-
+        # For dormant ingresses, only show Moon aspects
         if whole_chart_is_dormant and primary_planet.name != 'Moon':
             return None
+
+        # Now, we have appropriately-foreground planets (if that's required);
+        # time to compute whether we actually have an aspect or not
+
+        raw_orb = None
 
         if aspect_framework == chart_models.AspectFramework.ECLIPTICAL:
             raw_orb = (
@@ -282,123 +287,48 @@ class CoreChart(object, metaclass=ABCMeta):
         elif aspect_framework == chart_models.AspectFramework.MUNDANE:
             raw_orb = abs(primary_planet.house - secondary_planet.house) % 360
 
-        if raw_orb > 180:
-            raw_orb = 360 - raw_orb
+        (aspect_type, aspect_class, aspect_orb, aspect_strength) = calc_utils.parse_aspect(value=raw_orb, options=self.options)
 
-        ecliptic_orbs = (
-            self.options.ecliptic_aspects
-            or chart_utils.DEFAULT_ECLIPTICAL_ORBS
-        )
-        mundane_orbs = (
-            self.options.mundane_aspects or chart_utils.DEFAULT_MUNDANE_ORBS
-        )
-
-        for (aspect_type, aspect_degrees) in chart_models.AspectType.iterate():
-            test_orbs = None
-
-            # If the aspect is a sesquisquare, we need to use the orb for semisquare,
-            # as it's the only orb in options
-            aspect_degrees_for_options = aspect_degrees
-            if aspect_degrees == 135:
-                aspect_degrees_for_options = 45
-            if aspect_degrees == 150:
-                aspect_degrees_for_options = 30
-
-            if aspect_framework == chart_models.AspectFramework.ECLIPTICAL:
-                if str(aspect_degrees_for_options) in ecliptic_orbs:
-                    test_orbs = ecliptic_orbs[str(aspect_degrees_for_options)]
-                else:
-                    continue
-            elif aspect_framework == chart_models.AspectFramework.MUNDANE:
-                if str(aspect_degrees_for_options) in mundane_orbs:
-                    test_orbs = mundane_orbs[str(aspect_degrees_for_options)]
-                else:
-                    continue
-
-            if test_orbs[2]:
-                maxorb = test_orbs[2]
-            elif test_orbs[1]:
-                maxorb = test_orbs[1] * 1.25
-            elif test_orbs[0]:
-                maxorb = test_orbs[0] * 2.5
-            else:
-                continue
-
-            if not (
-                raw_orb >= aspect_degrees - maxorb
-                and raw_orb <= aspect_degrees + maxorb
-            ):
-                continue
-
-            greater_planet = (
-                primary_planet
-                if primary_planet.role >= secondary_planet.role
-                else secondary_planet
-            )
-            lesser_planet = (
-                primary_planet
-                if greater_planet == secondary_planet
-                else secondary_planet
-            )
-
-            aspect = (
-                chart_models.Aspect()
-                .from_planet(
-                    greater_planet.short_name, role=greater_planet.role
-                )
-                .to_planet(lesser_planet.short_name, role=lesser_planet.role)
-                .as_type(aspect_type)
-            )
-            aspect.framework = aspect_framework
-            aspect_orb = abs(raw_orb - aspect_degrees)
-
-            if aspect_orb <= test_orbs[0]:
-                aspect = aspect.with_class(1)
-            elif aspect_orb <= test_orbs[1]:
-                aspect = aspect.with_class(2)
-            elif aspect_orb <= test_orbs[2]:
-                aspect = aspect.with_class(3)
-            else:
-                aspect = None
-                continue
-
-            if primary_planet.name == 'Moon' and (
-                primary_planet.role == chart_models.INGRESSES
-                or primary_planet.role == chart_models.SOLUNAR_RETURNS
-            ):
-                # Always consider transiting Moon aspects, as long as they're in orb
-                break
-
-            # Otherwise, make sure the aspect should be considered at all
-
-            show_aspects = (
-                option_models.ShowAspect.from_number(self.options.show_aspects)
-                or self.options.show_aspects
-            )
-
-            if (
-                show_aspects == option_models.ShowAspect.ONE_PLUS_FOREGROUND
-                or show_aspects == option_models.ShowAspect.BOTH_FOREGROUND
-            ):
-                if aspect_is_not_foreground:
-                    if aspect_orb <= 1 and self.options.partile_nf:
-                        aspect = aspect.with_class(4)
-                    else:
-                        # We may have found an aspect, but it's neither foreground nor partile
-                        aspect = None
-
-            # We have found a valid aspect (or run out of aspects to try)
-            break
-
-        if not aspect:
+        if not aspect_type:
             return None
 
-        aspect_strength = chart_utils.calc_aspect_strength_percent(
-            maxorb, aspect_orb
-        )
-        aspect = aspect.with_strength(aspect_strength).with_orb(aspect_orb)
+        if (
+            not primary_planet.treat_as_foreground and 
+            (show_aspects_type == option_models.ShowAspect.ONE_PLUS_FOREGROUND
+            or show_aspects_type == option_models.ShowAspect.BOTH_FOREGROUND)
+        ):
+            if aspect_is_not_foreground:
+                if aspect_orb < 1 and self.options.partile_nf:
+                    aspect_class = 4
+                else:
+                    # We may have found an aspect, but it's neither foreground nor partile
+                    return None
 
-        return aspect
+        from_planet = (
+            primary_planet
+            if primary_planet.role >= secondary_planet.role
+            else secondary_planet
+        )
+
+        to_planet = (
+            primary_planet
+            if from_planet == secondary_planet
+            else secondary_planet
+        )
+
+        return (
+            chart_models.Aspect()
+                .from_planet(
+                    from_planet.short_name, role=from_planet.role
+                )
+                .to_planet(to_planet.short_name, role=to_planet.role)
+                .as_type(aspect_type)
+                .with_class(aspect_class)
+                .with_framework(aspect_framework)
+                .with_strength(aspect_strength)
+                .with_orb(aspect_orb)
+        )
+
 
     def find_pvp_aspect(
         self,

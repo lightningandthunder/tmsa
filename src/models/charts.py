@@ -1002,6 +1002,10 @@ class Aspect:
     def as_prime_vertical_paran(self):
         self.framework = AspectFramework.PRIME_VERTICAL_PARAN
         return self
+    
+    def with_framework(self, framework: AspectFramework):
+        self.framework = framework
+        return self
 
     def from_planet(self, planet: str, role: ChartWheelRole = None):
         self.from_planet_short_name = planet
