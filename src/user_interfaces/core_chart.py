@@ -1653,21 +1653,27 @@ class CoreChart(object, metaclass=ABCMeta):
                         if (
                             moon_sign
                             in chart_utils.POS_SIGN[planet_short_name]
+                            and len(self.charts) == 1
                         ):
                             chartfile.write(f' Mo {moon_sign}+')
                             need_another_row = True
                         elif (
                             moon_sign
                             in chart_utils.NEG_SIGN[planet_short_name]
+                            and len(self.charts) == 1
                         ):
                             chartfile.write(f' Mo {moon_sign}-')
                             need_another_row = True
                     if planet_short_name != 'Su':
-                        if sun_sign in chart_utils.POS_SIGN[planet_short_name]:
+                        if (
+                            sun_sign in chart_utils.POS_SIGN[planet_short_name]
+                            and len(self.charts) == 1
+                        ):
                             chartfile.write(f' Su {sun_sign}+')
                             need_another_row = True
                         elif (
                             sun_sign in chart_utils.NEG_SIGN[planet_short_name]
+                            and len(self.charts) == 1
                         ):
                             chartfile.write(f' Su {sun_sign}-')
                             need_another_row = True
@@ -1742,6 +1748,10 @@ class CoreChart(object, metaclass=ABCMeta):
                         ):
                             chartfile.write('\n' + pipe_indent + '| ')
 
+                ## # # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
+                ## Midpoints - decide if we need to write midpoints or not ##
+                ## # # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
+
                 if self.options.midpoints.get('enabled'):
                     self.halfsums = calc_utils.calc_halfsums(
                         self.options, self.charts
@@ -1750,7 +1760,6 @@ class CoreChart(object, metaclass=ABCMeta):
                         self.options, self.charts, self.halfsums
                     )
 
-                # Midpoints - decide if we need to write midpoints or not
                 related_midpoints = self.midpoints.get(
                     f'{planet_data.role.value}{planet_data.short_name}', []
                 )
@@ -1802,6 +1811,12 @@ class CoreChart(object, metaclass=ABCMeta):
             squares_are_direct = self.options.midpoints.get('is90', 'd') == 'd'
 
             # Write midpoints for Ascendant/MC
+
+            # If we're not on the outermost chart, skip angles.
+            # Eventually, we'll have to calculate if the natal angles are "foreground" and consider midpoints to them.
+
+            if chart.role.value != outermost_chart.role.value:
+                continue
 
             ascendant_midpoints = []
             if not only_mundane_enabled or squares_are_direct:
