@@ -977,7 +977,7 @@ class AspectFramework(Enum):
     ECLIPTICAL = ' '
     MUNDANE = 'M'
     PRIME_VERTICAL_PARAN = 'p'
-    POTENTIAL_PARAN = 'P'
+    PARAN = 'P'
 
 
 @dataclass
@@ -1002,6 +1002,10 @@ class Aspect:
 
     def as_prime_vertical_paran(self):
         self.framework = AspectFramework.PRIME_VERTICAL_PARAN
+        return self
+
+    def as_paran(self):
+        self.framework = AspectFramework.PARAN
         return self
 
     def with_framework(self, framework: AspectFramework):

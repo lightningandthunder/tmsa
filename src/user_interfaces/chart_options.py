@@ -75,6 +75,7 @@ class ChartOptions(Frame):
             )
         Label(self, 'Ecliptic Aspects', 0.25, 0.4, 0.25)
         Label(self, 'Mundane Aspects', 0.55, 0.4, 0.25)
+
         Label(self, 'Exact At', 0.85, 0.4, 0.1, anchor=tk.W)
         names = [
             'Conjunction',
@@ -194,9 +195,9 @@ class ChartOptions(Frame):
             '<Button-1>', lambda _: delay(self.midpoints)
         )
 
-        self.pvp_button = Button(self, 'PVP Aspects', 0.65, 0.95, 0.15).bind(
-            '<Button-1>', lambda _: delay(self.prime_vertical_parans)
-        )
+        self.pvp_button = Button(
+            self, 'Paran Aspects', 0.65, 0.95, 0.15, font=font_14
+        ).bind('<Button-1>', lambda _: delay(self.prime_vertical_parans))
         backbtn = Button(self, 'Back', 0.8, 0.95, 0.15)
 
         backbtn.bind('<Button-1>', lambda _: delay(self.destroy))
@@ -259,6 +260,14 @@ class ChartOptions(Frame):
                 '0': [1.25, 2.0, 3.0],
                 '180': [1.25, 2.0, 3.0],
                 '90': [1.25, 2.0, 3.0],
+            },
+        )
+
+        self.paran_aspects = options.get(
+            'paran_aspects',
+            {
+                'enabled': False,
+                '0': [1],
             },
         )
 
@@ -602,7 +611,10 @@ class ChartOptions(Frame):
                 ].append(float(text) if text else 0)
 
         options['midpoints'] = self.mpopt
+
         options['pvp_aspects'] = self.pvp_aspects
+        options['paran_aspects'] = self.paran_aspects
+
         if os.path.exists(filepath):
             if not tkmessagebox.askyesno(
                 'File Exists', f"Do you want to overwrite file '{filename}'?"
@@ -627,16 +639,33 @@ class ChartOptions(Frame):
             self.mpopt = {'0': 0, '90': 0, '45': 0, 'M': 0}
 
     def finish_pvp_options(self):
-        if self.pvp_aspects:
-            self.status.text = 'Prime vertical paran options changed.'
+        status_text = ''
+        if self.paran_aspects:
+            status_text = 'Paran'
         else:
-            self.status.text = 'Prime vertical paran options unchanged.'
+            self.paran_aspects = {
+                'enabled': False,
+                '0': [1],
+            }
+
+        if self.pvp_aspects:
+            if self.paran_aspects:
+                status_text = 'Paran, prime vertical paran options'
+            else:
+                status_text = 'Prime vertical paran options'
+        else:
             self.pvp_aspects = {
                 'enabled': False,
                 '0': [1.25, 2.0, 3.0],
                 '180': [1.25, 2.0, 3.0],
                 '90': [1.25, 2.0, 3.0],
             }
+
+        self.status.text = (
+            f'{status_text} changed.'
+            if status_text
+            else 'Paran and PVP options unchanged.'
+        )
 
     def finish_extra_bodies(self, extra_bodies):
         if sorted(self.extra_bodies) != sorted(extra_bodies):
@@ -655,5 +684,8 @@ class ChartOptions(Frame):
 
     def prime_vertical_parans(self):
         PVPOptions(
-            self.optfile.text, self.pvp_aspects, self.finish_pvp_options
+            self.optfile.text,
+            self.pvp_aspects,
+            self.paran_aspects,
+            self.finish_pvp_options,
         )

@@ -1,4 +1,5 @@
 import bisect
+import math
 
 
 from src import *
@@ -404,8 +405,12 @@ def find_outermost_chart(
 
 
 def parse_aspect(
-    value: float, options: Options, use_mundane_orbs: bool
-) -> tuple[chart_models.AspectType, int, float]:
+    value: float,
+    options: Options,
+    use_mundane_orbs: bool = False,
+    use_paran_orbs: bool = False,
+    allow_harmonics: list[float] = [1],
+) -> tuple[chart_models.AspectType, int, float, str]:
     """Returns an aspect type, aspect class (1-indexed), orb, and strength percent"""
     normalized_value = to360(value)
 
@@ -436,8 +441,20 @@ def parse_aspect(
     # Examples are semisextile and quincunx sharing 150,
     # and septile using 7 despite the actual aspect being 51.whatever
     for (definition_degrees, definition, harmonic) in definitions:
+        if allow_harmonics:
+            allow = False
+            for allowed_harmonic in allow_harmonics:
+                if allowed_harmonic % harmonic == 0:
+                    allow = True
+                    break
+
+            if not allow:
+                continue
+
         if use_mundane_orbs:
             orbs = options.mundane_aspects.get(str(definition_degrees), [0])
+        elif use_paran_orbs:
+            orbs = options.paran_aspects.get('0', [0])
         else:
             orbs = options.ecliptic_aspects.get(str(definition_degrees), [0])
 
@@ -451,9 +468,9 @@ def parse_aspect(
                 )
                 if is_in_range:
                     max_orb = 360
-                    if orbs[2]:
+                    if len(orbs) >= 3 and orbs[2]:
                         max_orb = orbs[2]
-                    elif orbs[1]:
+                    elif len(orbs) >= 2 and orbs[1]:
                         max_orb = orbs[1] * 1.25
                     else:
                         max_orb = orbs[0] * 2.5
@@ -548,3 +565,92 @@ def calc_planetary_needs_strength(
     )
 
     return min(strength, 100)
+
+
+def find_angle_crossings(
+    planet: chart_models.PlanetData, geo_latitude: float
+) -> tuple[float, float, float, float]:
+    """Returns a list of angle crossings, as RAMC values, for planetary data.
+    They are in the order of rising, culminating, setting, anticulminating.
+    """
+
+    ascensional_difference = math.degrees(
+        math.asin(
+            math.tan(math.radians(geo_latitude))
+            * math.tan(math.radians(planet.declination))
+        )
+    )
+    geo_co_latitude = 90 - geo_latitude
+
+    planet_never_rises = planet.declination > geo_co_latitude
+
+    rising = (
+        None
+        if planet_never_rises
+        else to360(planet.right_ascension + ascensional_difference - 90)
+    )
+    setting = (
+        None
+        if planet_never_rises
+        else to360(planet.right_ascension - ascensional_difference + 90)
+    )
+
+    return (
+        rising,
+        planet.right_ascension,
+        setting,
+        to360(planet.right_ascension + 180),
+    )
+
+
+def calc_major_angle_paran(
+    from_planet: chart_models.PlanetData,
+    to_planet: chart_models.PlanetData,
+    options: Options,
+    geo_latitude: float,
+):
+    parans_a = find_angle_crossings(from_planet, geo_latitude)
+    parans_b = find_angle_crossings(to_planet, geo_latitude)
+
+    lowest_orb = None
+    aspect = None
+
+    closest_aspect_type = None
+    closest_aspect_class = None
+    closest_aspect_orb = None
+    closest_aspect_strength = None
+
+    for crossing_a in parans_a:
+        for crossing_b in parans_b:
+            orb = to360(abs(crossing_a - crossing_b))
+            (aspect_type, aspect_class, aspect_orb, strength) = parse_aspect(
+                orb, options, use_paran_orbs=True, allow_harmonics=[4]
+            )
+
+            if aspect_type:
+                if lowest_orb is None or aspect_orb < lowest_orb:
+                    lowest_orb = aspect_orb
+                    closest_aspect_type = aspect_type
+                    closest_aspect_class = aspect_class
+                    closest_aspect_orb = aspect_orb
+                    closest_aspect_strength = strength
+
+    if lowest_orb is not None:
+        return (
+            chart_models.Aspect()
+            .as_paran()
+            .from_planet(
+                from_planet.short_name,
+                role=from_planet.role,
+            )
+            .to_planet(
+                to_planet.short_name,
+                role=to_planet.role,
+            )
+            .as_type(closest_aspect_type)
+            .with_class(closest_aspect_class)
+            .with_strength(closest_aspect_strength)
+            .with_orb(closest_aspect_orb)
+        )
+
+    return aspect

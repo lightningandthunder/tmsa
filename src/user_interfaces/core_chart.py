@@ -799,6 +799,8 @@ class CoreChart(object, metaclass=ABCMeta):
         to_chart_type: chart_models.ChartType,
         whole_chart_is_dormant: bool,
     ) -> chart_models.Aspect | None:
+        outermost_chart = calc_utils.find_outermost_chart(self.charts)
+
         ecliptical_aspect = self.find_ecliptical_aspect(
             primary_planet_data,
             secondary_planet_data,
@@ -909,6 +911,18 @@ class CoreChart(object, metaclass=ABCMeta):
 
         if tightest_aspect and not tightest_aspect.aspect_class == 4:
             return tightest_aspect
+
+        if self.options.paran_aspects.get('enabled', False):
+            paran_aspect = calc_utils.calc_major_angle_paran(
+                primary_planet_data,
+                secondary_planet_data,
+                self.options,
+                outermost_chart.geo_latitude,
+            )
+            if paran_aspect:
+                paran_aspect.aspect_class = 4
+
+            tightest_aspect = paran_aspect or tightest_aspect
 
         # Allow PVP aspects to override other "other partile" aspects
         if self.options.pvp_aspects.get('enabled', False):

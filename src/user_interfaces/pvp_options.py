@@ -13,15 +13,20 @@ from src.utils.gui_utils import ShowHelp
 
 
 class PVPOptions(Frame):
-    def __init__(self, name, pvp_opts, func):
+    def __init__(self, name, pvp_opts, paran_opts, func):
         super().__init__()
-        self.pvp_opts = pvp_opts
+        self.pvp_aspects = pvp_opts
+        self.paran_aspects = paran_opts
         self.func = func
 
-        self.enable_pvp = Checkbutton(self, 'Enable', 0.4, 0.35, 0.215)
-        self.enable_pvp.checked = pvp_opts.get('enabled', False)
+        self.enable_pvp = Checkbutton(
+            self, 'Enable PVP Aspects', 0.35, 0.3, 0.3, anchor='w'
+        )
+        self.enable_pvp.checked = self.pvp_aspects.get('enabled', False)
 
-        Label(self, f'Prime Vertical Paran Options For {name}', 0, 0, 1)
+        Label(
+            self, f'Paran and Prime Vertical Paran Options For {name}', 0, 0, 1
+        )
         Label(self, 'Orb in degrees, to omit leave blank.', 0, 0.05, 1)
         Label(self, 'C1', 0.4, 0.1, 0.05)
         Label(self, 'C2', 0.5, 0.1, 0.05)
@@ -69,6 +74,19 @@ class PVPOptions(Frame):
             '<KeyRelease>', lambda _: delay(check_dec, self.square_3)
         )
 
+        Label(self, 'Parans', 0.4, 0.35, 0.25)
+        Label(self, '0, 90, 180', 0.2, 0.4, 0.3)
+        self.paran = Entry(self, '', 0.4, 0.4, 0.05)
+        self.paran.bind(
+            '<KeyRelease>',
+            lambda _: delay(check_dec, self.paran),
+        )
+
+        self.enable_parans = Checkbutton(
+            self, 'Enable Paran Aspects', 0.35, 0.45, 0.3, anchor='w'
+        )
+        self.enable_parans.checked = self.paran_aspects.get('enabled', False)
+
         Button(self, 'Save', 0.1, 0.55, 0.2).bind(
             '<Button-1>', lambda _: delay(self.save)
         )
@@ -84,41 +102,45 @@ class PVPOptions(Frame):
         )
         self.status = Label(self, '', 0, 0.5, 1)
 
-        conjunction_class_1 = pvp_opts.get('0')[0]
+        conjunction_class_1 = self.pvp_aspects.get('0')[0]
         if conjunction_class_1:
             self.conjunction_1.text = conjunction_class_1
 
-        conjunction_class_2 = pvp_opts.get('0')[1]
+        conjunction_class_2 = self.pvp_aspects.get('0')[1]
         if conjunction_class_2:
             self.conjunction_2.text = conjunction_class_2
 
-        conjunction_class_3 = pvp_opts.get('0')[2]
+        conjunction_class_3 = self.pvp_aspects.get('0')[2]
         if conjunction_class_3:
             self.conjunction_3.text = conjunction_class_3
 
-        opposition_class_1 = pvp_opts.get('180')[0]
+        opposition_class_1 = self.pvp_aspects.get('180')[0]
         if opposition_class_1:
             self.opposition_1.text = opposition_class_1
 
-        opposition_class_2 = pvp_opts.get('180')[1]
+        opposition_class_2 = self.pvp_aspects.get('180')[1]
         if opposition_class_2:
             self.opposition_2.text = opposition_class_2
 
-        opposition_class_3 = pvp_opts.get('180')[2]
+        opposition_class_3 = self.pvp_aspects.get('180')[2]
         if opposition_class_3:
             self.opposition_3.text = opposition_class_3
 
-        square_class_1 = pvp_opts.get('90')[0]
+        square_class_1 = self.pvp_aspects.get('90')[0]
         if square_class_1:
             self.square_1.text = square_class_1
 
-        square_class_2 = pvp_opts.get('90')[1]
+        square_class_2 = self.pvp_aspects.get('90')[1]
         if square_class_2:
             self.square_2.text = square_class_2
 
-        square_class_3 = pvp_opts.get('90')[2]
+        square_class_3 = self.pvp_aspects.get('90')[2]
         if square_class_3:
             self.square_3.text = square_class_3
+
+        paran_orb = self.paran_aspects.get('0', [0])[0]
+        if paran_orb:
+            self.paran.text = paran_orb
 
     def clear(self):
         self.conjunction_1.text = ''
@@ -140,7 +162,7 @@ class PVPOptions(Frame):
             co_2 = float(co_2) if co_2 else 0
             co_3 = self.conjunction_3.text.strip()
             co_3 = float(co_3) if co_3 else 0
-            self.pvp_opts['0'] = [co_1, co_2, co_3]
+            self.pvp_aspects['0'] = [co_1, co_2, co_3]
 
             op_1 = self.opposition_1.text.strip()
             op_1 = float(op_1) if op_1 else 0
@@ -148,7 +170,7 @@ class PVPOptions(Frame):
             op_2 = float(op_2) if op_2 else 0
             op_3 = self.opposition_3.text.strip()
             op_3 = float(op_3) if op_3 else 0
-            self.pvp_opts['180'] = [op_1, op_2, op_3]
+            self.pvp_aspects['180'] = [op_1, op_2, op_3]
 
             sq_1 = self.square_1.text.strip()
             sq_1 = float(sq_1) if sq_1 else 0
@@ -156,9 +178,13 @@ class PVPOptions(Frame):
             sq_2 = float(sq_2) if sq_2 else 0
             sq_3 = self.square_3.text.strip()
             sq_3 = float(sq_3) if sq_3 else 0
-            self.pvp_opts['90'] = [sq_1, sq_2, sq_3]
+            self.pvp_aspects['90'] = [sq_1, sq_2, sq_3]
 
-            self.pvp_opts['enabled'] = self.enable_pvp.checked
+            self.pvp_aspects['enabled'] = self.enable_pvp.checked
+
+            paran_orb = self.paran.text.strip()
+            self.paran_aspects['0'][0] = float(paran_orb) if paran_orb else 0
+            self.paran_aspects['enabled'] = self.enable_parans.checked
 
             self.destroy()
             self.func()
@@ -166,6 +192,6 @@ class PVPOptions(Frame):
             self.status.error('Error saving PVP options: ' + str(e))
 
     def back(self):
-        self.pvp_opts = {}
+        self.pvp_aspects = {}
         self.destroy()
         self.func()

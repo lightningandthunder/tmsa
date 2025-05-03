@@ -75,8 +75,8 @@ class Options:
     ecliptic_aspects: dict[str, list[float]] = {}
     mundane_aspects: dict[str, list[float]] = {}
     pvp_aspects: dict[str, list[float]] = {}
+    paran_aspects: dict[str, list[float]] = {}
     midpoints: dict[str, list[float]] = {}
-    enable_natal_midpoints: bool = False
     include_fg_under_aspects: bool = False
     use_raw_angularity_score: bool = False
 
@@ -121,6 +121,8 @@ class Options:
             self.mundane_aspects = data['mundane_aspects']
         if 'pvp_aspects' in data:
             self.pvp_aspects = data['pvp_aspects']
+        if 'paran_aspects' in data:
+            self.paran_aspects = data['paran_aspects']
         if 'midpoints' in data:
             self.midpoints = data['midpoints']
 
