@@ -278,6 +278,7 @@ class CoreChart(object, metaclass=ABCMeta):
         # time to compute whether we actually have an aspect or not
 
         raw_orb = None
+        use_mundane_orbs = False
 
         if aspect_framework == chart_models.AspectFramework.ECLIPTICAL:
             raw_orb = (
@@ -286,16 +287,25 @@ class CoreChart(object, metaclass=ABCMeta):
             )
         elif aspect_framework == chart_models.AspectFramework.MUNDANE:
             raw_orb = abs(primary_planet.house - secondary_planet.house) % 360
+            use_mundane_orbs = True
 
-        (aspect_type, aspect_class, aspect_orb, aspect_strength) = calc_utils.parse_aspect(value=raw_orb, options=self.options)
+        (
+            aspect_type,
+            aspect_class,
+            aspect_orb,
+            aspect_strength,
+        ) = calc_utils.parse_aspect(
+            value=raw_orb,
+            options=self.options,
+            use_mundane_orbs=use_mundane_orbs,
+        )
 
         if not aspect_type:
             return None
 
-        if (
-            not primary_planet.treat_as_foreground and 
-            (show_aspects_type == option_models.ShowAspect.ONE_PLUS_FOREGROUND
-            or show_aspects_type == option_models.ShowAspect.BOTH_FOREGROUND)
+        if not primary_planet.treat_as_foreground and (
+            show_aspects_type == option_models.ShowAspect.ONE_PLUS_FOREGROUND
+            or show_aspects_type == option_models.ShowAspect.BOTH_FOREGROUND
         ):
             if aspect_is_not_foreground:
                 if aspect_orb < 1 and self.options.partile_nf:
@@ -318,17 +328,14 @@ class CoreChart(object, metaclass=ABCMeta):
 
         return (
             chart_models.Aspect()
-                .from_planet(
-                    from_planet.short_name, role=from_planet.role
-                )
-                .to_planet(to_planet.short_name, role=to_planet.role)
-                .as_type(aspect_type)
-                .with_class(aspect_class)
-                .with_framework(aspect_framework)
-                .with_strength(aspect_strength)
-                .with_orb(aspect_orb)
+            .from_planet(from_planet.short_name, role=from_planet.role)
+            .to_planet(to_planet.short_name, role=to_planet.role)
+            .as_type(aspect_type)
+            .with_class(aspect_class)
+            .with_framework(aspect_framework)
+            .with_strength(aspect_strength)
+            .with_orb(aspect_orb)
         )
-
 
     def find_pvp_aspect(
         self,

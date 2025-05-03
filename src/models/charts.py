@@ -843,7 +843,7 @@ class AspectType(Enum):
     OPPOSITION = 'op'
     INCONJUNCT = 'in'
 
-    DECILE = 'dc'
+    NOVILE_SQUARE = 'ns'
 
     # Not implemented anywhere
     QUINTILE = 'qu'
@@ -872,8 +872,8 @@ class AspectType(Enum):
             return cls.INCONJUNCT
         elif string == 'op':
             return cls.OPPOSITION
-        elif string == 'dc':
-            return cls.DECILE
+        elif string == 'ns':
+            return cls.NOVILE_SQUARE
         elif string == 'qu':
             return cls.QUINTILE
         elif string == 'sp':
@@ -888,17 +888,18 @@ class AspectType(Enum):
         if isinstance(degrees, str):
             degrees = int(degrees)
 
-        # Does not handle septile
         if degrees == 0:
             return cls.CONJUNCTION
         if degrees == 10:
-            return cls.DECILE
+            return cls.NOVILE_SQUARE
         elif degrees == 30:
             return cls.INCONJUNCT
         elif degrees == 40:
             return cls.NOVILE
         elif degrees == 45:
             return cls.OCTILE
+        elif str(degrees).startswith('51.'):
+            return cls.SEPTILE
         elif degrees == 60:
             return cls.SEXTILE
         elif degrees == 72:
@@ -921,7 +922,7 @@ class AspectType(Enum):
         # Does not handle septiles
         if abbreviation == 'co':
             return 0
-        elif abbreviation == 'dc':
+        elif abbreviation == 'ns':
             return 10
         elif abbreviation == 'nv':
             return 40
@@ -1002,7 +1003,7 @@ class Aspect:
     def as_prime_vertical_paran(self):
         self.framework = AspectFramework.PRIME_VERTICAL_PARAN
         return self
-    
+
     def with_framework(self, framework: AspectFramework):
         self.framework = framework
         return self

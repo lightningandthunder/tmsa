@@ -15,7 +15,6 @@ import src.constants as constants
 from src.user_interfaces.core_chart import CoreChart
 import src.utils.chart_utils as chart_utils
 from src.utils.chart_utils import (
-    zod_min,
     zod_sec,
     center_align,
     fmt_dms,

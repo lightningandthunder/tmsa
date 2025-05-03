@@ -404,9 +404,9 @@ def find_outermost_chart(
 
 
 def parse_aspect(
-    value: float, options: Options
+    value: float, options: Options, use_mundane_orbs: bool
 ) -> tuple[chart_models.AspectType, int, float]:
-    '''Returns an aspect type, aspect class (1-indexed), orb, and strength percent'''
+    """Returns an aspect type, aspect class (1-indexed), orb, and strength percent"""
     normalized_value = to360(value)
 
     definitions = [
@@ -419,18 +419,29 @@ def parse_aspect(
         (120, chart_models.AspectType.TRINE, 3),
         (60, chart_models.AspectType.SEXTILE, 6),
         # Overlapping or niche cases
-        (150, chart_models.AspectType.INCONJUNCT, 2.4),
-        (72, chart_models.AspectType.QUINTILE, 5),
+        (30, chart_models.AspectType.INCONJUNCT, 2.4),
         (7, chart_models.AspectType.SEPTILE, 7),
         (40, chart_models.AspectType.NOVILE, 9),
         (30, chart_models.AspectType.INCONJUNCT, 12),
-        (10, chart_models.AspectType.DECILE, 36),
+        (
+            72,
+            chart_models.AspectType.QUINTILE,
+            20,
+        ),  # 18°, 36°, 72°; covers decile and vigintile/semidecile
+        (10, chart_models.AspectType.NOVILE_SQUARE, 36),  # or Trigintasextile?
     ]
 
-    for (degrees, definition, harmonic) in definitions:
-        orbs = options.ecliptic_aspects.get(str(degrees))
+    # Note that definition_degrees is not the actual degrees used,
+    # only the key in the options dict for the orb.
+    # Examples are semisextile and quincunx sharing 150,
+    # and septile using 7 despite the actual aspect being 51.whatever
+    for (definition_degrees, definition, harmonic) in definitions:
+        if use_mundane_orbs:
+            orbs = options.mundane_aspects.get(str(definition_degrees), [0])
+        else:
+            orbs = options.ecliptic_aspects.get(str(definition_degrees), [0])
 
-        if not orbs or not orbs[0]:
+        if not orbs[0]:
             continue
 
         for orb_index in range(len(orbs)):
@@ -447,7 +458,9 @@ def parse_aspect(
                     else:
                         max_orb = orbs[0] * 2.5
 
-                    strength = calc_aspect_strength_percent(max_orb, aspect_orb)
+                    strength = calc_aspect_strength_percent(
+                        max_orb, aspect_orb
+                    )
                     return (definition, orb_index + 1, aspect_orb, strength)
 
     return (None, None, None, None)

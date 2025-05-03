@@ -245,7 +245,7 @@ class Label(PropertyMixin, tk.Label):
         y,
         width=0.25,
         height=0.05,
-        anchor=tk.CENTER,
+        anchor='center',
         font=base_font,
     ):
         super().__init__(
@@ -315,7 +315,16 @@ class Entry(PropertyMixin, tk.Entry):
 
 class Checkbutton(PropertyMixin, tk.Checkbutton):
     def __init__(
-        self, root, text, x, y, width, height=0.05, focus=True, font=base_font
+        self,
+        root,
+        text,
+        x,
+        y,
+        width,
+        height=0.05,
+        focus=True,
+        font=base_font,
+        anchor=tk.W,
     ):
         self._var = tk.IntVar(root)
         super().__init__(
@@ -332,7 +341,7 @@ class Checkbutton(PropertyMixin, tk.Checkbutton):
         self.y = y
         self.width = width
         self.height = height
-        self['anchor'] = tk.W
+        self['anchor'] = anchor
         self.place(relx=x, rely=y, relwidth=width, relheight=height)
 
     @property
