@@ -85,9 +85,9 @@ class ChartOptions(Frame):
             'Trine',
             'Sextile',
             'Inconjuct',
-            'Novile Sqr',
+            '10° Series',
         ]
-        abbr = ['co', 'op', 'sq', 'oc', 'tr', 'sx', 'in', 'ns']
+        abbr = ['co', 'op', 'sq', 'oc', 'tr', 'sx', 'in', 'dc']
         exact = [0, 180, 90, [45, 135], 120, 60, [30, 150], 10]
         self.names = []
         self.abbrs = []
@@ -231,7 +231,12 @@ class ChartOptions(Frame):
         self.showasp.value = options.get('show_aspects', 0)
         self.partile.checked = options.get('partile_nf', False)
         ang = options.get('angularity', {})
-        ecliptical_aspects = options.get('ecliptic_aspects', {})
+        ecliptical_aspects: dict = options.get('ecliptic_aspects', {})
+        
+        # Make sure the "newer" aspects considered have defaults
+        for key in ['10', '7', '72', '11', '13']:
+            ecliptical_aspects.setdefault(key, [0, 0, 0])
+
         mundane_aspects = options.get('mundane_aspects', {})
 
         angularity_model = ang.get('model', 2)
@@ -467,7 +472,7 @@ class ChartOptions(Frame):
 
         for aspect_label_index in range(len(self.names)):
             abbrs.append(self.abbrs[aspect_label_index].text[0:2])
-            if abbrs[aspect_label_index] in ['oc ', 'in ', 'ns ']:
+            if abbrs[aspect_label_index] in ['oc ', 'in ', 'dc ']:
                 max_allowed_orb = 5
             else:
                 max_allowed_orb = 15

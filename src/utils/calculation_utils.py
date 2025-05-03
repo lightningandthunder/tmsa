@@ -433,7 +433,7 @@ def parse_aspect(
             chart_models.AspectType.QUINTILE,
             20,
         ),  # 18°, 36°, 72°; covers decile and vigintile/semidecile
-        (10, chart_models.AspectType.NOVILE_SQUARE, 36),  # or Trigintasextile?
+        (10, chart_models.AspectType.TEN_DEGREE_SERIES, 36),  # or Trigintasextile?
     ]
 
     # Note that definition_degrees is not the actual degrees used,

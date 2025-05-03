@@ -843,7 +843,7 @@ class AspectType(Enum):
     OPPOSITION = 'op'
     INCONJUNCT = 'in'
 
-    NOVILE_SQUARE = 'ns'
+    TEN_DEGREE_SERIES = 'dc'
 
     # Not implemented anywhere
     QUINTILE = 'qu'
@@ -872,8 +872,8 @@ class AspectType(Enum):
             return cls.INCONJUNCT
         elif string == 'op':
             return cls.OPPOSITION
-        elif string == 'ns':
-            return cls.NOVILE_SQUARE
+        elif string == 'dc':
+            return cls.TEN_DEGREE_SERIES
         elif string == 'qu':
             return cls.QUINTILE
         elif string == 'sp':
@@ -891,7 +891,7 @@ class AspectType(Enum):
         if degrees == 0:
             return cls.CONJUNCTION
         if degrees == 10:
-            return cls.NOVILE_SQUARE
+            return cls.TEN_DEGREE_SERIES
         elif degrees == 30:
             return cls.INCONJUNCT
         elif degrees == 40:
@@ -922,7 +922,7 @@ class AspectType(Enum):
         # Does not handle septiles
         if abbreviation == 'co':
             return 0
-        elif abbreviation == 'ns':
+        elif abbreviation == 'dc':
             return 10
         elif abbreviation == 'nv':
             return 40
