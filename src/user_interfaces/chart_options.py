@@ -95,6 +95,10 @@ class ChartOptions(Frame):
         self.maxcls = []
         self.mmaxorbs = []
         self.mmaxcls = []
+
+        self.allowed_ecliptic = {}
+        self.allowed_mundane = {}
+
         for aspect_name_index in range(len(names)):
             self.names.append(
                 Label(
@@ -232,7 +236,7 @@ class ChartOptions(Frame):
         self.partile.checked = options.get('partile_nf', False)
         ang = options.get('angularity', {})
         ecliptical_aspects: dict = options.get('ecliptic_aspects', {})
-        
+
         # Make sure the "newer" aspects considered have defaults
         for key in ['10', '7', '72', '11', '13']:
             ecliptical_aspects.setdefault(key, [0, 0, 0])
@@ -272,9 +276,35 @@ class ChartOptions(Frame):
             'paran_aspects',
             {
                 'enabled': False,
-                '0': [1],
+                '0': [1, 2, 3],
             },
         )
+
+        # Migrate to the "allowed stuff" model
+
+        if not 'allowed_ecliptic' in options:
+            options['allowed_ecliptic'] = NATAL_DEFAULT['allowed_ecliptic']
+
+            # User might have some aspects "disabled" by leaving orbs blank
+            for key in options['allowed_ecliptic']:
+                # If there's a class 1 orb specified, turn that aspect type on
+                options['allowed_ecliptic'][key]['full'] = bool(
+                    key in options['ecliptic_aspects']
+                    and options['ecliptic_aspects'][key][0]
+                )
+
+        self.allowed_ecliptic = options['allowed_ecliptic']
+
+        if not 'allowed_mundane' in options:
+            options['allowed_mundane'] = NATAL_DEFAULT['allowed_mundane']
+
+            for key in options['allowed_mundane']:
+                options['allowed_mundane'][key]['full'] = bool(
+                    key in options['mundane_aspects']
+                    and options['mundane_aspects'][key][0]
+                )
+
+        self.allowed_mundane = options['allowed_mundane']
 
         self.extra_bodies = options.get('extra_bodies', [])
         if 'Use_Eris' in options and 'Er' not in self.extra_bodies:
@@ -466,13 +496,29 @@ class ChartOptions(Frame):
                 'Orb for foreground minor angle must be numeric or blank.'
             )
             return
-        ecliptical_max_orbs = [[], [], [], [], [], [], [], []]
+        ecliptical_max_orbs = [
+            [],
+            [],
+            [],
+            [],
+            [],
+            [],
+            [],
+            [],
+            [],
+            [],
+            [],
+            [],
+            [],
+        ]
         mundane_max_orbs = [[], [], [], []]
-        abbrs = []
 
         for aspect_label_index in range(len(self.names)):
-            abbrs.append(self.abbrs[aspect_label_index].text[0:2])
-            if abbrs[aspect_label_index] in ['oc ', 'in ', 'dc ']:
+            if self.abbrs[aspect_label_index].text[0:2] in [
+                'oc ',
+                'in ',
+                'dc ',
+            ]:
                 max_allowed_orb = 5
             else:
                 max_allowed_orb = 15
@@ -590,24 +636,49 @@ class ChartOptions(Frame):
             'use_raw_angularity_score'
         ] = self.use_raw_angularity_score.checked
 
-        aspect_key_list = ['0', '180', '90', '45', '120', '60', '30', '10']
+        aspect_key_list = [
+            '0',
+            '180',
+            '90',
+            '45',
+            '120',
+            '60',
+            '30',
+            '10',
+            '16',
+            '5',
+            '7',
+            '11',
+            '13',
+        ]
+
+        options['allowed_ecliptic'] = self.allowed_ecliptic
+        options['allowed_mundane'] = self.allowed_mundane
+
         options['ecliptic_aspects'] = {}
-        for aspect_label_index in range(8):
+        for aspect_label_index in range(len(aspect_key_list)):
             options['ecliptic_aspects'][
                 aspect_key_list[aspect_label_index]
             ] = []
+
         options['mundane_aspects'] = {}
         for aspect_label_index in range(4):
             options['mundane_aspects'][
                 aspect_key_list[aspect_label_index]
             ] = []
         options['angularity']['model'] = self.bgcurve.value
-        for aspect_label_index in range(8):
-            for aspect_class in range(3):
-                text = self.maxorbs[aspect_label_index][aspect_class].text
+
+        for aspect_label_index in range(len(aspect_key_list)):
+            if aspect_label_index >= len(self.maxorbs):
                 options['ecliptic_aspects'][
                     aspect_key_list[aspect_label_index]
-                ].append(float(text) if text else 0)
+                ] = [0, 0, 0]
+            else:
+                for aspect_class in range(3):
+                    text = self.maxorbs[aspect_label_index][aspect_class].text
+                    options['ecliptic_aspects'][
+                        aspect_key_list[aspect_label_index]
+                    ].append(float(text) if text else 0)
         for aspect_label_index in range(4):
             for aspect_class in range(3):
                 text = self.mmaxorbs[aspect_label_index][aspect_class].text
@@ -650,7 +721,7 @@ class ChartOptions(Frame):
         else:
             self.paran_aspects = {
                 'enabled': False,
-                '0': [1],
+                '0': [1, 2, 3],
             }
 
         if self.pvp_aspects:

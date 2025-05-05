@@ -76,10 +76,22 @@ class PVPOptions(Frame):
 
         Label(self, 'Parans', 0.4, 0.35, 0.25)
         Label(self, '0, 90, 180', 0.2, 0.4, 0.3)
-        self.paran = Entry(self, '', 0.4, 0.4, 0.05)
-        self.paran.bind(
+        self.paran_1 = Entry(self, '', 0.4, 0.4, 0.05)
+        self.paran_1.bind(
             '<KeyRelease>',
-            lambda _: delay(check_dec, self.paran),
+            lambda _: delay(check_dec, self.paran_1),
+        )
+
+        self.paran_2 = Entry(self, '', 0.5, 0.4, 0.05)
+        self.paran_2.bind(
+            '<KeyRelease>',
+            lambda _: delay(check_dec, self.paran_2),
+        )
+
+        self.paran_3 = Entry(self, '', 0.6, 0.4, 0.05)
+        self.paran_3.bind(
+            '<KeyRelease>',
+            lambda _: delay(check_dec, self.paran_3),
         )
 
         self.enable_parans = Checkbutton(
@@ -138,9 +150,14 @@ class PVPOptions(Frame):
         if square_class_3:
             self.square_3.text = square_class_3
 
-        paran_orb = self.paran_aspects.get('0', [0])[0]
-        if paran_orb:
-            self.paran.text = paran_orb
+        paran_orbs = self.paran_aspects.get('0', [0, 0, 0])
+
+        if paran_orbs[0]:
+            self.paran_1.text = paran_orbs[0]
+        if paran_orbs[1]:
+            self.paran_2.text = paran_orbs[1]
+        if paran_orbs[2]:
+            self.paran_3.text = paran_orbs[2]
 
     def clear(self):
         self.conjunction_1.text = ''
@@ -182,8 +199,15 @@ class PVPOptions(Frame):
 
             self.pvp_aspects['enabled'] = self.enable_pvp.checked
 
-            paran_orb = self.paran.text.strip()
-            self.paran_aspects['0'][0] = float(paran_orb) if paran_orb else 0
+            paran_orb_1 = self.paran_1.text.strip()
+            paran_orb_2 = self.paran_2.text.strip()
+            paran_orb_3 = self.paran_3.text.strip()
+            self.paran_aspects['0'] = [
+                float(paran_orb_1) if paran_orb_1 else 0,
+                float(paran_orb_2) if paran_orb_2 else 0,
+                float(paran_orb_3) if paran_orb_3 else 0,
+            ]
+
             self.paran_aspects['enabled'] = self.enable_parans.checked
 
             self.destroy()

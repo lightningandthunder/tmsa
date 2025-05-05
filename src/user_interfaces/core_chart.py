@@ -791,7 +791,7 @@ class CoreChart(object, metaclass=ABCMeta):
 
         return chart_grid
 
-    def parse_aspect(
+    def find_aspect(
         self,
         primary_planet_data: chart_models.PlanetData,
         secondary_planet_data: chart_models.PlanetData,
@@ -812,6 +812,16 @@ class CoreChart(object, metaclass=ABCMeta):
             secondary_planet_data,
             whole_chart_is_dormant,
         )
+
+        paran_aspect = None
+
+        if self.options.paran_aspects.get('enabled', False):
+            paran_aspect = calc_utils.calc_major_angle_paran(
+                primary_planet_data,
+                secondary_planet_data,
+                self.options,
+                outermost_chart.geo_latitude,
+            )
 
         if (
             from_chart_type.value in chart_models.SOLAR_RETURNS
@@ -902,27 +912,16 @@ class CoreChart(object, metaclass=ABCMeta):
 
         tightest_aspect = None
 
-        if ecliptical_aspect or mundane_aspect:
+        if ecliptical_aspect or mundane_aspect or paran_aspect:
             tightest_aspect = min(
                 ecliptical_aspect,
                 mundane_aspect,
+                paran_aspect,
                 key=lambda x: x.orb if x else 1000,
             )
 
         if tightest_aspect and not tightest_aspect.aspect_class == 4:
             return tightest_aspect
-
-        if self.options.paran_aspects.get('enabled', False):
-            paran_aspect = calc_utils.calc_major_angle_paran(
-                primary_planet_data,
-                secondary_planet_data,
-                self.options,
-                outermost_chart.geo_latitude,
-            )
-            if paran_aspect:
-                paran_aspect.aspect_class = 4
-
-            tightest_aspect = paran_aspect or tightest_aspect
 
         # Allow PVP aspects to override other "other partile" aspects
         if self.options.pvp_aspects.get('enabled', False):
@@ -977,7 +976,7 @@ class CoreChart(object, metaclass=ABCMeta):
                             secondary_planet_long_name
                         ]
 
-                        maybe_aspect = self.parse_aspect(
+                        maybe_aspect = self.find_aspect(
                             primary_planet,
                             secondary_planet,
                             from_chart.type,

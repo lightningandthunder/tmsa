@@ -409,42 +409,39 @@ def parse_aspect(
     options: Options,
     use_mundane_orbs: bool = False,
     use_paran_orbs: bool = False,
-    allow_harmonics: list[float] = [1],
+    allow_harmonics: list[float] = [],
+    allow_divisions: list[int] = [],
 ) -> tuple[chart_models.AspectType, int, float, str]:
-    """Returns an aspect type, aspect class (1-indexed), orb, and strength percent"""
+    """Returns an aspect type, aspect class 1-3, orb, and strength percent"""
     normalized_value = to360(value)
 
+    # Sorted *mostly* by harmonic definition, but preferring standard aspects
     definitions = [
-        # Hard aspects
         (0, chart_models.AspectType.CONJUNCTION, 1),
         (180, chart_models.AspectType.OPPOSITION, 2),
-        (90, chart_models.AspectType.SQUARE, 4),
-        (45, chart_models.AspectType.OCTILE, 8),
-        # Soft aspects
-        (120, chart_models.AspectType.TRINE, 3),
-        (60, chart_models.AspectType.SEXTILE, 6),
-        # Overlapping or niche cases
         (30, chart_models.AspectType.INCONJUNCT, 2.4),
+        (120, chart_models.AspectType.TRINE, 3),
+        (90, chart_models.AspectType.SQUARE, 4),
+        (60, chart_models.AspectType.SEXTILE, 6),
         (7, chart_models.AspectType.SEPTILE, 7),
-        (40, chart_models.AspectType.NOVILE, 9),
+        (45, chart_models.AspectType.OCTILE, 8),
+        (11, chart_models.AspectType.ELEVEN_HARMONIC, 11),
         (30, chart_models.AspectType.INCONJUNCT, 12),
+        (13, chart_models.AspectType.THIRTEEN_HARMONIC, 13),
+        (16, chart_models.AspectType.SIXTEEN_HARMONIC, 16),
         (
-            72,
+            5,
             chart_models.AspectType.QUINTILE,
             20,
-        ),  # 18°, 36°, 72°; covers decile and vigintile/semidecile
-        (10, chart_models.AspectType.TEN_DEGREE_SERIES, 36),  # or Trigintasextile?
+        ),
+        (10, chart_models.AspectType.TEN_DEGREE_SERIES, 36),
     ]
 
-    # Note that definition_degrees is not the actual degrees used,
-    # only the key in the options dict for the orb.
-    # Examples are semisextile and quincunx sharing 150,
-    # and septile using 7 despite the actual aspect being 51.whatever
-    for (definition_degrees, definition, harmonic) in definitions:
-        if allow_harmonics:
+    for (dictionary_key_degrees, definition, harmonic) in definitions:
+        if allow_harmonics and len(allow_harmonics):
             allow = False
             for allowed_harmonic in allow_harmonics:
-                if allowed_harmonic % harmonic == 0:
+                if (allowed_harmonic % harmonic) == 0:
                     allow = True
                     break
 
@@ -452,11 +449,15 @@ def parse_aspect(
                 continue
 
         if use_mundane_orbs:
-            orbs = options.mundane_aspects.get(str(definition_degrees), [0])
+            orbs = options.mundane_aspects.get(
+                str(dictionary_key_degrees), [0, 0, 0]
+            )
         elif use_paran_orbs:
-            orbs = options.paran_aspects.get('0', [0])
+            orbs = options.paran_aspects.get('0', [0, 0, 0])
         else:
-            orbs = options.ecliptic_aspects.get(str(definition_degrees), [0])
+            orbs = options.ecliptic_aspects.get(
+                str(dictionary_key_degrees), [0, 0, 0]
+            )
 
         if not orbs[0]:
             continue
@@ -614,28 +615,40 @@ def calc_major_angle_paran(
 
     lowest_orb = None
     aspect = None
+    relationship = None
 
-    closest_aspect_type = None
     closest_aspect_class = None
     closest_aspect_orb = None
     closest_aspect_strength = None
 
-    for crossing_a in parans_a:
-        for crossing_b in parans_b:
+    # Figure out the aspect as well as the relationship
+    for (angle_id_a, crossing_a) in enumerate(parans_a):
+        for (angle_id_b, crossing_b) in enumerate(parans_b):
             orb = to360(abs(crossing_a - crossing_b))
             (aspect_type, aspect_class, aspect_orb, strength) = parse_aspect(
-                orb, options, use_paran_orbs=True, allow_harmonics=[4]
+                orb, options, use_paran_orbs=True, allow_harmonics=[1]
             )
 
             if aspect_type:
                 if lowest_orb is None or aspect_orb < lowest_orb:
                     lowest_orb = aspect_orb
-                    closest_aspect_type = aspect_type
                     closest_aspect_class = aspect_class
                     closest_aspect_orb = aspect_orb
                     closest_aspect_strength = strength
 
+                    # Conjunctions will be 0, oppositions will be 2, squares will be 1 or 3
+                    relationship = math.fabs(angle_id_a - angle_id_b)
+
     if lowest_orb is not None:
+        aspect_type = None
+
+        if relationship == 0:
+            aspect_type = chart_models.AspectType.CONJUNCTION
+        elif relationship % 2 == 0:
+            aspect_type = chart_models.AspectType.OPPOSITION
+        else:
+            aspect_type = chart_models.AspectType.SQUARE
+
         return (
             chart_models.Aspect()
             .as_paran()
@@ -647,7 +660,7 @@ def calc_major_angle_paran(
                 to_planet.short_name,
                 role=to_planet.role,
             )
-            .as_type(closest_aspect_type)
+            .as_type(aspect_type)
             .with_class(closest_aspect_class)
             .with_strength(closest_aspect_strength)
             .with_orb(closest_aspect_orb)

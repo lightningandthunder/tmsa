@@ -844,11 +844,13 @@ class AspectType(Enum):
     INCONJUNCT = 'in'
 
     TEN_DEGREE_SERIES = 'dc'
+    ELEVEN_HARMONIC = '11'
+    THIRTEEN_HARMONIC = '13'
 
     # Not implemented anywhere
     QUINTILE = 'qu'
     SEPTILE = 'sp'
-    NOVILE = 'nv'
+    SIXTEEN_HARMONIC = '16'
 
     def __str__(self):
         return self.value
@@ -856,121 +858,52 @@ class AspectType(Enum):
     def __repr__(self):
         return self.value
 
-    @classmethod
-    def from_string(cls, string: str):
-        if string == 'co':
-            return cls.CONJUNCTION
-        elif string == 'oc':
-            return cls.OCTILE
-        elif string == 'sx':
-            return cls.SEXTILE
-        elif string == 'sq':
-            return cls.SQUARE
-        elif string == 'tr':
-            return cls.TRINE
-        elif string == 'in':
-            return cls.INCONJUNCT
-        elif string == 'op':
-            return cls.OPPOSITION
-        elif string == 'dc':
-            return cls.TEN_DEGREE_SERIES
-        elif string == 'qu':
-            return cls.QUINTILE
-        elif string == 'sp':
-            return cls.SEPTILE
-        elif string == 'nv':
-            return cls.NOVILE
-        else:
-            return None
+    @property
+    def two_letter_abbr(self) -> str:
+        return self.value
 
-    @classmethod
-    def from_degrees(cls, degrees: int | str):
-        if isinstance(degrees, str):
-            degrees = int(degrees)
-
-        if degrees == 0:
-            return cls.CONJUNCTION
-        if degrees == 10:
-            return cls.TEN_DEGREE_SERIES
-        elif degrees == 30:
-            return cls.INCONJUNCT
-        elif degrees == 40:
-            return cls.NOVILE
-        elif degrees == 45:
-            return cls.OCTILE
-        elif str(degrees).startswith('51.'):
-            return cls.SEPTILE
-        elif degrees == 60:
-            return cls.SEXTILE
-        elif degrees == 72:
-            return cls.QUINTILE
-        elif degrees == 90:
-            return cls.SQUARE
-        elif degrees == 120:
-            return cls.TRINE
-        elif degrees == 135:
-            return cls.OCTILE
-        elif degrees == 150:
-            return cls.INCONJUNCT
-        elif degrees == 180:
-            return cls.OPPOSITION
-        else:
-            return None
+    @property
+    def three_letter_abbr(self) -> str:
+        _map = {
+            AspectType.CONJUNCTION: 'cnj',
+            AspectType.OCTILE: 'oct',
+            AspectType.SEXTILE: 'sex',
+            AspectType.SQUARE: 'sqr',
+            AspectType.TRINE: 'tri',
+            AspectType.OPPOSITION: 'opp',
+            AspectType.INCONJUNCT: 'inc',
+            AspectType.TEN_DEGREE_SERIES: '10x',
+            AspectType.QUINTILE: 'qnt',
+            AspectType.SEPTILE: 'spt',
+            AspectType.ELEVEN_HARMONIC: '11H',
+            AspectType.THIRTEEN_HARMONIC: '13H',
+            AspectType.HALF_OCTILE: '16H',
+        }
+        return _map[self]
 
     @staticmethod
     def degrees_from_abbreviation(abbreviation: str) -> int | None:
-        # Does not handle septiles
-        if abbreviation == 'co':
+        # Does not handle 7, 11, or 13-series
+        if abbreviation in ['co', 'cnj']:
             return 0
-        elif abbreviation == 'dc':
+        elif abbreviation in ['dc', 'dec', '10x']:
             return 10
-        elif abbreviation == 'nv':
-            return 40
-        elif abbreviation == 'oc':
+        elif abbreviation in ['oc', 'oct']:
             return 45
-        elif abbreviation == 'sx':
+        elif abbreviation in ['sx', 'sex', 'sxt']:
             return 60
-        elif abbreviation == 'qu':
+        elif abbreviation in ['qu', 'qn', 'qnt']:
             return 72
-        elif abbreviation == 'sq':
+        elif abbreviation in ['sq', 'sqr']:
             return 90
-        elif abbreviation == 'tr':
+        elif abbreviation in ['tr', 'tri']:
             return 120
-        elif abbreviation == 'in':
+        elif abbreviation in ['in', 'inc']:
             return 150
-        elif abbreviation == 'op':
+        elif abbreviation in ['op', 'opp']:
             return 180
         else:
             return None
-
-    @classmethod
-    def iterate(cls) -> Iterator[tuple['AspectType', int]]:
-        for member in AspectType:
-            yield (member, cls.degrees_from_abbreviation(member.value))
-            if member == AspectType.OCTILE:
-                yield (member, 135)
-            elif member == AspectType.INCONJUNCT:
-                yield (member, 30)
-
-    @classmethod
-    def iterate_harmonic_8(cls) -> Iterator[tuple['AspectType', int]]:
-        for member in AspectType:
-            if member == AspectType.SEXTILE or member == AspectType.TRINE:
-                continue
-            yield (member, cls.degrees_from_abbreviation(member.value))
-            if member == AspectType.OCTILE:
-                yield (member, 135)
-
-    @classmethod
-    def iterate_harmonic_4(cls) -> Iterator[tuple['AspectType', int]]:
-        for member in AspectType:
-            if (
-                member == AspectType.SEXTILE
-                or member == AspectType.TRINE
-                or member == AspectType.OCTILE
-            ):
-                continue
-            yield (member, cls.degrees_from_abbreviation(member.value))
 
 
 class AspectFramework(Enum):

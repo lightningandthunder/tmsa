@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from src import log_startup_error
+from src.defaults.option_defaults import NATAL_DEFAULT
 
 
 @dataclass
@@ -73,6 +74,8 @@ class Options:
     partile_nf: bool = False
     angularity: AngularitySubOptions = None
     ecliptic_aspects: dict[str, list[float]] = {}
+    allowed_ecliptic: dict[str, bool] = {}
+    allowed_mundane: dict[str, bool] = {}
     mundane_aspects: dict[str, list[float]] = {}
     pvp_aspects: dict[str, list[float]] = {}
     paran_aspects: dict[str, list[float]] = {}
@@ -115,16 +118,18 @@ class Options:
                 data['angularity']['major_angles'],
                 data['angularity']['minor_angles'],
             )
-        if 'ecliptic_aspects' in data:
-            self.ecliptic_aspects = data['ecliptic_aspects']
-        if 'mundane_aspects' in data:
-            self.mundane_aspects = data['mundane_aspects']
-        if 'pvp_aspects' in data:
-            self.pvp_aspects = data['pvp_aspects']
-        if 'paran_aspects' in data:
-            self.paran_aspects = data['paran_aspects']
-        if 'midpoints' in data:
-            self.midpoints = data['midpoints']
+
+        for key in [
+            'ecliptic_aspects',
+            'allowed_ecliptic',
+            'mundane_aspects',
+            'allowed_mundane',
+            'pvp_aspects',
+            'paran_aspects',
+            'midpoints',
+        ]:
+            if key in data:
+                setattr(self, key, data[key])
 
     def to_file(self, file_path: str):
         with open(file_path, 'w') as file:
