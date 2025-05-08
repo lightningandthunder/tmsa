@@ -1,5 +1,8 @@
 ### 0.7.0
-
+- Exposed paran functionality
+- Enabled minor aspects, including 10° series
+- Added pagination to "recently used" items, increasing the storage size
+- Removed the legacy "TMSA Classic" angularity model
 
 ### 0.6.0
 

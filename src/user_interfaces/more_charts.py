@@ -18,26 +18,43 @@ class MoreCharts(Frame):
         self.listing = listing
         self.callback = callback
         self.offset = offset
-        self.lbls = []
+        self.file_labels = []
         self.names = {}
         Label(self, 'Select Chart', 0, 0, 1)
         for i in range(17):
-            self.lbls.append(
+            self.file_labels.append(
                 Label(self, '', 0, i * 0.05 + 0.05, 1, font=ulfont)
             )
-            self.lbls[i].bind(
+            self.file_labels[i].bind(
                 '<Button-1>', lambda e: delay(self.set_result, e.widget.text)
             )
-            self.lbls[i].bind(
+            self.file_labels[i].bind(
                 '<Button-3>', lambda e: delay(self.remove, e.widget.text)
             )
-        for i in range(min(17, len(self.listing) - offset)):
-            self.lbls[i].text = display_name(self.listing[i + offset])
-            self.names[self.lbls[i].text] = self.listing[i + offset]
+        for i in range(min(17, len(self.listing) - self.offset)):
+            self.file_labels[i].text = display_name(
+                self.listing[i + self.offset]
+            )
+            self.names[self.file_labels[i].text] = self.listing[
+                i + self.offset
+            ]
         Label(
             self, 'Right click a chart to remove it from history.', 0, 0.9, 1
         )
-        Button(self, 'Not Found', 0.4, 0.95, 0.2).bind(
+
+        if len(self.listing) - self.offset >= 17:
+            Button(self, 'Previous', 0.3, 0.95, 0.2).bind(
+                '<Button-1>', lambda _: self.destroy()
+            )
+            Button(self, 'Next', 0.5, 0.95, 0.2).bind(
+                '<Button-1>', lambda _: delay(self.next_page())
+            )
+        else:
+            Button(self, 'Previous', 0.4, 0.95, 0.2).bind(
+                '<Button-1>', lambda _: self.destroy()
+            )
+
+        Button(self, 'Search Files', 0.8, 0.95, 0.2).bind(
             '<Button-1>', lambda _: delay(self.not_found)
         )
 
@@ -46,6 +63,9 @@ class MoreCharts(Frame):
             return
         self.destroy()
         self.callback(self.names.get(value, None))
+
+    def next_page(self):
+        MoreCharts(self.listing, self.callback, self.offset + 17)
 
     def not_found(self):
         self.destroy()
@@ -60,6 +80,8 @@ class MoreCharts(Frame):
             return
         self.listing.pop(index)
         for i in range(17):
-            self.lbls[i].text = ''
+            self.file_labels[i].text = ''
         for i in range(min(17, len(self.listing) - self.offset)):
-            self.lbls[i].text = display_name(self.listing[i + self.offset])
+            self.file_labels[i].text = display_name(
+                self.listing[i + self.offset]
+            )
