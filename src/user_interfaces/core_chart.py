@@ -303,16 +303,22 @@ class CoreChart(object, metaclass=ABCMeta):
         if not aspect_type:
             return None
 
-        if not primary_planet.treat_as_foreground and (
-            show_aspects_type == option_models.ShowAspect.ONE_PLUS_FOREGROUND
-            or show_aspects_type == option_models.ShowAspect.BOTH_FOREGROUND
-        ):
-            if aspect_is_not_foreground:
-                if aspect_orb < 1 and self.options.partile_nf:
-                    aspect_class = 4
-                else:
-                    # We may have found an aspect, but it's neither foreground nor partile
-                    return None
+        # if (
+        #     not primary_planet.treat_as_foreground
+        #     and not secondary_planet.treat_as_foreground
+        #     and (
+        #         show_aspects_type
+        #         == option_models.ShowAspect.ONE_PLUS_FOREGROUND
+        #         or show_aspects_type
+        #         == option_models.ShowAspect.BOTH_FOREGROUND
+        #     )
+        # ):
+        if aspect_is_not_foreground:
+            if aspect_orb < 1 and self.options.partile_nf:
+                aspect_class = 4
+            else:
+                # We may have found an aspect, but it's neither foreground nor partile
+                return None
 
         from_planet = (
             primary_planet
@@ -821,6 +827,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 secondary_planet_data,
                 self.options,
                 outermost_chart.geo_latitude,
+                whole_chart_is_dormant,
             )
 
         if (

@@ -5,7 +5,7 @@ import math
 from src import *
 from src import constants
 from src.models.angles import ForegroundAngles
-from src.models.options import Options
+from src.models.options import Options, ShowAspect
 import src.models.charts as chart_models
 from src.utils.chart_utils import (
     POS_SIGN,
@@ -404,6 +404,28 @@ def find_outermost_chart(
     return outermost_chart
 
 
+ASPECT_DEFINITIONS = [
+    (0, chart_models.AspectType.CONJUNCTION, 1),
+    (180, chart_models.AspectType.OPPOSITION, 2),
+    (30, chart_models.AspectType.INCONJUNCT, 2.4),
+    (120, chart_models.AspectType.TRINE, 3),
+    (90, chart_models.AspectType.SQUARE, 4),
+    (60, chart_models.AspectType.SEXTILE, 6),
+    (7, chart_models.AspectType.SEPTILE, 7),
+    (45, chart_models.AspectType.OCTILE, 8),
+    (11, chart_models.AspectType.ELEVEN_HARMONIC, 11),
+    (30, chart_models.AspectType.INCONJUNCT, 12),
+    (13, chart_models.AspectType.THIRTEEN_HARMONIC, 13),
+    (16, chart_models.AspectType.SIXTEEN_HARMONIC, 16),
+    (
+        5,
+        chart_models.AspectType.QUINTILE,
+        20,
+    ),
+    (10, chart_models.AspectType.TEN_DEGREE_SERIES, 36),
+]
+
+
 def parse_aspect(
     value: float,
     options: Options,
@@ -415,33 +437,11 @@ def parse_aspect(
     """Returns an aspect type, aspect class 1-3, orb, and strength percent"""
     normalized_value = to360(value)
 
-    # Sorted *mostly* by harmonic definition, but preferring standard aspects
-    definitions = [
-        (0, chart_models.AspectType.CONJUNCTION, 1),
-        (180, chart_models.AspectType.OPPOSITION, 2),
-        (30, chart_models.AspectType.INCONJUNCT, 2.4),
-        (120, chart_models.AspectType.TRINE, 3),
-        (90, chart_models.AspectType.SQUARE, 4),
-        (60, chart_models.AspectType.SEXTILE, 6),
-        (7, chart_models.AspectType.SEPTILE, 7),
-        (45, chart_models.AspectType.OCTILE, 8),
-        (11, chart_models.AspectType.ELEVEN_HARMONIC, 11),
-        (30, chart_models.AspectType.INCONJUNCT, 12),
-        (13, chart_models.AspectType.THIRTEEN_HARMONIC, 13),
-        (16, chart_models.AspectType.SIXTEEN_HARMONIC, 16),
-        (
-            5,
-            chart_models.AspectType.QUINTILE,
-            20,
-        ),
-        (10, chart_models.AspectType.TEN_DEGREE_SERIES, 36),
-    ]
-
-    for (dictionary_key_degrees, definition, harmonic) in definitions:
+    for (dictionary_key_degrees, definition, harmonic) in ASPECT_DEFINITIONS:
         if allow_harmonics and len(allow_harmonics):
             allow = False
             for allowed_harmonic in allow_harmonics:
-                if (allowed_harmonic % harmonic) == 0:
+                if allowed_harmonic == harmonic:
                     allow = True
                     break
 
@@ -462,10 +462,10 @@ def parse_aspect(
         if not orbs[0]:
             continue
 
-        for orb_index in range(len(orbs)):
-            if orbs[orb_index]:
+        for class_index in range(len(orbs)):
+            if orbs[class_index]:
                 (is_in_range, aspect_orb) = in_harmonic_range(
-                    normalized_value, orbs[orb_index], harmonic
+                    normalized_value, orbs[class_index], harmonic
                 )
                 if is_in_range:
                     max_orb = 360
@@ -479,7 +479,7 @@ def parse_aspect(
                     strength = calc_aspect_strength_percent(
                         max_orb, aspect_orb
                     )
-                    return (definition, orb_index + 1, aspect_orb, strength)
+                    return (definition, class_index + 1, aspect_orb, strength)
 
     return (None, None, None, None)
 
@@ -609,11 +609,49 @@ def calc_major_angle_paran(
     to_planet: chart_models.PlanetData,
     options: Options,
     geo_latitude: float,
+    whole_chart_is_dormant: bool,
 ):
+    show_aspects_type = options.show_aspects or ShowAspect.ALL
+    aspect_is_not_foreground = False
+
+    # See if we can short-circuit by skipping non-foreground aspects
+    # when we have Show Partile Non-Foreground off
+    if show_aspects_type == ShowAspect.ONE_PLUS_FOREGROUND:
+        if (
+            not from_planet.is_foreground
+            and not from_planet.treat_as_foreground
+            and not to_planet.is_foreground
+            and not to_planet.treat_as_foreground
+        ):
+            if not options.partile_nf:
+                return None
+            else:
+                aspect_is_not_foreground = True
+
+    elif show_aspects_type == ShowAspect.BOTH_FOREGROUND:
+        if (
+            not from_planet.treat_as_foreground
+            and not to_planet.treat_as_foreground
+        ):
+            if (
+                not from_planet.is_foreground
+                and not from_planet.treat_as_foreground
+            ) or (
+                not to_planet.is_foreground
+                and not to_planet.treat_as_foreground
+            ):
+                if not options.partile_nf:
+                    return None
+                else:
+                    aspect_is_not_foreground = True
+
+    # For dormant ingresses, only show Moon aspects
+    if whole_chart_is_dormant and from_planet.name != 'Moon':
+        return None
+
     parans_a = find_angle_crossings(from_planet, geo_latitude)
     parans_b = find_angle_crossings(to_planet, geo_latitude)
 
-    lowest_orb = None
     aspect = None
     relationship = None
 
@@ -624,14 +662,16 @@ def calc_major_angle_paran(
     # Figure out the aspect as well as the relationship
     for (angle_id_a, crossing_a) in enumerate(parans_a):
         for (angle_id_b, crossing_b) in enumerate(parans_b):
-            orb = to360(abs(crossing_a - crossing_b))
+            orb = abs(crossing_a - crossing_b)
             (aspect_type, aspect_class, aspect_orb, strength) = parse_aspect(
                 orb, options, use_paran_orbs=True, allow_harmonics=[1]
             )
 
             if aspect_type:
-                if lowest_orb is None or aspect_orb < lowest_orb:
-                    lowest_orb = aspect_orb
+                if (
+                    closest_aspect_orb is None
+                    or aspect_orb < closest_aspect_orb
+                ):
                     closest_aspect_class = aspect_class
                     closest_aspect_orb = aspect_orb
                     closest_aspect_strength = strength
@@ -639,7 +679,14 @@ def calc_major_angle_paran(
                     # Conjunctions will be 0, oppositions will be 2, squares will be 1 or 3
                     relationship = math.fabs(angle_id_a - angle_id_b)
 
-    if lowest_orb is not None:
+    if closest_aspect_orb is not None:
+        if aspect_is_not_foreground:
+            if closest_aspect_orb < 1 and options.partile_nf:
+                closest_aspect_class = 4
+            else:
+                # We may have found an aspect, but it's neither foreground nor partile
+                return None
+
         aspect_type = None
 
         if relationship == 0:

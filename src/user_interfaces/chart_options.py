@@ -47,7 +47,7 @@ class ChartOptions(Frame):
         self.use_raw_angularity_score = Checkbutton(
             self, 'Use Raw FG Score', 0.03, 0.3, 0.15, anchor='w'
         )
-        self.nobg = Checkbutton(self, "Don't Mark", 0.8, 0.2, 0.15)
+        self.nobg = Checkbutton(self, "Don't Mark", 0.6, 0.2, 0.15)
         Label(self, 'C1 Orb', 0.225, 0.25, 0.1)
         Label(self, 'C2 0rb', 0.325, 0.25, 0.1)
         Label(self, 'C3 Orb', 0.425, 0.25, 0.1)
