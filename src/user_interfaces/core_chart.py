@@ -924,7 +924,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 ecliptical_aspect,
                 mundane_aspect,
                 paran_aspect,
-                key=lambda x: x.orb if x else 1000,
+                key=lambda x: (200 - x.strength) if x else 1000,
             )
 
         if tightest_aspect and not tightest_aspect.aspect_class == 4:
@@ -1745,7 +1745,7 @@ class CoreChart(object, metaclass=ABCMeta):
                     related_midpoints = filtered_midpoints
 
                 if len(related_midpoints) > 0:
-                    chartfile.write('\n' + pipe_indent + '|    ')
+                    chartfile.write('\n' + pipe_indent + '|  ')
 
                     self.write_midpoint_cosmic_state(
                         chartfile,
@@ -1758,7 +1758,7 @@ class CoreChart(object, metaclass=ABCMeta):
 
             angle_indent = (
                 (' ' * 8) if strength_hierarchy_written else (' ' * 4)
-            ) + '|    '
+            ) + '|  '
 
             only_mundane_enabled = (
                 not self.options.midpoints.get('0')
@@ -1884,7 +1884,7 @@ class CoreChart(object, metaclass=ABCMeta):
         strength_hierarchy_written: bool,
     ):
         for (midpoint_index, midpoint) in enumerate(midpoints):
-            chartfile.write(str(midpoint) + (' ' * 4))
+            chartfile.write(str(midpoint) + (' ' * 3))
             if strength_hierarchy_written:
                 if (
                     midpoint_index == 3
@@ -1895,13 +1895,13 @@ class CoreChart(object, metaclass=ABCMeta):
                         and midpoint_index != len(midpoints) - 1
                     )
                 ):
-                    chartfile.write('\n' + indent + '|    ')
+                    chartfile.write('\n' + indent + '|  ')
             else:
                 if (
                     midpoint_index % 4 == 3
                     and midpoint_index != len(midpoints) - 1
                 ):
-                    chartfile.write('\n' + indent + '|    ')
+                    chartfile.write('\n' + indent + '|  ')
 
     def get_return_class(self, t: chart_models.ChartType) -> str:
         t = t.type.value.lower()

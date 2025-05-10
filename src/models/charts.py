@@ -1001,6 +1001,10 @@ class Aspect:
             AspectType.SEXTILE,
         ]
 
+    @property
+    def strength_percent_formatted(self):
+        return f'{round(float(self.strength)):>3}%'
+
     def __str__(self):
         # This will read something like this:
         # tUr co rSu  1°23'  95% M
@@ -1011,7 +1015,7 @@ class Aspect:
         text = (
             f'{planet_1_role}{self.from_planet_short_name} '
             + f'{self.type.value} {planet_2_role}{self.to_planet_short_name} '
-            + f'{self.get_formatted_orb()} {round(self.strength):>3}% {self.framework.value}'
+            + f'{self.get_formatted_orb()} {self.strength_percent_formatted} {self.framework.value}'
         )
 
         return text if len(text) % 2 == 0 else text + ' '
@@ -1020,8 +1024,8 @@ class Aspect:
         # Exclude the given planet name from the aspect.
         # This will read: "aspect_type other_planet dm_orb framework"
         if self.from_planet_short_name == planet_short_name:
-            return f'{self.type.value} {self.to_planet_role.value}{self.to_planet_short_name} {self.get_formatted_orb()}{self.framework.value}'
-        return f'{self.type.value} {self.from_planet_role.value}{self.from_planet_short_name} {self.get_formatted_orb()}{self.framework.value}'
+            return f'{self.type.value} {self.to_planet_role.value}{self.to_planet_short_name} {self.strength_percent_formatted} {self.framework.value}'
+        return f'{self.type.value} {self.from_planet_role.value}{self.from_planet_short_name} {self.strength_percent_formatted} {self.framework.value}'
 
     def includes_planet(
         self, planet_name: str, role: ChartWheelRole | None = None
@@ -1121,6 +1125,10 @@ class AngleContactAspect:
     def is_hard_aspect(self):
         return True
 
+    @property
+    def strength_percent_formatted(self):
+        return f'{round(float(self.strength)):>3}%'
+
     def __str__(self):
         # This will read something like this:
         # tUr co Mc  +1°23'  99%
@@ -1143,7 +1151,7 @@ class AngleContactAspect:
             self.to_planet_short_name.strip().upper()
         ]
 
-        return f'{angle_name} {self.get_formatted_orb()}'
+        return f'{angle_name} {self.strength_percent_formatted}'
 
     def includes_planet(
         self, planet_name: str, role: ChartWheelRole | None = None
