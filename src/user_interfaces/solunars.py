@@ -642,17 +642,36 @@ class Solunars(Frame):
             solunars.append('Last Quarti-Lunar Return')
 
         if self.more_charts.get('nsr'):
-            solunars.append('Novienic Solar Return')
+            solunars.append(ChartType.NOVIENIC_SOLAR_RETURN.value)
         if self.more_charts.get('10-day'):
-            solunars.append('10-Day Solar Return')
+            solunars.append(ChartType.TEN_DAY_SOLAR_RETURN.value)
         if self.more_charts.get('nlr'):
-            solunars.append('Novienic Lunar Return')
+            solunars.append(ChartType.NOVIENIC_LUNAR_RETURN.value)
         if self.more_charts.get('18-hour'):
-            solunars.append('18-Hour Lunar Return')
+            solunars.append(ChartType.EIGHTEEN_HOUR_LUNAR_RETURN.value)
+
+        if self.more_charts.get('solu'):
+            solunars.append(ChartType.SOLILUNAR_RETURN.value)
+        if self.more_charts.get('demi-solu'):
+            solunars.append(ChartType.DEMI_SOLILUNAR_RETURN.value)
+        if self.more_charts.get('quarti-solu-1'):
+            solunars.append(ChartType.FIRST_QUARTI_SOLILUNAR_RETURN.value)
+        if self.more_charts.get('quarti-solu-3'):
+            solunars.append(ChartType.LAST_QUARTI_SOLILUNAR_RETURN.value)
+
+        if self.more_charts.get('luso'):
+            solunars.append(ChartType.LUNISOLAR_RETURN.value)
+        if self.more_charts.get('demi-luso'):
+            solunars.append(ChartType.DEMI_LUNISOLAR_RETURN.value)
+        if self.more_charts.get('quarti-luso-1'):
+            solunars.append(ChartType.FIRST_QUARTI_LUNISOLAR_RETURN.value)
+        if self.more_charts.get('quarti-luso-3'):
+            solunars.append(ChartType.LAST_QUARTI_LUNISOLAR_RETURN.value)
 
         if not solunars:
             self.status.error('No solunars selected.')
             return
+
         if self.event:
             if self.event == '<':
                 cchart = deepcopy(chart)
@@ -695,7 +714,11 @@ class Solunars(Frame):
         for sol in solunars:
             target = sun
             sl = sol.lower()
-            if 'solar' in sl:
+            if (
+                'solar' in sl
+                and not 'solilunar' in sl
+                and not 'lunisolar' in sl
+            ):
                 cclass = 'SR'
                 if 'demi' in sl:
                     target = (sun + 180) % 360
@@ -729,7 +752,11 @@ class Solunars(Frame):
 
                 date = calc_sun_crossing(target, start)
 
-            elif 'lunar' in sl:
+            elif (
+                'lunar' in sl
+                and not 'lunisolar' in sl
+                and not 'solilunar' in sl
+            ):
                 target = moon
                 cclass = 'LR'
                 if 'demi' in sl:
@@ -757,6 +784,35 @@ class Solunars(Frame):
                             continue
                         break
                 date = calc_moon_crossing(target, start)
+
+            elif 'solilunar' in sl:
+                target = moon
+                sl = sol.lower()
+                cclass = 'SR'
+
+                if 'demi' in sl:
+                    target = (moon + 180) % 360
+                elif 'first' in sl:
+                    target = (moon + 90) % 360
+                elif 'last' in sl:
+                    target = (moon + 270) % 360
+
+                date = calc_sun_crossing(target, start)
+
+            elif 'lunisolar' in sl:
+                target = sun
+                sl = sol.lower()
+                cclass = 'LR'
+
+                if 'demi' in sl:
+                    target = (sun + 180) % 360
+                elif 'first' in sl:
+                    target = (sun + 90) % 360
+                elif 'last' in sl:
+                    target = (sun + 270) % 360
+
+                date = calc_moon_crossing(target, start)
+
             self.make_chart(chart, date, sol, cclass)
 
     def backward_search(self, chart, solunars):
@@ -928,9 +984,9 @@ class Solunars(Frame):
         lunar_returns = []
         for sol in solunars:
             sl = sol.lower()
-            if 'solar' in sl:
+            if 'solar' in sl or 'solilunar' in sl:
                 solar_returns.append(sol)
-            if 'lunar' in sl:
+            if 'lunar' in sl or 'lunisolar' in sl:
                 lunar_returns.append(sol)
         chart_class = 'SR'
         if solar_returns:
@@ -1026,6 +1082,55 @@ class Solunars(Frame):
             solar_returns = solar_returns[1:]
             found = True
 
+        # Solilunar variants
+        if solar_returns:
+            chart_class = 'SR'
+            date = calc_sun_crossing(moon, start - 184)
+            if date > start:
+                if (
+                    date - start <= 15
+                    and solar_returns[0] == ChartType.SOLILUNAR_RETURN.value
+                ):
+                    self.make_chart(chart, date, solar_returns[0], chart_class)
+                date = calc_sun_crossing(moon, start - 367)
+            if solar_returns[0] == ChartType.SOLILUNAR_RETURN.value:
+                self.make_chart(chart, date, solar_returns[0], chart_class)
+                found = True
+                solar_returns = solar_returns[1:]
+            demi_start = date
+        if solar_returns:
+            target = (moon + 180) % 360
+            date = calc_sun_crossing(target, demi_start)
+            if date > start:
+                if (
+                    date - start <= 15
+                    and solar_returns[0]
+                    == ChartType.DEMI_SOLILUNAR_RETURN.value
+                ):
+                    self.make_chart(chart, date, solar_returns[0], chart_class)
+                    found = True
+                quarti_start = demi_start
+            else:
+                if solar_returns[0] == ChartType.DEMI_SOLILUNAR_RETURN.value:
+                    self.make_chart(chart, date, solar_returns[0], chart_class)
+                    found = True
+                quarti_start = date
+            if solar_returns[0] == ChartType.DEMI_SOLILUNAR_RETURN.value:
+                solar_returns = solar_returns[1:]
+        if solar_returns and solar_returns[0] in [
+            ChartType.FIRST_QUARTI_SOLILUNAR_RETURN.value,
+            ChartType.LAST_QUARTI_SOLILUNAR_RETURN.value,
+        ]:
+            if quarti_start == demi_start:
+                target = (moon + 90) % 360
+                chtype = ChartType.FIRST_QUARTI_SOLILUNAR_RETURN.value
+            else:
+                target = (moon + 270) % 360
+                chtype = ChartType.LAST_QUARTI_SOLILUNAR_RETURN.value
+            date = calc_sun_crossing(target, quarti_start)
+            if date - start <= 15:
+                self.make_chart(chart, date, chtype, chart_class)
+
         if lunar_returns:
             chart_class = 'LR'
             date = calc_moon_crossing(moon, start - 15)
@@ -1116,6 +1221,52 @@ class Solunars(Frame):
             self.make_chart(chart, date_to_use, lunar_returns[0], chart_class)
             lunar_returns = lunar_returns[1:]
             found = True
+
+        # Lunisolar variants
+        if lunar_returns:
+            date = calc_moon_crossing(sun, start - 15)
+            if date > start:
+                if (
+                    date - start <= 1.25
+                    and lunar_returns[0] == ChartType.LUNISOLAR_RETURN.value
+                ):
+                    self.make_chart(chart, date, lunar_returns[0], chart_class)
+                date = calc_moon_crossing(sun, start - 29)
+            if lunar_returns[0] == ChartType.LUNISOLAR_RETURN.value:
+                self.make_chart(chart, date, lunar_returns[0], chart_class)
+                found = True
+                lunar_returns = lunar_returns[1:]
+            demi_start = date
+        if lunar_returns:
+            target = (sun + 180) % 360
+            date = calc_moon_crossing(target, demi_start)
+            if date > start:
+                if (
+                    date - start <= 1.25
+                    and lunar_returns[0]
+                    == ChartType.DEMI_LUNISOLAR_RETURN.value
+                ):
+                    self.make_chart(chart, date, lunar_returns[0], chart_class)
+                    found = True
+                quarti_start = demi_start
+            else:
+                if lunar_returns[0] == ChartType.DEMI_LUNISOLAR_RETURN.value:
+                    self.make_chart(chart, date, lunar_returns[0], chart_class)
+                    found = True
+                quarti_start = date
+            if lunar_returns[0] == ChartType.DEMI_LUNISOLAR_RETURN.value:
+                lunar_returns = lunar_returns[1:]
+        if lunar_returns:
+            if quarti_start == demi_start:
+                target = (sun + 90) % 360
+                chtype = ChartType.FIRST_QUARTI_LUNISOLAR_RETURN.value
+            else:
+                target = (sun + 270) % 360
+                chtype = ChartType.LAST_QUARTI_LUNISOLAR_RETURN.value
+            date = calc_moon_crossing(target, quarti_start)
+            if date - start <= 1.25:
+                self.make_chart(chart, date, chtype, chart_class)
+                found = True
 
         if not found:
             self.status.error('No charts found.')

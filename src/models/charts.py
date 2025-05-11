@@ -375,11 +375,27 @@ class ChartType(Enum):
     KINETIC_LUNAR_RETURN_SINGLE = 'Kinetic Lunar Return Single Wheel'
     DEMI_KINETIC_LUNAR_RETURN = 'Kinetic Demi-Lunar Return'
     DEMI_KINETIC_LUNAR_RETURN_SINGLE = 'Kinetic Demi-Lunar Return Single Wheel'
+    FIRST_QUARTI_KINETIC_LUNAR_RETURN = 'Kinetic First Quarti-Lunar Return'
+    FIRST_QUARTI_KINETIC_LUNAR_RETURN_SINGLE = (
+        'Kinetic First Quarti-Lunar Return Single Wheel'
+    )
+    LAST_QUARTI_KINETIC_LUNAR_RETURN = 'Kinetic Last Quarti-Lunar Return'
+    LAST_QUARTI_KINETIC_LUNAR_RETURN_SINGLE = (
+        'Kinetic Last Quarti-Lunar Return Single Wheel'
+    )
 
     KINETIC_SOLAR_RETURN = 'Kinetic Solar Return'
     KINETIC_SOLAR_RETURN_SINGLE = 'Kinetic Solar Return Single Wheel'
     DEMI_KINETIC_SOLAR_RETURN = 'Kinetic Demi-Solar Return'
     DEMI_KINETIC_SOLAR_RETURN_SINGLE = 'Kinetic Demi-Solar Return Single Wheel'
+    FIRST_QUARTI_KINETIC_SOLAR_RETURN = 'Kinetic First Quarti-Solar Return'
+    FIRST_QUARTI_KINETIC_SOLAR_RETURN_SINGLE = (
+        'Kinetic First Quarti-Solar Return Single Wheel'
+    )
+    LAST_QUARTI_KINETIC_SOLAR_RETURN = 'Kinetic Last Quarti-Solar Return'
+    LAST_QUARTI_KINETIC_SOLAR_RETURN_SINGLE = (
+        'Kinetic Last Quarti-Solar Return Single Wheel'
+    )
 
     NOVIENIC_SOLAR_RETURN = 'Novienic Solar Return'
     NOVIENIC_SOLAR_RETURN_SINGLE = 'Novienic Solar Return Single Wheel'
@@ -395,6 +411,14 @@ class ChartType(Enum):
     ANLUNAR_RETURN_SINGLE = 'Anlunar Return Single Wheel'
     DEMI_ANLUNAR_RETURN = 'Demi-Anlunar Return'
     DEMI_ANLUNAR_RETURN_SINGLE = 'Demi-Anlunar Return Single Wheel'
+    FIRST_QUARTI_ANLUNAR_RETURN = 'First Quarti-Anlunar Return'
+    FIRST_QUARTI_ANLUNAR_RETURN_SINGLE = (
+        'First Quarti-Anlunar Return Single Wheel'
+    )
+    LAST_QUARTI_ANLUNAR_RETURN = 'Last Quarti-Anlunar Return'
+    LAST_QUARTI_ANLUNAR_RETURN_SINGLE = (
+        'Last Quarti-Anlunar Return Single Wheel'
+    )
 
     KINETIC_ANULAR_RETURN = 'Kinetic Anlunar Return'
     KINETIC_ANLUNAR_RETURN_SINGLE = 'Kinetic Anlunar Return Single Wheel'
@@ -402,15 +426,40 @@ class ChartType(Enum):
     KINETIC_DEMI_ANLUNAR_RETURN_SINGLE = (
         'Kinetic Demi-Anlunar Return Single Wheel'
     )
+    FIRST_QUARTI_KINETIC_ANULAR_RETURN = 'Kinetic First Quarti-Anlunar Return'
+    FIRST_QUARTI_KINETIC_ANULAR_RETURN_SINGLE = (
+        'Kinetic First Quarti-Anlunar Return Single Wheel'
+    )
+    LAST_QUARTI_KINETIC_ANULAR_RETURN = 'Kinetic Last Quarti-Anlunar Return'
+    LAST_QUARTI_KINETIC_ANULAR_RETURN_SINGLE = (
+        'Kinetic Last Quarti-Anlunar Return Single Wheel'
+    )
 
     SOLILUNAR_RETURN = 'Solilunar Return'
     SOLILUNAR_RETURN_SINGLE = 'Solilunar Return Single Wheel'
     DEMI_SOLILUNAR_RETURN = 'Demi-Solilunar Return'
     DEMI_SOLILUNAR_RETURN_SINGLE = 'Demi-Solilunar Return Single Wheel'
+    FIRST_QUARTI_SOLILUNAR_RETURN = 'First Quarti-Solilunar Return'
+    FIRST_QUARTI_SOLILUNAR_RETURN_SINGLE = (
+        'First Quarti-Solilunar Return Single Wheel'
+    )
+    LAST_QUARTI_SOLILUNAR_RETURN = 'Last Quarti-Solilunar Return'
+    LAST_QUARTI_SOLILUNAR_RETURN_SINGLE = (
+        'Last Quarti-Solilunar Return Single Wheel'
+    )
+
     LUNISOLAR_RETURN = 'Lunisolar Return'
     LUNISOLAR_RETURN_SINGLE = 'Lunisolar Return Single Wheel'
     DEMI_LUNISOLAR_RETURN = 'Demi-Lunisolar Return'
     DEMI_LUNISOLAR_RETURN_SINGLE = 'Demi-Lunisolar Return Single Wheel'
+    FIRST_QUARTI_LUNISOLAR_RETURN = 'First Quarti-Lunisolar Return'
+    FIRST_QUARTI_LUNISOLAR_RETURN_SINGLE = (
+        'First Quarti-Lunisolar Return Single Wheel'
+    )
+    LAST_QUARTI_LUNISOLAR_RETURN = 'Last Quarti-Lunisolar Return'
+    LAST_QUARTI_LUNISOLAR_RETURN_SINGLE = (
+        'Last Quarti-Lunisolar Return Single Wheel'
+    )
 
     CAP_SOLAR = 'Capsolar'
     ARI_SOLAR = 'Arisolar'
