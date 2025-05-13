@@ -614,23 +614,26 @@ class CoreChart(object, metaclass=ABCMeta):
         else:
             ramc_square_strength = -200
 
-        (angularity_strength, signed_orb, max_orb) = max(
+        (angularity_strength, signed_orb, max_orb, related_angle) = max(
             (
                 mundane_angularity_strength,
                 mundane_angularity_signed_orb,
                 max(major_angle_orbs),
+                'major'
             ),
             (
                 square_asc_strength,
                 aspect_to_asc_signed_orb,
                 max(minor_angle_orbs),
+                'ZN'
             ),
             (
                 square_mc_strength,
                 aspect_to_mc_signed_orb,
                 max(minor_angle_orbs),
+                'EW'
             ),
-            (ramc_square_strength, ramc_signed_orb, max(minor_angle_orbs)),
+            (ramc_square_strength, ramc_signed_orb, max(minor_angle_orbs), 'RA'),
             key=lambda x: x[0],
         )
 
@@ -1315,6 +1318,7 @@ class CoreChart(object, metaclass=ABCMeta):
             ) = self.calc_angle_and_strength(planet_data)
 
             angularity_as_aspect = None
+
             if angularity.value.strip().upper() in [
                 a.value.strip().upper() for a in angles_models.ForegroundAngles
             ]:
@@ -1327,6 +1331,7 @@ class CoreChart(object, metaclass=ABCMeta):
                     .with_strength(strength_percent)
                     .with_strength_as_aspect(raw_angle_contact_strength)
                 )
+
             if planet_negates_dormancy:
                 whole_chart_is_dormant = False
 
@@ -1337,7 +1342,6 @@ class CoreChart(object, metaclass=ABCMeta):
             minor_limit = angularity_options.minor_angles or [1.0, 2.0, 3.0]
 
             major_limit = angularity_options.major_angles or [3.0, 6.0, 10.0]
-
             if angularity_as_aspect:
                 if angles_models.MinorAngles.contains(
                     angularity_as_aspect.to_planet_short_name
@@ -1539,9 +1543,18 @@ class CoreChart(object, metaclass=ABCMeta):
         )
 
         angularities_lookup = {}
+
         for angularity in angularities_as_aspects:
             key = f'{angularity.from_planet_role}{angularity.from_planet_short_name}'
             angularities_lookup[key] = angularity
+
+        if self.options.midpoints.get('enabled'):
+            self.halfsums = calc_utils.calc_halfsums(
+                self.options, self.charts
+            )
+            self.midpoints = calc_utils.calc_midpoints_3(
+                self.options, self.charts, self.halfsums
+            )
 
         # Iterate from transiting chart to radix
         for (index, chart) in enumerate(self.charts):
@@ -1627,7 +1640,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 )
 
                 need_another_row = False
-
+                
                 if chart.type.value not in chart_models.INGRESSES:
                     if planet_short_name != 'Mo':
                         if (
@@ -1705,7 +1718,7 @@ class CoreChart(object, metaclass=ABCMeta):
                         need_another_row = False
                     else:
                         chartfile.write(' ')
-
+                
                 for aspect_index, aspect in enumerate(aspect_list):
                     chartfile.write(aspect[0] + ' ' * 3)
 
@@ -1731,14 +1744,6 @@ class CoreChart(object, metaclass=ABCMeta):
                 ## # # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
                 ## Midpoints - decide if we need to write midpoints or not ##
                 ## # # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
-
-                if self.options.midpoints.get('enabled'):
-                    self.halfsums = calc_utils.calc_halfsums(
-                        self.options, self.charts
-                    )
-                    self.midpoints = calc_utils.calc_midpoints_3(
-                        self.options, self.charts, self.halfsums
-                    )
 
                 related_midpoints = self.midpoints.get(
                     f'{planet_data.role.value}{planet_data.short_name}', []
@@ -1766,7 +1771,7 @@ class CoreChart(object, metaclass=ABCMeta):
                             filtered_midpoints.append(midpoint)
 
                     related_midpoints = filtered_midpoints
-
+                
                 if len(related_midpoints) > 0:
                     chartfile.write('\n' + pipe_indent + '|  ')
 
@@ -1776,7 +1781,7 @@ class CoreChart(object, metaclass=ABCMeta):
                         related_midpoints,
                         strength_hierarchy_written,
                     )
-
+        
             chartfile.write('\n')
 
             angle_indent = (
@@ -1797,7 +1802,7 @@ class CoreChart(object, metaclass=ABCMeta):
 
             if chart.role.value != outermost_chart.role.value:
                 continue
-
+            
             ascendant_midpoints = []
             if not only_mundane_enabled or squares_are_direct:
                 raw_midpoints = self.midpoints.get(
@@ -1898,6 +1903,7 @@ class CoreChart(object, metaclass=ABCMeta):
                     ra_midpoints,
                     strength_hierarchy_written,
                 )
+                
 
     def write_midpoint_cosmic_state(
         self,

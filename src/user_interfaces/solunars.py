@@ -1165,7 +1165,7 @@ class Solunars(Frame):
                 quarti_start = date
             if lunar_returns[0] == 'Demi-Lunar Return':
                 lunar_returns = lunar_returns[1:]
-        if lunar_returns:
+        if lunar_returns and lunar_returns[0] in ['First Quarti-Lunar Return', 'Last Quarti-Lunar Return']:
             if quarti_start == demi_start:
                 target = (moon + 90) % 360
                 chtype = 'First Quarti-Lunar Return'
