@@ -260,6 +260,55 @@ class Label(PropertyMixin, tk.Label):
         self.place(relx=x, rely=y, relwidth=width, relheight=height)
 
 
+class Scrollbar(PropertyMixin, tk.Scrollbar):
+    def __init__(
+        self,
+        root,
+        orient=tk.VERTICAL,
+        **kwargs,
+    ):
+        super().__init__(root, orient=orient, **kwargs)
+
+
+class Listbox(PropertyMixin, tk.Listbox):
+    def __init__(
+        self,
+        root,
+        x,
+        y,
+        width=1,
+        height=1,
+        font=base_font,
+        **kwargs,
+    ):
+        super().__init__(
+            root, foreground=TXT_COLOR, background=BG_COLOR, **kwargs
+        )
+        self['font'] = font
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.place(relx=x, rely=y, relwidth=width, relheight=height)
+
+    def item_is_header(self, item):
+        return item.startswith('--')
+
+    @property
+    def selections(self):
+        return [
+            self.get(i)
+            for i in self.curselection()
+            if not self.item_is_header(self.get(i))
+        ]
+
+    def set_options(self, options):
+        for (index, item) in enumerate(options):
+            self.insert(tk.END, item)
+            if self.item_is_header(item):
+                self.itemconfig(index, fg='gray')
+
+
 class Button(PropertyMixin, tk.Button):
     def __init__(
         self,
@@ -325,6 +374,8 @@ class Checkbutton(PropertyMixin, tk.Checkbutton):
         focus=True,
         font=base_font,
         anchor=tk.W,
+        relx=None,
+        rely=None,
     ):
         self._var = tk.IntVar(root)
         super().__init__(
@@ -342,7 +393,12 @@ class Checkbutton(PropertyMixin, tk.Checkbutton):
         self.width = width
         self.height = height
         self['anchor'] = anchor
-        self.place(relx=x, rely=y, relwidth=width, relheight=height)
+        self.place(
+            relx=relx if relx else x,
+            rely=rely if rely else y,
+            relwidth=width,
+            relheight=height,
+        )
 
     @property
     def checked(self):
@@ -414,3 +470,61 @@ class Radiobutton(tk.Radiobutton):
         self['anchor'] = tk.W
         self.place(relx=x, rely=y, relwidth=width, relheight=height)
         group.append(self)
+
+
+# https://stackoverflow.com/questions/27820178/how-to-add-placeholder-to-an-entry-in-tkinter
+
+
+class PlaceholderEntry(tk.Entry, PropertyMixin):
+    def __init__(
+        self,
+        master,
+        text,
+        x,
+        y,
+        width,
+        height=0.05,
+        focus=True,
+        placeholder='',
+        cnf={},
+        fg='black',
+        fg_placeholder='grey50',
+        *args,
+        **kw,
+    ):
+        super().__init__(master=None, cnf={}, bg='white', *args, **kw)
+        self.fg = fg
+        self.fg_placeholder = fg_placeholder
+        self.placeholder = placeholder
+        self.bind('<FocusOut>', lambda event: self.fill_placeholder())
+        self.bind('<FocusIn>', lambda event: self.clear_box())
+        self['font'] = base_font
+
+        if text:
+            self.insert(0, text)
+        else:
+            self.fill_placeholder()
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self['anchor'] = None
+        self.place(relx=x, rely=y, relwidth=width, relheight=height)
+
+    def clear_box(self):
+        if not self.get() and super().get():
+            self.config(fg=self.fg)
+            self.delete(0, tk.END)
+
+    def fill_placeholder(self):
+        if not super().get():
+            self.config(fg=self.fg_placeholder)
+            self.insert(0, self.placeholder)
+
+    def get(self):
+        content = super().get()
+        if not content:
+            self.fill_placeholder()
+        if content == self.placeholder:
+            return ''
+        return content

@@ -610,11 +610,13 @@ def make_chart_path(chart, temporary, is_ingress=False):
     return os.path.abspath(os.path.join(path, filepath))
 
 
-def calc_aspect_strength_percent(max_orb: int, raw_orb: float) -> str:
+def calc_aspect_strength_percent(
+    max_orb: int, raw_orb: float, as_float=False
+) -> str:
     strength = 60 / max_orb
     strength_percent = math.cos(math.radians(raw_orb * strength))
     strength_percent = round((strength_percent - 0.5) * 200)
-    return f'{strength_percent:3d}'
+    return f'{strength_percent:3d}' if not as_float else strength_percent
 
 
 def convert_house_to_pvl(house: float) -> float:

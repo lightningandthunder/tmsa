@@ -11,6 +11,7 @@ from abc import ABCMeta, abstractmethod
 import bisect
 import copy
 from io import TextIOWrapper
+import math
 
 import src.models.angles as angles_models
 import src.models.charts as chart_models
@@ -515,6 +516,7 @@ class CoreChart(object, metaclass=ABCMeta):
         angles_models.ForegroundAngles | angles_models.NonForegroundAngles,
         float,
         float,
+        float,
         bool,
         bool,
     ]:
@@ -540,7 +542,7 @@ class CoreChart(object, metaclass=ABCMeta):
             else -1 * house_quadrant_position
         )
 
-        use_raw = self.options.use_raw_angularity_score
+        use_raw = False
 
         if (
             angularity_options.model
@@ -612,11 +614,23 @@ class CoreChart(object, metaclass=ABCMeta):
         else:
             ramc_square_strength = -200
 
-        (angularity_strength, signed_orb) = max(
-            (mundane_angularity_strength, mundane_angularity_signed_orb),
-            (square_asc_strength, aspect_to_asc_signed_orb),
-            (square_mc_strength, aspect_to_mc_signed_orb),
-            (ramc_square_strength, ramc_signed_orb),
+        (angularity_strength, signed_orb, max_orb) = max(
+            (
+                mundane_angularity_strength,
+                mundane_angularity_signed_orb,
+                max(major_angle_orbs),
+            ),
+            (
+                square_asc_strength,
+                aspect_to_asc_signed_orb,
+                max(minor_angle_orbs),
+            ),
+            (
+                square_mc_strength,
+                aspect_to_mc_signed_orb,
+                max(minor_angle_orbs),
+            ),
+            (ramc_square_strength, ramc_signed_orb, max(minor_angle_orbs)),
             key=lambda x: x[0],
         )
 
@@ -742,9 +756,15 @@ class CoreChart(object, metaclass=ABCMeta):
             )
 
         planet.angularity_strength = angularity_strength
+        raw_angle_contact_strength = chart_utils.calc_aspect_strength_percent(
+            max_orb,
+            math.fabs(signed_orb),
+            as_float=True,
+        )
         return (
             angularity,
             angularity_strength,
+            raw_angle_contact_strength,
             signed_orb,
             planet_negates_dormancy,
             is_mundanely_background,
@@ -956,7 +976,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 bisect.insort(
                     angularities_by_class[index],
                     angularity,
-                    key=lambda x: -1 * round(x.strength),
+                    key=lambda x: -1 * x.strength_as_aspect,
                 )
 
         for (from_index, from_chart) in enumerate(self.charts):
@@ -1177,6 +1197,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 chartfile,
                 chart_index,
             )
+
             if angularities_for_section:
                 angularities_as_aspects.extend(angularities_for_section)
             if not chart_is_dormant:
@@ -1287,6 +1308,7 @@ class CoreChart(object, metaclass=ABCMeta):
             (
                 angularity,
                 strength_percent,
+                raw_angle_contact_strength,
                 signed_angularity_orb,
                 planet_negates_dormancy,
                 is_mundanely_background,
@@ -1303,6 +1325,7 @@ class CoreChart(object, metaclass=ABCMeta):
                     .to_planet(angularity.value.strip().upper())
                     .with_orb(signed_angularity_orb)
                     .with_strength(strength_percent)
+                    .with_strength_as_aspect(raw_angle_contact_strength)
                 )
             if planet_negates_dormancy:
                 whole_chart_is_dormant = False

@@ -27,6 +27,7 @@ from src.user_interfaces.chart import Chart
 from src.user_interfaces.locations import Locations
 from src.user_interfaces.more_charts import MoreCharts
 from src.user_interfaces.more_solunars import MoreSolunars
+from src.user_interfaces.solunars_all_in_one import SolunarsAllInOne
 from src.user_interfaces.widgets import *
 from src.utils.format_utils import display_name, normalize_text, to360, toDMS
 from src.utils.gui_utils import ShowHelp
@@ -185,6 +186,13 @@ class Solunars(Frame):
         backbtn = Button(self, 'Back', 0.8, 0.95, 0.20)
         backbtn.bind('<Button-1>', lambda _: delay(self.back))
         self.status = Label(self, '', 0, 0.85, 1)
+
+        Button(self, 'Test Page', 0, 0.85, 0.2).bind(
+            '<Button-1>', lambda _: delay(self.all_in_one)
+        )
+
+    def all_in_one(self):
+        SolunarsAllInOne(self.base, self.filename)
 
     def enable_find(self):
         self.findbtn.disabled = False
@@ -733,8 +741,6 @@ class Solunars(Frame):
                         test_date = calc_sun_crossing(target, start)
                         if test_date - start >= 41:
                             increment -= 40
-                            if increment == 0:
-                                increment -= 40
                             continue
 
                         break
@@ -745,8 +751,6 @@ class Solunars(Frame):
                         test_date = calc_sun_crossing(target, start)
                         if test_date - start >= 11:
                             increment -= 10
-                            if increment == 0:
-                                increment -= 10
                             continue
                         break
 

@@ -974,6 +974,8 @@ class Aspect:
     from_planet_role: ChartWheelRole = ''
     to_planet_role: ChartWheelRole = ''
 
+    includes_angle = False
+
     def as_ecliptical(self):
         self.framework = AspectFramework.ECLIPTICAL
         return self
@@ -1108,12 +1110,15 @@ class AngleContactAspect:
     type: AspectType = AspectType.CONJUNCTION
     aspect_class: int = 0
     strength: float = 0.0
+    strength_as_aspect: float = 0.0
     orb: float = 0
     framework: AspectFramework = AspectFramework.ECLIPTICAL
     from_planet_short_name: str = ''
     to_planet_short_name: str = ''
     from_planet_role: ChartWheelRole = ''
     to_planet_role: ChartWheelRole = ChartWheelRole.NATAL
+
+    includes_angle = True
 
     __angle_name_map = {
         'A': 'As',
@@ -1164,6 +1169,10 @@ class AngleContactAspect:
         self.strength = strength
         return self
 
+    def with_strength_as_aspect(self, strength: float):
+        self.strength_as_aspect = strength
+        return self
+
     def as_type(self, type: AspectType):
         self.type = type
         return self
@@ -1178,6 +1187,10 @@ class AngleContactAspect:
     def strength_percent_formatted(self):
         return f'{round(float(self.strength)):>3}%'
 
+    @property
+    def strength_as_aspect_formatted(self):
+        return f'{round(float(self.strength_as_aspect)):>3}%'
+
     def __str__(self):
         # This will read something like this:
         # tUr co Mc  +1°23'  99%
@@ -1190,7 +1203,7 @@ class AngleContactAspect:
         text = (
             f'{planet_1_role}{self.from_planet_short_name} '
             + f'{self.type.value} {" " if planet_1_role != "" else ""}{self.to_planet_role.value}{angle_name} '
-            + f'{"+" if self.orb >= 0 else "-"}{self.get_formatted_orb()} {round(self.strength):>3}% '
+            + f'{"+" if self.orb >= 0 else "-"}{self.get_formatted_orb()} {round(self.strength_as_aspect):>3}% '
         )
 
         return text if len(text) % 2 == 0 else text + ' '
@@ -1200,7 +1213,7 @@ class AngleContactAspect:
             self.to_planet_short_name.strip().upper()
         ]
 
-        return f'{angle_name} {self.strength_percent_formatted}'
+        return f'{angle_name} {self.strength_as_aspect_formatted}'
 
     def includes_planet(
         self, planet_name: str, role: ChartWheelRole | None = None
