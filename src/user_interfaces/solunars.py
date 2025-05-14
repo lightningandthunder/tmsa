@@ -745,8 +745,17 @@ class Solunars(Frame):
             chart['time'],
             chart['style'],
         )
-        sun = chart['base_chart']['Sun'][0]
-        moon = chart['base_chart']['Moon'][0]
+        sun = pydash.get(
+            chart,
+            'base_chart.Sun.[0]',
+            pydash.get(chart, 'base_chart.planets.Sun.[0]'),
+        )
+        moon = pydash.get(
+            chart,
+            'base_chart.Moon.[0]',
+            pydash.get(chart, 'base_chart.planets.Moon.[0]'),
+        )
+
         for sol in solunars:
             target = sun
             sl = sol.lower()
@@ -855,17 +864,22 @@ class Solunars(Frame):
                     solar_return_date, chart['style']
                 )
 
-                ssr_chart = ChartObject.from_calculation(
-                    name=chart['name'] + ' Solar Return',
-                    julian_day_utc=solar_return_date,
-                    type=ChartType.SOLAR_RETURN,
-                    year=year,
-                    month=month,
-                    day=day,
-                    time=time,
+                ssr_params = {**chart}
+                ssr_params.update(
+                    {
+                        'name': chart['base_chart']['name'] + ' Solar Return',
+                        'julian_day_utc': solar_return_date,
+                        'type': ChartType.SOLAR_RETURN.value,
+                        'year': year,
+                        'month': month,
+                        'day': day,
+                        'time': time,
+                    }
                 )
-                chart['ssr_chart'] = ssr_chart
-                solar_moon = ssr_chart['Moon'][0]
+
+                ssr_chart = ChartObject.from_calculation(ssr_params)
+
+                solar_moon = ssr_chart.planets['Moon'].longitude
 
                 if 'demi' in sl:
                     target = (solar_moon + 180) % 360
@@ -875,6 +889,8 @@ class Solunars(Frame):
                     target = (solar_moon + 270) % 360
                 else:
                     target = solar_moon
+
+                chart['ssr_chart'] = ssr_chart
 
                 date = calc_moon_crossing(target, start)
 
@@ -888,8 +904,16 @@ class Solunars(Frame):
             chart['time'],
             chart['style'],
         )
-        sun = chart['base_chart']['Sun'][0]
-        moon = chart['base_chart']['Moon'][0]
+        sun = pydash.get(
+            chart,
+            'base_chart.Sun.[0]',
+            pydash.get(chart, 'base_chart.planets.Sun.[0]'),
+        )
+        moon = pydash.get(
+            chart,
+            'base_chart.Moon.[0]',
+            pydash.get(chart, 'base_chart.planets.Moon.[0]'),
+        )
 
         past_date_already_found = False
 
@@ -974,8 +998,16 @@ class Solunars(Frame):
             chart['time'],
             chart['style'],
         )
-        sun = chart['base_chart']['Sun'][0]
-        moon = chart['base_chart']['Moon'][0]
+        sun = pydash.get(
+            chart,
+            'base_chart.Sun.[0]',
+            pydash.get(chart, 'base_chart.planets.Sun.[0]'),
+        )
+        moon = pydash.get(
+            chart,
+            'base_chart.Moon.[0]',
+            pydash.get(chart, 'base_chart.planets.Moon.[0]'),
+        )
         if self.search.value == 2:
             start -= 366
         for sol in solunars:
@@ -1043,8 +1075,18 @@ class Solunars(Frame):
             chart['time'],
             chart['style'],
         )
-        sun = chart['base_chart']['Sun'][0]
-        moon = chart['base_chart']['Moon'][0]
+
+        sun = pydash.get(
+            chart,
+            'base_chart.Sun.[0]',
+            pydash.get(chart, 'base_chart.planets.Sun.[0]'),
+        )
+        moon = pydash.get(
+            chart,
+            'base_chart.Moon.[0]',
+            pydash.get(chart, 'base_chart.planets.Moon.[0]'),
+        )
+
         solar_returns = []
         lunar_returns = []
         for sol in solunars:
@@ -1291,7 +1333,12 @@ class Solunars(Frame):
             found = True
 
         # Lunisolar variants
-        if lunar_returns:
+        if lunar_returns and lunar_returns[0] in [
+            ChartType.LUNISOLAR_RETURN.value,
+            ChartType.DEMI_LUNISOLAR_RETURN.value,
+            ChartType.FIRST_QUARTI_LUNISOLAR_RETURN.value,
+            ChartType.LAST_QUARTI_LUNISOLAR_RETURN.value,
+        ]:
             date = calc_moon_crossing(sun, start - 15)
             if date > start:
                 if (
@@ -1335,6 +1382,88 @@ class Solunars(Frame):
             if date - start <= 1.25:
                 self.make_chart(chart, date, chtype, chart_class)
                 found = True
+
+        # Anlunars
+        if lunar_returns and lunar_returns[0] in [
+            ChartType.ANLUNAR_RETURN.value,
+            ChartType.DEMI_ANLUNAR_RETURN.value,
+            ChartType.FIRST_QUARTI_ANLUNAR_RETURN.value,
+            ChartType.LAST_QUARTI_ANLUNAR_RETURN.value,
+        ]:
+            chart_class = 'LR'
+            # Get past SSR
+            ssr_date = calc_sun_crossing(sun, start - 366)
+            (year, month, day, time) = revjul(ssr_date, chart['style'])
+
+            ssr_params = {**chart}
+            ssr_params.update(
+                {
+                    'name': chart['base_chart']['name'] + ' Solar Return',
+                    'julian_day_utc': ssr_date,
+                    'type': ChartType.SOLAR_RETURN.value,
+                    'year': year,
+                    'month': month,
+                    'day': day,
+                    'time': time,
+                }
+            )
+
+            ssr_chart = ChartObject.from_calculation(ssr_params)
+            chart['ssr_chart'] = ssr_chart
+
+            solar_moon = ssr_chart.planets['Moon'].longitude
+
+            date = calc_moon_crossing(solar_moon, start - 15)
+            if date > start:
+                if (
+                    date - start <= 1.25
+                    and lunar_returns[0] == ChartType.ANLUNAR_RETURN.value
+                ):
+                    self.make_chart(chart, date, lunar_returns[0], chart_class)
+                date = calc_moon_crossing(solar_moon, start - 29)
+            if lunar_returns[0] == ChartType.ANLUNAR_RETURN.value:
+                self.make_chart(chart, date, lunar_returns[0], chart_class)
+                found = True
+                lunar_returns = lunar_returns[1:]
+            demi_start = date
+
+            if lunar_returns:
+                target = (solar_moon + 180) % 360
+                date = calc_moon_crossing(target, demi_start)
+                if date > start:
+                    if (
+                        date - start <= 1.25
+                        and lunar_returns[0]
+                        == ChartType.DEMI_ANLUNAR_RETURN.value
+                    ):
+                        self.make_chart(
+                            chart, date, lunar_returns[0], chart_class
+                        )
+                        found = True
+                    quarti_start = demi_start
+                else:
+                    if lunar_returns[0] == ChartType.DEMI_ANLUNAR_RETURN.value:
+                        self.make_chart(
+                            chart, date, lunar_returns[0], chart_class
+                        )
+                        found = True
+                    quarti_start = date
+                if lunar_returns[0] == ChartType.DEMI_ANLUNAR_RETURN.value:
+                    lunar_returns = lunar_returns[1:]
+            if lunar_returns and lunar_returns[0] in [
+                ChartType.FIRST_QUARTI_ANLUNAR_RETURN.value,
+                ChartType.LAST_QUARTI_ANLUNAR_RETURN.value,
+            ]:
+                if quarti_start == demi_start:
+                    target = (solar_moon + 90) % 360
+                    chtype = ChartType.FIRST_QUARTI_ANLUNAR_RETURN.value
+                else:
+                    target = (solar_moon + 270) % 360
+                    chtype = ChartType.LAST_QUARTI_ANLUNAR_RETURN.value
+                date = calc_moon_crossing(target, quarti_start)
+                if date - start <= 1.25:
+                    self.make_chart(chart, date, chtype, chart_class)
+                    found = True
 
         if not found:
             self.status.error('No charts found.')

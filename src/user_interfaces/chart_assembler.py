@@ -148,10 +148,8 @@ class ChartAssembler:
                 ChartWheelRole.TRANSIT
             )
 
-            # TODO - this is gonna have to be from calculation also
-            ssr_chart = ChartObject.from_calculation(
-                params['ssr_chart']
-            ).with_role(ChartWheelRole.SOLAR)
+            # This has to be pre-calculated
+            ssr_chart = params['ssr_chart'].with_role(ChartWheelRole.SOLAR)
 
             radix = ChartObject(params['base_chart']).with_role(
                 ChartWheelRole.RADIX
@@ -162,12 +160,12 @@ class ChartAssembler:
             )
 
         elif params.get('base_chart', None):
-            return_chart = ChartObject(params).with_role(
+            return_chart = ChartObject.from_calculation(params).with_role(
                 ChartWheelRole.TRANSIT
             )
-            radix = ChartObject(params['base_chart']).with_role(
-                ChartWheelRole.RADIX
-            )
+            radix = ChartObject.from_calculation(
+                params['base_chart']
+            ).with_role(ChartWheelRole.RADIX)
             if not version_is_supported(radix.version):
                 if not tkmessagebox.askyesno(
                     'Radix chart version is out of date and needs to be updated',
@@ -181,7 +179,9 @@ class ChartAssembler:
 
             self.report = Biwheel([return_chart, radix], temporary, options)
         else:
-            single_chart = ChartObject(params).with_role(ChartWheelRole.NATAL)
+            single_chart = ChartObject.from_calculation(params).with_role(
+                ChartWheelRole.NATAL
+            )
             self.report = Uniwheel([single_chart], temporary, options)
 
     def recalculate_radix(self, chart):
@@ -194,7 +194,9 @@ class ChartAssembler:
             json.dump(recalculated_chart, datafile, indent=4)
 
         # Write recalculated chart file
-        radix = ChartObject(recalculated_chart).with_role(ChartWheelRole.RADIX)
+        radix = ChartObject.from_calculation(recalculated_chart).with_role(
+            ChartWheelRole.RADIX
+        )
         try:
             optfile = recalculated_chart['options'].replace(' ', '_') + '.opt'
             if not os.path.exists(os.path.join(OPTION_PATH, optfile)):
@@ -211,9 +213,9 @@ class ChartAssembler:
 
         # This is important because it's not actually a radix;
         # it is its own thing in this context.
-        recalculated_natal = ChartObject(recalculated_chart).with_role(
-            ChartWheelRole.NATAL
-        )
+        recalculated_natal = ChartObject.from_calculation(
+            recalculated_chart
+        ).with_role(ChartWheelRole.NATAL)
         Uniwheel([recalculated_natal], False, Options(options))
 
         # But we still want to return the *radix* specifically
