@@ -1044,20 +1044,11 @@ class CoreChart(object, metaclass=ABCMeta):
                 aspect_width = len(str(aspect_class[0]))
                 break
 
-        # Remove empty aspect classes
         if len(aspects_by_class[3]) == 0 or whole_chart_is_dormant:
             del aspects_by_class[3]
             del aspect_class_headers[3]
             aspects_by_class.append([])
             aspect_class_headers.append('')
-        for class_index in range(2, -1, -1):
-            if len(aspects_by_class[class_index]) == 0:
-                del aspects_by_class[class_index]
-                del aspect_class_headers[class_index]
-                aspects_by_class.append([])
-                aspect_class_headers.append('')
-
-        aspect_header_index = 0
 
         if len(angularities_as_aspects):
             chartfile.write('-' * self.table_width + '\n')
@@ -1065,19 +1056,21 @@ class CoreChart(object, metaclass=ABCMeta):
                 angularities_by_class, chartfile
             )
 
-        if any(aspect_class_headers):
+        if len(aspects_by_class[3]) and not len(aspects_by_class[2]):
+            del aspects_by_class[2]
+            del aspect_class_headers[2]
+
+        if any(
+            [
+                True
+                for aspect_class in aspect_class_headers
+                if len(aspect_class) > 0
+            ]
+        ):
             chartfile.write('-' * self.table_width + '\n')
 
-            while not any(aspect_class_headers[aspect_header_index]):
-                aspect_header_index += 1
-
-            # Write the first 3 headers
-            if aspect_class_headers[aspect_header_index]:
-                left_header = aspect_class_headers[aspect_header_index]
-            else:
-                left_header = ' ' * 26
-
-            aspect_header_index += 1
+            # Class 1
+            left_header = aspect_class_headers[0]
 
             chartfile.write(
                 chart_utils.center_align(
@@ -1086,12 +1079,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 )
             )
 
-            if aspect_class_headers[aspect_header_index]:
-                center_header = aspect_class_headers[aspect_header_index]
-            else:
-                center_header = ' ' * 26
-
-            aspect_header_index += 1
+            center_header = aspect_class_headers[1]
 
             # This represents how much of a shift right there is between
             # the left-aligned first column and the center-aligned second column
@@ -1110,12 +1098,10 @@ class CoreChart(object, metaclass=ABCMeta):
             if gap > 0:
                 chartfile.write(' ' * gap)
 
-            if aspect_class_headers[aspect_header_index]:
-                right_header = aspect_class_headers[aspect_header_index]
+            if not aspects_by_class[2] and aspects_by_class[3]:
+                right_header = aspect_class_headers[3]
             else:
-                right_header = ' ' * 26
-
-            aspect_header_index += 1
+                right_header = aspect_class_headers[2]
 
             chartfile.write(
                 chart_utils.center_align(
@@ -1123,9 +1109,6 @@ class CoreChart(object, metaclass=ABCMeta):
                 )
             )
             chartfile.write('\n')
-
-            # Dashed lines below the column headers; currently removed
-            # chartfile.write('\n' + '-' * self.table_width + '\n')
 
         # For each aspect class, insert dividers where the roles change
         aspects_by_class_with_dividers = copy.deepcopy(aspects_by_class)
@@ -1149,18 +1132,17 @@ class CoreChart(object, metaclass=ABCMeta):
 
         # If there's a fourth class, write it below and centered
         if (
-            aspect_header_index <= len(aspect_class_headers) - 1
-            and aspect_header_index <= len(aspects_by_class_with_dividers) - 1
-            and aspects_by_class_with_dividers[aspect_header_index]
+            len(aspects_by_class_with_dividers) > 3
+            and aspects_by_class_with_dividers[3]
         ):
             chartfile.write(
                 chart_utils.center_align(
-                    aspect_class_headers[aspect_header_index],
+                    aspect_class_headers[3],
                     width=self.table_width,
                 )
                 + '\n'
             )
-            for aspect in aspects_by_class_with_dividers[aspect_header_index]:
+            for aspect in aspects_by_class_with_dividers[3]:
                 chartfile.write(
                     chart_utils.center_align(str(aspect), self.table_width)
                     + '\n'

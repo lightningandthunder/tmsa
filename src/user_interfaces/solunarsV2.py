@@ -23,7 +23,7 @@ from src import *
 from src.constants import DQ, DS, MONTHS, VERSION, DEV_MODE
 from src.models.charts import ChartObject, ChartParams, ChartType
 from src.swe import *
-from src.user_interfaces.chart import Chart
+from src.user_interfaces.chart_assembler import ChartAssembler
 from src.user_interfaces.chartV2 import ChartV2
 from src.user_interfaces.locations import Locations
 from src.user_interfaces.more_charts import MoreCharts

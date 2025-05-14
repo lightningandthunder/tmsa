@@ -12,9 +12,9 @@ from src import *
 from src.models.charts import ChartObject, ChartWheelRole
 from src.models.options import Options
 from src.swe import *
-from src.user_interfaces.biwheelV3 import BiwheelV3
+from src.user_interfaces.biwheel import Biwheel
 from src.user_interfaces.triwheel import Triwheel
-from src.user_interfaces.uniwheelV3 import UniwheelV3
+from src.user_interfaces.uniwheel import Uniwheel
 from src.user_interfaces.widgets import *
 from src.utils.chart_utils import make_chart_path
 from src.utils.format_utils import (
@@ -24,7 +24,7 @@ from src.utils.format_utils import (
 )
 
 
-class Chart:
+class ChartAssembler:
     def __init__(self, chart, temporary, burst=False):
         chart['version'] = (
             version_str_to_tuple(VERSION)
@@ -170,10 +170,10 @@ class Chart:
                 if not radix:
                     return None
 
-            self.report = BiwheelV3([return_chart, radix], temporary, options)
+            self.report = Biwheel([return_chart, radix], temporary, options)
         else:
             single_chart = ChartObject(chart).with_role(ChartWheelRole.NATAL)
-            self.report = UniwheelV3([single_chart], temporary, options)
+            self.report = Uniwheel([single_chart], temporary, options)
 
     def recalculate_radix(self, chart):
         recalculated_chart = deepcopy(chart)
@@ -205,7 +205,7 @@ class Chart:
         recalculated_natal = ChartObject(recalculated_chart).with_role(
             ChartWheelRole.NATAL
         )
-        UniwheelV3([recalculated_natal], False, Options(options))
+        Uniwheel([recalculated_natal], False, Options(options))
 
         # But we still want to return the *radix* specifically
         return radix

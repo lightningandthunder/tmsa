@@ -22,7 +22,7 @@ from geopy import Nominatim
 from src import *
 from src.constants import DQ, DS, MONTHS, VERSION
 from src.swe import *
-from src.user_interfaces.chart import Chart
+from src.user_interfaces.chart_assembler import ChartAssembler
 from src.user_interfaces.locations import Locations
 from src.user_interfaces.more_charts import MoreCharts
 from src.user_interfaces.widgets import *
@@ -819,9 +819,9 @@ class Ingresses(Frame):
         cchart['correction'] = 0
         cchart['zone'] = 'UT'
         if show:
-            Chart(cchart, self.istemp.value).report.show()
+            ChartAssembler(cchart, self.istemp.value).report.show()
         else:
-            Chart(cchart, self.istemp.value).report
+            ChartAssembler(cchart, self.istemp.value).report
 
     def save_location(self, chart):
         try:

@@ -25,7 +25,7 @@ from src.utils.chart_utils import (
 )
 
 
-class BiwheelV3(CoreChart):
+class Biwheel(CoreChart):
     table_width = 81
     rows = 65
     columns = 69

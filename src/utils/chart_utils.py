@@ -680,9 +680,15 @@ def write_triple_columns_to_file(
         )
     ):
         if aspect_index < len(classes[0]):
+            text = (
+                str(classes[0][aspect_index])
+                if classes[0][aspect_index]
+                else ' ' * 26
+            )
+
             chartfile.write(
                 left_align(
-                    str(classes[0][aspect_index]),
+                    text,
                     width=26,
                 )
             )

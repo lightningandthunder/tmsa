@@ -326,10 +326,8 @@ class SelectChart(Frame):
             if chart.get('base_chart', None):
                 chart['basechart'] = None
             main.after(0, self.destroy())
-            if DEV_MODE:
-                SolunarsV2(chart, self.filename)
-            else:
-                Solunars(chart, self.filename)
+
+            Solunars(chart, self.filename)
         except Exception as e:
             self.status.error(
                 f"Unable to open file: '{os.path.basename(self.filename)}' : {e}."

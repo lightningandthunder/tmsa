@@ -25,7 +25,7 @@ from src.constants import DQ, DS, MONTHS, VERSION
 from src.models.charts import ChartObject, ChartParams, ChartType
 from src.models.options import ProgramOptions
 from src.swe import *
-from src.user_interfaces.chart import Chart
+from src.user_interfaces.chart_assembler import ChartAssembler
 from src.user_interfaces.locations import Locations
 from src.user_interfaces.more_charts import MoreCharts
 from src.user_interfaces.more_solunars import MoreSolunars
@@ -1356,11 +1356,11 @@ class Solunars(Frame):
         cchart['correction'] = 0
         cchart['zone'] = 'UT'
         if show:
-            chart_class = Chart(cchart, self.istemp.value)
+            chart_class = ChartAssembler(cchart, self.istemp.value)
             if hasattr(chart_class, 'report'):
                 chart_class.report.show()
         else:
-            chart_class = Chart(cchart, self.istemp.value)
+            chart_class = ChartAssembler(cchart, self.istemp.value)
             if hasattr(chart_class, 'report'):
                 chart_class.report
 
