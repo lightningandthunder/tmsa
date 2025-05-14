@@ -25,96 +25,96 @@ from src.utils.format_utils import (
 
 
 class ChartAssembler:
-    def __init__(self, chart, temporary, burst=False):
-        chart['version'] = (
-            version_str_to_tuple(VERSION)
-            if 'version' not in chart
-            else chart['version']
-        )
-        self.jd = julday(
-            chart['year'],
-            chart['month'],
-            chart['day'],
-            chart['time'] + chart['correction'],
-            chart['style'],
-        )
-        self.long = chart['longitude']
-        if chart['zone'] == 'LAT':
-            self.jd = calc_lat_to_lmt(self.jd, self.long)
-        self.ayan = calc_ayan(self.jd)
-        chart['ayan'] = self.ayan
-        self.oe = calc_obliquity(self.jd)
-        chart['oe'] = self.oe
-        self.lat = chart['latitude']
-        (cusps, angles) = calc_cusps(self.jd, self.lat, self.long)
-        self.ramc = angles[0]
-        chart['cusps'] = cusps
-        chart['ramc'] = self.ramc
-        chart['Vertex'] = [
-            angles[1],
-            calc_house_pos(
-                self.ramc, self.lat, self.oe, to360(angles[1] + self.ayan), 0
-            ),
-        ]
-        chart['Eastpoint'] = [
-            angles[2],
-            calc_house_pos(
-                self.ramc, self.lat, self.oe, to360(angles[2] + self.ayan), 0
-            ),
-        ]
+    def __init__(self, params, temporary, burst=False):
+        # chart['version'] = (
+        #     version_str_to_tuple(VERSION)
+        #     if 'version' not in chart
+        #     else chart['version']
+        # )
+        # self.jd = julday(
+        #     chart['year'],
+        #     chart['month'],
+        #     chart['day'],
+        #     chart['time'] + chart['correction'],
+        #     chart['style'],
+        # )
+        # self.long = chart['longitude']
+        # if chart['zone'] == 'LAT':
+        #     self.jd = calc_lat_to_lmt(self.jd, self.long)
+        # self.ayan = calc_ayan(self.jd)
+        # chart['ayan'] = self.ayan
+        # self.oe = calc_obliquity(self.jd)
+        # chart['oe'] = self.oe
+        # self.lat = chart['latitude']
+        # (cusps, angles) = calc_cusps(self.jd, self.lat, self.long)
+        # self.ramc = angles[0]
+        # chart['cusps'] = cusps
+        # chart['ramc'] = self.ramc
+        # chart['Vertex'] = [
+        #     angles[1],
+        #     calc_house_pos(
+        #         self.ramc, self.lat, self.oe, to360(angles[1] + self.ayan), 0
+        #     ),
+        # ]
+        # chart['Eastpoint'] = [
+        #     angles[2],
+        #     calc_house_pos(
+        #         self.ramc, self.lat, self.oe, to360(angles[2] + self.ayan), 0
+        #     ),
+        # ]
 
-        for [long_name, planet_definition] in PLANETS.items():
-            planet_index = planet_definition['number']
-            [
-                longitude,
-                latitude,
-                speed,
-                right_ascension,
-                declination,
-            ] = calc_planet(self.jd, planet_index)
-            [azimuth, altitude] = calc_azimuth(
-                self.jd,
-                self.long,
-                self.lat,
-                to360(longitude + self.ayan),
-                latitude,
-            )
-            house_position = calc_house_pos(
-                self.ramc,
-                self.lat,
-                self.oe,
-                to360(longitude + self.ayan),
-                latitude,
-            )
-            meridian_longitude = calc_meridian_longitude(azimuth, altitude)
+        # for [long_name, planet_definition] in PLANETS.items():
+        #     planet_index = planet_definition['number']
+        #     [
+        #         longitude,
+        #         latitude,
+        #         speed,
+        #         right_ascension,
+        #         declination,
+        #     ] = calc_planet(self.jd, planet_index)
+        #     [azimuth, altitude] = calc_azimuth(
+        #         self.jd,
+        #         self.long,
+        #         self.lat,
+        #         to360(longitude + self.ayan),
+        #         latitude,
+        #     )
+        #     house_position = calc_house_pos(
+        #         self.ramc,
+        #         self.lat,
+        #         self.oe,
+        #         to360(longitude + self.ayan),
+        #         latitude,
+        #     )
+        #     meridian_longitude = calc_meridian_longitude(azimuth, altitude)
 
-            data = [
-                longitude,
-                latitude,
-                speed,
-                right_ascension,
-                declination,
-                azimuth,
-                altitude,
-                meridian_longitude,
-                house_position,
-            ]
+        #     data = [
+        #         longitude,
+        #         latitude,
+        #         speed,
+        #         right_ascension,
+        #         declination,
+        #         azimuth,
+        #         altitude,
+        #         meridian_longitude,
+        #         house_position,
+        #     ]
 
-            chart[long_name] = data
+        #     chart[long_name] = data
 
-        self.save_and_print(chart, temporary, burst)
+        self.save_and_print(params, temporary, burst)
 
-    def save_and_print(self, chart, temporary, burst):
+    def save_and_print(self, params, temporary, burst):
         try:
-            optfile = chart['options'].replace(' ', '_') + '.opt'
+            optfile = params['options'].replace(' ', '_') + '.opt'
             with open(os.path.join(OPTION_PATH, optfile)) as datafile:
-                options = json.load(datafile)
+                raw_options = json.load(datafile)
         except Exception:
             tkmessagebox.showerror(
                 'File Error', f"Unable to open '{optfile}'."
             )
             return
-        filename = make_chart_path(chart, temporary)
+        filename = make_chart_path(params, temporary)
         if not burst:
             try:
                 with open(RECENT_FILE, 'r') as datafile:
@@ -123,9 +123,11 @@ class ChartAssembler:
                 recent = []
         if not os.path.exists(filename):
             os.makedirs(os.path.dirname(filename), exist_ok=True)
+
+        chart = ChartObject.from_calculation(params)
+
         try:
-            with open(filename, 'w') as datafile:
-                json.dump(chart, datafile, indent=4)
+            chart.to_file(filename)
         except Exception as e:
             tkmessagebox.showerror('Unable to save file', f'{e}')
             return
@@ -139,14 +141,19 @@ class ChartAssembler:
             except Exception:
                 pass
 
-        options = Options(options)
+        options = Options(raw_options)
 
-        if chart.get('ssr_chart', None):
-            return_chart = ChartObject(chart).with_role(ChartWheelRole.TRANSIT)
-            ssr_chart = ChartObject(chart['ssr_chart']).with_role(
-                ChartWheelRole.SOLAR
+        if params.get('ssr_chart', None):
+            return_chart = ChartObject.from_calculation(params).with_role(
+                ChartWheelRole.TRANSIT
             )
-            radix = ChartObject(chart['base_chart']).with_role(
+
+            # TODO - this is gonna have to be from calculation also
+            ssr_chart = ChartObject.from_calculation(
+                params['ssr_chart']
+            ).with_role(ChartWheelRole.SOLAR)
+
+            radix = ChartObject(params['base_chart']).with_role(
                 ChartWheelRole.RADIX
             )
 
@@ -154,9 +161,11 @@ class ChartAssembler:
                 [return_chart, ssr_chart, radix], temporary, options
             )
 
-        elif chart.get('base_chart', None):
-            return_chart = ChartObject(chart).with_role(ChartWheelRole.TRANSIT)
-            radix = ChartObject(chart['base_chart']).with_role(
+        elif params.get('base_chart', None):
+            return_chart = ChartObject(params).with_role(
+                ChartWheelRole.TRANSIT
+            )
+            radix = ChartObject(params['base_chart']).with_role(
                 ChartWheelRole.RADIX
             )
             if not version_is_supported(radix.version):
@@ -166,13 +175,13 @@ class ChartAssembler:
                 ):
                     return None
 
-                radix = self.recalculate_radix(chart['base_chart'])
+                radix = self.recalculate_radix(params['base_chart'])
                 if not radix:
                     return None
 
             self.report = Biwheel([return_chart, radix], temporary, options)
         else:
-            single_chart = ChartObject(chart).with_role(ChartWheelRole.NATAL)
+            single_chart = ChartObject(params).with_role(ChartWheelRole.NATAL)
             self.report = Uniwheel([single_chart], temporary, options)
 
     def recalculate_radix(self, chart):

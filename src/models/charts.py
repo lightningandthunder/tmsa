@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Iterator, TypeVar, TypedDict
 
+import pydash
+
 from src import log_startup_error, swe
 from src.constants import PLANETS, VERSION
 from src.models.angles import (
@@ -272,6 +274,21 @@ class PlanetData(__PointData):
     def short_name_with_role(self):
         return f'{self.role.value}{self.short_name}'
 
+    @property
+    def as_raw(self):
+        return [
+            self.longitude,
+            self.latitude,
+            self.speed,
+            self.right_ascension,
+            self.declination,
+            self.azimuth,
+            self.altitude,
+            self.meridian_longitude,
+            self.house,
+            self.prime_vertical_longitude,
+        ]
+
 
 @dataclass
 class AngleData(__PointData):
@@ -516,8 +533,10 @@ class ChartObject:
     version: tuple[int | str] = (0, 0, 0)
     sun_sign: str = ''
     moon_sign: str = ''
+    chart_class: str = ''
+    options_file: str = ''
 
-    def __init__(self, data: dict, from_scratch=False):
+    def __init__(self, data: dict):
         self.type = ChartType(data['type'])
         self.name = data.get('name', None)
         self.year = data['year']
@@ -528,10 +547,16 @@ class ChartObject:
         self.zone = data['zone']
         self.correction = data['correction']
 
+        self.chart_class = data.get('class', '')
+        self.options_file = data.get('options', '')
+
         planet = PlanetData()
 
-        self.sun_sign = SIGNS_SHORT[int(data['Sun'][0] // 30)]
-        self.moon_sign = SIGNS_SHORT[int(data['Moon'][0] // 30)]
+        sun_longitude = data.get('Sun', pydash.get('planets.Sun'))[0]
+        moon_longitude = data.get('Moon', pydash.get('planets.Moon'))[0]
+
+        self.sun_sign = SIGNS_SHORT[int(sun_longitude // 30)]
+        self.moon_sign = SIGNS_SHORT[int(moon_longitude // 30)]
         if 'julian_day_utc' in data:
             self.julian_day_utc = data['julian_day_utc']
         else:
@@ -556,6 +581,7 @@ class ChartObject:
         (cusps, angles) = swe.calc_cusps(
             self.julian_day_utc, self.geo_latitude, self.geo_longitude
         )
+
         if data.get('ramc', None):
             self.ramc = data['ramc']
         else:
@@ -607,7 +633,7 @@ class ChartObject:
             self.planets = {}
 
             for long_name in PLANETS:
-                if long_name not in data and not from_scratch:
+                if long_name not in data:
                     continue
                 planet_data = data[long_name]
                 planet = PlanetData()
@@ -723,37 +749,39 @@ class ChartObject:
             prime_vertical_longitude=None,
         )
 
-        def __dict__(self):
-            return {
-                'name': self.name,
-                'year': self.year,
-                'month': self.month,
-                'day': self.day,
-                'location': self.location,
-                'time': self.time,
-                'zone': self.zone,
-                'correction': self.correction,
-                'type': self.type.value,
-                'julian_day_utc': self.julian_day_utc,
-                'ayanamsa': self.ayanamsa,
-                'obliquity': self.obliquity,
-                'geo_longitude': self.geo_longitude,
-                'geo_latitude': self.geo_latitude,
-                'lst': self.lst,
-                'ramc': self.ramc,
-                'planets': {
-                    planet: self.planets[planet].__dict__
-                    for planet in self.planets
-                },
-                'cusps': self.cusps,
-                'angles': self.angles,
-                'vertex': self.vertex,
-                'eastpoint': self.eastpoint,
-                'role': self.role.value,
-                'notes': self.notes,
-                'style': self.style,
-                'version': self.version,
-            }
+    def __dict__(self):
+        data = {
+            'name': self.name,
+            'type': self.type.value,
+            'class': self.chart_class,
+            'year': self.year,
+            'month': self.month,
+            'day': self.day,
+            'style': self.style,
+            'time': self.time,
+            'location': self.location,
+            'latitude': self.geo_latitude,
+            'longitude': self.geo_longitude,
+            'zone': self.zone,
+            'correction': self.correction,
+            'notes': self.notes,
+            'options': self.options_file.replace('_', ' ').strip('.opt'),
+            'version': self.version,
+            'ayan': self.ayanamsa,
+            'oe': self.obliquity,
+            'cusps': self.cusps,
+            'ramc': self.ramc,
+            'Vertex': self.vertex,
+            'Eastpoint': self.eastpoint,
+            'lst': self.lst,
+            'julian_day_utc': self.julian_day_utc,
+            'planets': {},
+        }
+
+        for planet_name in self.planets:
+            data['planets'][planet_name] = self.planets[planet_name].as_raw
+
+        return data
 
     def iterate_points(
         self, options: Options, include_angles: bool = False
@@ -802,35 +830,26 @@ class ChartObject:
             except json.JSONDecodeError:
                 log_startup_error(f'Error reading {file_path}')
 
-    # TODO - this doesn't work yet; it's missing a lot of stuff
     @staticmethod
     def from_calculation(params: dict) -> 'ChartObject':
-        chart = ChartObject(params, from_scratch=True)
-        chart.version = (
+        chart = {}
+        chart.update(params)
+
+        chart['version'] = (
             version_str_to_tuple(VERSION)
             if 'version' not in params
             else params['version']
         )
-        chart.style = params['style']
-        chart.julian_day_utc = swe.julday(
-            params['year'],
-            params['month'],
-            params['day'],
-            params['time'] + params['correction'],
-            params['style'],
-        )
 
-        for planet in PLANETS:
-            planet_definitions = PLANETS[planet]
+        for [long_name, planet_definition] in PLANETS.items():
+            planet_index = planet_definition['number']
             [
                 longitude,
                 latitude,
                 speed,
                 right_ascension,
                 declination,
-            ] = swe.calc_planet(
-                chart.julian_day_utc, planet_definitions['number']
-            )
+            ] = swe.calc_planet(chart.julian_day_utc, planet_index)
             [azimuth, altitude] = swe.calc_azimuth(
                 chart.julian_day_utc,
                 chart.geo_longitude,
@@ -840,7 +859,7 @@ class ChartObject:
             )
             house_position = swe.calc_house_pos(
                 chart.ramc,
-                chart.latitude,
+                chart.geo_latitude,
                 chart.obliquity,
                 to360(longitude + chart.ayanamsa),
                 latitude,
@@ -859,9 +878,9 @@ class ChartObject:
                 house_position,
             ]
 
-            chart.planets[planet_definitions['long_name']] = data
+            chart[long_name] = data
 
-        return chart
+        return ChartObject(chart)
 
     def to_file(self, file_path: str):
         with open(file_path, 'w') as file:
