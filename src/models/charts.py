@@ -420,18 +420,18 @@ class ChartType(Enum):
         'Last Quarti-Anlunar Return Single Wheel'
     )
 
-    KINETIC_ANULAR_RETURN = 'Kinetic Anlunar Return'
+    KINETIC_ANLUNAR_RETURN = 'Kinetic Anlunar Return'
     KINETIC_ANLUNAR_RETURN_SINGLE = 'Kinetic Anlunar Return Single Wheel'
     KINETIC_DEMI_ANLUNAR_RETURN = 'Kinetic Demi-Anlunar Return'
     KINETIC_DEMI_ANLUNAR_RETURN_SINGLE = (
         'Kinetic Demi-Anlunar Return Single Wheel'
     )
-    FIRST_QUARTI_KINETIC_ANULAR_RETURN = 'Kinetic First Quarti-Anlunar Return'
-    FIRST_QUARTI_KINETIC_ANULAR_RETURN_SINGLE = (
+    FIRST_QUARTI_KINETIC_ANLUNAR_RETURN = 'Kinetic First Quarti-Anlunar Return'
+    FIRST_QUARTI_KINETIC_ANLUNAR_RETURN_SINGLE = (
         'Kinetic First Quarti-Anlunar Return Single Wheel'
     )
-    LAST_QUARTI_KINETIC_ANULAR_RETURN = 'Kinetic Last Quarti-Anlunar Return'
-    LAST_QUARTI_KINETIC_ANULAR_RETURN_SINGLE = (
+    LAST_QUARTI_KINETIC_ANLUNAR_RETURN = 'Kinetic Last Quarti-Anlunar Return'
+    LAST_QUARTI_KINETIC_ANLUNAR_RETURN_SINGLE = (
         'Kinetic Last Quarti-Anlunar Return Single Wheel'
     )
 
@@ -517,7 +517,7 @@ class ChartObject:
     sun_sign: str = ''
     moon_sign: str = ''
 
-    def __init__(self, data: dict):
+    def __init__(self, data: dict, from_scratch=False):
         self.type = ChartType(data['type'])
         self.name = data.get('name', None)
         self.year = data['year']
@@ -528,7 +528,6 @@ class ChartObject:
         self.zone = data['zone']
         self.correction = data['correction']
 
-        planet_data = data['Sun'][0]
         planet = PlanetData()
 
         self.sun_sign = SIGNS_SHORT[int(data['Sun'][0] // 30)]
@@ -608,7 +607,7 @@ class ChartObject:
             self.planets = {}
 
             for long_name in PLANETS:
-                if long_name not in data:
+                if long_name not in data and not from_scratch:
                     continue
                 planet_data = data[long_name]
                 planet = PlanetData()
@@ -805,8 +804,8 @@ class ChartObject:
 
     # TODO - this doesn't work yet; it's missing a lot of stuff
     @staticmethod
-    def from_calculation(params: ChartParams) -> 'ChartObject':
-        chart = ChartObject(params)
+    def from_calculation(params: dict) -> 'ChartObject':
+        chart = ChartObject(params, from_scratch=True)
         chart.version = (
             version_str_to_tuple(VERSION)
             if 'version' not in params
@@ -1335,43 +1334,45 @@ class MidpointAspect:
         return f"{self.to_midpoint} {round(self.orb_minutes): >2}'{self.midpoint_type.value}{framework_suffix}"
 
 
-SOLAR_RETURNS = [
+CHARTS_TO_SKIP_T_SOLAR_ASPECTS = [
     ChartType.SOLAR_RETURN.value,
     ChartType.DEMI_SOLAR_RETURN.value,
-    ChartType.FIRST_QUARTI_SOLAR_RETURN.value,
-    ChartType.LAST_QUARTI_SOLAR_RETURN.value,
     ChartType.KINETIC_SOLAR_RETURN.value,
     ChartType.DEMI_KINETIC_SOLAR_RETURN.value,
-    ChartType.NOVIENIC_SOLAR_RETURN.value,
-    ChartType.TEN_DAY_SOLAR_RETURN.value,
-    ChartType.SOLILUNAR_RETURN.value,
-    ChartType.DEMI_SOLILUNAR_RETURN.value,
 ]
 
-LUNAR_RETURNS = [
+CHARTS_TO_SKIP_T_LUNAR_ASPECTS = [
     ChartType.LUNAR_RETURN.value,
     ChartType.DEMI_LUNAR_RETURN.value,
-    ChartType.FIRST_QUARTI_LUNAR_RETURN.value,
-    ChartType.LAST_QUARTI_LUNAR_RETURN.value,
     ChartType.KINETIC_LUNAR_RETURN.value,
     ChartType.DEMI_KINETIC_LUNAR_RETURN.value,
-    ChartType.NOVIENIC_LUNAR_RETURN.value,
-    ChartType.EIGHTEEN_HOUR_LUNAR_RETURN.value,
-    ChartType.ANLUNAR_RETURN.value,
-    ChartType.DEMI_ANLUNAR_RETURN.value,
-    ChartType.KINETIC_ANULAR_RETURN.value,
-    ChartType.KINETIC_DEMI_ANLUNAR_RETURN.value,
-    ChartType.LUNISOLAR_RETURN.value,
-    ChartType.DEMI_LUNISOLAR_RETURN.value,
 ]
 
 KINETIC_RETURNS = [
     ChartType.KINETIC_LUNAR_RETURN.value,
     ChartType.DEMI_KINETIC_LUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_KINETIC_ANLUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_KINETIC_ANLUNAR_RETURN.value,
+    ChartType.KINETIC_LUNAR_RETURN_SINGLE.value,
+    ChartType.DEMI_KINETIC_LUNAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_KINETIC_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_KINETIC_ANLUNAR_RETURN_SINGLE.value,
     ChartType.KINETIC_SOLAR_RETURN.value,
     ChartType.DEMI_KINETIC_SOLAR_RETURN.value,
-    ChartType.KINETIC_ANULAR_RETURN.value,
+    ChartType.FIRST_QUARTI_KINETIC_SOLAR_RETURN.value,
+    ChartType.LAST_QUARTI_KINETIC_SOLAR_RETURN.value,
+    ChartType.KINETIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.DEMI_KINETIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_KINETIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_KINETIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.KINETIC_ANLUNAR_RETURN.value,
     ChartType.KINETIC_DEMI_ANLUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_KINETIC_ANLUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_KINETIC_ANLUNAR_RETURN.value,
+    ChartType.KINETIC_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.KINETIC_DEMI_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_KINETIC_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_KINETIC_ANLUNAR_RETURN_SINGLE.value,
 ]
 
 SOLUNAR_RETURNS = [
@@ -1379,26 +1380,74 @@ SOLUNAR_RETURNS = [
     ChartType.DEMI_SOLAR_RETURN.value,
     ChartType.LAST_QUARTI_SOLAR_RETURN.value,
     ChartType.FIRST_QUARTI_SOLAR_RETURN.value,
+    ChartType.SOLAR_RETURN_SINGLE.value,
+    ChartType.DEMI_SOLAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_SOLAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_SOLAR_RETURN_SINGLE.value,
     ChartType.LUNAR_RETURN.value,
     ChartType.DEMI_LUNAR_RETURN.value,
     ChartType.FIRST_QUARTI_LUNAR_RETURN.value,
     ChartType.LAST_QUARTI_LUNAR_RETURN.value,
+    ChartType.LUNAR_RETURN_SINGLE.value,
+    ChartType.DEMI_LUNAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_LUNAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_LUNAR_RETURN_SINGLE.value,
     ChartType.KINETIC_LUNAR_RETURN.value,
     ChartType.DEMI_KINETIC_LUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_KINETIC_LUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_KINETIC_LUNAR_RETURN.value,
+    ChartType.KINETIC_LUNAR_RETURN_SINGLE.value,
+    ChartType.DEMI_KINETIC_LUNAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_KINETIC_LUNAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_KINETIC_LUNAR_RETURN_SINGLE.value,
     ChartType.KINETIC_SOLAR_RETURN.value,
     ChartType.DEMI_KINETIC_SOLAR_RETURN.value,
+    ChartType.FIRST_QUARTI_KINETIC_SOLAR_RETURN,
+    ChartType.LAST_QUARTI_KINETIC_SOLAR_RETURN,
+    ChartType.KINETIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.DEMI_KINETIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_KINETIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_KINETIC_SOLAR_RETURN_SINGLE.value,
     ChartType.NOVIENIC_SOLAR_RETURN.value,
     ChartType.TEN_DAY_SOLAR_RETURN.value,
+    ChartType.NOVIENIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.TEN_DAY_SOLAR_RETURN_SINGLE.value,
     ChartType.NOVIENIC_LUNAR_RETURN.value,
     ChartType.EIGHTEEN_HOUR_LUNAR_RETURN.value,
+    ChartType.NOVIENIC_LUNAR_RETURN_SINGLE.value,
+    ChartType.EIGHTEEN_HOUR_LUNAR_RETURN_SINGLE.value,
     ChartType.ANLUNAR_RETURN.value,
     ChartType.DEMI_ANLUNAR_RETURN.value,
-    ChartType.KINETIC_ANULAR_RETURN.value,
+    ChartType.FIRST_QUARTI_ANLUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_ANLUNAR_RETURN.value,
+    ChartType.ANLUNAR_RETURN_SINGLE.value,
+    ChartType.DEMI_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.KINETIC_ANLUNAR_RETURN.value,
     ChartType.KINETIC_DEMI_ANLUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_KINETIC_ANLUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_KINETIC_ANLUNAR_RETURN.value,
+    ChartType.KINETIC_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.KINETIC_DEMI_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_KINETIC_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_KINETIC_ANLUNAR_RETURN_SINGLE.value,
     ChartType.SOLILUNAR_RETURN.value,
     ChartType.DEMI_SOLILUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_SOLILUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_SOLILUNAR_RETURN.value,
+    ChartType.SOLILUNAR_RETURN_SINGLE.value,
+    ChartType.DEMI_SOLILUNAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_SOLILUNAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_SOLILUNAR_RETURN_SINGLE.value,
     ChartType.LUNISOLAR_RETURN.value,
     ChartType.DEMI_LUNISOLAR_RETURN.value,
+    ChartType.FIRST_QUARTI_LUNISOLAR_RETURN.value,
+    ChartType.LAST_QUARTI_LUNISOLAR_RETURN.value,
+    ChartType.LUNISOLAR_RETURN_SINGLE.value,
+    ChartType.DEMI_LUNISOLAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_LUNISOLAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_LUNISOLAR_RETURN_SINGLE.value,
 ]
 
 RETURNS_WHERE_MOON_ALWAYS_FOREGROUND = [
@@ -1406,14 +1455,34 @@ RETURNS_WHERE_MOON_ALWAYS_FOREGROUND = [
     ChartType.DEMI_SOLAR_RETURN.value,
     ChartType.LAST_QUARTI_SOLAR_RETURN.value,
     ChartType.FIRST_QUARTI_SOLAR_RETURN.value,
+    ChartType.SOLAR_RETURN_SINGLE.value,
+    ChartType.DEMI_SOLAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_SOLAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_SOLAR_RETURN_SINGLE.value,
     ChartType.KINETIC_SOLAR_RETURN.value,
     ChartType.DEMI_KINETIC_SOLAR_RETURN.value,
+    ChartType.FIRST_QUARTI_KINETIC_SOLAR_RETURN,
+    ChartType.LAST_QUARTI_KINETIC_SOLAR_RETURN,
+    ChartType.KINETIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.DEMI_KINETIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_KINETIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_KINETIC_SOLAR_RETURN_SINGLE.value,
     ChartType.NOVIENIC_SOLAR_RETURN.value,
     ChartType.TEN_DAY_SOLAR_RETURN.value,
+    ChartType.NOVIENIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.TEN_DAY_SOLAR_RETURN_SINGLE.value,
     ChartType.NOVIENIC_LUNAR_RETURN.value,
     ChartType.EIGHTEEN_HOUR_LUNAR_RETURN.value,
+    ChartType.NOVIENIC_LUNAR_RETURN_SINGLE.value,
+    ChartType.EIGHTEEN_HOUR_LUNAR_RETURN_SINGLE.value,
     ChartType.SOLILUNAR_RETURN.value,
     ChartType.DEMI_SOLILUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_SOLILUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_SOLILUNAR_RETURN.value,
+    ChartType.SOLILUNAR_RETURN_SINGLE.value,
+    ChartType.DEMI_SOLILUNAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_SOLILUNAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_SOLILUNAR_RETURN_SINGLE.value,
 ]
 
 INGRESSES = [

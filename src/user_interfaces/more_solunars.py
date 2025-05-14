@@ -8,14 +8,18 @@
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
 from src import *
+from src.models.options import ProgramOptions
 from src.swe import *
 from src.user_interfaces.widgets import *
 
 
 class MoreSolunars(Frame):
-    def __init__(self, more_charts, callback):
+    def __init__(
+        self, more_charts: dict, program_options: ProgramOptions, callback
+    ):
         super().__init__()
         self.more_charts = more_charts
+        self.program_options = program_options
         self.callback = callback
 
         Label(self, 'Solar Returns', 0.5, 0, 0.3, anchor=tk.W)
@@ -33,13 +37,16 @@ class MoreSolunars(Frame):
 
         self.ksr = Checkbutton(self, 'KSR', 0.325, 0.1, 0.1)
         self.demi_ksr = Checkbutton(self, 'DKSR', 0.45, 0.1, 0.1)
-        self.quarti_ksr_1 = Checkbutton(self, 'QKSR1', 0.575, 0.1, 0.1)
-        self.quarti_ksr_3 = Checkbutton(self, 'QKSR3', 0.7, 0.1, 0.1)
 
         self.ksr.config(state=tk.DISABLED)
         self.demi_ksr.config(state=tk.DISABLED)
-        self.quarti_ksr_1.config(state=tk.DISABLED)
-        self.quarti_ksr_3.config(state=tk.DISABLED)
+
+        if self.program_options.quarti_returns_enabled:
+            self.quarti_ksr_1 = Checkbutton(self, 'QKSR1', 0.575, 0.1, 0.1)
+            self.quarti_ksr_3 = Checkbutton(self, 'QKSR3', 0.7, 0.1, 0.1)
+
+            self.quarti_ksr_1.config(state=tk.DISABLED)
+            self.quarti_ksr_3.config(state=tk.DISABLED)
 
         Label(self, 'Lunar Returns', 0.5, 0.15, 0.3, anchor=tk.W)
         self.nlr = Checkbutton(self, 'NLR', 0.325, 0.2, 0.1)
@@ -58,64 +65,85 @@ class MoreSolunars(Frame):
 
         self.klr = Checkbutton(self, 'KLR', 0.325, 0.25, 0.1)
         self.demi_klr = Checkbutton(self, 'DKLR', 0.45, 0.25, 0.1)
-        self.quarti_klr_1 = Checkbutton(self, 'QKLR1', 0.575, 0.25, 0.1)
-        self.quarti_klr_3 = Checkbutton(self, 'QKLR3', 0.7, 0.25, 0.1)
+
+        if self.program_options.quarti_returns_enabled:
+            self.quarti_klr_1 = Checkbutton(self, 'QKLR1', 0.575, 0.25, 0.1)
+            self.quarti_klr_3 = Checkbutton(self, 'QKLR3', 0.7, 0.25, 0.1)
+
+            self.quarti_klr_1.config(state=tk.DISABLED)
+            self.quarti_klr_3.config(state=tk.DISABLED)
 
         self.sar = Checkbutton(self, 'SAR', 0.325, 0.3, 0.1)
         self.dsar = Checkbutton(self, 'DSAR', 0.45, 0.3, 0.1)
-        self.quarti_sar_1 = Checkbutton(self, 'QSAR1', 0.575, 0.3, 0.1)
-        self.quarti_sar_3 = Checkbutton(self, 'QSAR3', 0.7, 0.3, 0.1)
+
+        if self.program_options.quarti_returns_enabled:
+            self.quarti_sar_1 = Checkbutton(self, 'QSAR1', 0.575, 0.3, 0.1)
+            self.quarti_sar_3 = Checkbutton(self, 'QSAR3', 0.7, 0.3, 0.1)
 
         self.ksar = Checkbutton(self, 'KSAR', 0.325, 0.35, 0.1)
         self.dksar = Checkbutton(self, 'DKSAR', 0.45, 0.35, 0.1)
-        self.quarti_ksar_1 = Checkbutton(self, 'QKSAR1', 0.575, 0.35, 0.1)
-        self.quarti_ksar_3 = Checkbutton(self, 'QKSAR3', 0.7, 0.35, 0.1)
+
+        if self.program_options.quarti_returns_enabled:
+            self.quarti_ksar_1 = Checkbutton(self, 'QKSAR1', 0.575, 0.35, 0.1)
+            self.quarti_ksar_3 = Checkbutton(self, 'QKSAR3', 0.7, 0.35, 0.1)
+
+            self.quarti_ksar_1.config(state=tk.DISABLED)
+            self.quarti_ksar_3.config(state=tk.DISABLED)
 
         self.klr.config(state=tk.DISABLED)
         self.demi_klr.config(state=tk.DISABLED)
-        self.quarti_klr_1.config(state=tk.DISABLED)
-        self.quarti_klr_3.config(state=tk.DISABLED)
-
-        self.sar.config(state=tk.DISABLED)
-        self.dsar.config(state=tk.DISABLED)
-        self.quarti_sar_1.config(state=tk.DISABLED)
-        self.quarti_sar_3.config(state=tk.DISABLED)
 
         self.ksar.config(state=tk.DISABLED)
         self.dksar.config(state=tk.DISABLED)
-        self.quarti_ksar_1.config(state=tk.DISABLED)
-        self.quarti_ksar_3.config(state=tk.DISABLED)
 
         Label(self, 'Other Returns', 0.5, 0.4, 0.3, anchor=tk.W)
         self.solilunar = Checkbutton(self, 'SoLu', 0.325, 0.45, 0.1)
         self.demi_solilunar = Checkbutton(self, 'DSoLu', 0.45, 0.45, 0.1)
-        self.quarti_solilunar_1 = Checkbutton(self, 'QSoLu1', 0.575, 0.45, 0.1)
-        self.quarti_solilunar_3 = Checkbutton(self, 'QSoLu3', 0.7, 0.45, 0.1)
+
+        if self.program_options.quarti_returns_enabled:
+            self.quarti_solilunar_1 = Checkbutton(
+                self, 'QSoLu1', 0.575, 0.45, 0.1
+            )
+            self.quarti_solilunar_3 = Checkbutton(
+                self, 'QSoLu3', 0.7, 0.45, 0.1
+            )
 
         self.lunisolar = Checkbutton(self, 'LuSo', 0.325, 0.5, 0.1)
         self.demi_lunisolar = Checkbutton(self, 'DLuSo', 0.45, 0.5, 0.1)
-        self.quarti_lunisolar_1 = Checkbutton(self, 'QLuSo1', 0.575, 0.5, 0.1)
-        self.quarti_lunisolar_3 = Checkbutton(self, 'QLuSo3', 0.7, 0.5, 0.1)
+
+        if self.program_options.quarti_returns_enabled:
+            self.quarti_lunisolar_1 = Checkbutton(
+                self, 'QLuSo1', 0.575, 0.5, 0.1
+            )
+            self.quarti_lunisolar_3 = Checkbutton(
+                self, 'QLuSo3', 0.7, 0.5, 0.1
+            )
 
         self.syr = Checkbutton(self, 'SYR', 0.325, 0.55, 0.1)
         self.dsyr = Checkbutton(self, 'DSYR', 0.45, 0.55, 0.1)
-        self.quarti_dsyr_1 = Checkbutton(self, 'QSYR1', 0.575, 0.55, 0.1)
-        self.quarti_dsyr_3 = Checkbutton(self, 'QSYR3', 0.7, 0.55, 0.1)
+
+        if self.program_options.quarti_returns_enabled:
+            self.quarti_syr_1 = Checkbutton(self, 'QSYR1', 0.575, 0.55, 0.1)
+            self.quarti_syr_3 = Checkbutton(self, 'QSYR3', 0.7, 0.55, 0.1)
+
+            self.quarti_syr_1.config(state=tk.DISABLED)
+            self.quarti_syr_3.config(state=tk.DISABLED)
 
         self.lsr = Checkbutton(self, 'LSR', 0.325, 0.6, 0.1)
         self.dlsr = Checkbutton(self, 'DLSR', 0.45, 0.6, 0.1)
-        self.quarti_lsr_1 = Checkbutton(self, 'QLSR1', 0.575, 0.6, 0.1)
-        self.quarti_lsr_3 = Checkbutton(self, 'QLSR3', 0.7, 0.6, 0.1)
+
+        if self.program_options.quarti_returns_enabled:
+            self.quarti_lsr_1 = Checkbutton(self, 'QLSR1', 0.575, 0.6, 0.1)
+            self.quarti_lsr_3 = Checkbutton(self, 'QLSR3', 0.7, 0.6, 0.1)
+
+            self.quarti_lsr_1.config(state=tk.DISABLED)
+            self.quarti_lsr_3.config(state=tk.DISABLED)
 
         self.syr.config(state=tk.DISABLED)
         self.dsyr.config(state=tk.DISABLED)
-        self.quarti_dsyr_1.config(state=tk.DISABLED)
-        self.quarti_dsyr_3.config(state=tk.DISABLED)
 
         self.lsr.config(state=tk.DISABLED)
         self.dlsr.config(state=tk.DISABLED)
-        self.quarti_lsr_1.config(state=tk.DISABLED)
-        self.quarti_lsr_3.config(state=tk.DISABLED)
 
         self.nsr.checked = more_charts.get('nsr', False)
         self.ten_day_solar.checked = more_charts.get('10-day', False)
@@ -130,8 +158,10 @@ class MoreSolunars(Frame):
 
         self.ksr.checked = more_charts.get('ksr', False)
         self.demi_ksr.checked = more_charts.get('demi-ksr', False)
-        self.quarti_ksr_1.checked = more_charts.get('quarti-ksr-1', False)
-        self.quarti_ksr_3.checked = more_charts.get('quarti-ksr-3', False)
+
+        if self.program_options.quarti_returns_enabled:
+            self.quarti_ksr_1.checked = more_charts.get('quarti-ksr-1', False)
+            self.quarti_ksr_3.checked = more_charts.get('quarti-ksr-3', False)
 
         self.nlr.checked = more_charts.get('nlr', False)
         self.eighteen_hour_lunar.checked = more_charts.get('18-hour', False)
@@ -146,46 +176,64 @@ class MoreSolunars(Frame):
 
         self.klr.checked = more_charts.get('klr', False)
         self.demi_klr.checked = more_charts.get('demi-klr', False)
-        self.quarti_klr_1.checked = more_charts.get('quarti-klr-1', False)
-        self.quarti_klr_3.checked = more_charts.get('quarti-klr-3', False)
+
+        if self.program_options.quarti_returns_enabled:
+            self.quarti_klr_1.checked = more_charts.get('quarti-klr-1', False)
+            self.quarti_klr_3.checked = more_charts.get('quarti-klr-3', False)
 
         self.sar.checked = more_charts.get('sar', False)
         self.dsar.checked = more_charts.get('demi-sar', False)
-        self.quarti_sar_1.checked = more_charts.get('quarti-sar-1', False)
-        self.quarti_sar_3.checked = more_charts.get('quarti-sar-3', False)
+
+        if self.program_options.quarti_returns_enabled:
+            self.quarti_sar_1.checked = more_charts.get('quarti-sar-1', False)
+            self.quarti_sar_3.checked = more_charts.get('quarti-sar-3', False)
 
         self.ksar.checked = more_charts.get('ksar', False)
         self.dksar.checked = more_charts.get('demi-ksar', False)
-        self.quarti_ksar_1.checked = more_charts.get('quarti-ksar-1', False)
-        self.quarti_ksar_3.checked = more_charts.get('quarti-ksar-3', False)
+
+        if self.program_options.quarti_returns_enabled:
+            self.quarti_ksar_1.checked = more_charts.get(
+                'quarti-ksar-1', False
+            )
+            self.quarti_ksar_3.checked = more_charts.get(
+                'quarti-ksar-3', False
+            )
 
         self.solilunar.checked = more_charts.get('solu', False)
         self.demi_solilunar.checked = more_charts.get('demi-solu', False)
-        self.quarti_solilunar_1.checked = more_charts.get(
-            'quarti-solu-1', False
-        )
-        self.quarti_solilunar_3.checked = more_charts.get(
-            'quarti-solu-3', False
-        )
+
+        if self.program_options.quarti_returns_enabled:
+            self.quarti_solilunar_1.checked = more_charts.get(
+                'quarti-solu-1', False
+            )
+            self.quarti_solilunar_3.checked = more_charts.get(
+                'quarti-solu-3', False
+            )
 
         self.lunisolar.checked = more_charts.get('luso', False)
         self.demi_lunisolar.checked = more_charts.get('demi-luso', False)
-        self.quarti_lunisolar_1.checked = more_charts.get(
-            'quarti-luso-1', False
-        )
-        self.quarti_lunisolar_3.checked = more_charts.get(
-            'quarti-luso-3', False
-        )
+
+        if self.program_options.quarti_returns_enabled:
+            self.quarti_lunisolar_1.checked = more_charts.get(
+                'quarti-luso-1', False
+            )
+            self.quarti_lunisolar_3.checked = more_charts.get(
+                'quarti-luso-3', False
+            )
 
         self.syr.checked = more_charts.get('syr', False)
         self.dsyr.checked = more_charts.get('demi-syr', False)
-        self.quarti_dsyr_1.checked = more_charts.get('quarti-syr-1', False)
-        self.quarti_dsyr_3.checked = more_charts.get('quarti-syr-3', False)
+
+        if self.program_options.quarti_returns_enabled:
+            self.quarti_syr_1.checked = more_charts.get('quarti-syr-1', False)
+            self.quarti_syr_3.checked = more_charts.get('quarti-syr-3', False)
 
         self.lsr.checked = more_charts.get('lsr', False)
         self.dlsr.checked = more_charts.get('demi-lsr', False)
-        self.quarti_lsr_1.checked = more_charts.get('quarti-lsr-1', False)
-        self.quarti_lsr_3.checked = more_charts.get('quarti-lsr-3', False)
+
+        if self.program_options.quarti_returns_enabled:
+            self.quarti_lsr_1.checked = more_charts.get('quarti-lsr-1', False)
+            self.quarti_lsr_3.checked = more_charts.get('quarti-lsr-3', False)
 
         Button(self, 'Save', 0.2, 0.95, 0.2).bind(
             '<Button-1>', lambda _: delay(self.save)
@@ -231,46 +279,62 @@ class MoreSolunars(Frame):
         self.ten_day_solar.checked = False
         self.ksr.checked = False
         self.demi_ksr.checked = False
-        self.quarti_ksr_1.checked = False
-        self.quarti_ksr_3.checked = False
+
+        if self.program_options.quarti_returns_enabled:
+            self.quarti_ksr_1.checked = False
+            self.quarti_ksr_3.checked = False
 
         self.nlr.checked = False
         self.eighteen_hour_lunar.checked = False
 
         self.klr.checked = False
         self.demi_klr.checked = False
-        self.quarti_klr_1.checked = False
-        self.quarti_klr_3.checked = False
+
+        if self.program_options.quarti_returns_enabled:
+            self.quarti_klr_1.checked = False
+            self.quarti_klr_3.checked = False
 
         self.sar.checked = False
         self.dsar.checked = False
-        self.quarti_sar_1.checked = False
-        self.quarti_sar_3.checked = False
+
+        if self.program_options.quarti_returns_enabled:
+            self.quarti_sar_1.checked = False
+            self.quarti_sar_3.checked = False
 
         self.ksar.checked = False
         self.dksar.checked = False
-        self.quarti_ksar_1.checked = False
-        self.quarti_ksar_3.checked = False
+
+        if self.program_options.quarti_returns_enabled:
+            self.quarti_ksar_1.checked = False
+            self.quarti_ksar_3.checked = False
 
         self.solilunar.checked = False
         self.demi_solilunar.checked = False
-        self.quarti_solilunar_1.checked = False
-        self.quarti_solilunar_3.checked = False
+
+        if self.program_options.quarti_returns_enabled:
+            self.quarti_solilunar_1.checked = False
+            self.quarti_solilunar_3.checked = False
 
         self.lunisolar.checked = False
         self.demi_lunisolar.checked = False
-        self.quarti_lunisolar_1.checked = False
-        self.quarti_lunisolar_3.checked = False
+
+        if self.program_options.quarti_returns_enabled:
+            self.quarti_lunisolar_1.checked = False
+            self.quarti_lunisolar_3.checked = False
 
         self.syr.checked = False
         self.dsyr.checked = False
-        self.quarti_dsyr_1.checked = False
-        self.quarti_dsyr_3.checked = False
+
+        if self.program_options.quarti_returns_enabled:
+            self.quarti_syr_1.checked = False
+            self.quarti_syr_3.checked = False
 
         self.lsr.checked = False
         self.dlsr.checked = False
-        self.quarti_lsr_1.checked = False
-        self.quarti_lsr_3.checked = False
+
+        if self.program_options.quarti_returns_enabled:
+            self.quarti_lsr_1.checked = False
+            self.quarti_lsr_3.checked = False
 
     def save(self):
         self.more_charts = {
@@ -278,39 +342,45 @@ class MoreSolunars(Frame):
             '10-day': self.ten_day_solar.checked,
             'ksr': self.ksr.checked,
             'demi-ksr': self.demi_ksr.checked,
-            'quarti-ksr-1': self.quarti_ksr_1.checked,
-            'quarti-ksr-3': self.quarti_ksr_3.checked,
             'nlr': self.nlr.checked,
             '18-hour': self.eighteen_hour_lunar.checked,
             'klr': self.klr.checked,
             'demi-klr': self.demi_klr.checked,
-            'quarti-klr-1': self.quarti_klr_1.checked,
-            'quarti-klr-3': self.quarti_klr_3.checked,
             'sar': self.sar.checked,
             'demi-sar': self.dsar.checked,
-            'quarti-sar-1': self.quarti_sar_1.checked,
-            'quarti-sar-3': self.quarti_sar_3.checked,
             'ksar': self.ksar.checked,
             'demi-ksar': self.dksar.checked,
-            'quarti-ksar-1': self.quarti_ksar_1.checked,
-            'quarti-ksar-3': self.quarti_ksar_3.checked,
             'solu': self.solilunar.checked,
             'demi-solu': self.demi_solilunar.checked,
-            'quarti-solu-1': self.quarti_solilunar_1.checked,
-            'quarti-solu-3': self.quarti_solilunar_3.checked,
             'luso': self.lunisolar.checked,
             'demi-luso': self.demi_lunisolar.checked,
-            'quarti-luso-1': self.quarti_lunisolar_1.checked,
-            'quarti-luso-3': self.quarti_lunisolar_3.checked,
             'syr': self.syr.checked,
             'demi-syr': self.dsyr.checked,
-            'quarti-syr-1': self.quarti_dsyr_1.checked,
-            'quarti-syr-3': self.quarti_dsyr_3.checked,
             'lsr': self.lsr.checked,
             'demi-lsr': self.dlsr.checked,
-            'quarti-lsr-1': self.quarti_lsr_1.checked,
-            'quarti-lsr-3': self.quarti_lsr_3.checked,
         }
+
+        if self.program_options.quarti_returns_enabled:
+            self.more_charts.update(
+                {
+                    'quarti-ksr-1': self.quarti_ksr_1.checked,
+                    'quarti-ksr-3': self.quarti_ksr_3.checked,
+                    'quarti-klr-1': self.quarti_klr_1.checked,
+                    'quarti-klr-3': self.quarti_klr_3.checked,
+                    'quarti-sar-1': self.quarti_sar_1.checked,
+                    'quarti-sar-3': self.quarti_sar_3.checked,
+                    'quarti-ksar-1': self.quarti_ksar_1.checked,
+                    'quarti-ksar-3': self.quarti_ksar_3.checked,
+                    'quarti-solu-1': self.quarti_solilunar_1.checked,
+                    'quarti-solu-3': self.quarti_solilunar_3.checked,
+                    'quarti-luso-1': self.quarti_lunisolar_1.checked,
+                    'quarti-luso-3': self.quarti_lunisolar_3.checked,
+                    'quarti-syr-1': self.quarti_syr_1.checked,
+                    'quarti-syr-3': self.quarti_syr_3.checked,
+                    'quarti-lsr-1': self.quarti_lsr_1.checked,
+                    'quarti-lsr-3': self.quarti_lsr_3.checked,
+                }
+            )
 
         self.callback(self.more_charts)
         self.destroy()

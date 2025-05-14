@@ -24,7 +24,7 @@ from src.constants import (
 from src.user_interfaces.chart_options import ChartOptions
 from src.user_interfaces.ingresses import Ingresses
 from src.user_interfaces.new_chart import NewChart
-from src.user_interfaces.program_options import ProgramOptions
+from src.user_interfaces.program_options import ProgramOptionsMenu
 from src.user_interfaces.select_chart import SelectChart
 from src.user_interfaces.widgets import *
 from src.utils.gui_utils import (
@@ -57,7 +57,7 @@ class StartPage(Frame):
     def __init__(self):
         super().__init__()
         global STILL_STARTING_UP
-        global DEV_MODE
+        # global DEV_MODE
 
         self.parent = main
         self.parent.bind('<Configure>', self.resize)
@@ -65,16 +65,16 @@ class StartPage(Frame):
         self.title = Label(
             self, TITLE, LABEL_X_COORD, 0.025, LABEL_WIDTH, font=title_font
         )
-        if DEV_MODE:
-            Label(
-                self,
-                BETA_FEATURES_ENABLED,
-                LABEL_X_COORD,
-                0.08,
-                LABEL_WIDTH,
-                LABEL_HEIGHT_UNIT,
-                font=font_12,
-            )
+        # if DEV_MODE:
+        #     Label(
+        #         self,
+        #         BETA_FEATURES_ENABLED,
+        #         LABEL_X_COORD,
+        #         0.08,
+        #         LABEL_WIDTH,
+        #         LABEL_HEIGHT_UNIT,
+        #         font=font_12,
+        #     )
         self.intro = Label(
             self,
             INTRO,
@@ -209,7 +209,7 @@ class StartPage(Frame):
             self, 'Program Options', 0.4, 0.5, 0.2, font=font_16
         )
         self.program_options.bind(
-            '<Button-1>', lambda _: delay(ProgramOptions)
+            '<Button-1>', lambda _: delay(ProgramOptionsMenu)
         )
         self.show_errors = Button(
             self,

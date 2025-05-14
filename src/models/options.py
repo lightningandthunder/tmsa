@@ -137,3 +137,31 @@ class Options:
 
     def __str__(self):
         return str(self.__dict__)
+
+
+class ProgramOptions:
+    quarti_returns_enabled: bool = True
+
+    def __init__(self, data: dict[str, any]):
+        self.quarti_returns_enabled = data.get('quarti_returns_enabled', True)
+
+    @staticmethod
+    def from_default():
+        return ProgramOptions({})
+
+    @staticmethod
+    def from_file(file_path: str):
+        with open(file_path, 'r') as file:
+            try:
+                data = json.load(file)
+                return ProgramOptions(data)
+            except json.JSONDecodeError:
+                log_startup_error(f'Error reading {file_path}')
+                return ProgramOptions.from_default()
+
+    def to_file(self, file_path: str):
+        with open(file_path, 'w') as file:
+            json.dump(self.__dict__, file, indent=4)
+
+    def __str__(self):
+        return str(self.__dict__)

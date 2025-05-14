@@ -13,6 +13,7 @@ from datetime import datetime as dt
 
 from src import *
 
+from src.models.options import ProgramOptions
 from src.swe import *
 
 
@@ -21,80 +22,112 @@ from src.utils.format_utils import display_name, toDMS
 from src.utils.gui_utils import ShowHelp
 
 
-CHART_OPTIONS = [
+CHART_OPTIONS_FULL = [
     '--- Major Charts --- ',
-    'Sidereal Solar Return',
-    'Demi Sidereal Solar Return',
-    '1st Quarti Sidereal Solar Return',
-    '3rd Quarti Sidereal Solar Return',
-    'SLR',
-    'DSLR',
-    'QSLR1',
-    'QSLR3',
-    '--- Minor Charts ---',
-    'NSR',
-    '10-Dy SR',
-    'NLR',
-    '18-Hr LR',
-    'SAR',
-    'DSAR',
-    'QSAR1',
-    'QSAR3',
+    'Sidereal Solar Return (SSR)',
+    '- Quarti-SSR #1',
+    '- Demi-SSR',
+    '- Quarti-SSR #2',
+    'Sidereal Lunar Return (SLR)',
+    '- Quarti-SLR #1',
+    '- Demi-SLR',
+    '- Quarti-SLR #2',
     '--- Kinetics ---',
-    'KSR',
-    'KDSR',
-    'KQSR1',
-    'KQSR3',
-    'KLR',
-    'KDLR',
-    'KQLR1',
-    'KQLR3',
-    'KSAR',
-    'KDSAR',
-    'KQSAR1',
-    'KQSAR3',
-    '--- Supplemental ---',
-    'SoLu',
-    'DSoLu',
-    'QSoLu1',
-    'QSoLu3',
-    'LuSo',
-    'DLuSo',
-    'QLuSo1',
-    'QLuSo3',
-    'SYR',
-    'DSYR',
-    'QSYR1',
-    'QSYR3',
-    'LSR',
-    'DLSR',
-    'QLSR1',
-    'QLSR3',
+    'Kinetic Solar Return (KSR)',
+    '- Quarti-KSR #1',
+    '- Demi-KSR',
+    '- Quarti-KSR #2',
+    'Kinetic Lunar Return (KLR)',
+    '- Quarti-KLR #1',
+    '- Demi-KLR',
+    '- Quarti-KLR #2',
+    '--- Secondary Charts ---',
+    'Novienic Solar Return (NSR)',
+    '- 10-Day Solar (Quarti-NSR)',
+    'Novienic Lunar Return (NLR)',
+    '- 18-Hour Lunar (Quarti-NLR)',
+    'Sidereal Anlunar Return (SAR)',
+    '- Quarti-SAR #1',
+    '- Demi-SAR',
+    '- Quarti-SAR #2',
+    'Kinetic Anlunar Return (KAR)',
+    '- Quarti-KAR #1',
+    '- Demi-KAR',
+    '- Quarti-KAR #2',
+    '--- Other Charts ---',
+    'Sidereal Yoga Return (SYR)',
+    '- Quarti-SYR #1',
+    '- Demi-SYR',
+    '- Quarti-SYR #2',
+    'Lunar Synodic Return (LSR)',
+    '- Quarti-LSR #1',
+    '- Demi-LSR',
+    '- Quarti-LSR #2',
+    'SoliLunar (SoLu)',
+    '- Quarto-SoLu #1',
+    '- Demi-SoLu',
+    '- Quarti-SoLu #2',
+    'LuniSolar (LuSo)',
+    '- Quarti-LuSo #1',
+    '- Demi-LuSo',
+    '- Quarti-LuSo #2',
+]
+
+CHART_OPTIONS_NO_QUARTIS = [
+    '--- Major Charts --- ',
+    'Sidereal Solar Return (SSR)',
+    '- Demi-SSR',
+    'Sidereal Lunar Return (SLR)',
+    '- Demi-SLR',
+    '--- Kinetics ---',
+    'Kinetic Solar Return (KSR)',
+    '- Demi-KSR',
+    'Kinetic Lunar Return (KLR)',
+    '- Demi-KLR',
+    '--- Secondary Charts ---',
+    'Novienic Solar Return (NSR)',
+    '- 10-Day Solar (Quarti-NSR)',
+    'Novienic Lunar Return (NLR)',
+    '- 18-Hour Lunar (Quarti-NLR)',
+    'Sidereal Anlunar Return (SAR)',
+    '- Demi-SAR',
+    'Kinetic Anlunar Return (KAR)',
+    '- Demi-KAR',
+    '--- Other Charts ---',
+    'Sidereal Yoga Return (SYR)',
+    '- Demi-SYR',
+    'Lunar Synodic Return (LSR)',
+    '- Demi-LSR',
+    'SoliLunar (SoLu)',
+    '- Demi-SoLu',
+    'LuniSolar (LuSo)',
+    '- Demi-LuSo',
 ]
 
 
 class SolunarsAllInOne(Frame):
-    def __init__(self, base, filename):
+    def __init__(self, base, filename, program_options: ProgramOptions):
         super().__init__()
         now = dt.utcnow()
         chart = {}
 
+        self.program_options = program_options
         self.more_charts = {}
 
         self.base = base
         self.filename = filename
         self.filename_label = Label(self, display_name(filename), 0, 0, 1)
-        Label(self, 'Search Direction', 0.1, 0.5, 0.15, anchor=tk.W)
+        Label(self, 'Search Direction', 0.05, 0.5, 0.20, anchor=tk.W)
 
         self.init = True
         self.search = Radiogroup(self)
         Radiobutton(
-            self, self.search, 0, 'Active Charts', 0.1, 0.55, 0.15
+            self, self.search, 0, 'Active Charts', 0.05, 0.55, 0.2
         ).bind('<Button-1>', lambda _: delay(self.toggle_year, 0))
-        Radiobutton(self, self.search, 1, 'Forwards', 0.1, 0.6, 0.15).bind(
+        Radiobutton(self, self.search, 1, 'Forwards', 0.05, 0.6, 0.2).bind(
             '<Button-1>', lambda _: delay(self.toggle_year, 1)
         )
-        Radiobutton(self, self.search, 2, 'Backwards', 0.1, 0.65, 0.15).bind(
+        Radiobutton(self, self.search, 2, 'Backwards', 0.05, 0.65, 0.2).bind(
             '<Button-1>', lambda _: delay(self.toggle_year, 2)
         )
 
@@ -210,7 +243,11 @@ class SolunarsAllInOne(Frame):
             height=0.95,
             selectmode=tk.MULTIPLE,
         )
-        self.listbox.set_options(CHART_OPTIONS)
+        self.listbox.set_options(
+            CHART_OPTIONS_FULL
+            if self.program_options.quarti_returns_enabled
+            else CHART_OPTIONS_NO_QUARTIS
+        )
         self.listbox.pack(side=tk.LEFT, fill=tk.X, expand=True)
         self.listbox.bind('<Button-1>', self.on_click)
 

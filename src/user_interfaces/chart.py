@@ -13,6 +13,7 @@ from src.models.charts import ChartObject, ChartWheelRole
 from src.models.options import Options
 from src.swe import *
 from src.user_interfaces.biwheelV3 import BiwheelV3
+from src.user_interfaces.triwheel import Triwheel
 from src.user_interfaces.uniwheelV3 import UniwheelV3
 from src.user_interfaces.widgets import *
 from src.utils.chart_utils import make_chart_path
@@ -140,7 +141,20 @@ class Chart:
 
         options = Options(options)
 
-        if chart.get('base_chart', None):
+        if chart.get('ssr_chart', None):
+            return_chart = ChartObject(chart).with_role(ChartWheelRole.TRANSIT)
+            ssr_chart = ChartObject(chart['ssr_chart']).with_role(
+                ChartWheelRole.SOLAR
+            )
+            radix = ChartObject(chart['base_chart']).with_role(
+                ChartWheelRole.RADIX
+            )
+
+            self.report = Triwheel(
+                [return_chart, ssr_chart, radix], temporary, options
+            )
+
+        elif chart.get('base_chart', None):
             return_chart = ChartObject(chart).with_role(ChartWheelRole.TRANSIT)
             radix = ChartObject(chart['base_chart']).with_role(
                 ChartWheelRole.RADIX

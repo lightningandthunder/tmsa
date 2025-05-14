@@ -18,10 +18,12 @@ from datetime import datetime as dt
 import anglicize
 import us
 from geopy import Nominatim
+import pydash
 
 from src import *
 from src.constants import DQ, DS, MONTHS, VERSION
-from src.models.charts import ChartType
+from src.models.charts import ChartObject, ChartParams, ChartType
+from src.models.options import ProgramOptions
 from src.swe import *
 from src.user_interfaces.chart import Chart
 from src.user_interfaces.locations import Locations
@@ -29,7 +31,13 @@ from src.user_interfaces.more_charts import MoreCharts
 from src.user_interfaces.more_solunars import MoreSolunars
 from src.user_interfaces.solunars_all_in_one import SolunarsAllInOne
 from src.user_interfaces.widgets import *
-from src.utils.format_utils import display_name, normalize_text, to360, toDMS
+from src.utils.format_utils import (
+    display_name,
+    normalize_text,
+    to360,
+    toDMS,
+    version_str_to_tuple,
+)
 from src.utils.gui_utils import ShowHelp
 from src.utils.os_utils import open_file
 
@@ -39,6 +47,8 @@ class Solunars(Frame):
         super().__init__()
         now = dt.utcnow()
         chart = {}
+
+        self.program_options = ProgramOptions.from_file(PROGRAM_OPTION_PATH)
 
         self.more_charts = {}
 
@@ -148,13 +158,18 @@ class Solunars(Frame):
         Label(self, 'Solar Returns', 0.15, 0.5, 0.3, anchor=tk.W)
         self.mainsolar = Checkbutton(self, 'SSR', 0.3, 0.5, 0.1)
         self.demisolar = Checkbutton(self, 'DSSR', 0.4, 0.5, 0.1)
-        self.fqsolar = Checkbutton(self, 'QSSR1', 0.5, 0.5, 0.1)
-        self.lqsolar = Checkbutton(self, 'QSSR3', 0.6, 0.5, 0.1)
+
+        if self.program_options.quarti_returns_enabled:
+            self.fqsolar = Checkbutton(self, 'QSSR1', 0.5, 0.5, 0.1)
+            self.lqsolar = Checkbutton(self, 'QSSR3', 0.6, 0.5, 0.1)
+
         Label(self, 'Lunar Returns', 0.15, 0.55, 0.3, anchor=tk.W)
         self.mainlunar = Checkbutton(self, 'SLR', 0.3, 0.55, 0.1)
         self.demilunar = Checkbutton(self, 'DSLR', 0.4, 0.55, 0.1)
-        self.fqlunar = Checkbutton(self, 'QSLR1', 0.5, 0.55, 0.1)
-        self.lqlunar = Checkbutton(self, 'QSLR3', 0.6, 0.55, 0.1)
+
+        if self.program_options.quarti_returns_enabled:
+            self.fqlunar = Checkbutton(self, 'QSLR1', 0.5, 0.55, 0.1)
+            self.lqlunar = Checkbutton(self, 'QSLR3', 0.6, 0.55, 0.1)
         Button(self, 'Select All', 0.3, 0.6, 0.2).bind(
             '<Button-1>', lambda _: delay(self.all_charts, True)
         )
@@ -192,7 +207,7 @@ class Solunars(Frame):
         )
 
     def all_in_one(self):
-        SolunarsAllInOne(self.base, self.filename)
+        SolunarsAllInOne(self.base, self.filename, self.program_options)
 
     def enable_find(self):
         self.findbtn.disabled = False
@@ -220,12 +235,14 @@ class Solunars(Frame):
     def all_charts(self, value):
         self.mainsolar.checked = value
         self.demisolar.checked = value
-        self.fqsolar.checked = value
-        self.lqsolar.checked = value
         self.mainlunar.checked = value
         self.demilunar.checked = value
-        self.fqlunar.checked = value
-        self.lqlunar.checked = value
+
+        if self.program_options.quarti_returns_enabled:
+            self.fqsolar.checked = value
+            self.lqsolar.checked = value
+            self.fqlunar.checked = value
+            self.lqlunar.checked = value
 
         if not value:
             self.more_charts = {}
@@ -342,7 +359,9 @@ class Solunars(Frame):
         self.old.checked = True if y < 1583 else False
 
     def show_more_solunars(self):
-        MoreSolunars(self.more_charts, self.more_solunars_finish)
+        MoreSolunars(
+            self.more_charts, self.program_options, self.more_solunars_finish
+        )
 
     def more_solunars_finish(self, selected):
         self.more_charts = selected
@@ -636,17 +655,17 @@ class Solunars(Frame):
             solunars.append('Solar Return')
         if self.demisolar.checked:
             solunars.append('Demi-Solar Return')
-        if self.fqsolar.checked:
+        if pydash.get(self, 'fqsolar.checked'):
             solunars.append('First Quarti-Solar Return')
-        if self.lqsolar.checked:
+        if pydash.get(self, 'lqsolar.checked'):
             solunars.append('Last Quarti-Solar Return')
         if self.mainlunar.checked:
             solunars.append('Lunar Return')
         if self.demilunar.checked:
             solunars.append('Demi-Lunar Return')
-        if self.fqlunar.checked:
+        if pydash.get(self, 'fqlunar.checked'):
             solunars.append('First Quarti-Lunar Return')
-        if self.lqlunar.checked:
+        if pydash.get(self, 'lqlunar.checked'):
             solunars.append('Last Quarti-Lunar Return')
 
         if self.more_charts.get('nsr'):
@@ -675,6 +694,15 @@ class Solunars(Frame):
             solunars.append(ChartType.FIRST_QUARTI_LUNISOLAR_RETURN.value)
         if self.more_charts.get('quarti-luso-3'):
             solunars.append(ChartType.LAST_QUARTI_LUNISOLAR_RETURN.value)
+
+        if self.more_charts.get('sar'):
+            solunars.append(ChartType.ANLUNAR_RETURN.value)
+        if self.more_charts.get('demi-sar'):
+            solunars.append(ChartType.DEMI_ANLUNAR_RETURN.value)
+        if self.more_charts.get('quarti-sar-1'):
+            solunars.append(ChartType.FIRST_QUARTI_ANLUNAR_RETURN.value)
+        if self.more_charts.get('quarti-sar-3'):
+            solunars.append(ChartType.LAST_QUARTI_ANLUNAR_RETURN.value)
 
         if not solunars:
             self.status.error('No solunars selected.')
@@ -760,6 +788,7 @@ class Solunars(Frame):
                 'lunar' in sl
                 and not 'lunisolar' in sl
                 and not 'solilunar' in sl
+                and not 'anlunar' in sl
             ):
                 target = moon
                 cclass = 'LR'
@@ -778,7 +807,7 @@ class Solunars(Frame):
                             increment -= 40
                             continue
                         break
-                elif '10-day' in sl:
+                elif '18-hour' in sl:
                     increment = 10
                     while True:
                         target = to360(moon + increment)
@@ -787,6 +816,7 @@ class Solunars(Frame):
                             increment += 10
                             continue
                         break
+
                 date = calc_moon_crossing(target, start)
 
             elif 'solilunar' in sl:
@@ -814,6 +844,37 @@ class Solunars(Frame):
                     target = (sun + 90) % 360
                 elif 'last' in sl:
                     target = (sun + 270) % 360
+
+                date = calc_moon_crossing(target, start)
+
+            elif 'anlunar' in sl:
+                cclass = 'LR'
+                # Get previous solar return
+                solar_return_date = calc_sun_crossing(sun, start - 366)
+                (year, month, day, time) = revjul(
+                    solar_return_date, chart['style']
+                )
+
+                ssr_chart = ChartObject.from_calculation(
+                    name=chart['name'] + ' Solar Return',
+                    julian_day_utc=solar_return_date,
+                    type=ChartType.SOLAR_RETURN,
+                    year=year,
+                    month=month,
+                    day=day,
+                    time=time,
+                )
+                chart['ssr_chart'] = ssr_chart
+                solar_moon = ssr_chart['Moon'][0]
+
+                if 'demi' in sl:
+                    target = (solar_moon + 180) % 360
+                elif 'first' in sl:
+                    target = (solar_moon + 90) % 360
+                elif 'last' in sl:
+                    target = (solar_moon + 270) % 360
+                else:
+                    target = solar_moon
 
                 date = calc_moon_crossing(target, start)
 
@@ -988,9 +1049,9 @@ class Solunars(Frame):
         lunar_returns = []
         for sol in solunars:
             sl = sol.lower()
-            if 'solar' in sl or 'solilunar' in sl:
+            if 'solilunar' in sl or ('solar' in sl and not 'lunisolar' in sl):
                 solar_returns.append(sol)
-            if 'lunar' in sl or 'lunisolar' in sl:
+            if 'lunisolar' in sl or ('lunar' in sl and not 'solilunar' in sl):
                 lunar_returns.append(sol)
         chart_class = 'SR'
         if solar_returns:
@@ -1165,7 +1226,10 @@ class Solunars(Frame):
                 quarti_start = date
             if lunar_returns[0] == 'Demi-Lunar Return':
                 lunar_returns = lunar_returns[1:]
-        if lunar_returns and lunar_returns[0] in ['First Quarti-Lunar Return', 'Last Quarti-Lunar Return']:
+        if lunar_returns and lunar_returns[0] in [
+            'First Quarti-Lunar Return',
+            'Last Quarti-Lunar Return',
+        ]:
             if quarti_start == demi_start:
                 target = (moon + 90) % 360
                 chtype = 'First Quarti-Lunar Return'
@@ -1299,6 +1363,8 @@ class Solunars(Frame):
             chart_class = Chart(cchart, self.istemp.value)
             if hasattr(chart_class, 'report'):
                 chart_class.report
+
+        return chart_class
 
     def save_location(self, chart):
         try:
