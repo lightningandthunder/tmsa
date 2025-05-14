@@ -733,7 +733,7 @@ class ChartObject:
             right_ascension=ramc,
             declination=dec,
             azimuth=180,
-            altitude=(90 - self.geo_latitude) + dec,
+            altitude=90 - (self.geo_latitude - dec),
             meridian_longitude=None,
             prime_vertical_longitude=270,
         )
