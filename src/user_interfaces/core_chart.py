@@ -49,19 +49,22 @@ class CoreChart(object, metaclass=ABCMeta):
         self.charts = sorted(charts, key=lambda x: x.role, reverse=True)
         self.temporary = temporary
 
+        outermost_chart = calc_utils.find_outermost_chart(self.charts)
+
+        # Add roles to all charts
         for chart in self.charts:
             for (
                 planet_name,
                 _,
-            ) in chart.iterate_points(self.options):
+            ) in outermost_chart.iterate_points(self.options):
                 chart.planets[planet_name].role = chart.role
 
-                if planet_name == 'Moon' and (
-                    chart.type.value in chart_models.INGRESSES
-                    or chart.type.value
-                    in chart_models.RETURNS_WHERE_MOON_ALWAYS_FOREGROUND
-                ):
-                    chart.planets[planet_name].treat_as_foreground = True
+        if (
+            outermost_chart.type.value in chart_models.INGRESSES
+            or outermost_chart.type.value
+            in chart_models.RETURNS_WHERE_MOON_ALWAYS_FOREGROUND
+        ):
+            outermost_chart.planets['Moon'].treat_as_foreground = True
 
         self.try_precess_charts()
 
