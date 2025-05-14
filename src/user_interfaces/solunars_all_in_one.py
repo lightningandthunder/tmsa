@@ -104,12 +104,81 @@ CHART_OPTIONS_NO_QUARTIS = [
     '- Demi-LuSo',
 ]
 
+SSR_AND_LUNARS = [
+    'Sidereal Solar Return (SSR)',
+    'Sidereal Lunar Return (SLR)',
+    '- Quarti-SLR #1',
+    '- Demi-SLR',
+    '- Quarti-SLR #2',
+]
+
+ALL_MAJOR = [
+    'Sidereal Solar Return (SSR)',
+    '- Quarti-SSR #1',
+    '- Demi-SSR',
+    '- Quarti-SSR #2',
+    'Sidereal Lunar Return (SLR)',
+    '- Quarti-SLR #1',
+    '- Demi-SLR',
+    '- Quarti-SLR #2',
+]
+
+MAJOR_AND_MINOR = [
+    'Sidereal Solar Return (SSR)',
+    '- Quarti-SSR #1',
+    '- Demi-SSR',
+    '- Quarti-SSR #2',
+    'Sidereal Lunar Return (SLR)',
+    '- Quarti-SLR #1',
+    '- Demi-SLR',
+    '- Quarti-SLR #2',
+    'Kinetic Lunar Return (KLR)',
+    '- Demi-KLR',
+    'Novienic Solar Return (NSR)',
+    '- 10-Day Solar (Quarti-NSR)',
+    'Sidereal Anlunar Return (SAR)',
+    '- Demi-SAR',
+]
+
+EXPERIMENTAL = [
+    'Novienic Lunar Return (NLR)',
+    '- 18-Hour Lunar (Quarti-NLR)',
+    'Kinetic Anlunar Return (KAR)',
+    '- Quarti-KAR #1',
+    '- Demi-KAR',
+    '- Quarti-KAR #2',
+    'Sidereal Yoga Return (SYR)',
+    '- Quarti-SYR #1',
+    '- Demi-SYR',
+    '- Quarti-SYR #2',
+    'Lunar Synodic Return (LSR)',
+    '- Quarti-LSR #1',
+    '- Demi-LSR',
+    '- Quarti-LSR #2',
+    'SoliLunar (SoLu)',
+    '- Quarto-SoLu #1',
+    '- Demi-SoLu',
+    '- Quarti-SoLu #2',
+    'LuniSolar (LuSo)',
+    '- Quarti-LuSo #1',
+    '- Demi-LuSo',
+    '- Quarti-LuSo #2',
+]
+
 
 class SolunarsAllInOne(Frame):
     def __init__(self, base, filename, program_options: ProgramOptions):
         super().__init__()
         now = dt.utcnow()
-        chart = {}
+
+        self._options = (
+            CHART_OPTIONS_FULL
+            if program_options.quarti_returns_enabled
+            else CHART_OPTIONS_NO_QUARTIS
+        )
+        self._in_callback = False
+
+        self._previous_selections = []
 
         self.program_options = program_options
         self.more_charts = {}
@@ -117,23 +186,7 @@ class SolunarsAllInOne(Frame):
         self.base = base
         self.filename = filename
         self.filename_label = Label(self, display_name(filename), 0, 0, 1)
-        Label(self, 'Search Direction', 0.05, 0.5, 0.20, anchor=tk.W)
 
-        self.init = True
-        self.search = Radiogroup(self)
-        Radiobutton(
-            self, self.search, 0, 'Active Charts', 0.05, 0.55, 0.2
-        ).bind('<Button-1>', lambda _: delay(self.toggle_year, 0))
-        Radiobutton(self, self.search, 1, 'Forwards', 0.05, 0.6, 0.2).bind(
-            '<Button-1>', lambda _: delay(self.toggle_year, 1)
-        )
-        Radiobutton(self, self.search, 2, 'Backwards', 0.05, 0.65, 0.2).bind(
-            '<Button-1>', lambda _: delay(self.toggle_year, 2)
-        )
-
-        self.search.value = 0
-        self.search.focus()
-        self.init = False
         if DATE_FMT == 'D M Y':
             self.dated = Entry(self, now.strftime('%d'), 0.3, 0.1, 0.1)
             self.datem = Entry(self, now.strftime('%m'), 0.4, 0.1, 0.1)
@@ -214,18 +267,18 @@ class SolunarsAllInOne(Frame):
         )
         self.event = None
 
-        Label(self, 'Date ' + DATE_FMT, 0.15, 0.1, 0.15, anchor=tk.W)
-        Label(self, 'Time UT H M S ', 0.15, 0.15, 0.15, anchor=tk.W)
-        Label(self, 'Location', 0.15, 0.2, 0.15, anchor=tk.W)
-        Label(self, 'Lat D M S', 0.15, 0.25, 0.15, anchor=tk.W)
-        Label(self, 'Long D M S', 0.15, 0.3, 0.15, anchor=tk.W)
-        Label(self, 'Options', 0.15, 0.4, 0.15, anchor=tk.W)
+        Label(self, 'Date ' + DATE_FMT, 0.1, 0.1, 0.15, anchor=tk.W)
+        Label(self, 'Time UT H M S ', 0.1, 0.15, 0.15, anchor=tk.W)
+        Label(self, 'Location', 0.1, 0.2, 0.15, anchor=tk.W)
+        Label(self, 'Lat D M S', 0.1, 0.25, 0.15, anchor=tk.W)
+        Label(self, 'Long D M S', 0.1, 0.3, 0.15, anchor=tk.W)
+        Label(self, 'Options', 0.1, 0.4, 0.15, anchor=tk.W)
 
         self.chart_select_frame = tk.Frame(
             self, width=0.5, height=0.5, background=BG_COLOR
         )
         self.chart_select_frame.place(
-            relx=0.45, rely=0.5, relwidth=0.3, relheight=0.3, anchor=tk.N
+            relx=0.45, rely=0.55, relwidth=0.3, relheight=0.3, anchor=tk.N
         )
 
         Label(
@@ -235,21 +288,20 @@ class SolunarsAllInOne(Frame):
             y=0,
             anchor=tk.N,
         ).pack(side=tk.TOP, pady=10)
+
         self.listbox = Listbox(
             self.chart_select_frame,
-            x=0.9,
-            y=0.9,
-            width=0.95,
-            height=0.95,
+            x=0,
+            y=0,
+            width=0,
+            height=0,
             selectmode=tk.MULTIPLE,
         )
-        self.listbox.set_options(
-            CHART_OPTIONS_FULL
-            if self.program_options.quarti_returns_enabled
-            else CHART_OPTIONS_NO_QUARTIS
-        )
-        self.listbox.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        self.listbox.bind('<Button-1>', self.on_click)
+
+        self.listbox.set_options(self._options)
+
+        self.listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.listbox.bind('<<ListboxSelect>>', self.on_select)
 
         self.scrollbar = Scrollbar(self.chart_select_frame)
         self.scrollbar.config(command=self.listbox.yview)
@@ -257,22 +309,54 @@ class SolunarsAllInOne(Frame):
 
         self.listbox.config(yscrollcommand=self.scrollbar.set)
 
-        Button(self, 'All Major', 0.3, 0.8, 0.15).bind(
-            '<Button-1>', lambda _: delay(self.all_charts, True)
+        Label(self, 'Quick Select', 0.1, 0.55, 0.2, anchor=tk.W)
+
+        Button(self, 'SSR + LRs', 0.1, 0.6, 0.15).bind(
+            '<Button-1>',
+            lambda _: delay(self.select_all_of_type, SSR_AND_LUNARS),
         )
-        Button(self, 'Clear', 0.45, 0.8, 0.15).bind(
-            '<Button-1>', lambda _: delay(self.all_charts, False)
+        Button(self, 'All Major', 0.1, 0.65, 0.15).bind(
+            '<Button-1>', lambda _: delay(self.select_all_of_type, ALL_MAJOR)
         )
+        Button(self, 'Maj + Minor', 0.1, 0.7, 0.15, font=font_16).bind(
+            '<Button-1>',
+            lambda _: delay(self.select_all_of_type, MAJOR_AND_MINOR),
+        )
+        Button(self, 'Experimental', 0.1, 0.75, 0.15, font=font_16).bind(
+            '<Button-1>',
+            lambda _: delay(self.select_all_of_type, EXPERIMENTAL),
+        )
+        Button(self, 'Clear', 0.1, 0.8, 0.15).bind(
+            '<Button-1>', lambda _: delay(self.clear_selections)
+        )
+
+        Label(self, 'Search Direction', 0.6, 0.55, 0.2, anchor=tk.CENTER)
+        self.search = Radiogroup(self)
+        Radiobutton(self, self.search, 0, 'Active Charts', 0.6, 0.6, 0.3).bind(
+            '<Button-1>', lambda _: delay(self.toggle_year, 0)
+        )
+        Radiobutton(self, self.search, 1, 'Forwards', 0.6, 0.65, 0.3).bind(
+            '<Button-1>', lambda _: delay(self.toggle_year, 1)
+        )
+        Radiobutton(self, self.search, 2, 'Backwards', 0.6, 0.7, 0.3).bind(
+            '<Button-1>', lambda _: delay(self.toggle_year, 2)
+        )
+
+        self.search.value = 0
+        self.search.focus()
+
         self.oneyear = Checkbutton(
-            self, 'All Selected Solunars For One Year', 0.3, 0.85, 0.4
+            self, 'All Selected For Months:', 0.6, 0.8, 0.3
         )
-        self.oneyear.config(state=tk.DISABLED)
+
+        self.all_for_months = Entry(self, '6', 0.8, 0.8, 0.025)
+
         self.istemp = Radiogroup(self)
-        Radiobutton(self, self.istemp, 0, 'Permanent Charts', 0.3, 0.9, 0.25)
-        Radiobutton(self, self.istemp, 1, 'Temporary Charts', 0.5, 0.9, 0.25)
+        Radiobutton(self, self.istemp, 0, 'Permanent Charts', 0.3, 0.5, 0.25)
+        Radiobutton(self, self.istemp, 1, 'Temporary Charts', 0.5, 0.5, 0.25)
         self.istemp.value = 1
 
-        Button(self, 'Calculate', 0.85, 0.95, 0.2).bind(
+        Button(self, 'Calculate', 0, 0.95, 0.2).bind(
             '<Button-1>', lambda _: delay(self.calculate)
         )
         Button(self, 'Help', 0.2, 0.95, 0.2).bind(
@@ -285,21 +369,74 @@ class SolunarsAllInOne(Frame):
         )
         backbtn = Button(self, 'Back', 0.8, 0.95, 0.20)
         backbtn.bind('<Button-1>', lambda _: delay(self.back))
-        self.status = Label(self, '', 0, 0.85, 1)
+        self.status = Label(self, '', 0, 0.9, 1)
 
-    def is_header(self, item):
-        return item.startswith('---')
+    def on_select(self, event):
+        if self._in_callback:
+            return
 
-    def on_click(self, event):
-        # Get the listbox widget from the event
-        self.listbox = event.widget
-        # Determine the index of the clicked item using the y coordinate of the click event
-        idx = self.listbox.nearest(event.y)
-        # Retrieve the text of that item
-        item = self.listbox.get(idx)
-        # If it's a header, stop the event processing so it doesn't get selected.
-        if self.is_header(item):
-            return 'break'  # Cancels the default handling
+        self._in_callback = True
+
+        widget = event.widget
+
+        selected_indices = list(widget.curselection())
+
+        # Unselect and remove headers from selection
+        for i in selected_indices:
+            if widget.get(i).startswith('---'):
+                widget.select_clear(i)
+
+        selected_indices = [
+            i for i in selected_indices if not widget.get(i).startswith('---')
+        ]
+
+        if not selected_indices:
+            # We must be unselecting the only selection
+            widget.delete(0, tk.END)
+
+            for (insertion_conter, item) in enumerate(self._options):
+                widget.insert(tk.END, item)
+                if item.startswith('---'):
+                    widget.itemconfig(insertion_conter, fg='gray')
+
+            self._in_callback = False
+            return
+
+        selected_items = []
+
+        for i in selected_indices:
+            item = widget.get(i)
+            if item.startswith('* '):
+                selected_items.append(item)
+            elif item.startswith('- '):
+                selected_items.append(item.replace('- ', '* '))
+            else:
+                selected_items.append(f'* {item}')
+
+        originals_minus_starred = [
+            item
+            for item in self._options
+            if f'* {item}' not in selected_items
+            and item.replace('- ', '* ') not in selected_items
+        ]
+
+        # Rebuild final listbox
+        widget.delete(0, tk.END)
+
+        for (insertion_conter, item) in enumerate(
+            selected_items + originals_minus_starred
+        ):
+            widget.insert(tk.END, item)
+            if item.startswith('---'):
+                widget.itemconfig(insertion_conter, fg='gray')
+
+        # Reselect all newly added/promoted starred items
+        widget.select_clear(0, tk.END)
+        for i, item in enumerate(widget.get(0, tk.END)):
+            if item in selected_items:
+                widget.select_set(i)
+
+        self._in_callback = False
 
     def enable_find(self):
         self.findbtn.disabled = False
@@ -310,8 +447,65 @@ class SolunarsAllInOne(Frame):
     def back(self):
         self.destroy()
 
-    def all_charts(self, value):
-        pass
+    def select_all_of_type(self, preset):
+        self._in_callback = True
+        # already_selected = self.listbox.selections
+        already_selected = []
+
+        for chart in preset:
+            # Skip over quartis if they're disabled
+            if chart not in self._options:
+                continue
+
+            item = chart.replace('- ', '* ')
+            if not item.startswith('* '):
+                item = f'* {item}'
+
+            if item not in already_selected:
+                already_selected.insert(0, item)
+
+        originals_minus_starred = [
+            item
+            for item in self._options
+            if f'* {item}' not in already_selected
+            and item.replace('- ', '* ') not in already_selected
+        ]
+
+        # Rebuild final listbox
+        self.listbox.delete(0, tk.END)
+
+        already_selected.reverse()
+
+        for (insertion_conter, item) in enumerate(
+            already_selected + originals_minus_starred
+        ):
+            self.listbox.insert(tk.END, item)
+            if item.startswith('---'):
+                self.listbox.itemconfig(insertion_conter, fg='gray')
+
+        # Reselect all originally selected items
+        self.listbox.select_clear(0, tk.END)
+        for i, item in enumerate(self.listbox.get(0, tk.END)):
+            if item in already_selected:
+                self.listbox.select_set(i)
+
+        self._in_callback = False
+
+    def clear_selections(self):
+        self._in_callback = True
+
+        # Rebuild final listbox
+        self.listbox.delete(0, tk.END)
+
+        for (insertion_conter, item) in enumerate(self._options):
+            self.listbox.insert(tk.END, item)
+            if item.startswith('---'):
+                self.listbox.itemconfig(insertion_conter, fg='gray')
+
+        # Reselect all newly added/promoted starred items
+        self.listbox.select_clear(0, tk.END)
+
+        self._in_callback = False
 
     def more_finish(self, selected):
         pass

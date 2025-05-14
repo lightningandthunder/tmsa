@@ -292,7 +292,7 @@ class Listbox(PropertyMixin, tk.Listbox):
         self.place(relx=x, rely=y, relwidth=width, relheight=height)
 
     def item_is_header(self, item):
-        return item.startswith('--')
+        return item.startswith('---')
 
     @property
     def selections(self):
@@ -303,6 +303,7 @@ class Listbox(PropertyMixin, tk.Listbox):
         ]
 
     def set_options(self, options):
+        self.option_clear()
         for (index, item) in enumerate(options):
             self.insert(tk.END, item)
             if self.item_is_header(item):
