@@ -76,9 +76,10 @@ if PLATFORM == 'Win32GUI':
     )
     title_font = tkFont(family='Lucida Console', size=36, weight='bold')
 elif PLATFORM == 'linux':
-    root_font = tk.font.nametofont('TkDefaultFont')
+    root_font = tk.font.nametofont('TkTextFont')
 
     base_font = root_font.copy()
+    base_font.configure(family='fixed')
     base_font.configure(size=18)
 
     font_32 = root_font.copy()

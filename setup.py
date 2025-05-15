@@ -17,7 +17,13 @@ match sys.platform:
         base = "Win32GUI"
     case "linux":
         base = None
-        build_dir = os.path.join('build', 'exe.linux-x86_64-3.10')
+        import glob
+
+        build_dirs = glob.glob("build/exe.linux-*")
+        build_dir = build_dirs[0] if build_dirs else None
+        if build_dir is None:
+            raise RuntimeError("Could not find the cx_Freeze build output directory")
+
     case "darwin":
         base = None
     case _:
@@ -112,8 +118,8 @@ options = {
     "build_exe": {
         "include_path": "src,public",
         "include_files": [
-            (os.path.join("copy", "dll"), "dll"),
-            (os.path.join("copy", "ephe"), "ephe"),
+            (os.path.join("src", "dll"), "dll"),
+            (os.path.join("src", "ephe"), "ephe"),
             (os.path.join("src", "assets"), "assets"),
             (os.path.join("src", "help"), "help"),
             *source_files
@@ -152,6 +158,21 @@ class BuildInstaller(Command):
         # Name of the output installer
         installer_name = f"TimeMatters-{VERSION}-linux-x86_64.sh"
 
+        # symlink_path = os.path.join(build_dir, 'run-tmsa')  # INSIDE exe.linux-*/ folder
+        # target_path = './tmsa'  # Relative path to tmsa from symlink
+
+        # # Clean up if needed
+        # if os.path.lexists(symlink_path):
+        #     os.remove(symlink_path)
+
+        # os.symlink(target_path, symlink_path)
+
+        # Path to postinstall.sh relative to project root
+        postinstall_src = os.path.join(os.path.dirname(__file__), "postinstall.sh")
+        postinstall_dst = os.path.join(build_dir, "postinstall.sh")
+        shutil.copyfile(postinstall_src, postinstall_dst)
+        os.chmod(postinstall_dst, 0o755)  # make sure it's executable
+
         # Command to create the self-extracting installer using makeself
         makeself_command = [
             'makeself',
@@ -159,7 +180,7 @@ class BuildInstaller(Command):
             build_dir,
             installer_name,
             f'Time Matters {VERSION} Installer',
-            './tmsa',
+            './postinstall.sh',
         ]
 
         # Run the makeself command
@@ -187,11 +208,20 @@ if sys.platform == "win32":
         zipf.write(installer_path, arcname=f"{file_name}.msi")
 elif sys.platform == 'linux':
     os.makedirs(out_dir, exist_ok=True)
-    shutil.move(f"TimeMatters-{VERSION}-linux-x86_64.sh", build_dir)
+    installer_name = f"TimeMatters-{VERSION}-linux-x86_64.sh"
+    if os.path.exists(os.path.join(build_dir, installer_name)):
+        os.remove(os.path.join(build_dir, installer_name))
+
+    shutil.move(installer_name, build_dir)
     
     file_name = f"TimeMatters-{VERSION}-linux-x86_64"
     zipped_file_name = f"{file_name}.zip"
     zipped_path = os.path.join(out_dir, zipped_file_name)
     installer_path = os.path.join(build_dir, f"{file_name}.sh")
+
+    if os.path.exists(zipped_path):
+        os.remove(zipped_path)
+    
     with zipfile.ZipFile(zipped_path, 'w') as zipf:
-        zipf.write(installer_path, arcname=f"{file_name}.zip")
+        zipf.write(installer_path, arcname=os.path.basename(installer_path))
+

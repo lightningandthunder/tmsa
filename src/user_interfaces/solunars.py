@@ -21,6 +21,7 @@ from geopy import Nominatim
 import pydash
 
 from src import *
+from src import swe
 from src.constants import DQ, DS, MONTHS, VERSION
 from src.models.charts import ChartObject, ChartParams, ChartType
 from src.models.options import ProgramOptions
@@ -651,58 +652,102 @@ class Solunars(Frame):
         chart['options'] = self.options.text.strip()
         chart['base_chart'] = self.base
         solunars = []
+        solars = []
+        lunars = []
+
         if self.mainsolar.checked:
             solunars.append('Solar Return')
+            solars.append('Solar Return')
         if self.demisolar.checked:
             solunars.append('Demi-Solar Return')
+            solars.append('Demi-Solar Return')
         if pydash.get(self, 'fqsolar.checked'):
             solunars.append('First Quarti-Solar Return')
+            solars.append('First Quarti-Solar Return')
         if pydash.get(self, 'lqsolar.checked'):
             solunars.append('Last Quarti-Solar Return')
+            solars.append('Last Quarti-Solar Return')
+
         if self.mainlunar.checked:
             solunars.append('Lunar Return')
+            lunars.append('Lunar Return')
         if self.demilunar.checked:
             solunars.append('Demi-Lunar Return')
+            lunars.append('Demi-Lunar Return')
         if pydash.get(self, 'fqlunar.checked'):
             solunars.append('First Quarti-Lunar Return')
+            lunars.append('First Quarti-Lunar Return')
         if pydash.get(self, 'lqlunar.checked'):
             solunars.append('Last Quarti-Lunar Return')
+            lunars.append('Last Quarti-Lunar Return')
 
         if self.more_charts.get('nsr'):
             solunars.append(ChartType.NOVIENIC_SOLAR_RETURN.value)
+            solars.append(ChartType.NOVIENIC_SOLAR_RETURN.value)
         if self.more_charts.get('10-day'):
             solunars.append(ChartType.TEN_DAY_SOLAR_RETURN.value)
+            solars.append(ChartType.TEN_DAY_SOLAR_RETURN.value)
         if self.more_charts.get('nlr'):
             solunars.append(ChartType.NOVIENIC_LUNAR_RETURN.value)
+            lunars.append(ChartType.NOVIENIC_LUNAR_RETURN.value)
         if self.more_charts.get('18-hour'):
             solunars.append(ChartType.EIGHTEEN_HOUR_LUNAR_RETURN.value)
+            lunars.append(ChartType.EIGHTEEN_HOUR_LUNAR_RETURN.value)
 
         if self.more_charts.get('solu'):
             solunars.append(ChartType.SOLILUNAR_RETURN.value)
+            solars.append(ChartType.SOLILUNAR_RETURN.value)
         if self.more_charts.get('demi-solu'):
             solunars.append(ChartType.DEMI_SOLILUNAR_RETURN.value)
+            solars.append(ChartType.DEMI_SOLILUNAR_RETURN.value)
         if self.more_charts.get('quarti-solu-1'):
             solunars.append(ChartType.FIRST_QUARTI_SOLILUNAR_RETURN.value)
+            solars.append(ChartType.FIRST_QUARTI_SOLILUNAR_RETURN.value)
         if self.more_charts.get('quarti-solu-3'):
             solunars.append(ChartType.LAST_QUARTI_SOLILUNAR_RETURN.value)
+            solars.append(ChartType.LAST_QUARTI_SOLILUNAR_RETURN.value)
 
         if self.more_charts.get('luso'):
             solunars.append(ChartType.LUNISOLAR_RETURN.value)
+            lunars.append(ChartType.LUNISOLAR_RETURN.value)
         if self.more_charts.get('demi-luso'):
             solunars.append(ChartType.DEMI_LUNISOLAR_RETURN.value)
+            lunars.append(ChartType.DEMI_LUNISOLAR_RETURN.value)
         if self.more_charts.get('quarti-luso-1'):
             solunars.append(ChartType.FIRST_QUARTI_LUNISOLAR_RETURN.value)
+            lunars.append(ChartType.FIRST_QUARTI_LUNISOLAR_RETURN.value)
         if self.more_charts.get('quarti-luso-3'):
             solunars.append(ChartType.LAST_QUARTI_LUNISOLAR_RETURN.value)
+            lunars.append(ChartType.LAST_QUARTI_LUNISOLAR_RETURN.value)
 
         if self.more_charts.get('sar'):
             solunars.append(ChartType.ANLUNAR_RETURN.value)
+            lunars.append(ChartType.ANLUNAR_RETURN.value)
         if self.more_charts.get('demi-sar'):
             solunars.append(ChartType.DEMI_ANLUNAR_RETURN.value)
+            lunars.append(ChartType.DEMI_ANLUNAR_RETURN.value)
         if self.more_charts.get('quarti-sar-1'):
             solunars.append(ChartType.FIRST_QUARTI_ANLUNAR_RETURN.value)
+            lunars.append(ChartType.FIRST_QUARTI_ANLUNAR_RETURN.value)
         if self.more_charts.get('quarti-sar-3'):
             solunars.append(ChartType.LAST_QUARTI_ANLUNAR_RETURN.value)
+            lunars.append(ChartType.LAST_QUARTI_ANLUNAR_RETURN.value)
+
+        if self.more_charts.get('lsr'):
+            print('Trying to get LSR')
+            solunars.append(ChartType.LUNAR_SYNODICAL_RETURN.value)
+            lunars.append(ChartType.LUNAR_SYNODICAL_RETURN.value)
+        if self.more_charts.get('demi-lsr'):
+            solunars.append(ChartType.DEMI_LUNAR_SYNODICAL_RETURN.value)
+            lunars.append(ChartType.DEMI_LUNAR_SYNODICAL_RETURN.value)
+        if self.more_charts.get('quarti-lsr-1'):
+            solunars.append(
+                ChartType.FIRST_QUARTI_LUNAR_SYNODICAL_RETURN.value
+            )
+            lunars.append(ChartType.FIRST_QUARTI_LUNAR_SYNODICAL_RETURN.value)
+        if self.more_charts.get('quarti-lsr-3'):
+            solunars.append(ChartType.LAST_QUARTI_LUNAR_SYNODICAL_RETURN.value)
+            lunars.append(ChartType.LAST_QUARTI_LUNAR_SYNODICAL_RETURN.value)
 
         if not solunars:
             self.status.error('No solunars selected.')
@@ -798,6 +843,7 @@ class Solunars(Frame):
                 and not 'lunisolar' in sl
                 and not 'solilunar' in sl
                 and not 'anlunar' in sl
+                and not 'synodical' in sl
             ):
                 target = moon
                 cclass = 'LR'
@@ -893,6 +939,45 @@ class Solunars(Frame):
                 chart['ssr_chart'] = ssr_chart
 
                 date = calc_moon_crossing(target, start)
+
+            elif 'synodical' in sl:
+                cclass = 'LR'
+                natal_jd_utc = pydash.get(
+                    chart['base_chart'], ['julian_day_utc']
+                )
+                natal_elongation = swe.calc_moon_elongation_for_jd_utc(
+                    natal_jd_utc
+                )
+
+                if sun > moon or moon - sun > 180:
+                    natal_elongation *= -1
+
+                precision = 5
+                natal_elongation = round(natal_elongation, precision)
+
+                lower_bound = start
+                higher_bound = start + 29.5
+
+                while True:
+                    date = (lower_bound + higher_bound) / 2
+                    test_elongation = swe.calc_moon_elongation_for_jd_utc(date)
+                    test_elongation = round(test_elongation, precision)
+
+                    test_sun = swe.calc_planet(date, 0)[0]
+                    test_moon = swe.calc_planet(date, 1)[0]
+
+                    if test_sun > test_moon or test_moon - test_sun > 180:
+                        test_elongation *= -1
+
+                    if (
+                        natal_elongation == test_elongation
+                        or higher_bound < lower_bound
+                    ):
+                        break
+                    elif test_elongation > natal_elongation:
+                        higher_bound = date
+                    else:
+                        lower_bound = date
 
             self.make_chart(chart, date, sol, cclass)
 

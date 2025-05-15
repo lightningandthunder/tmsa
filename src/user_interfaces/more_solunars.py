@@ -142,9 +142,6 @@ class MoreSolunars(Frame):
         self.syr.config(state=tk.DISABLED)
         self.dsyr.config(state=tk.DISABLED)
 
-        self.lsr.config(state=tk.DISABLED)
-        self.dlsr.config(state=tk.DISABLED)
-
         self.nsr.checked = more_charts.get('nsr', False)
         self.ten_day_solar.checked = more_charts.get('10-day', False)
 

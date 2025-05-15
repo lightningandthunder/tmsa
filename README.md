@@ -39,15 +39,6 @@ python3 -m venv venv
 
 pip install -r etc/requirements-linux.txt
 
-# Give permissions for lib and log file directories
-sudo mkdir -p /var/lib/tmsa
-# enter sudo password
-sudo chown $USER:$USER /var/lib/tmsa
-sudo chmod 755 /var/lib/tmsa
-sudo mkdir -p /var/log/tmsa
-sudo chown $USER:$USER /var/log/tmsa
-sudo chmod 755 /var/log/tmsa
-
 python setup.py build_installer
 ```
 
@@ -56,7 +47,6 @@ You might need to also install a bunch of other packages to get `tkextrafont` to
 ```shell
 sudo apt install tcl-dev tk-dev
 sudo apt install build-essential python3-dev python3-pip cmake
-
 ```
 
 

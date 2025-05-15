@@ -478,6 +478,21 @@ class ChartType(Enum):
         'Last Quarti-Lunisolar Return Single Wheel'
     )
 
+    LUNAR_SYNODICAL_RETURN = 'Lunar Synodical Return'
+    LUNAR_SYNODICAL_RETURN_SINGLE = 'Lunar Synodical Return Single Wheel'
+    DEMI_LUNAR_SYNODICAL_RETURN = 'Demi-Lunar Synodical Return'
+    DEMI_LUNAR_SYNODICAL_RETURN_SINGLE = (
+        'Demi-Lunar Synodical Return Single Wheel'
+    )
+    FIRST_QUARTI_LUNAR_SYNODICAL_RETURN = 'First Quarti-Lunar Synodical Return'
+    FIRST_QUARTI_LUNAR_SYNODICAL_RETURN_SINGLE = (
+        'First Quarti-Lunar Synodical Return Single Wheel'
+    )
+    LAST_QUARTI_LUNAR_SYNODICAL_RETURN = 'Last Quarti-Lunar Synodical Return'
+    LAST_QUARTI_LUNAR_SYNODICAL_RETURN_SINGLE = (
+        'Last Quarti-Lunar Synodical Return Single Wheel'
+    )
+
     CAP_SOLAR = 'Capsolar'
     ARI_SOLAR = 'Arisolar'
     CAN_SOLAR = 'Cansolar'
@@ -1552,6 +1567,14 @@ SOLUNAR_RETURNS = [
     ChartType.DEMI_LUNISOLAR_RETURN_SINGLE.value,
     ChartType.FIRST_QUARTI_LUNISOLAR_RETURN_SINGLE.value,
     ChartType.LAST_QUARTI_LUNISOLAR_RETURN_SINGLE.value,
+    ChartType.LUNAR_SYNODICAL_RETURN,
+    ChartType.LUNAR_SYNODICAL_RETURN_SINGLE,
+    ChartType.DEMI_LUNAR_SYNODICAL_RETURN,
+    ChartType.DEMI_LUNAR_SYNODICAL_RETURN_SINGLE,
+    ChartType.FIRST_QUARTI_LUNAR_SYNODICAL_RETURN,
+    ChartType.FIRST_QUARTI_LUNAR_SYNODICAL_RETURN_SINGLE,
+    ChartType.LAST_QUARTI_LUNAR_SYNODICAL_RETURN,
+    ChartType.LAST_QUARTI_LUNAR_SYNODICAL_RETURN_SINGLE,
 ]
 
 RETURNS_WHERE_MOON_ALWAYS_FOREGROUND = [

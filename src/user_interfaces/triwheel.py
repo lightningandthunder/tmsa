@@ -34,6 +34,7 @@ class Triwheel(CoreChart):
         charts: list[chart_models.ChartObject],
         temporary: bool,
         options: option_models.Options,
+        chart_for_angles=None,
     ):
         super().__init__(charts, temporary, options)
 
@@ -45,8 +46,8 @@ class Triwheel(CoreChart):
         cols = 69
         chart_grid = [[' ' for _ in range(cols)] for _ in range(rows)]
 
-        [anlunar_chart, ssr_chart, radix] = self.charts
-        self.cclass = self.get_return_class(anlunar_chart)
+        [transiting_chart, transit_base_chart, radix] = self.charts
+        self.cclass = self.get_return_class(transiting_chart)
 
         chartfile.write('\n')
         for column_index in range(cols):
@@ -68,7 +69,7 @@ class Triwheel(CoreChart):
                 if index == 32 and sub_index == 34:
                     continue
                 chart_grid[index][sub_index] = '+'
-        cusps = [chart_utils.zod_min(c) for c in anlunar_chart.cusps]
+        cusps = [chart_utils.zod_min(c) for c in transiting_chart.cusps]
         chart_grid[0][14:20] = cusps[11]
         chart_grid[0][31:37] = cusps[10]
         chart_grid[0][48:54] = cusps[9]
@@ -84,54 +85,55 @@ class Triwheel(CoreChart):
 
         chart_grid[19][18:51] = center_align('Transiting (t) Chart')
 
-        return_chart_type = anlunar_chart.type.value.lower()
+        return_chart_type = transiting_chart.type.value.lower()
 
         if (
             'solar' not in return_chart_type
             and 'lunar' not in return_chart_type
         ):
-            chart_grid[20][18:51] = center_align(anlunar_chart.name)
+            chart_grid[20][18:51] = center_align(transiting_chart.name)
         elif 'return' in return_chart_type:
-            parts = anlunar_chart.name.split(';')
+            parts = transiting_chart.name.split(';')
             chart_grid[20][18:51] = center_align(parts[0])
-        chart_grid[21][18:51] = center_align(anlunar_chart.type.value)
+        chart_grid[21][18:51] = center_align(transiting_chart.type.value)
         line = (
-            str(anlunar_chart.day)
+            str(transiting_chart.day)
             + ' '
-            + constants.MONTHS[anlunar_chart.month - 1]
+            + constants.MONTHS[transiting_chart.month - 1]
             + ' '
         )
         line += (
-            f'{anlunar_chart.year} '
-            if anlunar_chart.year > 0
-            else f'{-(anlunar_chart.year) + 1} BCE '
+            f'{transiting_chart.year} '
+            if transiting_chart.year > 0
+            else f'{-(transiting_chart.year) + 1} BCE '
         )
-        if not anlunar_chart.style:
+        if not transiting_chart.style:
             line += 'OS '
-        line += fmt_hms(anlunar_chart.time) + ' ' + anlunar_chart.zone
+        line += fmt_hms(transiting_chart.time) + ' ' + transiting_chart.zone
 
         chart_grid[22][18:51] = center_align(line)
-        chart_grid[23][18:51] = center_align(anlunar_chart.location)
+        chart_grid[23][18:51] = center_align(transiting_chart.location)
         chart_grid[24][18:51] = center_align(
-            fmt_lat(anlunar_chart.geo_latitude)
+            fmt_lat(transiting_chart.geo_latitude)
             + ' '
-            + fmt_long(anlunar_chart.geo_longitude)
+            + fmt_long(transiting_chart.geo_longitude)
         )
         chart_grid[25][18:51] = center_align(
-            'UT ' + fmt_hms(anlunar_chart.time + anlunar_chart.correction)
+            'UT '
+            + fmt_hms(transiting_chart.time + transiting_chart.correction)
         )
         chart_grid[26][18:51] = center_align(
-            'RAMC ' + fmt_dms(anlunar_chart.ramc)
+            'RAMC ' + fmt_dms(transiting_chart.ramc)
         )
         chart_grid[27][18:51] = center_align(
-            'OE ' + fmt_dms(anlunar_chart.obliquity)
+            'OE ' + fmt_dms(transiting_chart.obliquity)
         )
         chart_grid[28][18:51] = center_align(
-            'SVP ' + zod_sec(360 - anlunar_chart.ayanamsa)
+            'SVP ' + zod_sec(360 - transiting_chart.ayanamsa)
         )
         chart_grid[29][18:51] = center_align('Sidereal Zodiac')
         chart_grid[30][18:51] = center_align('Campanus Houses')
-        chart_grid[31][18:51] = center_align(anlunar_chart.notes or '')
+        chart_grid[31][18:51] = center_align(transiting_chart.notes or '')
 
         radix = self.find_innermost_chart()
         chart_grid[33][18:51] = center_align('Radical (r) Chart')
@@ -191,24 +193,25 @@ class Triwheel(CoreChart):
                     temp = houses[column_index][sub_index]
                     if len(temp) > 2:
                         planet = houses[column_index][sub_index][0]
-                        if houses[column_index][sub_index][-1] == 't':
-                            chart_grid[y[column_index] + sub_index][
-                                x[column_index] : x[column_index] + 16
-                            ] = self.insert_planet_into_line(
-                                anlunar_chart, planet, 't', width=16
-                            )
-                        elif houses[column_index][sub_index][-1] == 's':
-                            chart_grid[y[column_index] + sub_index][
-                                x[column_index] : x[column_index] + 16
-                            ] = self.insert_planet_into_line(
-                                ssr_chart, planet, 's', width=16
-                            )
+                        planet_layer_char = houses[column_index][sub_index][-1]
+
+                        chart_for_planet = None
+                        if planet_layer_char == 't':
+                            chart_for_planet = transiting_chart
+                        elif planet_layer_char in ['s', 'p']:
+                            chart_for_planet = transit_base_chart
                         else:
-                            chart_grid[y[column_index] + sub_index][
-                                x[column_index] : x[column_index] + 16
-                            ] = self.insert_planet_into_line(
-                                radix, planet, 'r', width=16
-                            )
+                            planet_layer_char = 'r'
+                            chart_for_planet = radix
+
+                        chart_grid[y[column_index] + sub_index][
+                            x[column_index] : x[column_index] + 16
+                        ] = self.insert_planet_into_line(
+                            chart_for_planet,
+                            planet,
+                            planet_layer_char,
+                            width=16,
+                        )
 
         for row in chart_grid:
             chartfile.write(' ')
@@ -225,25 +228,27 @@ class Triwheel(CoreChart):
             )
             ex = ''
             for planet_name in len(extras):
-                if planet_name[-1] == 't':
-                    ex += (
-                        self.insert_planet_into_line(
-                            anlunar_chart, planet_name[0], 't', True, width=16
-                        )
-                        + ' '
-                    )
-                elif planet_name[-1] == 's':
-                    ex += (
-                        self.insert_planet_into_line(
-                            anlunar_chart, planet_name[0], 's', True, width=16
-                        )
-                        + ' '
-                    )
+                planet_layer_char = planet_name[-1]
+
+                related_chart = None
+                if planet_layer_char == 't':
+                    related_chart = transiting_chart
+
+                elif planet_layer_char in ['s', 'p']:
+                    related_chart = transit_base_chart
+
                 else:
-                    ex += (
-                        self.insert_planet_into_line(
-                            radix, planet_name[0], 'r', True, width=16
-                        )
-                        + ' '
+                    planet_layer_char = 'r'
+                    related_chart = radix
+
+                ex += (
+                    self.insert_planet_into_line(
+                        related_chart,
+                        planet_name[0],
+                        planet_layer_char,
+                        True,
+                        width=16,
                     )
+                    + ' '
+                )
             chartfile.write(center_align(ex[0:-1], 81) + '\n')

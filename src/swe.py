@@ -143,6 +143,15 @@ swe_mooncross_ut.restype = c_double.restype = c_double
 swe_cotrans = _get_handle_for_platform(dll, '_swe_cotrans@16')
 swe_cotrans.argtypes = [POINTER(c_double * 3), POINTER(c_double * 3), c_double]
 
+swe_pheno_ut = _get_handle_for_platform(dll, 'swe_pheno_ut@32')
+swe_pheno_ut.argtypes = [
+    c_double,
+    c_int,
+    c_int,
+    POINTER(c_double * 20),
+    POINTER(c_char * 256),
+]
+
 
 def julday(year, month, day, hour, isgreg) -> float:
     return swe_julday(year, month, day, hour, isgreg)
@@ -168,7 +177,6 @@ def calc_planet(universal_time: float, planet: int):
         if i in [0, 1, 3]:
             result.append(result_array[i])
 
-    # The flag here indicates equatorial positions, and speed
     equatorial_positions_and_speed = 2048 + 256
     swe_calc_ut(
         universal_time,
@@ -379,3 +387,20 @@ def is_planet_stationary(long_name: str, julian_day: float) -> bool:
     ending_period_direction = calc_planet(ending_time, stats['number'])[2] > 0
 
     return base_direction != ending_period_direction
+
+
+def calc_moon_elongation_for_jd_utc(jd_utc: float) -> float:
+    sidereal_positions_and_speed = 64 * 1024 + 256
+    result_array = (c_double * 20)()
+    err = create_string_buffer(256)
+    swe_pheno_ut(
+        jd_utc,
+        1,
+        sidereal_positions_and_speed,
+        result_array,
+        err,
+    )
+    if err.value:
+        print('elongation err: ', err.value)
+
+    return result_array[2]
