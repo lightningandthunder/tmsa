@@ -11,6 +11,7 @@
 - Added a toggle under Program Options to disable quarti-returns, removing them from all menus
 - Fixed "All Solunars for 1 Year" toggle to correctly fetch all selected Solunars
 - Fixed MC altitude calculation
+- Under the hood: changed the way chart data calculation happens and gets saved to streamline multi-step charts such as Anlunar Returns.
 
 ### 0.6.0
 
