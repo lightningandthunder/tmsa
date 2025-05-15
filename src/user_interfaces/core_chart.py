@@ -962,7 +962,10 @@ class CoreChart(object, metaclass=ABCMeta):
                 ecliptical_aspect,
                 mundane_aspect,
                 paran_aspect,
-                key=lambda x: ((200 - x.strength) if x else 1000, x.orb if x else 1000),
+                key=lambda x: (
+                    (200 - x.strength) if x else 1000,
+                    x.orb if x else 1000,
+                ),
             )
 
         if tightest_aspect and not tightest_aspect.aspect_class == 4:
