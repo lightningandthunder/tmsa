@@ -1,8 +1,16 @@
 ### 0.7.0
-- Exposed paran functionality
+- Added paran functionality
 - Enabled minor aspects, including 10° series
 - Added pagination to "recently used" items, increasing the storage size
 - Removed the legacy "TMSA Classic" angularity model
+- Aspects now split into columns even if there are missing classes
+- Added many Solunar return types: Novienic Solar Returns (Enneads), Novienic Lunar Returns, Anlunars, Solilunars, and Lunisolars.
+- Made "angle contact aspects" have the same strength scale as traditional aspects
+- Added a "Sidereal Landmarks" page
+- Refreshed the Solunars page to allow for all of the additional Solunar types
+- Added a toggle under Program Options to disable quarti-returns, removing them from all menus
+- Fixed "All Solunars for 1 Year" toggle to correctly fetch all selected Solunars
+- Fixed MC altitude calculation
 
 ### 0.6.0
 
