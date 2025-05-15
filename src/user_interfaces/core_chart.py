@@ -506,6 +506,7 @@ class CoreChart(object, metaclass=ABCMeta):
             .as_type(aspect_type)
             .with_class(aspect_class)
         )
+
         aspect_strength = chart_utils.calc_aspect_strength_percent(
             square_orb, normalized_orb
         )
@@ -961,7 +962,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 ecliptical_aspect,
                 mundane_aspect,
                 paran_aspect,
-                key=lambda x: (200 - x.strength) if x else 1000,
+                key=lambda x: ((200 - x.strength) if x else 1000, x.orb),
             )
 
         if tightest_aspect and not tightest_aspect.aspect_class == 4:

@@ -307,7 +307,12 @@ class SolunarsAllInOne(Frame):
         self.scrollbar.config(command=self.listbox.yview)
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        self.listbox.config(yscrollcommand=self.scrollbar.set)
+        self.listbox.config(
+            yscrollcommand=self.scrollbar.set,
+            activestyle='dotbox',
+            selectbackground=BG_COLOR,
+            selectforeground=TXT_COLOR,
+        )
 
         Label(self, 'Quick Select', 0.1, 0.55, 0.2, anchor=tk.W)
 

@@ -26,6 +26,7 @@ from src.user_interfaces.ingresses import Ingresses
 from src.user_interfaces.new_chart import NewChart
 from src.user_interfaces.program_options import ProgramOptionsMenu
 from src.user_interfaces.select_chart import SelectChart
+from src.user_interfaces.sidereal_landmarks import SiderealLandmarks
 from src.user_interfaces.widgets import *
 from src.utils.gui_utils import (
     ShowHelp,
@@ -178,6 +179,7 @@ class StartPage(Frame):
         Button(self, 'Ingresses', 0.2, 0.45, 0.2).bind(
             '<Button-1>', lambda _: delay(Ingresses)
         )
+
         default = (
             'Student Natal'
             if os.path.exists(STUDENT_FILE)
@@ -204,6 +206,9 @@ class StartPage(Frame):
 
         Button(self, 'Help', 0.2, 0.5, 0.2).bind(
             '<Button-1>', lambda _: delay(ShowHelp, HELP_PATH + r'\main.txt')
+        )
+        Button(self, 'Sidereal Landmarks', 0.2, 0.55, 0.2).bind(
+            '<Button-1>', lambda _: delay(self.show_sidereal_landmarks)
         )
         self.program_options = Button(
             self, 'Program Options', 0.4, 0.5, 0.2, font=font_16
@@ -253,6 +258,9 @@ class StartPage(Frame):
                 recs = json.dump(recs, datafile, indent=4)
         except:
             pass
+
+    def show_sidereal_landmarks(self):
+        SiderealLandmarks()
 
     def resize(self, event):
         self.resize_predictive_options()

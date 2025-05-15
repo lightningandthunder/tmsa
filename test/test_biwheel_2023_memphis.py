@@ -23,8 +23,7 @@ class TestBiwheelDisplay:
         Biwheel([return_chart, radix], temporary=True, options=options)
 
         lines = mockfile.file.split('\n')
-        for index, line in enumerate(lines):
-            print(f'{index: <3}: {line}')
+
 
         assert_line_contains(
             lines[20], 'Transiting (t) Chart', any_position=True
@@ -80,9 +79,6 @@ class TestBiwheelDisplay:
 
     #     lines = mockfile.file.split('\n')
         
-    #     for index, line in enumerate(lines):
-    #         print(f'{index: <3}: {line}')
-
     #     assert_line_contains(
     #         lines[70].strip(),
     #         "Mo 17Vi 8'16\"  4S 9 +11°54' 189° 9'  8S28  73°16' -30°39' 189°41'  31°45'  50%",

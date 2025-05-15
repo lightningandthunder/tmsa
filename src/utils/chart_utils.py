@@ -258,10 +258,10 @@ def minor_angularity_curve(
     orb_degrees: float, options: Options, use_raw: bool = False
 ):
     max_orb = calc_class_3_orb(options.angularity.minor_angles)
-    curve_width = 360.0 / (max_orb * 4)
+    curve_multiplier = 360.0 / (max_orb * 4)
 
     # Regular cosine curve
-    raw = math.cos(math.radians(orb_degrees * curve_width))
+    raw = math.cos(math.radians(orb_degrees * curve_multiplier))
 
     if use_raw:
         # Make it comparable to major angle contacts
@@ -613,9 +613,12 @@ def make_chart_path(chart, temporary, is_ingress=False):
 def calc_aspect_strength_percent(
     max_orb: int, raw_orb: float, as_float=False
 ) -> str:
-    strength = 60 / max_orb
-    strength_percent = math.cos(math.radians(raw_orb * strength))
-    strength_percent = round((strength_percent - 0.5) * 200)
+
+    curve_multiplier = 90 / max_orb
+    strength_percent = math.cos(math.radians(raw_orb * curve_multiplier))
+
+    strength_percent = round(strength_percent * 100)
+
     return f'{strength_percent:3d}' if not as_float else strength_percent
 
 
@@ -713,3 +716,12 @@ def write_triple_columns_to_file(
         else:
             chartfile.write(' ' * 26)
         chartfile.write('\n')
+
+
+def truncate(number, digits) -> float:
+    # Improve accuracy with floating point operations, to avoid truncate(16.4, 2) = 16.39 or truncate(-1.13, 2) = -1.12
+    nbDecimals = len(str(number).split('.')[1])
+    if nbDecimals <= digits:
+        return number
+    stepper = 10.0**digits
+    return math.trunc(stepper * number) / stepper

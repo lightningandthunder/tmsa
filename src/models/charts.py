@@ -725,6 +725,13 @@ class ChartObject:
             self.ayanamsa,
             self.obliquity,
         )
+
+        mc_altitude = 90 - (self.geo_latitude - dec)
+        if mc_altitude > 90:
+            mc_altitude = 180 - mc_altitude
+        if mc_altitude < 0:
+            mc_altitude *= -1
+
         self.angle_data['Mc'] = AngleData(
             name='Midheaven',
             short_name='Mc',
@@ -733,7 +740,7 @@ class ChartObject:
             right_ascension=ramc,
             declination=dec,
             azimuth=180,
-            altitude=90 - (self.geo_latitude - dec),
+            altitude=mc_altitude,
             meridian_longitude=None,
             prime_vertical_longitude=270,
         )
