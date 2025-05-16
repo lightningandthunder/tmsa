@@ -1,5 +1,5 @@
-from test.mocks.mockfile import MockFile
 from test.fixtures.tk_fixtures import mock_tk_main
+from test.mocks.mockfile import MockFile
 
 
 class TestMidpoints:

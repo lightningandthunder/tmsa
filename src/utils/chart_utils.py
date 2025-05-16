@@ -7,14 +7,13 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
-from io import TextIOWrapper
 import math
 import os
+from io import TextIOWrapper
 from typing import Iterator
 
 from src import *
-from src import constants
-from src import swe
+from src import constants, swe
 from src.models.angles import (
     ForegroundAngles,
     MinorAngles,

@@ -7,22 +7,22 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
-from abc import ABCMeta, abstractmethod
 import bisect
 import copy
-from io import TextIOWrapper
 import math
+import tkinter.messagebox as tkmessagebox
+from abc import ABCMeta, abstractmethod
+from datetime import datetime
+from io import TextIOWrapper
 
+import src.constants as constants
 import src.models.angles as angles_models
 import src.models.charts as chart_models
 import src.models.options as option_models
-import src.constants as constants
-import src.utils.chart_utils as chart_utils
 import src.utils.calculation_utils as calc_utils
+import src.utils.chart_utils as chart_utils
 from src.utils.format_utils import to360
 from src.utils.os_utils import open_file
-import tkinter.messagebox as tkmessagebox
-from datetime import datetime
 
 
 class CoreChart(object, metaclass=ABCMeta):

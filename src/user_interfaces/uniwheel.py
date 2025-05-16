@@ -9,11 +9,11 @@
 
 from io import TextIOWrapper
 
+import src.constants as constants
 import src.models.charts as chart_models
 import src.models.options as option_models
-import src.constants as constants
-from src.user_interfaces.core_chart import CoreChart
 import src.utils.chart_utils as chart_utils
+from src.user_interfaces.core_chart import CoreChart
 
 
 class Uniwheel(CoreChart):

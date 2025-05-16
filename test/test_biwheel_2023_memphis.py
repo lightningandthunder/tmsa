@@ -1,10 +1,12 @@
-from src.models.charts import ChartObject, ChartWheelRole
-from test.fixtures.ssr import ssr
-from test.mocks.mockfile import MockFile
-from test.fixtures.tk_fixtures import mock_tk_main
-from test.utils import assert_line_contains
 from test.fixtures.return_options import return_options
+from test.fixtures.ssr import ssr
+from test.fixtures.tk_fixtures import mock_tk_main
+from test.mocks.mockfile import MockFile
+from test.utils import assert_line_contains
+
 import src.models.options as model_option
+from src.models.charts import ChartObject, ChartWheelRole
+
 
 class TestBiwheelDisplay:
     def test_chart_center_info(

@@ -1,7 +1,8 @@
-import pytest
-from unittest.mock import MagicMock
 import tkinter as tk
 import tkinter.font
+from unittest.mock import MagicMock
+
+import pytest
 
 
 @pytest.fixture(autouse=True)

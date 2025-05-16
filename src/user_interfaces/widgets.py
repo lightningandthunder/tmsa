@@ -7,12 +7,12 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
+import io
 import tkinter as tk
 import tkinter.messagebox as tkmessagebox
-from tkinter.font import Font as tkFont
 import traceback
 from datetime import datetime as dt
-import io
+from tkinter.font import Font as tkFont
 
 from src import *
 from src.constants import PLATFORM, VERSION

@@ -1,11 +1,13 @@
-from cx_Freeze import Executable, setup
 import os
+import shutil
+import subprocess
 import sys
 import zipfile
-from src.constants import VERSION
+
+from cx_Freeze import Executable, setup
 from setuptools import Command
-import subprocess
-import shutil
+
+from src.constants import VERSION
 
 base = ""
 out_dir = "dist"

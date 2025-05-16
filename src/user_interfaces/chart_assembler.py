@@ -8,6 +8,7 @@
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
 from copy import deepcopy
+
 from src import *
 from src.models.charts import ChartObject, ChartWheelRole
 from src.models.options import Options

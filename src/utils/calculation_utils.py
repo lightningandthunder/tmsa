@@ -1,12 +1,11 @@
 import bisect
 import math
 
-
+import src.models.charts as chart_models
 from src import *
 from src import constants
 from src.models.angles import ForegroundAngles
 from src.models.options import Options, ShowAspect
-import src.models.charts as chart_models
 from src.utils.chart_utils import (
     POS_SIGN,
     calc_aspect_strength_percent,

@@ -120,14 +120,7 @@ class MoreSolunars(Frame):
             )
 
         self.syr = Checkbutton(self, 'SYR', 0.325, 0.55, 0.1)
-        self.dsyr = Checkbutton(self, 'DSYR', 0.45, 0.55, 0.1)
-
-        if self.program_options.quarti_returns_enabled:
-            self.quarti_syr_1 = Checkbutton(self, 'QSYR1', 0.575, 0.55, 0.1)
-            self.quarti_syr_3 = Checkbutton(self, 'QSYR3', 0.7, 0.55, 0.1)
-
-            self.quarti_syr_1.config(state=tk.DISABLED)
-            self.quarti_syr_3.config(state=tk.DISABLED)
+        self.syr.config(state=tk.DISABLED)
 
         self.lsr = Checkbutton(self, 'LSR', 0.325, 0.6, 0.1)
         self.dlsr = Checkbutton(self, 'DLSR', 0.45, 0.6, 0.1)
@@ -135,12 +128,6 @@ class MoreSolunars(Frame):
         if self.program_options.quarti_returns_enabled:
             self.quarti_lsr_1 = Checkbutton(self, 'QLSR1', 0.575, 0.6, 0.1)
             self.quarti_lsr_3 = Checkbutton(self, 'QLSR3', 0.7, 0.6, 0.1)
-
-            self.quarti_lsr_1.config(state=tk.DISABLED)
-            self.quarti_lsr_3.config(state=tk.DISABLED)
-
-        self.syr.config(state=tk.DISABLED)
-        self.dsyr.config(state=tk.DISABLED)
 
         self.nsr.checked = more_charts.get('nsr', False)
         self.ten_day_solar.checked = more_charts.get('10-day', False)
@@ -219,7 +206,6 @@ class MoreSolunars(Frame):
             )
 
         self.syr.checked = more_charts.get('syr', False)
-        self.dsyr.checked = more_charts.get('demi-syr', False)
 
         if self.program_options.quarti_returns_enabled:
             self.quarti_syr_1.checked = more_charts.get('quarti-syr-1', False)
@@ -240,9 +226,6 @@ class MoreSolunars(Frame):
         )
         Button(self, 'Back', 0.6, 0.95, 0.2).bind(
             '<Button-1>', lambda _: delay(self.back)
-        )
-        self.oneyear = Checkbutton(
-            self, 'All Selected Solunars For One Year', 0.3, 0.8, 0.4
         )
 
     def handle_nsr_click(self):
@@ -320,7 +303,6 @@ class MoreSolunars(Frame):
             self.quarti_lunisolar_3.checked = False
 
         self.syr.checked = False
-        self.dsyr.checked = False
 
         if self.program_options.quarti_returns_enabled:
             self.quarti_syr_1.checked = False
@@ -352,7 +334,6 @@ class MoreSolunars(Frame):
             'luso': self.lunisolar.checked,
             'demi-luso': self.demi_lunisolar.checked,
             'syr': self.syr.checked,
-            'demi-syr': self.dsyr.checked,
             'lsr': self.lsr.checked,
             'demi-lsr': self.dlsr.checked,
         }

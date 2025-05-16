@@ -16,9 +16,9 @@ from copy import deepcopy
 from datetime import datetime as dt
 
 import anglicize
+import pydash
 import us
 from geopy import Nominatim
-import pydash
 
 from src import *
 from src import swe
@@ -30,7 +30,6 @@ from src.user_interfaces.chart_assembler import ChartAssembler
 from src.user_interfaces.locations import Locations
 from src.user_interfaces.more_charts import MoreCharts
 from src.user_interfaces.more_solunars import MoreSolunars
-from src.user_interfaces.solunars_all_in_one import SolunarsAllInOne
 from src.user_interfaces.widgets import *
 from src.utils.format_utils import (
     display_name,
@@ -202,13 +201,6 @@ class Solunars(Frame):
         backbtn = Button(self, 'Back', 0.8, 0.95, 0.20)
         backbtn.bind('<Button-1>', lambda _: delay(self.back))
         self.status = Label(self, '', 0, 0.85, 1)
-
-        Button(self, 'Test Page', 0, 0.85, 0.2).bind(
-            '<Button-1>', lambda _: delay(self.all_in_one)
-        )
-
-    def all_in_one(self):
-        SolunarsAllInOne(self.base, self.filename, self.program_options)
 
     def enable_find(self):
         self.findbtn.disabled = False
@@ -533,7 +525,7 @@ class Solunars(Frame):
         self.destroy()
         Solunars(self.base, self.filename)
 
-    def calculate(self):
+    def calculate(self, args):
         self.status.text = ''
         self.findbtn.disabled = False
         chart = {}

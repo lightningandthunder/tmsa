@@ -2,7 +2,7 @@ import itertools
 import json
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Iterator, TypeVar, TypedDict
+from typing import Iterator, TypedDict, TypeVar
 
 import pydash
 
@@ -17,11 +17,7 @@ from src.models.angles import (
 )
 from src.models.options import NodeTypes, Options
 from src.utils import chart_utils
-from src.utils.chart_utils import (
-    SIGNS_SHORT,
-    convert_house_to_pvl,
-    fmt_dm,
-)
+from src.utils.chart_utils import SIGNS_SHORT, convert_house_to_pvl, fmt_dm
 from src.utils.format_utils import to360, version_str_to_tuple
 
 T = TypeVar('T', bound='ChartObject')
@@ -492,6 +488,8 @@ class ChartType(Enum):
     LAST_QUARTI_LUNAR_SYNODICAL_RETURN_SINGLE = (
         'Last Quarti-Lunar Synodical Return Single Wheel'
     )
+
+    YOGA_RETURN = 'Sidereal Yoga Return (SYR)'
 
     CAP_SOLAR = 'Capsolar'
     ARI_SOLAR = 'Arisolar'

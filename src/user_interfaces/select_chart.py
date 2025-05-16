@@ -16,10 +16,13 @@ import tkinter.messagebox as tkmessagebox
 from src import *
 from src.constants import DEV_MODE
 from src.models.charts import INGRESSES
+from src.models.options import ProgramOptions
 from src.user_interfaces.more_charts import MoreCharts
 from src.user_interfaces.new_chart import NewChart
 from src.user_interfaces.solunars import Solunars
+from src.user_interfaces.solunars_all_in_one import SolunarsAllInOne
 from src.user_interfaces.widgets import *
+from src.user_interfaces.widgets import main
 from src.utils.chart_utils import make_chart_path
 from src.utils.format_utils import display_name, parse_version_from_txt_file
 from src.utils.gui_utils import (
@@ -28,13 +31,14 @@ from src.utils.gui_utils import (
     show_not_implemented,
 )
 from src.utils.os_utils import open_file
-from src.user_interfaces.widgets import main
 
 
 class SelectChart(Frame):
     def __init__(self):
         super().__init__()
         main.bind('<Configure>', self.resize)
+
+        self.program_options = ProgramOptions.from_file(PROGRAM_OPTION_PATH)
 
         self.fnlbl = Label(self, '', 0, 0, 1)
         self.filename = ''
@@ -326,7 +330,7 @@ class SelectChart(Frame):
                 chart['basechart'] = None
             main.after(0, self.destroy())
 
-            Solunars(chart, self.filename)
+            SolunarsAllInOne(chart, self.filename, self.program_options)
         except Exception as e:
             self.status.error(
                 f"Unable to open file: '{os.path.basename(self.filename)}' : {e}."
