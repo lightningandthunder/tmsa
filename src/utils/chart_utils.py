@@ -182,7 +182,7 @@ SQ = "'"
 
 
 def major_angularity_curve_cadent_background(
-    orb: float, use_raw: bool = False
+    orb: float
 ):
     if orb <= 10:
         orb *= 6
@@ -193,11 +193,11 @@ def major_angularity_curve_cadent_background(
     else:
         orb = 6 * orb - 180
 
-    return _major_angle_angularity_strength_percent(orb, use_raw)
+    return _major_angle_angularity_strength_percent(orb)
 
 
 def major_angularity_curve_midquadrant_background(
-    orb: float, use_raw: bool = False
+    orb: float
 ):
     if orb > 45:
         orb = 90 - orb
@@ -208,17 +208,14 @@ def major_angularity_curve_midquadrant_background(
     else:
         orb = 6 * orb - 90
 
-    return _major_angle_angularity_strength_percent(orb, use_raw)
+    return _major_angle_angularity_strength_percent(orb)
 
 
 def _major_angle_angularity_strength_percent(
-    orb: float, use_raw: bool = False
+    orb: float
 ) -> float:
     # Normalize the -1 to +1 range to a percentage
     raw = math.cos(math.radians(orb))
-
-    if use_raw:
-        return raw * 100
 
     # Convert from -1 to +1 to 0 to +2
     raw = raw + 1
@@ -230,7 +227,7 @@ def _major_angle_angularity_strength_percent(
     return raw * 100
 
 
-def major_angularity_curve_eureka_formula(orb: float, use_raw: bool = False):
+def major_angularity_curve_eureka_formula(orb: float):
     initial_angularity = math.cos(math.radians(orb * 4))
     # Reduce the weight - this essentially is a square of the calculated score
     faded_angularity = initial_angularity * ((initial_angularity + 1) / 2)
@@ -246,26 +243,19 @@ def major_angularity_curve_eureka_formula(orb: float, use_raw: bool = False):
     # Convert to -1 to +1
     penultimate_score /= 1.125
 
-    if not use_raw:
-        # Convert to 0 to +1
-        raw_decimal = (penultimate_score + 1) / 2
-        return raw_decimal * 100
-
-    return penultimate_score * 100
+    # Convert to 0 to +1
+    raw_decimal = (penultimate_score + 1) / 2
+    return raw_decimal * 100
 
 
 def minor_angularity_curve(
-    orb_degrees: float, options: Options, use_raw: bool = False
+    orb_degrees: float, options: Options
 ):
     max_orb = calc_class_3_orb(options.angularity.minor_angles)
     curve_multiplier = 360.0 / (max_orb * 4)
 
     # Regular cosine curve
     raw = math.cos(math.radians(orb_degrees * curve_multiplier))
-
-    if use_raw:
-        # Make it comparable to major angle contacts
-        return (0.5 * raw + 0.5) * 100
 
     # Convert from -1 to +1 to 0 to +2
     raw += 1
@@ -275,47 +265,6 @@ def minor_angularity_curve(
     raw += 50
 
     return raw
-
-
-def convert_raw_strength_to_modified(
-    options: Options,
-    strength: int,
-    angle: ForegroundAngles | NonForegroundAngles,
-):
-    # Finish out the calculations that were aborted using raw settings
-    output_strength = strength / 100
-
-    if MinorAngles.contains(angle.value):
-        max_orb = calc_class_3_orb(options.angularity.minor_angles)
-        curve_width = 360.0 / (max_orb * 4)
-
-        output_strength -= 0.5
-        output_strength *= 2
-
-        # Revert the intial "raw" operations
-        radians_value = math.acos(output_strength)
-        degrees_value = math.degrees(radians_value)
-        orb_degrees = degrees_value / curve_width
-
-        return round(minor_angularity_curve(orb_degrees, options))
-
-    if options.angularity.model.value == AngularityModel.EUREKA.value:
-        # Convert to 0 to +1
-        output_strength = (output_strength + 1) / 2
-        return round(output_strength * 100)
-
-    if options.angularity.model.value in [
-        AngularityModel.CLASSIC_CADENT.value,
-        AngularityModel.MIDQUADRANT.value,
-    ]:
-        # Convert from -1 to +1 to 0 to +2
-        output_strength = output_strength + 1
-
-        # Reduce to 0 to +1
-        output_strength /= 2
-
-        # Convert to percentage
-        return round(output_strength * 100)
 
 
 def calc_class_3_orb(orbs: list[float]) -> float:

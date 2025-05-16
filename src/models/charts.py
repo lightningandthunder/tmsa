@@ -686,6 +686,11 @@ class ChartObject:
                     planet: PlanetData(**data['planets'][planet])
                     for planet in data['planets']
                 }
+                for planet_name in self.planets:
+                    self.planets[planet_name].is_stationary = swe.is_planet_stationary(
+                        planet_name, 
+                        self.julian_day_utc
+                    )
 
         else:
             self.planets = {}
@@ -919,6 +924,11 @@ class ChartObject:
                 params['day'],
                 params['time'] + params['correction'],
                 params.get('style', 1),
+            )
+
+        if params['zone'] == 'LAT':
+            chart['julian_day_utc'] = swe.calc_lat_to_lmt(
+                chart['julian_day_utc'], chart['longitude']
             )
 
         chart['planets'] = {}

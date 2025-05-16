@@ -10,7 +10,6 @@ import src.models.charts as chart_models
 from src.utils.chart_utils import (
     POS_SIGN,
     calc_aspect_strength_percent,
-    convert_raw_strength_to_modified,
     in_harmonic_range,
 )
 from src.utils.format_utils import to360
@@ -551,12 +550,6 @@ def calc_planetary_needs_strength(
         stationary_strength = 90
 
     normalized_angularity_strength = planet.angularity_strength
-
-    if options.use_raw_angularity_score:
-        # Figure out which angularity model we're using and flesh out the 0-100 score
-        normalized_angularity_strength = convert_raw_strength_to_modified(
-            options, planet.angularity_strength, planet.angle
-        )
 
     strength = max(
         normalized_angularity_strength,

@@ -81,7 +81,6 @@ class Options:
     paran_aspects: dict[str, list[float]] = {}
     midpoints: dict[str, list[float]] = {}
     include_fg_under_aspects: bool = False
-    use_raw_angularity_score: bool = False
 
     @staticmethod
     def from_file(file_path: str):
@@ -108,9 +107,7 @@ class Options:
         self.include_fg_under_aspects = (
             True if data.get('include_fg_under_aspects') else False
         )
-        self.use_raw_angularity_score = (
-            True if data.get('use_raw_angularity_score') else False
-        )
+
         if 'angularity' in data:
             self.angularity = AngularitySubOptions(
                 AngularityModel.from_number(data['angularity']['model']),

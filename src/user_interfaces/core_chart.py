@@ -546,8 +546,6 @@ class CoreChart(object, metaclass=ABCMeta):
             else -1 * house_quadrant_position
         )
 
-        use_raw = False
-
         if (
             angularity_options.model
             == option_models.AngularityModel.MIDQUADRANT
@@ -555,7 +553,6 @@ class CoreChart(object, metaclass=ABCMeta):
             mundane_angularity_strength = (
                 chart_utils.major_angularity_curve_midquadrant_background(
                     house_quadrant_position,
-                    use_raw,
                 )
             )
         elif (
@@ -565,14 +562,12 @@ class CoreChart(object, metaclass=ABCMeta):
             mundane_angularity_strength = (
                 chart_utils.major_angularity_curve_cadent_background(
                     house_quadrant_position,
-                    use_raw,
                 )
             )
         else:   # model == eureka
             mundane_angularity_strength = (
                 chart_utils.major_angularity_curve_eureka_formula(
                     house_quadrant_position,
-                    use_raw,
                 )
             )
 
@@ -585,7 +580,7 @@ class CoreChart(object, metaclass=ABCMeta):
 
         if chart_utils.inrange(aspect_to_asc, 90, 3):
             square_asc_strength = chart_utils.minor_angularity_curve(
-                abs(aspect_to_asc - 90), self.options, use_raw
+                abs(aspect_to_asc - 90), self.options
             )
         else:
             square_asc_strength = -200
@@ -599,7 +594,7 @@ class CoreChart(object, metaclass=ABCMeta):
 
         if chart_utils.inrange(aspect_to_mc, 90, 3):
             square_mc_strength = chart_utils.minor_angularity_curve(
-                abs(aspect_to_mc - 90), self.options, use_raw
+                abs(aspect_to_mc - 90), self.options
             )
         else:
             square_mc_strength = -200
@@ -613,7 +608,7 @@ class CoreChart(object, metaclass=ABCMeta):
 
         if chart_utils.inrange(ramc_aspect, 90, 3):
             ramc_square_strength = chart_utils.minor_angularity_curve(
-                abs(ramc_aspect - 90), self.options, use_raw
+                abs(ramc_aspect - 90), self.options
             )
         else:
             ramc_square_strength = -200
@@ -661,13 +656,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 angles_models.AngleAxes.MUNDOSCOPE_ANGLE.value
             )
         else:
-            if (
-                self.options.use_raw_angularity_score
-                and mundane_angularity_strength <= -50.0
-            ) or (
-                not self.options.use_raw_angularity_score
-                and mundane_angularity_strength <= 25.0
-            ):
+            if mundane_angularity_strength <= 25.0:
                 if not angularity_options.no_bg:
                     is_mundanely_background = True
 

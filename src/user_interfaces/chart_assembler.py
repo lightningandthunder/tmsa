@@ -151,7 +151,7 @@ class ChartAssembler:
             # This has to be pre-calculated
             ssr_chart = params['ssr_chart'].with_role(ChartWheelRole.SOLAR)
 
-            radix = ChartObject(params['base_chart']).with_role(
+            radix = ChartObject.from_calculation(params['base_chart']).with_role(
                 ChartWheelRole.RADIX
             )
 
