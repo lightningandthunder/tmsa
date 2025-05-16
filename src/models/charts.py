@@ -595,10 +595,11 @@ class ChartObject:
                 data['time'] + data['correction'],
                 data.get('style', 1),
             )
-        if self.zone == 'LAT':
-            self.julian_day_utc = swe.calc_lat_to_lmt(
-                self.julian_day_utc, data['longitude']
-            )
+            if self.zone == 'LAT':
+                self.julian_day_utc = swe.calc_lat_to_lmt(
+                    self.julian_day_utc, data['longitude']
+                )
+
         self.ayanamsa = float(
             data.get('ayan', swe.calc_ayan(self.julian_day_utc))
         )
@@ -687,9 +688,10 @@ class ChartObject:
                     for planet in data['planets']
                 }
                 for planet_name in self.planets:
-                    self.planets[planet_name].is_stationary = swe.is_planet_stationary(
-                        planet_name, 
-                        self.julian_day_utc
+                    self.planets[
+                        planet_name
+                    ].is_stationary = swe.is_planet_stationary(
+                        planet_name, self.julian_day_utc
                     )
 
         else:
@@ -926,7 +928,7 @@ class ChartObject:
                 params.get('style', 1),
             )
 
-        if params['zone'] == 'LAT':
+        if 'zone' in params and params['zone'] == 'LAT':
             chart['julian_day_utc'] = swe.calc_lat_to_lmt(
                 chart['julian_day_utc'], chart['longitude']
             )

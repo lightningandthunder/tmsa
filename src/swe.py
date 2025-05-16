@@ -22,6 +22,7 @@ from ctypes import (
 
 from src import *
 from src.constants import HOUR_FRACTION_OF_A_DAY, PLANETS, PLATFORM
+from src.utils.calculation_utils import get_signed_orb_to_reference
 from src.utils.format_utils import (
     add_360_if_negative,
     arccotangent,
@@ -142,15 +143,6 @@ swe_mooncross_ut.restype = c_double.restype = c_double
 
 swe_cotrans = _get_handle_for_platform(dll, '_swe_cotrans@16')
 swe_cotrans.argtypes = [POINTER(c_double * 3), POINTER(c_double * 3), c_double]
-
-swe_pheno_ut = _get_handle_for_platform(dll, 'swe_pheno_ut@32')
-swe_pheno_ut.argtypes = [
-    c_double,
-    c_int,
-    c_int,
-    POINTER(c_double * 20),
-    POINTER(c_char * 256),
-]
 
 
 def julday(year, month, day, hour, isgreg) -> float:
@@ -389,18 +381,42 @@ def is_planet_stationary(long_name: str, julian_day: float) -> bool:
     return base_direction != ending_period_direction
 
 
-def calc_moon_elongation_for_jd_utc(jd_utc: float) -> float:
-    sidereal_positions_and_speed = 64 * 1024 + 256
-    result_array = (c_double * 20)()
-    err = create_string_buffer(256)
-    swe_pheno_ut(
-        jd_utc,
-        1,
-        sidereal_positions_and_speed,
-        result_array,
-        err,
-    )
-    if err.value:
-        print('elongation err: ', err.value)
+def calc_signed_moon_elongation(jd_utc: float) -> float:
+    sun_longitude = calc_planet(jd_utc, 0)[0]
+    moon_longitude = calc_planet(jd_utc, 1)[0]
 
-    return result_array[2]
+    return get_signed_orb_to_reference(moon_longitude, sun_longitude)
+
+
+def find_jd_utc_of_elongation(
+    target: float,
+    lower_bound: float,
+    higher_bound: float,
+    precision: int = 5,
+) -> float | None:
+    low = lower_bound
+    high = higher_bound
+
+    target_rounded = round(target, precision)
+
+    previous_check = None
+
+    while True:
+        date = (low + high) / 2
+        test_elongation = calc_signed_moon_elongation(date)
+        test_elongation = round(test_elongation, precision)
+
+        if previous_check and previous_check == test_elongation:
+            return None
+
+        if target_rounded == test_elongation or high <= low:
+            break
+
+        elif test_elongation > target_rounded:
+            high = date
+        else:
+            low = date
+
+        previous_check = test_elongation
+
+    return date

@@ -59,13 +59,13 @@ class Solunars(Frame):
         Label(self, 'Search', 0.15, 0.05, 0.15, anchor=tk.W)
         self.init = True
         self.search = Radiogroup(self)
-        Radiobutton(
-            self, self.search, 0, 'Active Charts', 0.3, 0.05, 0.2
-        ).bind('<Button-1>', lambda _: delay(self.toggle_year, 0))
-        Radiobutton(self, self.search, 1, 'Forwards', 0.5, 0.05, 0.15).bind(
+        Radiobutton(self, self.search, 0, 'Active', 0.3, 0.05, 0.2).bind(
+            '<Button-1>', lambda _: delay(self.toggle_year, 0)
+        )
+        Radiobutton(self, self.search, 1, 'Forward', 0.5, 0.05, 0.15).bind(
             '<Button-1>', lambda _: delay(self.toggle_year, 1)
         )
-        Radiobutton(self, self.search, 2, 'Backwards', 0.65, 0.05, 0.15).bind(
+        Radiobutton(self, self.search, 2, 'Backward', 0.65, 0.05, 0.15).bind(
             '<Button-1>', lambda _: delay(self.toggle_year, 2)
         )
         self.search.value = 0
@@ -148,7 +148,7 @@ class Solunars(Frame):
         Button(self, 'Temporary', 0.7, 0.4, 0.1).bind(
             '<Button-1>', lambda _: delay(self.temp_options)
         )
-        Label(self, 'Optional Event', 0.15, 0.45, 0.15)
+        Label(self, 'Opt. Event', 0.15, 0.45, 0.15)
         Button(self, 'New Chart', 0.3, 0.45, 0.15).bind(
             '<Button-1>', lambda _: delay(self.make_event)
         )
@@ -734,7 +734,6 @@ class Solunars(Frame):
             lunars.append(ChartType.LAST_QUARTI_ANLUNAR_RETURN.value)
 
         if self.more_charts.get('lsr'):
-            print('Trying to get LSR')
             solunars.append(ChartType.LUNAR_SYNODICAL_RETURN.value)
             lunars.append(ChartType.LUNAR_SYNODICAL_RETURN.value)
         if self.more_charts.get('demi-lsr'):
@@ -942,39 +941,40 @@ class Solunars(Frame):
 
             elif 'synodical' in sl:
                 cclass = 'LR'
-                natal_jd_utc = pydash.get(
-                    chart['base_chart'], ['julian_day_utc']
-                )
-                natal_elongation = swe.calc_moon_elongation_for_jd_utc(
-                    natal_jd_utc
-                )
-
-                if sun > moon or moon - sun > 180:
-                    natal_elongation *= -1
 
                 precision = 5
+
+                natal_elongation = get_signed_orb_to_reference(moon, sun)
                 natal_elongation = round(natal_elongation, precision)
+
+                target_elongation = natal_elongation
+
+                if 'demi' in sl:
+                    target_elongation = to360(natal_elongation + 180)
+                elif 'first' in sl:
+                    target_elongation = to360(natal_elongation + 90)
+                elif 'last' in sl:
+                    target_elongation = to360(natal_elongation + 270)
+
+                if target_elongation > 180:
+                    target_elongation -= 180
+                    target_elongation *= -1
 
                 lower_bound = start
                 higher_bound = start + 29.5
 
                 while True:
                     date = (lower_bound + higher_bound) / 2
-                    test_elongation = swe.calc_moon_elongation_for_jd_utc(date)
+                    test_elongation = swe.calc_signed_moon_elongation(date)
                     test_elongation = round(test_elongation, precision)
 
-                    test_sun = swe.calc_planet(date, 0)[0]
-                    test_moon = swe.calc_planet(date, 1)[0]
-
-                    if test_sun > test_moon or test_moon - test_sun > 180:
-                        test_elongation *= -1
-
                     if (
-                        natal_elongation == test_elongation
-                        or higher_bound < lower_bound
+                        target_elongation == test_elongation
+                        or higher_bound <= lower_bound
                     ):
                         break
-                    elif test_elongation > natal_elongation:
+
+                    elif test_elongation > target_elongation:
                         higher_bound = date
                     else:
                         lower_bound = date
@@ -1369,7 +1369,10 @@ class Solunars(Frame):
                 found = True
 
         # NLR and 18-Hour Lunars
-        if lunar_returns and lunar_returns[0] == 'Novienic Lunar Return':
+        if (
+            lunar_returns
+            and lunar_returns[0] == ChartType.NOVIENIC_LUNAR_RETURN.value
+        ):
             increment = 40
 
             base_date = start - 4
@@ -1393,7 +1396,10 @@ class Solunars(Frame):
             lunar_returns = lunar_returns[1:]
             found = True
 
-        if lunar_returns and lunar_returns[0] == '18-Hour Lunar Return':
+        if (
+            lunar_returns
+            and lunar_returns[0] == ChartType.EIGHTEEN_HOUR_LUNAR_RETURN.value
+        ):
             increment = 10
 
             base_date = start - 1
@@ -1437,6 +1443,7 @@ class Solunars(Frame):
                 found = True
                 lunar_returns = lunar_returns[1:]
             demi_start = date
+
         if lunar_returns:
             target = (sun + 180) % 360
             date = calc_moon_crossing(target, demi_start)
@@ -1456,6 +1463,7 @@ class Solunars(Frame):
                 quarti_start = date
             if lunar_returns[0] == ChartType.DEMI_LUNISOLAR_RETURN.value:
                 lunar_returns = lunar_returns[1:]
+
         if lunar_returns:
             if quarti_start == demi_start:
                 target = (sun + 90) % 360
@@ -1549,6 +1557,102 @@ class Solunars(Frame):
                 if date - start <= 1.25:
                     self.make_chart(chart, date, chtype, chart_class)
                     found = True
+
+        if lunar_returns and 'Synodical' in lunar_returns[0]:
+            chart_class = 'LR'
+
+            natal_elongation = get_signed_orb_to_reference(moon, sun)
+
+            full_lsr_elongation = natal_elongation
+            if full_lsr_elongation > 180:
+                full_lsr_elongation -= 180
+                full_lsr_elongation *= -1
+
+            date = find_jd_utc_of_elongation(
+                full_lsr_elongation,
+                start - 15,
+                start + 14.5,
+            )
+
+            if date > start:
+                if (
+                    date - start <= 1.25
+                    and lunar_returns[0]
+                    == ChartType.LUNAR_SYNODICAL_RETURN.value
+                ):
+                    self.make_chart(chart, date, lunar_returns[0], chart_class)
+                date = find_jd_utc_of_elongation(
+                    full_lsr_elongation,
+                    start - 29.5,
+                    start,
+                )
+            if lunar_returns[0] == ChartType.LUNAR_SYNODICAL_RETURN.value:
+                self.make_chart(chart, date, lunar_returns[0], chart_class)
+                found = True
+                lunar_returns = lunar_returns[1:]
+            demi_start = date
+
+        if lunar_returns:
+            demi_elongation = to360(natal_elongation + 180)
+            if demi_elongation > 180:
+                demi_elongation -= 180
+                demi_elongation *= -1
+
+            date = find_jd_utc_of_elongation(
+                demi_elongation,
+                demi_start,
+                demi_start + 29.5,
+            )
+
+            if date > start:
+                if (
+                    date - start <= 1.25
+                    and lunar_returns[0]
+                    == ChartType.DEMI_LUNAR_SYNODICAL_RETURN.value
+                ):
+                    self.make_chart(chart, date, lunar_returns[0], chart_class)
+                    found = True
+                quarti_start = demi_start
+            else:
+                if (
+                    lunar_returns[0]
+                    == ChartType.DEMI_LUNAR_SYNODICAL_RETURN.value
+                ):
+                    self.make_chart(chart, date, lunar_returns[0], chart_class)
+                    found = True
+                quarti_start = date
+            if lunar_returns[0] == ChartType.DEMI_LUNAR_SYNODICAL_RETURN.value:
+                lunar_returns = lunar_returns[1:]
+
+        if lunar_returns and lunar_returns[0] in [
+            ChartType.FIRST_QUARTI_LUNAR_SYNODICAL_RETURN.value,
+            ChartType.LAST_QUARTI_LUNAR_SYNODICAL_RETURN.value,
+        ]:
+            first_quarti_elongation = to360(natal_elongation + 90)
+            if first_quarti_elongation > 180:
+                first_quarti_elongation -= 180
+                first_quarti_elongation *= -1
+
+            last_quarti_elongation = -1 * first_quarti_elongation
+            if last_quarti_elongation > 180:
+                last_quarti_elongation -= 180
+                last_quarti_elongation *= -1
+
+            if quarti_start == demi_start:
+                target = first_quarti_elongation
+                chtype = ChartType.FIRST_QUARTI_LUNAR_SYNODICAL_RETURN.value
+            else:
+                target = last_quarti_elongation
+                chtype = ChartType.LAST_QUARTI_LUNAR_SYNODICAL_RETURN.value
+
+            date = find_jd_utc_of_elongation(
+                target,
+                quarti_start,
+                quarti_start + 29.5,
+            )
+            if date - start <= 1.25:
+                self.make_chart(chart, date, chtype, chart_class)
+                found = True
 
         if not found:
             self.status.error('No charts found.')

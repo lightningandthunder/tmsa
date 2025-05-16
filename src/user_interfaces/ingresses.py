@@ -124,7 +124,7 @@ class Ingresses(Frame):
         Button(self, 'Temporary', 0.7, 0.4, 0.1).bind(
             '<Button-1>', lambda _: delay(self.temp_options)
         )
-        Label(self, 'Optional Event', 0.15, 0.45, 0.15)
+        Label(self, 'Opt. Event', 0.15, 0.45, 0.15)
         Button(self, 'New Chart', 0.3, 0.45, 0.15).bind(
             '<Button-1>', lambda _: delay(self.make_event)
         )

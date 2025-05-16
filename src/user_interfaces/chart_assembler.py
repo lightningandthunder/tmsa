@@ -151,9 +151,9 @@ class ChartAssembler:
             # This has to be pre-calculated
             ssr_chart = params['ssr_chart'].with_role(ChartWheelRole.SOLAR)
 
-            radix = ChartObject.from_calculation(params['base_chart']).with_role(
-                ChartWheelRole.RADIX
-            )
+            radix = ChartObject.from_calculation(
+                params['base_chart']
+            ).with_role(ChartWheelRole.RADIX)
 
             self.report = Triwheel(
                 [return_chart, ssr_chart, radix], temporary, options

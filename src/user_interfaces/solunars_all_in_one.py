@@ -23,7 +23,7 @@ from src.utils.gui_utils import ShowHelp
 
 
 CHART_OPTIONS_FULL = [
-    '--- Major Charts --- ',
+    '--- Major Charts ---',
     'Sidereal Solar Return (SSR)',
     '- Quarti-SSR #1',
     '- Demi-SSR',
@@ -56,9 +56,6 @@ CHART_OPTIONS_FULL = [
     '- Quarti-KAR #2',
     '--- Other Charts ---',
     'Sidereal Yoga Return (SYR)',
-    '- Quarti-SYR #1',
-    '- Demi-SYR',
-    '- Quarti-SYR #2',
     'Lunar Synodic Return (LSR)',
     '- Quarti-LSR #1',
     '- Demi-LSR',
@@ -148,9 +145,6 @@ EXPERIMENTAL = [
     '- Demi-KAR',
     '- Quarti-KAR #2',
     'Sidereal Yoga Return (SYR)',
-    '- Quarti-SYR #1',
-    '- Demi-SYR',
-    '- Quarti-SYR #2',
     'Lunar Synodic Return (LSR)',
     '- Quarti-LSR #1',
     '- Demi-LSR',
@@ -164,6 +158,8 @@ EXPERIMENTAL = [
     '- Demi-LuSo',
     '- Quarti-LuSo #2',
 ]
+
+SELECTED_HEADER = '--- Selected Charts ---'
 
 
 class SolunarsAllInOne(Frame):
@@ -337,13 +333,13 @@ class SolunarsAllInOne(Frame):
 
         Label(self, 'Search Direction', 0.6, 0.55, 0.2, anchor=tk.CENTER)
         self.search = Radiogroup(self)
-        Radiobutton(self, self.search, 0, 'Active Charts', 0.6, 0.6, 0.3).bind(
+        Radiobutton(self, self.search, 0, 'Active', 0.6, 0.6, 0.3).bind(
             '<Button-1>', lambda _: delay(self.toggle_year, 0)
         )
-        Radiobutton(self, self.search, 1, 'Forwards', 0.6, 0.65, 0.3).bind(
+        Radiobutton(self, self.search, 1, 'Forward', 0.6, 0.65, 0.3).bind(
             '<Button-1>', lambda _: delay(self.toggle_year, 1)
         )
-        Radiobutton(self, self.search, 2, 'Backwards', 0.6, 0.7, 0.3).bind(
+        Radiobutton(self, self.search, 2, 'Backward', 0.6, 0.7, 0.3).bind(
             '<Button-1>', lambda _: delay(self.toggle_year, 2)
         )
 
@@ -399,10 +395,10 @@ class SolunarsAllInOne(Frame):
             # We must be unselecting the only selection
             widget.delete(0, tk.END)
 
-            for (insertion_conter, item) in enumerate(self._options):
+            for (insertion_counter, item) in enumerate(self._options):
                 widget.insert(tk.END, item)
                 if item.startswith('---'):
-                    widget.itemconfig(insertion_conter, fg='gray')
+                    widget.itemconfig(insertion_counter, fg='gray')
 
             self._in_callback = False
             return
@@ -427,13 +423,21 @@ class SolunarsAllInOne(Frame):
 
         # Rebuild final listbox
         widget.delete(0, tk.END)
+        if selected_items:
+            widget.insert(tk.END, SELECTED_HEADER)
+            widget.itemconfig(0, fg=BTN_COLOR)
 
-        for (insertion_conter, item) in enumerate(
+        for (insertion_counter, item) in enumerate(
             selected_items + originals_minus_starred
         ):
             widget.insert(tk.END, item)
             if item.startswith('---'):
-                widget.itemconfig(insertion_conter, fg='gray')
+                index = insertion_counter
+                if selected_items:
+                    # There's a "selected" header at index 0
+                    index += 1
+
+                widget.itemconfig(index, fg='gray')
 
         # Reselect all newly added/promoted starred items
         widget.select_clear(0, tk.END)
@@ -454,7 +458,6 @@ class SolunarsAllInOne(Frame):
 
     def select_all_of_type(self, preset):
         self._in_callback = True
-        # already_selected = self.listbox.selections
         already_selected = []
 
         for chart in preset:
@@ -479,6 +482,9 @@ class SolunarsAllInOne(Frame):
         # Rebuild final listbox
         self.listbox.delete(0, tk.END)
 
+        self.listbox.insert(tk.END, SELECTED_HEADER)
+        self.listbox.itemconfig(0, fg=BTN_COLOR)
+
         already_selected.reverse()
 
         for (insertion_conter, item) in enumerate(
@@ -486,7 +492,9 @@ class SolunarsAllInOne(Frame):
         ):
             self.listbox.insert(tk.END, item)
             if item.startswith('---'):
-                self.listbox.itemconfig(insertion_conter, fg='gray')
+                # We add 1 to the counter because there's a "selected" header
+                # at index 0
+                self.listbox.itemconfig(insertion_conter + 1, fg='gray')
 
         # Reselect all originally selected items
         self.listbox.select_clear(0, tk.END)

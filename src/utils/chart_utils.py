@@ -181,9 +181,7 @@ DQ = '"'
 SQ = "'"
 
 
-def major_angularity_curve_cadent_background(
-    orb: float
-):
+def major_angularity_curve_cadent_background(orb: float):
     if orb <= 10:
         orb *= 6
     elif orb > 10 and orb <= 40:
@@ -196,9 +194,7 @@ def major_angularity_curve_cadent_background(
     return _major_angle_angularity_strength_percent(orb)
 
 
-def major_angularity_curve_midquadrant_background(
-    orb: float
-):
+def major_angularity_curve_midquadrant_background(orb: float):
     if orb > 45:
         orb = 90 - orb
     if orb <= 10:
@@ -211,9 +207,7 @@ def major_angularity_curve_midquadrant_background(
     return _major_angle_angularity_strength_percent(orb)
 
 
-def _major_angle_angularity_strength_percent(
-    orb: float
-) -> float:
+def _major_angle_angularity_strength_percent(orb: float) -> float:
     # Normalize the -1 to +1 range to a percentage
     raw = math.cos(math.radians(orb))
 
@@ -248,9 +242,7 @@ def major_angularity_curve_eureka_formula(orb: float):
     return raw_decimal * 100
 
 
-def minor_angularity_curve(
-    orb_degrees: float, options: Options
-):
+def minor_angularity_curve(orb_degrees: float, options: Options):
     max_orb = calc_class_3_orb(options.angularity.minor_angles)
     curve_multiplier = 360.0 / (max_orb * 4)
 

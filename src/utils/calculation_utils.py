@@ -707,3 +707,18 @@ def calc_major_angle_paran(
         )
 
     return aspect
+
+
+def get_signed_orb_to_reference(longitude: float, reference: float) -> float:
+    if longitude >= reference:
+        if longitude - reference >= 180:
+            diff = 360 - longitude
+            return (reference + diff) * -1
+
+        return longitude - reference
+
+    if reference - longitude >= 180:
+        diff = 360 - reference
+        return longitude + diff
+
+    return longitude - reference
