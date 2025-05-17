@@ -457,6 +457,9 @@ def parse_aspect(
                 str(dictionary_key_degrees), [0, 0, 0]
             )
 
+        if not len(orbs):
+            continue
+
         if not orbs[0]:
             continue
 

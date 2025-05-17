@@ -634,6 +634,7 @@ class Ingresses(Frame):
         chart['style'] = 0 if self.old.checked else 1
         chart['notes'] = normalize_text(self.notes.text, True)
         chart['options'] = self.options.text.strip()
+
         ingresses = []
         if self.capsolar.checked:
             ingresses.append('Capsolar')

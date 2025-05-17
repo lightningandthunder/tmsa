@@ -866,11 +866,9 @@ class SolunarsAllInOne(Frame):
         if self.search.value == 0:
             dates_and_chart_params = self.active_search(params, solars, lunars)
             if duration:
-                print('Doing burst search')
                 burst_chart_params = self.directional_search(
                     params, solars, lunars, burst_months=duration
                 )
-                print('Got ', len(burst_chart_params), ' from search')
                 dates_and_chart_params += burst_chart_params
         elif self.search.value == 1:
             dates_and_chart_params = self.directional_search(
