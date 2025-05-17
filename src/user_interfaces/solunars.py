@@ -23,10 +23,10 @@ from geopy import Nominatim
 from src import *
 from src import swe
 from src.constants import DQ, DS, MONTHS, VERSION
-from src.models.charts import ChartObject, ChartParams, ChartType
+from src.models.charts import ChartObject, ChartType
 from src.models.options import ProgramOptions
 from src.swe import *
-from src.user_interfaces.chart_assembler import ChartAssembler
+from src.user_interfaces.chart_assembler import assemble_charts
 from src.user_interfaces.locations import Locations
 from src.user_interfaces.more_charts import MoreCharts
 from src.user_interfaces.more_solunars import MoreSolunars
@@ -36,7 +36,6 @@ from src.utils.format_utils import (
     normalize_text,
     to360,
     toDMS,
-    version_str_to_tuple,
 )
 from src.utils.gui_utils import ShowHelp
 from src.utils.os_utils import open_file
@@ -726,19 +725,17 @@ class Solunars(Frame):
             lunars.append(ChartType.LAST_QUARTI_ANLUNAR_RETURN.value)
 
         if self.more_charts.get('lsr'):
-            solunars.append(ChartType.LUNAR_SYNODICAL_RETURN.value)
-            lunars.append(ChartType.LUNAR_SYNODICAL_RETURN.value)
+            solunars.append(ChartType.LUNAR_SYNODIC_RETURN.value)
+            lunars.append(ChartType.LUNAR_SYNODIC_RETURN.value)
         if self.more_charts.get('demi-lsr'):
-            solunars.append(ChartType.DEMI_LUNAR_SYNODICAL_RETURN.value)
-            lunars.append(ChartType.DEMI_LUNAR_SYNODICAL_RETURN.value)
+            solunars.append(ChartType.DEMI_LUNAR_SYNODIC_RETURN.value)
+            lunars.append(ChartType.DEMI_LUNAR_SYNODIC_RETURN.value)
         if self.more_charts.get('quarti-lsr-1'):
-            solunars.append(
-                ChartType.FIRST_QUARTI_LUNAR_SYNODICAL_RETURN.value
-            )
-            lunars.append(ChartType.FIRST_QUARTI_LUNAR_SYNODICAL_RETURN.value)
+            solunars.append(ChartType.FIRST_QUARTI_LUNAR_SYNODIC_RETURN.value)
+            lunars.append(ChartType.FIRST_QUARTI_LUNAR_SYNODIC_RETURN.value)
         if self.more_charts.get('quarti-lsr-3'):
-            solunars.append(ChartType.LAST_QUARTI_LUNAR_SYNODICAL_RETURN.value)
-            lunars.append(ChartType.LAST_QUARTI_LUNAR_SYNODICAL_RETURN.value)
+            solunars.append(ChartType.LAST_QUARTI_LUNAR_SYNODIC_RETURN.value)
+            lunars.append(ChartType.LAST_QUARTI_LUNAR_SYNODIC_RETURN.value)
 
         if not solunars:
             self.status.error('No solunars selected.')
@@ -834,7 +831,7 @@ class Solunars(Frame):
                 and not 'lunisolar' in sl
                 and not 'solilunar' in sl
                 and not 'anlunar' in sl
-                and not 'synodical' in sl
+                and not 'synodic' in sl
             ):
                 target = moon
                 cclass = 'LR'
@@ -914,7 +911,7 @@ class Solunars(Frame):
                     }
                 )
 
-                ssr_chart = ChartObject.from_calculation(ssr_params)
+                ssr_chart = ChartObject(ssr_params)
 
                 solar_moon = ssr_chart.planets['Moon'].longitude
 
@@ -931,7 +928,7 @@ class Solunars(Frame):
 
                 date = calc_moon_crossing(target, start)
 
-            elif 'synodical' in sl:
+            elif 'synodic' in sl:
                 cclass = 'LR'
 
                 precision = 5
@@ -1493,7 +1490,7 @@ class Solunars(Frame):
                 }
             )
 
-            ssr_chart = ChartObject.from_calculation(ssr_params)
+            ssr_chart = ChartObject(ssr_params)
             chart['ssr_chart'] = ssr_chart
 
             solar_moon = ssr_chart.planets['Moon'].longitude
@@ -1550,7 +1547,7 @@ class Solunars(Frame):
                     self.make_chart(chart, date, chtype, chart_class)
                     found = True
 
-        if lunar_returns and 'Synodical' in lunar_returns[0]:
+        if lunar_returns and 'Synodic' in lunar_returns[0]:
             chart_class = 'LR'
 
             natal_elongation = get_signed_orb_to_reference(moon, sun)
@@ -1570,7 +1567,7 @@ class Solunars(Frame):
                 if (
                     date - start <= 1.25
                     and lunar_returns[0]
-                    == ChartType.LUNAR_SYNODICAL_RETURN.value
+                    == ChartType.LUNAR_SYNODIC_RETURN.value
                 ):
                     self.make_chart(chart, date, lunar_returns[0], chart_class)
                 date = find_jd_utc_of_elongation(
@@ -1578,7 +1575,7 @@ class Solunars(Frame):
                     start - 29.5,
                     start,
                 )
-            if lunar_returns[0] == ChartType.LUNAR_SYNODICAL_RETURN.value:
+            if lunar_returns[0] == ChartType.LUNAR_SYNODIC_RETURN.value:
                 self.make_chart(chart, date, lunar_returns[0], chart_class)
                 found = True
                 lunar_returns = lunar_returns[1:]
@@ -1600,7 +1597,7 @@ class Solunars(Frame):
                 if (
                     date - start <= 1.25
                     and lunar_returns[0]
-                    == ChartType.DEMI_LUNAR_SYNODICAL_RETURN.value
+                    == ChartType.DEMI_LUNAR_SYNODIC_RETURN.value
                 ):
                     self.make_chart(chart, date, lunar_returns[0], chart_class)
                     found = True
@@ -1608,17 +1605,17 @@ class Solunars(Frame):
             else:
                 if (
                     lunar_returns[0]
-                    == ChartType.DEMI_LUNAR_SYNODICAL_RETURN.value
+                    == ChartType.DEMI_LUNAR_SYNODIC_RETURN.value
                 ):
                     self.make_chart(chart, date, lunar_returns[0], chart_class)
                     found = True
                 quarti_start = date
-            if lunar_returns[0] == ChartType.DEMI_LUNAR_SYNODICAL_RETURN.value:
+            if lunar_returns[0] == ChartType.DEMI_LUNAR_SYNODIC_RETURN.value:
                 lunar_returns = lunar_returns[1:]
 
         if lunar_returns and lunar_returns[0] in [
-            ChartType.FIRST_QUARTI_LUNAR_SYNODICAL_RETURN.value,
-            ChartType.LAST_QUARTI_LUNAR_SYNODICAL_RETURN.value,
+            ChartType.FIRST_QUARTI_LUNAR_SYNODIC_RETURN.value,
+            ChartType.LAST_QUARTI_LUNAR_SYNODIC_RETURN.value,
         ]:
             first_quarti_elongation = to360(natal_elongation + 90)
             if first_quarti_elongation > 180:
@@ -1632,10 +1629,10 @@ class Solunars(Frame):
 
             if quarti_start == demi_start:
                 target = first_quarti_elongation
-                chtype = ChartType.FIRST_QUARTI_LUNAR_SYNODICAL_RETURN.value
+                chtype = ChartType.FIRST_QUARTI_LUNAR_SYNODIC_RETURN.value
             else:
                 target = last_quarti_elongation
-                chtype = ChartType.LAST_QUARTI_LUNAR_SYNODICAL_RETURN.value
+                chtype = ChartType.LAST_QUARTI_LUNAR_SYNODIC_RETURN.value
 
             date = find_jd_utc_of_elongation(
                 target,
@@ -1665,14 +1662,10 @@ class Solunars(Frame):
         cchart['class'] = cclass
         cchart['correction'] = 0
         cchart['zone'] = 'UT'
+
+        chart_class = assemble_charts(cchart, self.istemp.value)
         if show:
-            chart_class = ChartAssembler(cchart, self.istemp.value)
-            if hasattr(chart_class, 'report'):
-                chart_class.report.show()
-        else:
-            chart_class = ChartAssembler(cchart, self.istemp.value)
-            if hasattr(chart_class, 'report'):
-                chart_class.report
+            chart_class.show()
 
         return chart_class
 

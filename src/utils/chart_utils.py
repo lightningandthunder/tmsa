@@ -665,3 +665,7 @@ def truncate(number, digits) -> float:
         return number
     stepper = 10.0**digits
     return math.trunc(stepper * number) / stepper
+
+
+def includes_any(collection: list[any], elements: list[any]):
+    return len(list(set(collection) & set(elements))) > 0

@@ -270,21 +270,6 @@ class PlanetData(__PointData):
     def short_name_with_role(self):
         return f'{self.role.value}{self.short_name}'
 
-    @property
-    def as_raw(self):
-        return [
-            self.longitude,
-            self.latitude,
-            self.speed,
-            self.right_ascension,
-            self.declination,
-            self.azimuth,
-            self.altitude,
-            self.meridian_longitude,
-            self.house,
-            self.prime_vertical_longitude,
-        ]
-
 
 @dataclass
 class AngleData(__PointData):
@@ -474,19 +459,17 @@ class ChartType(Enum):
         'Last Quarti-Lunisolar Return Single Wheel'
     )
 
-    LUNAR_SYNODICAL_RETURN = 'Lunar Synodical Return'
-    LUNAR_SYNODICAL_RETURN_SINGLE = 'Lunar Synodical Return Single Wheel'
-    DEMI_LUNAR_SYNODICAL_RETURN = 'Demi-Lunar Synodical Return'
-    DEMI_LUNAR_SYNODICAL_RETURN_SINGLE = (
-        'Demi-Lunar Synodical Return Single Wheel'
+    LUNAR_SYNODIC_RETURN = 'Lunar Synodic Return'
+    LUNAR_SYNODIC_RETURN_SINGLE = 'Lunar Synodic Return Single Wheel'
+    DEMI_LUNAR_SYNODIC_RETURN = 'Demi-Lunar Synodic Return'
+    DEMI_LUNAR_SYNODIC_RETURN_SINGLE = 'Demi-Lunar Synodic Return Single Wheel'
+    FIRST_QUARTI_LUNAR_SYNODIC_RETURN = 'First Quarti-Lunar Synodic Return'
+    FIRST_QUARTI_LUNAR_SYNODIC_RETURN_SINGLE = (
+        'First Quarti-Lunar Synodic Return Single Wheel'
     )
-    FIRST_QUARTI_LUNAR_SYNODICAL_RETURN = 'First Quarti-Lunar Synodical Return'
-    FIRST_QUARTI_LUNAR_SYNODICAL_RETURN_SINGLE = (
-        'First Quarti-Lunar Synodical Return Single Wheel'
-    )
-    LAST_QUARTI_LUNAR_SYNODICAL_RETURN = 'Last Quarti-Lunar Synodical Return'
-    LAST_QUARTI_LUNAR_SYNODICAL_RETURN_SINGLE = (
-        'Last Quarti-Lunar Synodical Return Single Wheel'
+    LAST_QUARTI_LUNAR_SYNODIC_RETURN = 'Last Quarti-Lunar Synodic Return'
+    LAST_QUARTI_LUNAR_SYNODIC_RETURN_SINGLE = (
+        'Last Quarti-Lunar Synodic Return Single Wheel'
     )
 
     YOGA_RETURN = 'Sidereal Yoga Return (SYR)'
@@ -550,192 +533,75 @@ class ChartObject:
     options_file: str = ''
 
     def __init__(self, data: dict):
+        # This should be the only information actually stored in data files
         self.type = ChartType(data['type'])
         self.name = data.get('name', None)
         self.year = data['year']
         self.month = data['month']
         self.day = data['day']
         self.location = data['location']
+        self.geo_longitude = float(data['longitude'])
+        self.geo_latitude = float(data['latitude'])
         self.time = data['time']
         self.zone = data.get('zone', '')
         self.correction = data.get('correction', 0)
-
         self.chart_class = data.get('class', '')
         self.options_file = data.get('options', '')
-
-        if data.get('Sun'):
-            sun_longitude = data['Sun'][0]
-        else:
-            sun_longitude = pydash.get(
-                data,
-                'planets.Sun.longitude',
-                pydash.get(data, 'planets.Sun.[0]'),
-            )
-
-        if data.get('Moon'):
-            moon_longitude = data['Moon'][0]
-        else:
-            moon_longitude = pydash.get(
-                data,
-                'planets.Moon.longitude',
-                pydash.get(data, 'planets.Moon.[0]'),
-            )
-
-        self.sun_sign = SIGNS_SHORT[int(sun_longitude // 30)]
-        self.moon_sign = SIGNS_SHORT[int(moon_longitude // 30)]
-        if 'julian_day_utc' in data:
-            self.julian_day_utc = data['julian_day_utc']
-        else:
-            self.julian_day_utc = swe.julday(
-                data['year'],
-                data['month'],
-                data['day'],
-                data['time'] + data['correction'],
-                data.get('style', 1),
-            )
-            if self.zone == 'LAT':
-                self.julian_day_utc = swe.calc_lat_to_lmt(
-                    self.julian_day_utc, data['longitude']
-                )
-
-        self.ayanamsa = float(
-            data.get('ayan', swe.calc_ayan(self.julian_day_utc))
-        )
-        self.obliquity = float(
-            data.get('oe', swe.calc_obliquity(self.julian_day_utc))
-        )
-        self.geo_longitude = float(data['longitude'])
-        self.geo_latitude = float(data['latitude'])
-        if data.get('cusps') and data.get('angles'):
-            (cusps, angles) = (data.get('cusps'), data.get('angles'))
-        else:
-            (cusps, angles) = swe.calc_cusps(
-                self.julian_day_utc, self.geo_latitude, self.geo_longitude
-            )
-
-        if data.get('ramc', None):
-            self.ramc = float(data['ramc'])
-        else:
-            self.ramc = angles[0]
-
-        if data.get('lst', None):
-            self.lst = float(data['lst'])
-        else:
-            self.lst = self.ramc / 15
-
-        if data.get('Vertex') and len(data.get('Vertex')) > 2:
-            self.vertex = data['Vertex']
-        else:
-            self.vertex = [
-                angles[1],
-                swe.calc_house_pos(
-                    self.ramc,
-                    self.geo_latitude,
-                    self.obliquity,
-                    to360(angles[1] + self.ayanamsa),
-                    0,
-                ),
-            ]
-
-        if data.get('Eastpoint'):
-            self.eastpoint = data['Eastpoint']
-        else:
-            self.eastpoint = [
-                angles[2],
-                swe.calc_house_pos(
-                    self.ramc,
-                    self.geo_latitude,
-                    self.obliquity,
-                    to360(angles[2] + self.ayanamsa),
-                    0,
-                ),
-            ]
-
-        self.angles = angles
-        self.cusps = cusps
-
-        if data.get('planets'):
-            if isinstance(pydash.get(data, 'planets.Sun'), list):
-                keys = [
-                    'longitude',
-                    'latitude',
-                    'speed',
-                    'right_ascension',
-                    'declination',
-                    'azimuth',
-                    'altitude',
-                    'meridian_longitude',
-                    'house',
-                ]
-
-                self.planets = {}
-
-                for planet in data['planets']:
-                    params = dict(
-                        zip(keys, [float(d) for d in data['planets'][planet]])
-                    )
-                    params['prime_vertical_longitude'] = params['house']
-                    definition = PLANETS.get(planet)
-                    params['short_name'] = definition['short_name']
-                    params['number'] = definition['number']
-                    self.planets[planet] = PlanetData(**params)
-
-            else:
-                self.planets = {
-                    planet: PlanetData(**data['planets'][planet])
-                    for planet in data['planets']
-                }
-                for planet_name in self.planets:
-                    self.planets[
-                        planet_name
-                    ].is_stationary = swe.is_planet_stationary(
-                        planet_name, self.julian_day_utc
-                    )
-
-        else:
-            self.planets = {}
-
-            for long_name in PLANETS:
-                if long_name not in data:
-                    continue
-                planet_data = data[long_name]
-                planet = PlanetData()
-
-                planet.name = long_name
-                planet.short_name = PLANETS[long_name]['short_name']
-                planet.number = PLANETS[long_name]['number']
-
-                planet.longitude = planet_data[0]
-                planet.latitude = planet_data[1]
-                planet.speed = planet_data[2]
-                planet.right_ascension = planet_data[3]
-                planet.declination = planet_data[4]
-                planet.azimuth = planet_data[5]
-                planet.altitude = planet_data[6]
-
-                planet.is_stationary = swe.is_planet_stationary(
-                    planet.name, self.julian_day_utc
-                )
-
-                if len(planet_data) >= 9:
-                    planet.meridian_longitude = planet_data[7]
-                    planet.house = planet_data[8]
-                    planet.prime_vertical_longitude = planet_data[8]
-                else:
-                    planet.house = planet_data[7]
-                    planet.prime_vertical_longitude = planet_data[7]
-                    planet.meridian_longitude = swe.calc_meridian_longitude(
-                        planet.azimuth, planet.altitude
-                    )
-
-                self.planets[long_name] = planet
-
-        self.cusps = cusps
-        self.angles = angles
-
+        self.style = data.get('style', 1)
         self.notes = data.get('notes', None)
 
-        self.version = data.get('version', (0, 0, 0))
+        self.version = (
+            version_str_to_tuple(VERSION)
+            if 'version' not in data
+            else data['version']
+        )
+
+        self.julian_day_utc = swe.julday(
+            self.year,
+            self.month,
+            self.day,
+            self.time + self.correction,
+            self.style,
+        )
+
+        if 'zone' in data and data['zone'].upper() == 'LAT':
+            self.julian_day_utc = swe.calc_lat_to_lmt(
+                self.julian_day_utc, self.geo_longitude
+            )
+
+        self.ayanamsa = swe.calc_ayan(self.julian_day_utc)
+        self.obliquity = swe.calc_obliquity(self.julian_day_utc)
+
+        # Calculate cusps & angles
+        (cusps, angles) = swe.calc_cusps(
+            self.julian_day_utc, self.geo_latitude, self.geo_longitude
+        )
+        self.ramc = angles[0]
+        self.lst = self.ramc / 15
+        self.cusps = cusps
+        self.angles = angles
+
+        self.vertex = [
+            angles[1],
+            swe.calc_house_pos(
+                self.ramc,
+                self.geo_latitude,
+                self.obliquity,
+                to360(angles[1] + self.ayanamsa),
+                0,
+            ),
+        ]
+
+        self.eastpoint = [
+            angles[2],
+            swe.calc_house_pos(
+                self.ramc,
+                self.geo_latitude,
+                self.obliquity,
+                to360(angles[2] + self.ayanamsa),
+                0,
+            ),
+        ]
 
         # Populate angle_data
         # MC, AS, EP, VX
@@ -819,6 +685,57 @@ class ChartObject:
             prime_vertical_longitude=None,
         )
 
+        # Calculate planet data
+        self.planets = {}
+
+        for [long_name, planet_definition] in PLANETS.items():
+            planet_index = planet_definition['number']
+            [
+                longitude,
+                latitude,
+                speed,
+                right_ascension,
+                declination,
+            ] = swe.calc_planet(self.julian_day_utc, planet_index)
+            [azimuth, altitude] = swe.calc_azimuth(
+                self.julian_day_utc,
+                self.geo_longitude,
+                self.geo_latitude,
+                to360(longitude + self.ayanamsa),
+                latitude,
+            )
+
+            house_position = swe.calc_house_pos(
+                self.ramc,
+                self.geo_latitude,
+                self.obliquity,
+                to360(longitude + self.ayanamsa),
+                latitude,
+            )
+            meridian_longitude = swe.calc_meridian_longitude(azimuth, altitude)
+
+            self.planets[long_name] = PlanetData(
+                name=long_name,
+                short_name=planet_definition['short_name'],
+                number=planet_definition['number'],
+                longitude=longitude,
+                latitude=latitude,
+                speed=speed,
+                right_ascension=right_ascension,
+                declination=declination,
+                azimuth=azimuth,
+                altitude=altitude,
+                meridian_longitude=meridian_longitude,
+                house=house_position,
+                prime_vertical_longitude=house_position,
+                is_stationary=swe.is_planet_stationary(
+                    long_name, self.julian_day_utc
+                ),
+            )
+
+        self.sun_sign = SIGNS_SHORT[int(self.planets['Sun'].longitude // 30)]
+        self.moon_sign = SIGNS_SHORT[int(self.planets['Moon'].longitude // 30)]
+
     def to_dict(self):
         options_file = self.options_file.replace('_', ' ')
         if options_file.endswith('.opt'):
@@ -841,19 +758,7 @@ class ChartObject:
             'notes': self.notes,
             'options': options_file,
             'version': self.version,
-            'ayan': self.ayanamsa,
-            'oe': self.obliquity,
-            'cusps': self.cusps,
-            'ramc': self.ramc,
-            'Vertex': self.vertex,
-            'Eastpoint': self.eastpoint,
-            'lst': self.lst,
-            'julian_day_utc': self.julian_day_utc,
-            'planets': {},
         }
-
-        for planet_name in self.planets:
-            data['planets'][planet_name] = self.planets[planet_name].as_raw
 
         return data
 
@@ -903,94 +808,6 @@ class ChartObject:
                 return ChartObject(data)
             except json.JSONDecodeError:
                 log_startup_error(f'Error reading {file_path}')
-
-    @staticmethod
-    def from_calculation(params: dict) -> 'ChartObject':
-        chart = {}
-        chart.update(params)
-
-        chart['version'] = (
-            version_str_to_tuple(VERSION)
-            if 'version' not in params
-            else params['version']
-        )
-
-        if 'julian_day_utc' in params:
-            chart['julian_day_utc'] = params['julian_day_utc']
-        else:
-            chart['julian_day_utc'] = swe.julday(
-                params['year'],
-                params['month'],
-                params['day'],
-                params['time'] + params['correction'],
-                params.get('style', 1),
-            )
-
-        if 'zone' in params and params['zone'] == 'LAT':
-            chart['julian_day_utc'] = swe.calc_lat_to_lmt(
-                chart['julian_day_utc'], chart['longitude']
-            )
-
-        chart['planets'] = {}
-        chart['ayan'] = swe.calc_ayan(chart['julian_day_utc'])
-        if params.get('ramc'):
-            chart['ramc'] = params['ramc']
-        elif params.get('angles'):
-            chart['ramc'] = params.get('angles')[0]
-        else:
-            (cusps, angles) = swe.calc_cusps(
-                chart['julian_day_utc'], chart['latitude'], chart['longitude']
-            )
-            chart['ramc'] = angles[0]
-            params['cusps'] = cusps
-            params['angles'] = angles
-
-        chart['oe'] = params.get(
-            'oe', swe.calc_obliquity(chart['julian_day_utc'])
-        )
-
-        for [long_name, planet_definition] in PLANETS.items():
-            planet_index = planet_definition['number']
-            [
-                longitude,
-                latitude,
-                speed,
-                right_ascension,
-                declination,
-            ] = swe.calc_planet(chart['julian_day_utc'], planet_index)
-            [azimuth, altitude] = swe.calc_azimuth(
-                chart['julian_day_utc'],
-                chart['longitude'],
-                chart['latitude'],
-                to360(longitude + chart['ayan']),
-                latitude,
-            )
-            house_position = swe.calc_house_pos(
-                chart['ramc'],
-                chart['latitude'],
-                chart['oe'],
-                to360(longitude + chart['ayan']),
-                latitude,
-            )
-            meridian_longitude = swe.calc_meridian_longitude(azimuth, altitude)
-
-            chart['planets'][long_name] = {
-                'name': long_name,
-                'short_name': planet_definition['short_name'],
-                'number': planet_definition['number'],
-                'longitude': longitude,
-                'latitude': latitude,
-                'speed': speed,
-                'right_ascension': right_ascension,
-                'declination': declination,
-                'azimuth': azimuth,
-                'altitude': altitude,
-                'meridian_longitude': meridian_longitude,
-                'house': house_position,
-                'prime_vertical_longitude': house_position,
-            }
-
-        return ChartObject(chart)
 
     def to_file(self, file_path: str):
         with open(file_path, 'w') as file:
@@ -1577,14 +1394,100 @@ SOLUNAR_RETURNS = [
     ChartType.DEMI_LUNISOLAR_RETURN_SINGLE.value,
     ChartType.FIRST_QUARTI_LUNISOLAR_RETURN_SINGLE.value,
     ChartType.LAST_QUARTI_LUNISOLAR_RETURN_SINGLE.value,
-    ChartType.LUNAR_SYNODICAL_RETURN,
-    ChartType.LUNAR_SYNODICAL_RETURN_SINGLE,
-    ChartType.DEMI_LUNAR_SYNODICAL_RETURN,
-    ChartType.DEMI_LUNAR_SYNODICAL_RETURN_SINGLE,
-    ChartType.FIRST_QUARTI_LUNAR_SYNODICAL_RETURN,
-    ChartType.FIRST_QUARTI_LUNAR_SYNODICAL_RETURN_SINGLE,
-    ChartType.LAST_QUARTI_LUNAR_SYNODICAL_RETURN,
-    ChartType.LAST_QUARTI_LUNAR_SYNODICAL_RETURN_SINGLE,
+    ChartType.LUNAR_SYNODIC_RETURN.value,
+    ChartType.LUNAR_SYNODIC_RETURN_SINGLE.value,
+    ChartType.DEMI_LUNAR_SYNODIC_RETURN.value,
+    ChartType.DEMI_LUNAR_SYNODIC_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_LUNAR_SYNODIC_RETURN.value,
+    ChartType.FIRST_QUARTI_LUNAR_SYNODIC_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_LUNAR_SYNODIC_RETURN.value,
+    ChartType.LAST_QUARTI_LUNAR_SYNODIC_RETURN_SINGLE.value,
+]
+
+SOLAR_RETURNS = [
+    ChartType.SOLAR_RETURN.value,
+    ChartType.DEMI_SOLAR_RETURN.value,
+    ChartType.LAST_QUARTI_SOLAR_RETURN.value,
+    ChartType.FIRST_QUARTI_SOLAR_RETURN.value,
+    ChartType.SOLAR_RETURN_SINGLE.value,
+    ChartType.DEMI_SOLAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_SOLAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_SOLAR_RETURN_SINGLE.value,
+    ChartType.KINETIC_SOLAR_RETURN.value,
+    ChartType.DEMI_KINETIC_SOLAR_RETURN.value,
+    ChartType.FIRST_QUARTI_KINETIC_SOLAR_RETURN,
+    ChartType.LAST_QUARTI_KINETIC_SOLAR_RETURN,
+    ChartType.KINETIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.DEMI_KINETIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_KINETIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_KINETIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.NOVIENIC_SOLAR_RETURN.value,
+    ChartType.TEN_DAY_SOLAR_RETURN.value,
+    ChartType.NOVIENIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.TEN_DAY_SOLAR_RETURN_SINGLE.value,
+    ChartType.SOLILUNAR_RETURN.value,
+    ChartType.DEMI_SOLILUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_SOLILUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_SOLILUNAR_RETURN.value,
+    ChartType.SOLILUNAR_RETURN_SINGLE.value,
+    ChartType.DEMI_SOLILUNAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_SOLILUNAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_SOLILUNAR_RETURN_SINGLE.value,
+]
+
+LUNAR_RETURNS = [
+    ChartType.LUNAR_RETURN.value,
+    ChartType.DEMI_LUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_LUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_LUNAR_RETURN.value,
+    ChartType.LUNAR_RETURN_SINGLE.value,
+    ChartType.DEMI_LUNAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_LUNAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_LUNAR_RETURN_SINGLE.value,
+    ChartType.KINETIC_LUNAR_RETURN.value,
+    ChartType.DEMI_KINETIC_LUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_KINETIC_LUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_KINETIC_LUNAR_RETURN.value,
+    ChartType.KINETIC_LUNAR_RETURN_SINGLE.value,
+    ChartType.DEMI_KINETIC_LUNAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_KINETIC_LUNAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_KINETIC_LUNAR_RETURN_SINGLE.value,
+    ChartType.NOVIENIC_LUNAR_RETURN.value,
+    ChartType.EIGHTEEN_HOUR_LUNAR_RETURN.value,
+    ChartType.NOVIENIC_LUNAR_RETURN_SINGLE.value,
+    ChartType.EIGHTEEN_HOUR_LUNAR_RETURN_SINGLE.value,
+    ChartType.ANLUNAR_RETURN.value,
+    ChartType.DEMI_ANLUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_ANLUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_ANLUNAR_RETURN.value,
+    ChartType.ANLUNAR_RETURN_SINGLE.value,
+    ChartType.DEMI_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.KINETIC_ANLUNAR_RETURN.value,
+    ChartType.KINETIC_DEMI_ANLUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_KINETIC_ANLUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_KINETIC_ANLUNAR_RETURN.value,
+    ChartType.KINETIC_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.KINETIC_DEMI_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_KINETIC_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_KINETIC_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.LUNISOLAR_RETURN.value,
+    ChartType.DEMI_LUNISOLAR_RETURN.value,
+    ChartType.FIRST_QUARTI_LUNISOLAR_RETURN.value,
+    ChartType.LAST_QUARTI_LUNISOLAR_RETURN.value,
+    ChartType.LUNISOLAR_RETURN_SINGLE.value,
+    ChartType.DEMI_LUNISOLAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_LUNISOLAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_LUNISOLAR_RETURN_SINGLE.value,
+    ChartType.LUNAR_SYNODIC_RETURN.value,
+    ChartType.LUNAR_SYNODIC_RETURN_SINGLE.value,
+    ChartType.DEMI_LUNAR_SYNODIC_RETURN.value,
+    ChartType.DEMI_LUNAR_SYNODIC_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_LUNAR_SYNODIC_RETURN.value,
+    ChartType.FIRST_QUARTI_LUNAR_SYNODIC_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_LUNAR_SYNODIC_RETURN.value,
+    ChartType.LAST_QUARTI_LUNAR_SYNODIC_RETURN_SINGLE.value,
 ]
 
 RETURNS_WHERE_MOON_ALWAYS_FOREGROUND = [

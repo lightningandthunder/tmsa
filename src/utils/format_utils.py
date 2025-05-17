@@ -1,8 +1,6 @@
 import math
 import os
 
-from src.constants import OLDEST_SUPPORTED_VERSION
-
 
 def normalize_text(text, nocap=False, maxlen=33):
     text = text.strip()
@@ -109,19 +107,3 @@ def parse_version_from_txt_file(file_path: str) -> str:
             if '.' in element:
                 return version_str_to_tuple(element)
     return (0, 0, 0)
-
-
-def version_is_supported(version: tuple[int | str]) -> bool:
-    supported_version = version_str_to_tuple(OLDEST_SUPPORTED_VERSION)
-    if version[0] > supported_version[0]:
-        return True
-
-    if version[1] > supported_version[1]:
-        return True
-
-    if version[1] == supported_version[1]:
-        # If not, it's something like x.y.0a1
-        if isinstance(version[2], int):
-            return version[2] >= supported_version[2]
-
-    return False

@@ -21,9 +21,8 @@ from geopy import Nominatim
 from timezonefinder import TimezoneFinder
 
 from src import *
-from src.constants import DQ, DS, MONTHS, VERSION
-from src.models.charts import ChartObject
-from src.user_interfaces.chart_assembler import ChartAssembler
+from src.constants import DS, MONTHS, VERSION
+from src.user_interfaces.chart_assembler import assemble_charts
 from src.user_interfaces.locations import Locations
 from src.user_interfaces.widgets import *
 from src.utils.format_utils import normalize_text, version_str_to_tuple
@@ -901,7 +900,7 @@ class NewChart(Frame):
             chart['options'] = 'Natal Default'
 
         chart['version'] = version_str_to_tuple(VERSION)
-        ChartAssembler(chart, self.istemp.value).report.show()
+        assemble_charts(chart, self.istemp.value).show()
 
     def save_location(self, chart):
         try:

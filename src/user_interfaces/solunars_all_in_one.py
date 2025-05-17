@@ -22,14 +22,21 @@ from geopy import Nominatim
 
 from src import *
 from src.constants import DQ, DS, MONTHS, VERSION
-from src.models.charts import ChartObject, ChartType
+from src.models.charts import (
+    LUNAR_RETURNS,
+    SOLAR_RETURNS,
+    ChartObject,
+    ChartType,
+    ChartWheelRole,
+)
 from src.models.options import ProgramOptions
 from src.swe import *
-from src.user_interfaces.chart_assembler import ChartAssembler
+from src.user_interfaces.chart_assembler import assemble_charts
 from src.user_interfaces.locations import Locations
 from src.user_interfaces.more_charts import MoreCharts
 from src.user_interfaces.solunars import Solunars
 from src.user_interfaces.widgets import *
+from src.utils.chart_utils import includes_any
 from src.utils.format_utils import display_name, normalize_text, to360, toDMS
 from src.utils.gui_utils import ShowHelp
 from src.utils.os_utils import open_file
@@ -207,27 +214,31 @@ class SolunarsAllInOne(Frame):
         Label(self, 'Search Direction', 0.6, 0.55, 0.2, anchor=tk.CENTER)
         self.search = Radiogroup(self)
         Radiobutton(self, self.search, 0, 'Active', 0.6, 0.6, 0.3).bind(
-            '<Button-1>', lambda _: delay(self.toggle_burst, 0)
+            '<Button-1>', lambda _: delay(self.update_search_direction, 0)
         )
         Radiobutton(self, self.search, 1, 'Forward', 0.6, 0.65, 0.3).bind(
-            '<Button-1>', lambda _: delay(self.toggle_burst, 1)
+            '<Button-1>', lambda _: delay(self.update_search_direction, 1)
         )
-        Radiobutton(self, self.search, 2, 'Backward', 0.6, 0.7, 0.3).bind(
-            '<Button-1>', lambda _: delay(self.toggle_burst, 2)
+
+        self.backwards = Radiobutton(
+            self, self.search, 2, 'Backward', 0.6, 0.7, 0.3
         )
+        self.backwards.bind(
+            '<Button-1>', lambda _: delay(self.update_search_direction, 2)
+        )
+
+        self.backwards.config(state=tk.DISABLED)
 
         self.init = True
 
         self.search.value = 0
         self.search.focus()
 
-        self.oneyear = Checkbutton(
-            self, 'All Selected For Months:', 0.6, 0.8, 0.3
+        self.toggle_burst = Checkbutton(
+            self, 'All Selected For Months:', 0.6, 0.75, 0.3
         )
-        self.oneyear.config(state=tk.DISABLED)
 
-        self.all_for_months = Entry(self, 6, 0.8, 0.8, 0.025)
-        self.all_for_months.config(state=tk.DISABLED)
+        self.burst_month_duration = Entry(self, 6, 0.6, 0.8, 0.025)
 
         self.istemp = Radiogroup(self)
         Radiobutton(self, self.istemp, 0, 'Permanent Charts', 0.3, 0.5, 0.25)
@@ -288,6 +299,7 @@ class SolunarsAllInOne(Frame):
             return
 
         selected_items = []
+        scroll_position = widget.yview()
 
         for i in selected_indices:
             item = widget.get(i)
@@ -329,19 +341,16 @@ class SolunarsAllInOne(Frame):
             if item in selected_items:
                 widget.select_set(i)
 
+        widget.yview_moveto(scroll_position[0])
+
         self._in_callback = False
 
     def enable_find(self):
         self.findbtn.disabled = False
 
-    def toggle_burst(self, value):
+    def update_search_direction(self, value):
         if self.init:
             return
-        if value == 0:
-            self.oneyear.checked = False
-            self.oneyear.config(state=tk.DISABLED)
-        else:
-            self.oneyear.config(state=tk.NORMAL)
         self.init = True
         self.search.value = value
         self.init = False
@@ -691,16 +700,26 @@ class SolunarsAllInOne(Frame):
         SolunarsAllInOne(self.base, self.filename, self.program_options)
 
     def calculate(self):
-        solunars = []
+        solars = []
+        lunars = []
+
         for entry in self.listbox.selections:
             entry = entry.replace('*', '-')
             if entry not in CHART_OPTIONS_FULL:
                 entry = entry.strip('-').strip()
-            solunars.append(LABELS_TO_RETURNS[entry])
+            solunar_type = LABELS_TO_RETURNS[entry]
+            if solunar_type in SOLAR_RETURNS:
+                solars.append(solunar_type)
+            elif solunar_type in LUNAR_RETURNS:
+                lunars.append(solunar_type)
+
+        if not solars and not lunars:
+            self.status.error('No solunars selected.')
+            return
 
         self.status.text = ''
         self.findbtn.disabled = False
-        chart = {}
+        params = {}
         try:
             y = int(self.datey.text)
             m = int(self.datem.text)
@@ -717,17 +736,17 @@ class SolunarsAllInOne(Frame):
             )
         if self.bce.checked:
             y = -y + 1
-        chart['year'] = y
+        params['year'] = y
         if m < 1 or m > 12:
             return self.status.error(
                 'Month must be between 1 and 12.', self.datem
             )
-        chart['month'] = m
+        params['month'] = m
         if d < 1 or d > 31:
             return self.status.error(
                 'Day must be between 1 and 31.', self.dated
             )
-        chart['day'] = d
+        params['day'] = d
         z = str(y) if y > 0 else str(-y + 1) + ' BCE'
         if self.old.checked and y > 1582:
             if not tkmessagebox.askyesno(
@@ -741,7 +760,7 @@ class SolunarsAllInOne(Frame):
                 f'Is {d} {MONTHS[m -1]} {z} new style (Gregorian)?',
             ):
                 return
-        chart['style'] = 0 if self.old.checked else 1
+        params['style'] = 0 if self.old.checked else 1
         try:
             time = (
                 int(self.timeh.text)
@@ -777,9 +796,9 @@ class SolunarsAllInOne(Frame):
                 time -= 12
             if self.tmfmt.value == 1:
                 time += 12
-        chart['time'] = time
-        chart['location'] = normalize_text(self.loc.text)
-        if not chart['location']:
+        params['time'] = time
+        params['location'] = normalize_text(self.loc.text)
+        if not params['location']:
             return self.status.error('Location must be specified.', self.loc)
         try:
             lat = (
@@ -796,7 +815,7 @@ class SolunarsAllInOne(Frame):
             )
         if self.latdir.value == 1:
             lat = -lat
-        chart['latitude'] = lat
+        params['latitude'] = lat
         try:
             long = (
                 int(self.longd.text)
@@ -811,20 +830,17 @@ class SolunarsAllInOne(Frame):
             )
         if self.longdir.value == 1:
             long = -long
-        chart['longitude'] = long
-        chart['notes'] = normalize_text(self.notes.text, True)
-        chart['options'] = self.options.text.strip()
-        chart['base_chart'] = self.base
-        solars = []
-        lunars = []
-
-        if not solunars:
-            self.status.error('No solunars selected.')
-            return
+        params['longitude'] = long
+        params['notes'] = normalize_text(self.notes.text, True)
+        params['options'] = self.options.text.strip()
+        params['base_chart'] = self.base
+        params['radix'] = ChartObject(self.base).with_role(
+            ChartWheelRole.RADIX
+        )
 
         if self.event:
             if self.event == '<':
-                cchart = deepcopy(chart)
+                cchart = deepcopy(params)
                 date = julday(
                     cchart['year'],
                     cchart['month'],
@@ -839,730 +855,957 @@ class SolunarsAllInOne(Frame):
                 filename = self.event[0:-3] + 'txt'
                 if os.path.exists(filename):
                     open_file(filename)
-        self.save_location(chart)
-        if self.oneyear.checked:
-            self.burst(chart, solunars)
-        elif self.search.value == 0:
-            self.active_search(chart, solunars)
+        self.save_location(params)
+
+        dates_and_chart_params = {}
+
+        duration = None
+        if self.toggle_burst.checked:
+            duration = float(self.burst_month_duration.text)
+
+        if self.search.value == 0:
+            dates_and_chart_params = self.active_search(params, solars, lunars)
+            if duration:
+                print('Doing burst search')
+                burst_chart_params = self.directional_search(
+                    params, solars, lunars, burst_months=duration
+                )
+                print('Got ', len(burst_chart_params), ' from search')
+                dates_and_chart_params += burst_chart_params
         elif self.search.value == 1:
-            self.forward_search(chart, solunars)
+            dates_and_chart_params = self.directional_search(
+                params, solars, lunars, burst_months=duration
+            )
         elif self.search.value == 2:
-            self.backward_search(chart, solunars)
+            dates_and_chart_params = self.directional_search(
+                params, solars, lunars, reverse=True, burst_months=duration
+            )
         else:
             self.status.error('No search direction selected.')
 
-    def forward_search(self, chart, solunars):
-        start = julday(
-            chart['year'],
-            chart['month'],
-            chart['day'],
-            chart['time'],
-            chart['style'],
-        )
-        sun = pydash.get(
-            chart,
-            'base_chart.Sun.[0]',
-            pydash.get(chart, 'base_chart.planets.Sun.[0]'),
-        )
-        moon = pydash.get(
-            chart,
-            'base_chart.Moon.[0]',
-            pydash.get(chart, 'base_chart.planets.Moon.[0]'),
+        if dates_and_chart_params:
+            dates_and_chart_params = sorted(
+                dates_and_chart_params, key=lambda x: -1 * x[1]
+            )
+
+            # skip duplicates, which can easily happen with demis
+            previous_date = None
+
+            for (
+                chart_params,
+                date,
+                solunar_type,
+                chart_class,
+            ) in dates_and_chart_params:
+                if previous_date and date == previous_date:
+                    continue
+
+                self.make_chart(
+                    chart_params,
+                    date,
+                    solunar_type,
+                    chart_class,
+                    show=not duration,
+                )
+                previous_date = date
+
+            s = '' if len(dates_and_chart_params) == 1 else 's'
+            self.status.text = (
+                f'{len(dates_and_chart_params)} chart{s} created.'
+            )
+        else:
+            self.status.error('No charts found.')
+
+    def directional_search(
+        self,
+        params: dict,
+        solars: list[str],
+        lunars: list[str],
+        reverse=False,
+        burst_months=None,
+    ):
+        dates_and_chart_params: list[tuple[any]] = []
+
+        radix = params['radix']
+
+        base_start = julday(
+            params['year'],
+            params['month'],
+            params['day'],
+            params['time'],
+            params['style'],
         )
 
-        for sol in solunars:
-            target = sun
-            sl = sol.lower()
-            if (
-                'solar' in sl
-                and not 'solilunar' in sl
-                and not 'lunisolar' in sl
-            ):
-                cclass = 'SR'
-                if 'demi' in sl:
-                    target = (sun + 180) % 360
-                elif 'first' in sl:
-                    target = (sun + 90) % 360
-                elif 'last' in sl:
-                    target = (sun + 270) % 360
-                elif 'novienic' in sl:
-                    increment = 40
-                    while True:
-                        target = to360(sun + increment)
-                        test_date = calc_sun_crossing(target, start)
-                        if test_date - start >= 41:
-                            increment -= 40
-                            continue
+        continue_until_date = base_start + 0.0001
 
-                        break
-                elif '10-day' in sl:
+        if burst_months:
+            continue_until_date += 30 * burst_months
+
+        sun = radix.planets['Sun'].longitude
+        moon = radix.planets['Moon'].longitude
+
+        for solar_return_type in solars:
+            chart_class = 'SR'
+
+            # Traditional Solar Returns
+            if solar_return_type in [
+                ChartType.SOLAR_RETURN.value,
+                ChartType.DEMI_SOLAR_RETURN.value,
+                ChartType.FIRST_QUARTI_SOLAR_RETURN.value,
+                ChartType.LAST_QUARTI_SOLAR_RETURN.value,
+            ]:
+                start = base_start
+
+                while start <= continue_until_date:
+                    # starting_date = start if not reverse else start - 367
+
+                    target = sun
+                    next_increment = 366
+
+                    if solar_return_type == ChartType.DEMI_SOLAR_RETURN.value:
+                        target = (sun + 180) % 360
+                        next_increment = 183
+                    elif (
+                        solar_return_type
+                        == ChartType.FIRST_QUARTI_SOLAR_RETURN.value
+                    ):
+                        target = (sun + 90) % 360
+                        next_increment = 92
+                    elif (
+                        solar_return_type
+                        == ChartType.LAST_QUARTI_SOLAR_RETURN.value
+                    ):
+                        target = (sun + 90) % 360
+                        next_increment = 92
+
+                    date = calc_sun_crossing(target, start)
+                    # if reverse and date > starting_date:
+                    #     date = calc_sun_crossing(target, starting_date - 367)
+
+                    start += next_increment
+
+                    dates_and_chart_params.append(
+                        (params, date, solar_return_type, chart_class)
+                    )
+
+                continue
+
+            elif solar_return_type in [
+                ChartType.NOVIENIC_SOLAR_RETURN.value,
+                ChartType.TEN_DAY_SOLAR_RETURN.value,
+            ]:
+                start = base_start
+
+                base_increment = 40
+                increment = 40
+                period_length = 41
+
+                if solar_return_type == ChartType.TEN_DAY_SOLAR_RETURN.value:
+                    base_increment = 10
                     increment = 10
+                    period_length = 11
+
+                # starting_date = start if not reverse else start - (period_length / 2)
+                while start <= continue_until_date:
+
                     while True:
-                        target = to360(sun + increment)
+                        target = to360(sun + base_increment)
                         test_date = calc_sun_crossing(target, start)
-                        if test_date - start >= 11:
-                            increment -= 10
+
+                        if test_date - start >= period_length:
+                            base_increment -= increment
                             continue
+
                         break
 
-                date = calc_sun_crossing(target, start)
+                    date = calc_sun_crossing(target, start)
+                    if reverse and date > start:
+                        pass
 
-            elif (
-                'lunar' in sl
-                and not 'lunisolar' in sl
-                and not 'solilunar' in sl
-                and not 'anlunar' in sl
-                and not 'synodical' in sl
-            ):
+                    dates_and_chart_params.append(
+                        (params, date, solar_return_type, chart_class)
+                    )
+
+                    start += increment
+
+                continue
+
+            elif solar_return_type in [
+                ChartType.SOLILUNAR_RETURN.value,
+                ChartType.DEMI_SOLILUNAR_RETURN.value,
+                ChartType.FIRST_QUARTI_SOLILUNAR_RETURN.value,
+                ChartType.LAST_QUARTI_SOLILUNAR_RETURN.value,
+            ]:
                 target = moon
-                cclass = 'LR'
-                if 'demi' in sl:
-                    target = (moon + 180) % 360
-                elif 'first' in sl:
-                    target = (moon + 90) % 360
-                elif 'last' in sl:
-                    target = (moon + 270) % 360
-                elif 'novienic' in sl:
-                    increment = 40
-                    while True:
-                        target = to360(moon + increment)
-                        test_date = calc_moon_crossing(target, start)
-                        if test_date - start >= 3.45:
-                            increment -= 40
-                            continue
-                        break
-                elif '18-hour' in sl:
+                start = base_start
+
+                while start <= continue_until_date:
+                    next_increment = 366
+
+                    if (
+                        solar_return_type
+                        == ChartType.DEMI_SOLILUNAR_RETURN.value
+                    ):
+                        target = (moon + 180) % 360
+                        next_increment = 188
+                    elif (
+                        solar_return_type
+                        == ChartType.FIRST_QUARTI_SOLILUNAR_RETURN.value
+                    ):
+                        target = (moon + 90) % 360
+                        next_increment = 92
+                    elif (
+                        solar_return_type
+                        == ChartType.LAST_QUARTI_SOLILUNAR_RETURN.value
+                    ):
+                        target = (moon + 270) % 360
+                        next_increment = 92
+
+                    date = calc_sun_crossing(target, start)
+                    dates_and_chart_params.append(
+                        (params, date, solar_return_type, chart_class)
+                    )
+
+                    start += next_increment
+
+                continue
+
+        for lunar_return_type in lunars:
+            chart_class = 'LR'
+
+            if lunar_return_type in [
+                ChartType.LUNAR_RETURN.value,
+                ChartType.DEMI_LUNAR_RETURN.value,
+                ChartType.FIRST_QUARTI_LUNAR_RETURN.value,
+                ChartType.LAST_QUARTI_LUNAR_RETURN.value,
+            ]:
+                target = moon
+                start = base_start
+
+                while start <= continue_until_date:
+                    next_increment = 29
+
+                    if lunar_return_type == ChartType.DEMI_LUNAR_RETURN.value:
+                        target = (moon + 180) % 360
+                        next_increment = 14.5
+                    elif (
+                        lunar_return_type
+                        == ChartType.FIRST_QUARTI_LUNAR_RETURN.value
+                    ):
+                        target = (moon + 90) % 360
+                        next_increment = 7.25
+                    elif (
+                        lunar_return_type
+                        == ChartType.LAST_QUARTI_LUNAR_RETURN.value
+                    ):
+                        target = (moon + 270) % 360
+                        next_increment = 7.25
+
+                    date = calc_moon_crossing(target, start)
+                    dates_and_chart_params.append(
+                        (params, date, lunar_return_type, chart_class)
+                    )
+
+                    start += next_increment
+
+                continue
+
+            elif lunar_return_type in [
+                ChartType.NOVIENIC_LUNAR_RETURN.value,
+                ChartType.EIGHTEEN_HOUR_LUNAR_RETURN.value,
+            ]:
+
+                base_increment = 40
+                increment = 40
+                period_length = 3.45
+
+                if (
+                    lunar_return_type
+                    == ChartType.EIGHTEEN_HOUR_LUNAR_RETURN.value
+                ):
+                    base_increment = 10
                     increment = 10
+                    period_length = 0.86
+
+                start = base_start
+
+                while start <= continue_until_date:
+
+                    # Figure out which incremental return is the next one after the start date
                     while True:
-                        target = to360(moon + increment)
+                        target = to360(moon + base_increment)
                         test_date = calc_moon_crossing(target, start)
-                        if test_date - start >= 0.86:
-                            increment += 10
+                        if test_date - start >= period_length:
+                            base_increment -= increment
                             continue
+
                         break
 
-                date = calc_moon_crossing(target, start)
+                    date = calc_moon_crossing(target, start)
+                    dates_and_chart_params.append(
+                        (params, date, lunar_return_type, chart_class)
+                    )
 
-            elif 'solilunar' in sl:
-                target = moon
-                sl = sol.lower()
-                cclass = 'SR'
+                    start += increment
 
-                if 'demi' in sl:
-                    target = (moon + 180) % 360
-                elif 'first' in sl:
-                    target = (moon + 90) % 360
-                elif 'last' in sl:
-                    target = (moon + 270) % 360
+                continue
 
-                date = calc_sun_crossing(target, start)
-
-            elif 'lunisolar' in sl:
+            elif lunar_return_type in [
+                ChartType.LUNISOLAR_RETURN.value,
+                ChartType.DEMI_LUNISOLAR_RETURN.value,
+                ChartType.FIRST_QUARTI_LUNISOLAR_RETURN.value,
+                ChartType.LAST_QUARTI_LUNISOLAR_RETURN.value,
+            ]:
                 target = sun
-                sl = sol.lower()
-                cclass = 'LR'
+                base_start = start
 
-                if 'demi' in sl:
-                    target = (sun + 180) % 360
-                elif 'first' in sl:
-                    target = (sun + 90) % 360
-                elif 'last' in sl:
-                    target = (sun + 270) % 360
+                while start <= continue_until_date:
+                    next_increment = 29
 
-                date = calc_moon_crossing(target, start)
+                    if (
+                        lunar_return_type
+                        == ChartType.DEMI_LUNISOLAR_RETURN.value
+                    ):
+                        target = (sun + 180) % 360
+                        next_increment = 14.5
+                    elif (
+                        lunar_return_type
+                        == ChartType.FIRST_QUARTI_LUNISOLAR_RETURN.value
+                    ):
+                        target = (sun + 90) % 360
+                        next_increment = 7.25
+                    elif (
+                        lunar_return_type
+                        == ChartType.LAST_QUARTI_LUNISOLAR_RETURN.value
+                    ):
+                        target = (sun + 270) % 360
+                        next_increment = 7.25
 
-            elif 'anlunar' in sl:
-                cclass = 'LR'
-                # Get previous solar return
-                solar_return_date = calc_sun_crossing(sun, start - 366)
-                (year, month, day, time) = revjul(
-                    solar_return_date, chart['style']
-                )
+                    date = calc_moon_crossing(target, start)
+                    dates_and_chart_params.append(
+                        (params, date, lunar_return_type, chart_class)
+                    )
+                    start += next_increment
 
-                ssr_params = {**chart}
-                ssr_params.update(
-                    {
-                        'name': chart['base_chart']['name'] + ' Solar Return',
-                        'julian_day_utc': solar_return_date,
-                        'type': ChartType.SOLAR_RETURN.value,
-                        'year': year,
-                        'month': month,
-                        'day': day,
-                        'time': time,
-                    }
-                )
+                continue
 
-                ssr_chart = ChartObject.from_calculation(ssr_params)
+            elif lunar_return_type in [
+                ChartType.ANLUNAR_RETURN.value,
+                ChartType.DEMI_ANLUNAR_RETURN.value,
+                ChartType.FIRST_QUARTI_ANLUNAR_RETURN.value,
+                ChartType.LAST_QUARTI_ANLUNAR_RETURN.value,
+            ]:
 
-                solar_moon = ssr_chart.planets['Moon'].longitude
+                start = base_start
 
-                if 'demi' in sl:
-                    target = (solar_moon + 180) % 360
-                elif 'first' in sl:
-                    target = (solar_moon + 90) % 360
-                elif 'last' in sl:
-                    target = (solar_moon + 270) % 360
-                else:
+                while start <= continue_until_date:
+                    # Get previous solar return
+                    solar_return_date = calc_sun_crossing(sun, start - 366)
+                    (year, month, day, time) = revjul(
+                        solar_return_date, params['style']
+                    )
+
+                    ssr_params = {**params}
+                    ssr_params.update(
+                        {
+                            'name': radix.name + ' Solar Return',
+                            'type': ChartType.SOLAR_RETURN.value,
+                            'year': year,
+                            'month': month,
+                            'day': day,
+                            'time': time,
+                        }
+                    )
+
+                    ssr_chart = ChartObject(ssr_params)
+
+                    solar_moon = ssr_chart.planets['Moon'].longitude
                     target = solar_moon
 
-                chart['ssr_chart'] = ssr_chart
+                    next_increment = 29
 
-                date = calc_moon_crossing(target, start)
+                    if (
+                        lunar_return_type
+                        == ChartType.DEMI_ANLUNAR_RETURN.value
+                    ):
+                        target = (solar_moon + 180) % 360
+                        next_increment = 14.5
+                    elif (
+                        lunar_return_type
+                        == ChartType.FIRST_QUARTI_ANLUNAR_RETURN.value
+                    ):
+                        target = (solar_moon + 90) % 360
+                        next_increment = 7.25
+                    elif (
+                        lunar_return_type
+                        == ChartType.LAST_QUARTI_ANLUNAR_RETURN.value
+                    ):
+                        target = (solar_moon + 270) % 360
+                        next_increment = 7.25
 
-            elif 'synodical' in sl:
-                cclass = 'LR'
+                    transiting_params = {**params}
+                    transiting_params['ssr_chart'] = ssr_chart
 
+                    date = calc_moon_crossing(target, start)
+                    dates_and_chart_params.append(
+                        (
+                            transiting_params,
+                            date,
+                            lunar_return_type,
+                            chart_class,
+                        )
+                    )
+                    start += next_increment
+
+                continue
+
+            elif lunar_return_type in [
+                ChartType.LUNAR_SYNODIC_RETURN.value,
+                ChartType.DEMI_LUNAR_SYNODIC_RETURN.value,
+                ChartType.FIRST_QUARTI_LUNAR_SYNODIC_RETURN.value,
+                ChartType.LAST_QUARTI_LUNAR_SYNODIC_RETURN.value,
+            ]:
                 precision = 5
 
                 natal_elongation = get_signed_orb_to_reference(moon, sun)
                 natal_elongation = round(natal_elongation, precision)
 
-                target_elongation = natal_elongation
+                start = base_start
 
-                if 'demi' in sl:
-                    target_elongation = to360(natal_elongation + 180)
-                elif 'first' in sl:
-                    target_elongation = to360(natal_elongation + 90)
-                elif 'last' in sl:
-                    target_elongation = to360(natal_elongation + 270)
+                while start <= continue_until_date:
 
-                if target_elongation > 180:
-                    target_elongation -= 180
-                    target_elongation *= -1
-
-                lower_bound = start
-                higher_bound = start + 29.5
-
-                while True:
-                    date = (lower_bound + higher_bound) / 2
-                    test_elongation = calc_signed_moon_elongation(date)
-                    test_elongation = round(test_elongation, precision)
+                    target_elongation = natal_elongation
+                    next_increment = 29
 
                     if (
-                        target_elongation == test_elongation
-                        or higher_bound <= lower_bound
+                        lunar_return_type
+                        == ChartType.DEMI_LUNAR_SYNODIC_RETURN.value
                     ):
-                        break
+                        target_elongation = to360(natal_elongation + 180)
+                        next_increment = 14.5
+                    elif (
+                        lunar_return_type
+                        == ChartType.FIRST_QUARTI_LUNAR_SYNODIC_RETURN.value
+                    ):
+                        target_elongation = to360(natal_elongation + 90)
+                        next_increment = 7.25
+                    elif (
+                        lunar_return_type
+                        == ChartType.LAST_QUARTI_LUNAR_SYNODIC_RETURN.value
+                    ):
+                        target_elongation = to360(natal_elongation + 270)
+                        next_increment = 7.25
 
-                    elif test_elongation > target_elongation:
-                        higher_bound = date
-                    else:
-                        lower_bound = date
+                    if target_elongation > 180:
+                        target_elongation -= 180
+                        target_elongation *= -1
 
-            self.make_chart(chart, date, sol, cclass)
-
-    def backward_search(self, chart, solunars):
-        start = julday(
-            chart['year'],
-            chart['month'],
-            chart['day'],
-            chart['time'],
-            chart['style'],
-        )
-        sun = pydash.get(
-            chart,
-            'base_chart.Sun.[0]',
-            pydash.get(chart, 'base_chart.planets.Sun.[0]'),
-        )
-        moon = pydash.get(
-            chart,
-            'base_chart.Moon.[0]',
-            pydash.get(chart, 'base_chart.planets.Moon.[0]'),
-        )
-
-        past_date_already_found = False
-
-        for sol in solunars:
-            normalized_name = sol.lower()
-            if 'solar' in normalized_name:
-                cclass = 'SR'
-                if 'demi' in normalized_name:
-                    target = (sun + 180) % 360
-                elif 'first' in normalized_name:
-                    target = (sun + 90) % 360
-                elif 'last' in normalized_name:
-                    target = (sun + 270) % 360
-                elif 'novienic' in normalized_name:
-                    past_date_already_found = True
-                    increment = 40
-
-                    base_date = start - 82
+                    lower_bound = start
+                    higher_bound = start + 29.5
 
                     while True:
-                        target = to360(sun + increment)
-                        date = calc_sun_crossing(target, base_date)
-                        if date > start - 40:
-                            increment -= 40
-                            if increment == 0:
-                                increment -= 40
+                        date = (lower_bound + higher_bound) / 2
+                        test_elongation = calc_signed_moon_elongation(date)
+                        test_elongation = round(test_elongation, precision)
 
-                            continue
+                        if (
+                            target_elongation == test_elongation
+                            or higher_bound <= lower_bound
+                        ):
+                            break
 
-                        if start - date >= 40:
-                            increment -= 40
-                            if increment == 0:
-                                increment -= 40
+                        elif test_elongation > target_elongation:
+                            higher_bound = date
+                        else:
+                            lower_bound = date
 
-                            continue
+                    dates_and_chart_params.append(
+                        (params, date, lunar_return_type, chart_class)
+                    )
+                    start += next_increment
 
-                        break
+                continue
 
-                elif '10-day' in normalized_name:
-                    past_date_already_found = True
-                    date_to_use = start - 20
-                    increment = 10
-                    while True:
-                        target = to360(sun + increment)
-                        date = calc_sun_crossing(target, date_to_use)
-                        if date - start >= 21:
-                            increment -= 10
-                            if increment == 0:
-                                increment -= 10
-                            continue
+        return dates_and_chart_params
 
-                        break
-                else:
-                    target = sun
+    def active_search(self, params, solar_returns, lunar_returns):
+        # Copy the lists so that we don't mutate them during this search
+        solars = [s for s in solar_returns]
+        lunars = [l for l in lunar_returns]
 
-                if not past_date_already_found:
-                    date = calc_sun_crossing(target, start - 184)
+        found_chart_params: list[tuple[any]] = []
 
-                    if date > start:
-                        date = calc_sun_crossing(target, start - 367)
-
-            elif 'lunar' in normalized_name:
-                cclass = 'LR'
-                if 'demi' in normalized_name:
-                    target = (moon + 180) % 360
-                elif 'first' in normalized_name:
-                    target = (moon + 90) % 360
-                elif 'last' in normalized_name:
-                    target = (moon + 270) % 360
-                else:
-                    target = moon
-                date = calc_moon_crossing(target, start - 15)
-                if date > start:
-                    date = calc_moon_crossing(target, start - 29)
-            self.make_chart(chart, date, sol, cclass)
-
-    def burst(self, chart, solunars):
-        number_of_months = int(self.all_for_months.text)
+        radix = params['radix']
 
         start = julday(
-            chart['year'],
-            chart['month'],
-            chart['day'],
-            chart['time'],
-            chart['style'],
-        )
-        sun = pydash.get(
-            chart,
-            'base_chart.Sun.[0]',
-            pydash.get(chart, 'base_chart.planets.Sun.[0]'),
-        )
-        moon = pydash.get(
-            chart,
-            'base_chart.Moon.[0]',
-            pydash.get(chart, 'base_chart.planets.Moon.[0]'),
-        )
-        if self.search.value == 2:
-            start -= 366
-        for sol in solunars:
-            sl = sol.lower()
-            if 'solar' in sl:
-                cclass = 'SR'
-                if 'demi' in sl:
-                    target = (sun + 180) % 360
-                elif 'first' in sl:
-                    target = (sun + 90) % 360
-                elif 'last' in sl:
-                    target = (sun + 270) % 360
-                else:
-                    target = sun
-                date = calc_sun_crossing(target, start)
-            elif 'lunar' in sl:
-                cclass = 'LR'
-                if 'demi' in sl:
-                    target = (moon + 180) % 360
-                elif 'first' in sl:
-                    target = (moon + 90) % 360
-                elif 'last' in sl:
-                    target = (moon + 270) % 360
-                else:
-                    target = moon
-                date = calc_moon_crossing(target, start)
-            self.make_chart(chart, date, sol, cclass, False)
-        for i in range(0, 366, 26):
-            for sol in solunars:
-                sl = sol.lower()
-                if 'solar' in sl:
-                    cclass = 'SR'
-                    if 'demi' in sl:
-                        target = (sun + 180) % 360
-                    elif 'first' in sl:
-                        target = (sun + 90) % 360
-                    elif 'last' in sl:
-                        target = (sun + 270) % 360
-                    else:
-                        target = sun
-                    date = calc_sun_crossing(target, start)
-                elif 'lunar' in sl:
-                    cclass = 'LR'
-                    if 'demi' in sl:
-                        target = (moon + 180) % 360
-                    elif 'first' in sl:
-                        target = (moon + 90) % 360
-                    elif 'last' in sl:
-                        target = (moon + 270) % 360
-                    else:
-                        target = moon
-                    date = calc_moon_crossing(target, start + i)
-                    if date > start + 366:
-                        continue
-                self.make_chart(chart, date, sol, cclass, False)
-        self.status.text = 'Charts complete.'
-
-    def active_search(self, chart, solunars):
-        found = False
-        start = julday(
-            chart['year'],
-            chart['month'],
-            chart['day'],
-            chart['time'],
-            chart['style'],
+            params['year'],
+            params['month'],
+            params['day'],
+            params['time'],
+            params['style'],
         )
 
-        sun = pydash.get(
-            chart,
-            'base_chart.Sun.[0]',
-            pydash.get(chart, 'base_chart.planets.Sun.[0]'),
-        )
-        moon = pydash.get(
-            chart,
-            'base_chart.Moon.[0]',
-            pydash.get(chart, 'base_chart.planets.Moon.[0]'),
-        )
+        sun = radix.planets['Sun'].longitude
+        moon = radix.planets['Moon'].longitude
 
-        solar_returns = []
-        lunar_returns = []
-        for sol in solunars:
-            sl = sol.lower()
-            if 'solilunar' in sl or ('solar' in sl and not 'lunisolar' in sl):
-                solar_returns.append(sol)
-            if 'lunisolar' in sl or ('lunar' in sl and not 'solilunar' in sl):
-                lunar_returns.append(sol)
         chart_class = 'SR'
-        if solar_returns:
-            chart_class = 'SR'
+
+        if includes_any(
+            solars,
+            [
+                ChartType.SOLAR_RETURN.value,
+                ChartType.DEMI_SOLAR_RETURN.value,
+                ChartType.FIRST_QUARTI_SOLAR_RETURN.value,
+                ChartType.LAST_QUARTI_SOLAR_RETURN.value,
+            ],
+        ):
+
             date = calc_sun_crossing(sun, start - 184)
+            index = pydash.index_of(solars, ChartType.SOLAR_RETURN.value)
+
             if date > start:
-                if date - start <= 15 and solar_returns[0] == 'Solar Return':
-                    self.make_chart(chart, date, solar_returns[0], chart_class)
+                if date - start <= 15 and index >= 0:
+                    found_chart_params.append(
+                        (params, date, solars[index], chart_class)
+                    )
+                    solars.pop(index)
+
                 date = calc_sun_crossing(sun, start - 367)
-            if solar_returns[0] == 'Solar Return':
-                self.make_chart(chart, date, solar_returns[0], chart_class)
-                found = True
-                solar_returns = solar_returns[1:]
+            if index >= 0:
+                found_chart_params.append(
+                    (params, date, solars[index], chart_class)
+                )
+                solars.pop(index)
+
             demi_start = date
-        if solar_returns:
+
+        if includes_any(
+            solars,
+            [
+                ChartType.DEMI_SOLAR_RETURN.value,
+                ChartType.FIRST_QUARTI_SOLAR_RETURN.value,
+                ChartType.LAST_QUARTI_SOLAR_RETURN.value,
+            ],
+        ):
             target = (sun + 180) % 360
             date = calc_sun_crossing(target, demi_start)
+
+            index = pydash.index_of(solars, ChartType.DEMI_SOLAR_RETURN.value)
             if date > start:
-                if (
-                    date - start <= 15
-                    and solar_returns[0] == 'Demi-Solar Return'
-                ):
-                    self.make_chart(chart, date, solar_returns[0], chart_class)
-                    found = True
+                if date - start <= 15 and index >= 0:
+                    found_chart_params.append(
+                        (params, date, solars[index], chart_class)
+                    )
+                    solars.pop(index)
+
                 quarti_start = demi_start
             else:
-                if solar_returns[0] == 'Demi-Solar Return':
-                    self.make_chart(chart, date, solar_returns[0], chart_class)
-                    found = True
+                if index >= 0:
+                    found_chart_params.append(
+                        (params, date, solars[index], chart_class)
+                    )
+                    solars.pop(index)
                 quarti_start = date
-            if solar_returns[0] == 'Demi-Solar Return':
-                solar_returns = solar_returns[1:]
-        if solar_returns and solar_returns[0] in [
-            'First Quarti-Solar Return',
-            'Last Quarti-Solar Return',
-        ]:
+
+        if includes_any(
+            solars,
+            [
+                ChartType.FIRST_QUARTI_SOLAR_RETURN.value,
+                ChartType.LAST_QUARTI_SOLAR_RETURN.value,
+            ],
+        ):
             if quarti_start == demi_start:
                 target = (sun + 90) % 360
-                chtype = 'First Quarti-Solar Return'
+                index = pydash.index_of(
+                    solars, ChartType.FIRST_QUARTI_SOLAR_RETURN.value
+                )
             else:
                 target = (sun + 270) % 360
-                chtype = 'Last Quarti-Solar Return'
+                index = pydash.index_of(
+                    solars, ChartType.LAST_QUARTI_SOLAR_RETURN.value
+                )
             date = calc_sun_crossing(target, quarti_start)
             if date - start <= 15:
-                self.make_chart(chart, date, chtype, chart_class)
+                found_chart_params.append(
+                    (params, date, solars[index], chart_class)
+                )
+                solars.pop(index)
 
         # NSR and 10-Day Solars
-        if solar_returns and solar_returns[0] == 'Novienic Solar Return':
+        if ChartType.NOVIENIC_SOLAR_RETURN.value in solars:
             increment = 40
 
             base_date = start - 42
-            date_to_use = None
 
             while True:
                 target = to360(sun + increment)
-                test_date = calc_sun_crossing(target, base_date)
-                if test_date > start:
+                date = calc_sun_crossing(target, base_date)
+                if date > start:
                     increment -= 40
                     continue
 
-                if start - test_date >= 40:
+                if start - date >= 40:
                     increment -= 40
                     continue
 
-                date_to_use = test_date
                 break
 
-            self.make_chart(chart, date_to_use, solar_returns[0], chart_class)
-            solar_returns = solar_returns[1:]
-            found = True
+            index = pydash.index_of(
+                solars, ChartType.NOVIENIC_SOLAR_RETURN.value
+            )
+            found_chart_params.append(
+                (params, date, solars[index], chart_class)
+            )
+            solars.pop(index)
 
-        if solar_returns and solar_returns[0] == '10-Day Solar Return':
+        if ChartType.TEN_DAY_SOLAR_RETURN.value in solars:
             increment = 10
 
             base_date = start - 12
-            date_to_use = None
 
             while True:
                 target = to360(sun + increment)
-                test_date = calc_sun_crossing(target, base_date)
-                if test_date > start:
+                date = calc_sun_crossing(target, base_date)
+                if date > start:
                     increment -= 10
                     continue
 
-                if start - test_date >= 10:
+                if start - date >= 10:
                     increment += 10
                     continue
 
-                date_to_use = test_date
                 break
 
-            self.make_chart(chart, date_to_use, solar_returns[0], chart_class)
-            solar_returns = solar_returns[1:]
-            found = True
+            index = pydash.index_of(
+                solars, ChartType.TEN_DAY_SOLAR_RETURN.value
+            )
+            found_chart_params.append(
+                (params, date, solars[index], chart_class)
+            )
+            solars.pop(index)
 
         # Solilunar variants
-        if solar_returns:
-            chart_class = 'SR'
+        if includes_any(
+            solars,
+            [
+                ChartType.SOLILUNAR_RETURN.value,
+                ChartType.DEMI_SOLILUNAR_RETURN.value,
+                ChartType.FIRST_QUARTI_SOLILUNAR_RETURN.value,
+                ChartType.LAST_QUARTI_SOLILUNAR_RETURN.value,
+            ],
+        ):
             date = calc_sun_crossing(moon, start - 184)
+
+            index = pydash.index_of(solars, ChartType.SOLILUNAR_RETURN.value)
             if date > start:
-                if (
-                    date - start <= 15
-                    and solar_returns[0] == ChartType.SOLILUNAR_RETURN.value
-                ):
-                    self.make_chart(chart, date, solar_returns[0], chart_class)
+                if date - start <= 15 and index >= 0:
+                    found_chart_params.append(
+                        (params, date, solars[index], chart_class)
+                    )
+                    solars.pop(index)
                 date = calc_sun_crossing(moon, start - 367)
-            if solar_returns[0] == ChartType.SOLILUNAR_RETURN.value:
-                self.make_chart(chart, date, solar_returns[0], chart_class)
-                found = True
-                solar_returns = solar_returns[1:]
+
+            if index >= 0:
+                found_chart_params.append(
+                    (params, date, solars[index], chart_class)
+                )
+                solars.pop(index)
+
             demi_start = date
-        if solar_returns:
+
+        if includes_any(
+            solars,
+            [
+                ChartType.DEMI_SOLILUNAR_RETURN.value,
+                ChartType.FIRST_QUARTI_SOLILUNAR_RETURN.value,
+                ChartType.LAST_QUARTI_SOLILUNAR_RETURN.value,
+            ],
+        ):
             target = (moon + 180) % 360
             date = calc_sun_crossing(target, demi_start)
+
+            index = pydash.index_of(
+                solars, ChartType.DEMI_SOLILUNAR_RETURN.value
+            )
             if date > start:
-                if (
-                    date - start <= 15
-                    and solar_returns[0]
-                    == ChartType.DEMI_SOLILUNAR_RETURN.value
-                ):
-                    self.make_chart(chart, date, solar_returns[0], chart_class)
-                    found = True
+                if date - start <= 15 and index >= 0:
+                    found_chart_params.append(
+                        (params, date, solars[index], chart_class)
+                    )
+                    solars.pop(index)
                 quarti_start = demi_start
             else:
-                if solar_returns[0] == ChartType.DEMI_SOLILUNAR_RETURN.value:
-                    self.make_chart(chart, date, solar_returns[0], chart_class)
-                    found = True
+                if index >= 0:
+                    found_chart_params.append(
+                        (params, date, solars[index], chart_class)
+                    )
+                    solars.pop(index)
+
                 quarti_start = date
-            if solar_returns[0] == ChartType.DEMI_SOLILUNAR_RETURN.value:
-                solar_returns = solar_returns[1:]
-        if solar_returns and solar_returns[0] in [
-            ChartType.FIRST_QUARTI_SOLILUNAR_RETURN.value,
-            ChartType.LAST_QUARTI_SOLILUNAR_RETURN.value,
-        ]:
+
+        if includes_any(
+            solars,
+            [
+                ChartType.FIRST_QUARTI_SOLILUNAR_RETURN.value,
+                ChartType.LAST_QUARTI_SOLILUNAR_RETURN.value,
+            ],
+        ):
             if quarti_start == demi_start:
                 target = (moon + 90) % 360
-                chtype = ChartType.FIRST_QUARTI_SOLILUNAR_RETURN.value
+                index = pydash.index_of(
+                    solars, ChartType.FIRST_QUARTI_SOLILUNAR_RETURN.value
+                )
             else:
                 target = (moon + 270) % 360
-                chtype = ChartType.LAST_QUARTI_SOLILUNAR_RETURN.value
+                index = pydash.index_of(
+                    solars, ChartType.LAST_QUARTI_SOLILUNAR_RETURN.value
+                )
             date = calc_sun_crossing(target, quarti_start)
             if date - start <= 15:
-                self.make_chart(chart, date, chtype, chart_class)
+                found_chart_params.append(
+                    (params, date, solars[index], chart_class)
+                )
+                solars.pop(index)
 
-        if lunar_returns:
-            chart_class = 'LR'
+        chart_class = 'LR'
+
+        if includes_any(
+            lunars,
+            [
+                ChartType.LUNAR_RETURN.value,
+                ChartType.DEMI_LUNAR_RETURN.value,
+                ChartType.FIRST_QUARTI_LUNAR_RETURN.value,
+                ChartType.LAST_QUARTI_LUNAR_RETURN.value,
+            ],
+        ):
             date = calc_moon_crossing(moon, start - 15)
+            index = pydash.index_of(lunars, ChartType.LUNAR_RETURN.value)
             if date > start:
-                if date - start <= 1.25 and lunar_returns[0] == 'Lunar Return':
-                    self.make_chart(chart, date, lunar_returns[0], chart_class)
+                if date - start <= 1.25 and index >= 0:
+                    found_chart_params.append(
+                        (params, date, lunars[index], chart_class)
+                    )
+                    lunars.pop(index)
+
                 date = calc_moon_crossing(moon, start - 29)
-            if lunar_returns[0] == 'Lunar Return':
-                self.make_chart(chart, date, lunar_returns[0], chart_class)
-                found = True
-                lunar_returns = lunar_returns[1:]
+            if index >= 0:
+                found_chart_params.append(
+                    (params, date, lunars[index], chart_class)
+                )
+                lunars.pop(index)
+
             demi_start = date
-        if lunar_returns:
+
+        if includes_any(
+            lunars,
+            [
+                ChartType.DEMI_LUNAR_RETURN.value,
+                ChartType.FIRST_QUARTI_LUNAR_RETURN.value,
+                ChartType.LAST_QUARTI_LUNAR_RETURN.value,
+            ],
+        ):
             target = (moon + 180) % 360
             date = calc_moon_crossing(target, demi_start)
+            index = pydash.index_of(lunars, ChartType.DEMI_LUNAR_RETURN.value)
+
             if date > start:
-                if (
-                    date - start <= 1.25
-                    and lunar_returns[0] == 'Demi-Lunar Return'
-                ):
-                    self.make_chart(chart, date, lunar_returns[0], chart_class)
-                    found = True
+                if date - start <= 1.25 and index >= 0:
+                    found_chart_params.append(
+                        (params, date, lunars[index], chart_class)
+                    )
+                    lunars.pop(index)
+
                 quarti_start = demi_start
             else:
-                if lunar_returns[0] == 'Demi-Lunar Return':
-                    self.make_chart(chart, date, lunar_returns[0], chart_class)
-                    found = True
+                if index >= 0:
+                    found_chart_params.append(
+                        (params, date, lunars[index], chart_class)
+                    )
+                    lunars.pop(index)
+
                 quarti_start = date
-            if lunar_returns[0] == 'Demi-Lunar Return':
-                lunar_returns = lunar_returns[1:]
-        if lunar_returns and lunar_returns[0] in [
-            'First Quarti-Lunar Return',
-            'Last Quarti-Lunar Return',
-        ]:
+
+        if includes_any(
+            lunars,
+            [
+                ChartType.FIRST_QUARTI_LUNAR_RETURN.value,
+                ChartType.LAST_QUARTI_LUNAR_RETURN.value,
+            ],
+        ):
             if quarti_start == demi_start:
                 target = (moon + 90) % 360
-                chtype = 'First Quarti-Lunar Return'
+                index = pydash.index_of(
+                    lunars, ChartType.FIRST_QUARTI_LUNAR_RETURN.value
+                )
             else:
                 target = (moon + 270) % 360
-                chtype = 'Last Quarti-Lunar Return'
+                index = pydash.index_of(
+                    lunars, ChartType.LAST_QUARTI_LUNAR_RETURN.value
+                )
+
             date = calc_moon_crossing(target, quarti_start)
             if date - start <= 1.25:
-                self.make_chart(chart, date, chtype, chart_class)
-                found = True
+                found_chart_params.append(
+                    (params, date, lunars[index], chart_class)
+                )
+                lunars.pop(index)
 
         # NLR and 18-Hour Lunars
-        if (
-            lunar_returns
-            and lunar_returns[0] == ChartType.NOVIENIC_LUNAR_RETURN.value
-        ):
+        if ChartType.NOVIENIC_LUNAR_RETURN.value in lunars:
             increment = 40
 
             base_date = start - 4
-            date_to_use = None
 
             while True:
                 target = to360(moon + increment)
-                test_date = calc_moon_crossing(target, base_date)
-                if test_date > start:
+                date = calc_moon_crossing(target, base_date)
+                if date > start:
                     increment -= 40
                     continue
 
-                if start - test_date >= 3.45:
+                if start - date >= 3.45:
                     increment += 40
                     continue
 
-                date_to_use = test_date
                 break
 
-            self.make_chart(chart, date_to_use, lunar_returns[0], chart_class)
-            lunar_returns = lunar_returns[1:]
-            found = True
+            index = pydash.index_of(
+                lunars, ChartType.NOVIENIC_LUNAR_RETURN.value
+            )
+            found_chart_params.append(
+                (params, date, lunars[index], chart_class)
+            )
+            lunars.pop(index)
 
-        if (
-            lunar_returns
-            and lunar_returns[0] == ChartType.EIGHTEEN_HOUR_LUNAR_RETURN.value
-        ):
+        if ChartType.EIGHTEEN_HOUR_LUNAR_RETURN.value in lunars:
             increment = 10
 
             base_date = start - 1
-            date_to_use = None
 
             while True:
                 target = to360(moon + increment)
-                test_date = calc_moon_crossing(target, base_date)
-                if test_date > start:
+                date = calc_moon_crossing(target, base_date)
+                if date > start:
                     increment -= 10
                     continue
 
-                if start - test_date >= 0.86:
+                if start - date >= 0.86:
                     increment += 10
                     continue
 
-                date_to_use = test_date
                 break
 
-            self.make_chart(chart, date_to_use, lunar_returns[0], chart_class)
-            lunar_returns = lunar_returns[1:]
-            found = True
+            index = pydash.index_of(
+                lunars, ChartType.EIGHTEEN_HOUR_LUNAR_RETURN.value
+            )
+            found_chart_params.append(
+                (params, date, lunars[index], chart_class)
+            )
+            lunars.pop(index)
 
         # Lunisolar variants
-        if lunar_returns and lunar_returns[0] in [
-            ChartType.LUNISOLAR_RETURN.value,
-            ChartType.DEMI_LUNISOLAR_RETURN.value,
-            ChartType.FIRST_QUARTI_LUNISOLAR_RETURN.value,
-            ChartType.LAST_QUARTI_LUNISOLAR_RETURN.value,
-        ]:
+        if includes_any(
+            lunars,
+            [
+                ChartType.LUNISOLAR_RETURN.value,
+                ChartType.DEMI_LUNISOLAR_RETURN.value,
+                ChartType.FIRST_QUARTI_LUNISOLAR_RETURN.value,
+                ChartType.LAST_QUARTI_LUNISOLAR_RETURN.value,
+            ],
+        ):
             date = calc_moon_crossing(sun, start - 15)
+            index = pydash.index_of(lunars, ChartType.LUNISOLAR_RETURN.value)
             if date > start:
-                if (
-                    date - start <= 1.25
-                    and lunar_returns[0] == ChartType.LUNISOLAR_RETURN.value
-                ):
-                    self.make_chart(chart, date, lunar_returns[0], chart_class)
+                if date - start <= 1.25 and index >= 0:
+                    found_chart_params.append(
+                        (params, date, lunars[index], chart_class)
+                    )
+                    lunars.pop(index)
+
                 date = calc_moon_crossing(sun, start - 29)
-            if lunar_returns[0] == ChartType.LUNISOLAR_RETURN.value:
-                self.make_chart(chart, date, lunar_returns[0], chart_class)
-                found = True
-                lunar_returns = lunar_returns[1:]
+
+            if index >= 0:
+                found_chart_params.append(
+                    (params, date, lunars[index], chart_class)
+                )
+                lunars.pop(index)
+
             demi_start = date
 
-        if lunar_returns:
+        if includes_any(
+            lunars,
+            [
+                ChartType.DEMI_LUNISOLAR_RETURN.value,
+                ChartType.FIRST_QUARTI_LUNISOLAR_RETURN.value,
+                ChartType.LAST_QUARTI_LUNISOLAR_RETURN.value,
+            ],
+        ):
+
+            index = pydash.index_of(
+                lunars, ChartType.DEMI_LUNISOLAR_RETURN.value
+            )
             target = (sun + 180) % 360
             date = calc_moon_crossing(target, demi_start)
             if date > start:
-                if (
-                    date - start <= 1.25
-                    and lunar_returns[0]
-                    == ChartType.DEMI_LUNISOLAR_RETURN.value
-                ):
-                    self.make_chart(chart, date, lunar_returns[0], chart_class)
-                    found = True
+                if date - start <= 1.25 and index >= 0:
+                    found_chart_params.append(
+                        (params, date, lunars[index], chart_class)
+                    )
+                    lunars.pop(index)
+
                 quarti_start = demi_start
             else:
-                if lunar_returns[0] == ChartType.DEMI_LUNISOLAR_RETURN.value:
-                    self.make_chart(chart, date, lunar_returns[0], chart_class)
-                    found = True
-                quarti_start = date
-            if lunar_returns[0] == ChartType.DEMI_LUNISOLAR_RETURN.value:
-                lunar_returns = lunar_returns[1:]
+                if index >= 0:
+                    found_chart_params.append(
+                        (params, date, lunars[index], chart_class)
+                    )
+                    lunars.pop(index)
 
-        if lunar_returns:
+                quarti_start = date
+
+        if includes_any(
+            lunars,
+            [
+                ChartType.FIRST_QUARTI_LUNISOLAR_RETURN.value,
+                ChartType.LAST_QUARTI_LUNISOLAR_RETURN.value,
+            ],
+        ):
             if quarti_start == demi_start:
                 target = (sun + 90) % 360
-                chtype = ChartType.FIRST_QUARTI_LUNISOLAR_RETURN.value
+                index = pydash.index_of(
+                    lunars, ChartType.FIRST_QUARTI_LUNISOLAR_RETURN.value
+                )
             else:
                 target = (sun + 270) % 360
-                chtype = ChartType.LAST_QUARTI_LUNISOLAR_RETURN.value
+                index = pydash.index_of(
+                    lunars, ChartType.LAST_QUARTI_LUNISOLAR_RETURN.value
+                )
+
             date = calc_moon_crossing(target, quarti_start)
             if date - start <= 1.25:
-                self.make_chart(chart, date, chtype, chart_class)
-                found = True
+                found_chart_params.append(
+                    (params, date, lunars[index], chart_class)
+                )
+                lunars.pop(index)
 
         # Anlunars
-        if lunar_returns and lunar_returns[0] in [
-            ChartType.ANLUNAR_RETURN.value,
-            ChartType.DEMI_ANLUNAR_RETURN.value,
-            ChartType.FIRST_QUARTI_ANLUNAR_RETURN.value,
-            ChartType.LAST_QUARTI_ANLUNAR_RETURN.value,
-        ]:
-            chart_class = 'LR'
+        if includes_any(
+            lunars,
+            [
+                ChartType.ANLUNAR_RETURN.value,
+                ChartType.DEMI_ANLUNAR_RETURN.value,
+                ChartType.FIRST_QUARTI_ANLUNAR_RETURN.value,
+                ChartType.LAST_QUARTI_ANLUNAR_RETURN.value,
+            ],
+        ):
             # Get past SSR
             ssr_date = calc_sun_crossing(sun, start - 366)
-            (year, month, day, time) = revjul(ssr_date, chart['style'])
+            (year, month, day, time) = revjul(ssr_date, params['style'])
 
-            ssr_params = {**chart}
+            ssr_params = {**params}
             ssr_params.update(
                 {
-                    'name': chart['base_chart']['name'] + ' Solar Return',
+                    'name': params['base_chart']['name'] + ' Solar Return',
                     'julian_day_utc': ssr_date,
                     'type': ChartType.SOLAR_RETURN.value,
                     'year': year,
@@ -1572,67 +1815,96 @@ class SolunarsAllInOne(Frame):
                 }
             )
 
-            ssr_chart = ChartObject.from_calculation(ssr_params)
-            chart['ssr_chart'] = ssr_chart
+            ssr_chart = ChartObject(ssr_params)
+            transiting_params = {**params}
+            transiting_params['ssr_chart'] = ssr_chart
 
             solar_moon = ssr_chart.planets['Moon'].longitude
 
+            index = pydash.index_of(lunars, ChartType.ANLUNAR_RETURN.value)
             date = calc_moon_crossing(solar_moon, start - 15)
             if date > start:
-                if (
-                    date - start <= 1.25
-                    and lunar_returns[0] == ChartType.ANLUNAR_RETURN.value
-                ):
-                    self.make_chart(chart, date, lunar_returns[0], chart_class)
+                if date - start <= 1.25 and index >= 0:
+                    found_chart_params.append(
+                        (transiting_params, date, lunars[index], chart_class)
+                    )
+                    lunars.pop(index)
+
                 date = calc_moon_crossing(solar_moon, start - 29)
-            if lunar_returns[0] == ChartType.ANLUNAR_RETURN.value:
-                self.make_chart(chart, date, lunar_returns[0], chart_class)
-                found = True
-                lunar_returns = lunar_returns[1:]
+
+            if index >= 0:
+                found_chart_params.append(
+                    (transiting_params, date, lunars[index], chart_class)
+                )
+                lunars.pop(index)
+
             demi_start = date
 
-            if lunar_returns:
-                target = (solar_moon + 180) % 360
-                date = calc_moon_crossing(target, demi_start)
-                if date > start:
-                    if (
-                        date - start <= 1.25
-                        and lunar_returns[0]
-                        == ChartType.DEMI_ANLUNAR_RETURN.value
-                    ):
-                        self.make_chart(
-                            chart, date, lunar_returns[0], chart_class
-                        )
-                        found = True
-                    quarti_start = demi_start
-                else:
-                    if lunar_returns[0] == ChartType.DEMI_ANLUNAR_RETURN.value:
-                        self.make_chart(
-                            chart, date, lunar_returns[0], chart_class
-                        )
-                        found = True
-                    quarti_start = date
-                if lunar_returns[0] == ChartType.DEMI_ANLUNAR_RETURN.value:
-                    lunar_returns = lunar_returns[1:]
-            if lunar_returns and lunar_returns[0] in [
+        if includes_any(
+            lunars,
+            [
+                ChartType.DEMI_ANLUNAR_RETURN.value,
                 ChartType.FIRST_QUARTI_ANLUNAR_RETURN.value,
                 ChartType.LAST_QUARTI_ANLUNAR_RETURN.value,
-            ]:
-                if quarti_start == demi_start:
-                    target = (solar_moon + 90) % 360
-                    chtype = ChartType.FIRST_QUARTI_ANLUNAR_RETURN.value
-                else:
-                    target = (solar_moon + 270) % 360
-                    chtype = ChartType.LAST_QUARTI_ANLUNAR_RETURN.value
-                date = calc_moon_crossing(target, quarti_start)
-                if date - start <= 1.25:
-                    self.make_chart(chart, date, chtype, chart_class)
-                    found = True
+            ],
+        ):
+            target = (solar_moon + 180) % 360
+            date = calc_moon_crossing(target, demi_start)
+            index = pydash.index_of(
+                lunars, ChartType.DEMI_ANLUNAR_RETURN.value
+            )
 
-        natal_elongation = get_signed_orb_to_reference(moon, sun)
+            if date > start:
+                if date - start <= 1.25 and index >= 0:
+                    found_chart_params.append(
+                        (params, date, lunars[index], chart_class)
+                    )
+                    lunars.pop(index)
+                quarti_start = demi_start
+            else:
+                if index >= 0:
+                    found_chart_params.append(
+                        (params, date, lunars[index], chart_class)
+                    )
+                    lunars.pop(index)
+                quarti_start = date
 
-        if lunar_returns and 'Synodical' in lunar_returns[0]:
-            chart_class = 'LR'
+        if includes_any(
+            lunars,
+            [
+                ChartType.FIRST_QUARTI_ANLUNAR_RETURN.value,
+                ChartType.LAST_QUARTI_ANLUNAR_RETURN.value,
+            ],
+        ):
+            if quarti_start == demi_start:
+                target = (solar_moon + 90) % 360
+                index = pydash.index_of(
+                    lunars, ChartType.FIRST_QUARTI_ANLUNAR_RETURN.value
+                )
+            else:
+                target = (solar_moon + 270) % 360
+                index = pydash.index_of(
+                    lunars, ChartType.LAST_QUARTI_ANLUNAR_RETURN.value
+                )
+
+            date = calc_moon_crossing(target, quarti_start)
+            if date - start <= 1.25:
+                found_chart_params.append(
+                    (params, date, lunars[index], chart_class)
+                )
+                lunars.pop(index)
+
+        # LSRs
+        if includes_any(
+            lunars,
+            [
+                ChartType.LUNAR_SYNODIC_RETURN.value,
+                ChartType.DEMI_LUNAR_SYNODIC_RETURN.value,
+                ChartType.FIRST_QUARTI_LUNAR_SYNODIC_RETURN.value,
+                ChartType.LAST_QUARTI_LUNAR_SYNODIC_RETURN.value,
+            ],
+        ):
+            natal_elongation = get_signed_orb_to_reference(moon, sun)
 
             full_lsr_elongation = natal_elongation
             if full_lsr_elongation > 180:
@@ -1645,25 +1917,39 @@ class SolunarsAllInOne(Frame):
                 start + 14.5,
             )
 
+            index = pydash.index_of(
+                lunars, ChartType.LUNAR_SYNODIC_RETURN.value
+            )
+
             if date > start:
-                if (
-                    date - start <= 1.25
-                    and lunar_returns[0]
-                    == ChartType.LUNAR_SYNODICAL_RETURN.value
-                ):
-                    self.make_chart(chart, date, lunar_returns[0], chart_class)
+                if date - start <= 1.25 and index >= 0:
+                    found_chart_params.append(
+                        (params, date, lunars[index], chart_class)
+                    )
+                    lunars.pop(index)
+
                 date = find_jd_utc_of_elongation(
                     full_lsr_elongation,
                     start - 29.5,
                     start,
                 )
-            if lunar_returns[0] == ChartType.LUNAR_SYNODICAL_RETURN.value:
-                self.make_chart(chart, date, lunar_returns[0], chart_class)
-                found = True
-                lunar_returns = lunar_returns[1:]
+
+            if index >= 0:
+                found_chart_params.append(
+                    (params, date, lunars[index], chart_class)
+                )
+                lunars.pop(index)
+
             demi_start = date
 
-        if lunar_returns and 'Synodical' in lunar_returns[0]:
+        if includes_any(
+            lunars,
+            [
+                ChartType.DEMI_LUNAR_SYNODIC_RETURN.value,
+                ChartType.FIRST_QUARTI_LUNAR_SYNODIC_RETURN.value,
+                ChartType.LAST_QUARTI_LUNAR_SYNODIC_RETURN.value,
+            ],
+        ):
             demi_elongation = to360(natal_elongation + 180)
             if demi_elongation > 180:
                 demi_elongation -= 180
@@ -1675,30 +1961,34 @@ class SolunarsAllInOne(Frame):
                 demi_start + 29.5,
             )
 
+            index = pydash.index_of(
+                lunars, ChartType.DEMI_LUNAR_SYNODIC_RETURN.value
+            )
+
             if date > start:
-                if (
-                    date - start <= 1.25
-                    and lunar_returns[0]
-                    == ChartType.DEMI_LUNAR_SYNODICAL_RETURN.value
-                ):
-                    self.make_chart(chart, date, lunar_returns[0], chart_class)
-                    found = True
+                if date - start <= 1.25 and index >= 0:
+                    found_chart_params.append(
+                        (params, date, lunars[index], chart_class)
+                    )
+                    lunars.pop(index)
+
                 quarti_start = demi_start
             else:
-                if (
-                    lunar_returns[0]
-                    == ChartType.DEMI_LUNAR_SYNODICAL_RETURN.value
-                ):
-                    self.make_chart(chart, date, lunar_returns[0], chart_class)
-                    found = True
-                quarti_start = date
-            if lunar_returns[0] == ChartType.DEMI_LUNAR_SYNODICAL_RETURN.value:
-                lunar_returns = lunar_returns[1:]
+                if index >= 0:
+                    found_chart_params.append(
+                        (params, date, lunars[index], chart_class)
+                    )
+                    lunars.pop(index)
 
-        if lunar_returns and lunar_returns[0] in [
-            ChartType.FIRST_QUARTI_LUNAR_SYNODICAL_RETURN.value,
-            ChartType.LAST_QUARTI_LUNAR_SYNODICAL_RETURN.value,
-        ]:
+                quarti_start = date
+
+        if includes_any(
+            lunars,
+            [
+                ChartType.FIRST_QUARTI_LUNAR_SYNODIC_RETURN.value,
+                ChartType.LAST_QUARTI_LUNAR_SYNODIC_RETURN.value,
+            ],
+        ):
             first_quarti_elongation = to360(natal_elongation + 90)
             if first_quarti_elongation > 180:
                 first_quarti_elongation -= 180
@@ -1711,10 +2001,15 @@ class SolunarsAllInOne(Frame):
 
             if quarti_start == demi_start:
                 target = first_quarti_elongation
-                chtype = ChartType.FIRST_QUARTI_LUNAR_SYNODICAL_RETURN.value
+                index = pydash.index_of(
+                    lunars, ChartType.FIRST_QUARTI_LUNAR_SYNODIC_RETURN.value
+                )
+
             else:
                 target = last_quarti_elongation
-                chtype = ChartType.LAST_QUARTI_LUNAR_SYNODICAL_RETURN.value
+                index = pydash.index_of(
+                    lunars, ChartType.LAST_QUARTI_LUNAR_SYNODIC_RETURN.value
+                )
 
             date = find_jd_utc_of_elongation(
                 target,
@@ -1722,11 +2017,12 @@ class SolunarsAllInOne(Frame):
                 quarti_start + 29.5,
             )
             if date - start <= 1.25:
-                self.make_chart(chart, date, chtype, chart_class)
-                found = True
+                found_chart_params.append(
+                    (params, date, lunars[index], chart_class)
+                )
+                lunars.pop(index)
 
-        if not found:
-            self.status.error('No charts found.')
+        return found_chart_params
 
     def make_chart(self, chart, date, chtype, cclass, show=True):
         cchart = deepcopy(chart)
@@ -1744,22 +2040,23 @@ class SolunarsAllInOne(Frame):
         cchart['class'] = cclass
         cchart['correction'] = 0
         cchart['zone'] = 'UT'
+
+        chart_class = assemble_charts(cchart, self.istemp.value)
+
         if show:
-            chart_class = ChartAssembler(cchart, self.istemp.value)
-            if hasattr(chart_class, 'report'):
-                chart_class.report.show()
-        else:
-            chart_class = ChartAssembler(cchart, self.istemp.value)
-            if hasattr(chart_class, 'report'):
-                chart_class.report
+            chart_class.show()
 
         return chart_class
 
-    def save_location(self, chart):
+    def save_location(self, params):
         try:
             with open(LOCATIONS_FILE, 'r') as datafile:
                 locs = json.load(datafile)
-            newloc = [chart['location'], chart['latitude'], chart['longitude']]
+            newloc = [
+                params['location'],
+                params['latitude'],
+                params['longitude'],
+            ]
             if newloc in locs:
                 locs.remove(newloc)
             locs.insert(0, newloc)
@@ -1805,10 +2102,10 @@ LABELS_TO_RETURNS = {
     '- Quarti-KAR #2': ChartType.LAST_QUARTI_KINETIC_ANLUNAR_RETURN.value,
     '--- Other Charts ---': '',
     'Sidereal Yoga Return (SYR)': ChartType.YOGA_RETURN.value,
-    'Lunar Synodic Return (LSR)': ChartType.LUNAR_SYNODICAL_RETURN.value,
-    '- Quarti-LSR #1': ChartType.FIRST_QUARTI_LUNAR_SYNODICAL_RETURN.value,
-    '- Demi-LSR': ChartType.DEMI_LUNAR_SYNODICAL_RETURN.value,
-    '- Quarti-LSR #2': ChartType.LAST_QUARTI_LUNAR_SYNODICAL_RETURN.value,
+    'Lunar Synodic Return (LSR)': ChartType.LUNAR_SYNODIC_RETURN.value,
+    '- Quarti-LSR #1': ChartType.FIRST_QUARTI_LUNAR_SYNODIC_RETURN.value,
+    '- Demi-LSR': ChartType.DEMI_LUNAR_SYNODIC_RETURN.value,
+    '- Quarti-LSR #2': ChartType.LAST_QUARTI_LUNAR_SYNODIC_RETURN.value,
     'SoliLunar (SoLu)': ChartType.SOLILUNAR_RETURN.value,
     '- Quarti-SoLu #1': ChartType.FIRST_QUARTI_SOLILUNAR_RETURN.value,
     '- Demi-SoLu': ChartType.DEMI_SOLILUNAR_RETURN.value,
@@ -1889,7 +2186,6 @@ CHART_OPTIONS_NO_QUARTIS = [
     # '- Demi-KAR',
     '--- Other Charts ---',
     # 'Sidereal Yoga Return (SYR)',
-    '- Demi-SYR',
     'Lunar Synodic Return (LSR)',
     '- Demi-LSR',
     'SoliLunar (SoLu)',
