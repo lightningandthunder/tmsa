@@ -504,49 +504,50 @@ def angularity_activates_ingress(orb: float, angle: str) -> bool:
     return orb <= 2.0
 
 
-def make_chart_path(chart, temporary, is_ingress=False):
-    if isinstance(chart, dict):
+def make_chart_path(params, temporary, is_ingress=False):
+    if isinstance(params, dict):
         ingress = (
             True
-            if chart['type'][0:3] in ['Ari', 'Can', 'Lib', 'Cap']
-            or not chart['name']
+            if params['type'][0:3] in ['Ari', 'Can', 'Lib', 'Cap']
+            or not params.get('name')
             else False
         )
     else:
         ingress = is_ingress
-    if isinstance(chart, dict):
+    if isinstance(params, dict):
         if ingress:
-            first = f"{chart['year']}-{chart['month']}-{chart['day']}"
-            second = chart['location']
-            third = chart['type']
+            first = f"{params['year']}-{params['month']}-{params['day']}"
+            second = params['location']
+            third = params['type']
         else:
-            first = chart['name']
+            first = params['name']
             index = first.find(';')
             if index > -1:
                 first = first[0:index]
-            second = f"{chart['year']}-{chart['month']:02d}-{chart['day']:02d}"
-            third = chart['type']
+            second = f"{params['year']}-{params['month']:02d}-{params['day']:02d}"
+            third = params['type']
     else:
         if ingress:
-            first = f'{chart.year}-{chart.month}-{chart.day}'
-            second = chart.location
-            third = chart.type.value
+            first = f'{params.year}-{params.month}-{params.day}'
+            second = params.location
+            third = params.type.value
         else:
-            first = chart.name
+            first = params.name
             index = first.find(';')
             if index > -1:
                 first = first[0:index]
-            second = f'{chart.year}-{chart.month:02d}-{chart.day:02d}'
-            third = chart.type.value
+            second = f'{params.year}-{params.month:02d}-{params.day:02d}'
+            third = params.type.value
     filename = f'{first}~{second}~{third}.dat'
     if ingress:
         filepath = os.path.join(
-            f"{chart['year'] if isinstance(chart, dict) else chart.year}",
+            f"{params['year'] if isinstance(params, dict) else params.year}",
             filename,
         )
     else:
         filepath = os.path.join(first[0], first, filename)
     path = TEMP_CHARTS if temporary else CHART_PATH
+
     return os.path.abspath(os.path.join(path, filepath))
 
 

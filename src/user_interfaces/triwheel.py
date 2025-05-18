@@ -34,9 +34,9 @@ class Triwheel(CoreChart):
         charts: list[chart_models.ChartObject],
         temporary: bool,
         options: option_models.Options,
-        chart_for_angles=None,
+        use_progressed_angles: bool = False,
     ):
-        super().__init__(charts, temporary, options)
+        super().__init__(charts, temporary, options, use_progressed_angles)
 
     def draw_chart(
         self,

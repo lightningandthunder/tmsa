@@ -57,6 +57,19 @@ def assemble_charts(params, temporary, burst=False):
 
     options = Options(raw_options)
 
+    if params.get('chart_type', None) == 'snq':
+        if params.get('use_transit'):
+            transit_chart = ChartObject(params).with_role(ChartWheelRole.TRANSIT)
+            progressed_chart = ChartObject(params['progressed_chart']).with_role(ChartWheelRole.PROGRESSED)
+            radix = ChartObject(params['base_chart']).with_role(ChartWheelRole.RADIX)
+            return Triwheel([transit_chart, progressed_chart, radix], temporary, options, use_progressed_angles=True)
+
+        else: 
+            progressed_chart = ChartObject(params['progressed_chart']).with_role(ChartWheelRole.PROGRESSED)
+            radix = ChartObject(params['base_chart']).with_role(ChartWheelRole.RADIX)
+
+            return Biwheel([progressed_chart, radix], temporary, options, use_progressed_angles=True)
+
     if params.get('ssr_chart', None):
         return_chart = ChartObject(params).with_role(ChartWheelRole.TRANSIT)
 

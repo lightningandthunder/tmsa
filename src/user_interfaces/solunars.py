@@ -524,7 +524,7 @@ class Solunars(Frame):
         self.destroy()
         Solunars(self.base, self.filename)
 
-    def calculate(self, args):
+    def calculate(self):
         self.status.text = ''
         self.findbtn.disabled = False
         chart = {}

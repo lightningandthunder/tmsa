@@ -4,7 +4,8 @@
 - Added pagination to "recently used" items, increasing the storage size
 - Removed the legacy "TMSA Classic" angularity model
 - Aspects now split into columns even if there are missing classes
-- Added many Solunar return types: Novienic Solar Returns (Enneads), Novienic Lunar Returns, Anlunars, Solilunars, and Lunisolars.
+- Added many Solunar return types: Novienic Solar Returns (Enneads), Novienic Lunar Returns, Anlunars, Solilunars, Lunisolars, and Lunar Synodic Returns.
+- Refactored the Solunars selection page to include all Solunar types on it.
 - Made "angle contact aspects" have the same strength scale as traditional aspects
 - Added a "Sidereal Landmarks" page
 - Refreshed the Solunars page to allow for all of the additional Solunar types
@@ -13,6 +14,12 @@
 - Fixed MC altitude calculation for southern latitudes
 - Under the hood: changed the way chart data calculation happens and gets saved to streamline multi-step charts such as Anlunar Returns.
 - Fixed bug where midpoint halfsums would get calculated more than once, wasting time
+- Removed "use raw" toggle for angularity strength. Data table angularity and Needs Hierarchy angularity strength now use the original 0-100% scale, and angle-contact aspects are now scored exactly the same as other aspects (0-100%).
+- "Burst" chart calculation now displays charts (mostly) in chronological order.
+- Greatly increased the number of included ephemeris files, extending the temporal range TM covers to about 10,000 BCE to approximately 3,600 CE.
+- Greatly reduced the amount of information stored in data files, which means we will always recalculate all of it. Got rid of the notion of charts being "out of date" since they are always calculated fresh (unless you just open the .txt file with the calculated chart output).
+
+
 
 ### 0.6.0
 

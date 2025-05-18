@@ -9,6 +9,8 @@
 
 from io import TextIOWrapper
 
+import pydash
+
 import src.constants as constants
 import src.models.charts as chart_models
 import src.models.options as option_models
@@ -35,8 +37,9 @@ class Biwheel(CoreChart):
         charts: list[chart_models.ChartObject],
         temporary: bool,
         options: option_models.Options,
+        use_progressed_angles: bool = False,
     ):
-        super().__init__(charts, temporary, options)
+        super().__init__(charts, temporary, options, use_progressed_angles)
 
     def draw_chart(
         self,
@@ -46,8 +49,12 @@ class Biwheel(CoreChart):
         cols = 69
         chart_grid = [[' ' for _ in range(cols)] for _ in range(rows)]
 
-        return_chart = calc_utils.find_outermost_chart(self.charts)
-        self.cclass = self.get_return_class(return_chart)
+        outermost_chart = calc_utils.find_outermost_chart(self.charts)
+        self.cclass = self.get_return_class(outermost_chart)
+        
+        chart_for_angles = outermost_chart
+        if self.use_progressed_angles:
+            chart_for_angles = pydash.find(self.charts, lambda c: c.role.value == chart_models.ChartWheelRole.PROGRESSED.value)
 
         chartfile.write('\n')
         for column_index in range(cols):
@@ -69,7 +76,7 @@ class Biwheel(CoreChart):
                 if index == 32 and sub_index == 34:
                     continue
                 chart_grid[index][sub_index] = '+'
-        cusps = [chart_utils.zod_min(c) for c in return_chart.cusps]
+        cusps = [chart_utils.zod_min(c) for c in chart_for_angles.cusps]
         chart_grid[0][14:20] = cusps[11]
         chart_grid[0][31:37] = cusps[10]
         chart_grid[0][48:54] = cusps[9]
@@ -83,56 +90,59 @@ class Biwheel(CoreChart):
         chart_grid[64][31:37] = cusps[4]
         chart_grid[64][48:54] = cusps[5]
 
-        chart_grid[19][18:51] = center_align('Transiting (t) Chart')
+        if self.use_progressed_angles:
+            chart_grid[19][18:51] = center_align('Progressed (p) Chart')
+        else:
+            chart_grid[19][18:51] = center_align('Transiting (t) Chart')
 
-        return_chart_type = return_chart.type.value.lower()
+        return_chart_type = outermost_chart.type.value.lower()
 
         if (
             'solar' not in return_chart_type
             and 'lunar' not in return_chart_type
         ):
-            chart_grid[20][18:51] = center_align(return_chart.name)
+            chart_grid[20][18:51] = center_align(outermost_chart.name)
         elif 'return' in return_chart_type:
-            parts = return_chart.name.split(';')
+            parts = outermost_chart.name.split(';')
             chart_grid[20][18:51] = center_align(parts[0])
-        chart_grid[21][18:51] = center_align(return_chart.type.value)
+        chart_grid[21][18:51] = center_align(outermost_chart.type.value)
         line = (
-            str(return_chart.day)
+            str(outermost_chart.day)
             + ' '
-            + constants.MONTHS[return_chart.month - 1]
+            + constants.MONTHS[outermost_chart.month - 1]
             + ' '
         )
         line += (
-            f'{return_chart.year} '
-            if return_chart.year > 0
-            else f'{-(return_chart.year) + 1} BCE '
+            f'{outermost_chart.year} '
+            if outermost_chart.year > 0
+            else f'{-(outermost_chart.year) + 1} BCE '
         )
-        if not return_chart.style:
+        if not outermost_chart.style:
             line += 'OS '
-        line += fmt_hms(return_chart.time) + ' ' + return_chart.zone
+        line += fmt_hms(outermost_chart.time) + ' ' + outermost_chart.zone
 
         chart_grid[22][18:51] = center_align(line)
-        chart_grid[23][18:51] = center_align(return_chart.location)
+        chart_grid[23][18:51] = center_align(outermost_chart.location)
         chart_grid[24][18:51] = center_align(
-            fmt_lat(return_chart.geo_latitude)
+            fmt_lat(outermost_chart.geo_latitude)
             + ' '
-            + fmt_long(return_chart.geo_longitude)
+            + fmt_long(outermost_chart.geo_longitude)
         )
         chart_grid[25][18:51] = center_align(
-            'UT ' + fmt_hms(return_chart.time + return_chart.correction)
+            'UT ' + fmt_hms(outermost_chart.time + outermost_chart.correction)
         )
         chart_grid[26][18:51] = center_align(
-            'RAMC ' + fmt_dms(return_chart.ramc)
+            'RAMC ' + fmt_dms(outermost_chart.ramc)
         )
         chart_grid[27][18:51] = center_align(
-            'OE ' + fmt_dms(return_chart.obliquity)
+            'OE ' + fmt_dms(outermost_chart.obliquity)
         )
         chart_grid[28][18:51] = center_align(
-            'SVP ' + zod_sec(360 - return_chart.ayanamsa)
+            'SVP ' + zod_sec(360 - outermost_chart.ayanamsa)
         )
         chart_grid[29][18:51] = center_align('Sidereal Zodiac')
         chart_grid[30][18:51] = center_align('Campanus Houses')
-        chart_grid[31][18:51] = center_align(return_chart.notes or '')
+        chart_grid[31][18:51] = center_align(outermost_chart.notes or '')
 
         radix = self.find_innermost_chart()
         chart_grid[33][18:51] = center_align('Radical (r) Chart')
@@ -195,7 +205,13 @@ class Biwheel(CoreChart):
                             chart_grid[y[column_index] + sub_index][
                                 x[column_index] : x[column_index] + 16
                             ] = self.insert_planet_into_line(
-                                return_chart, planet, 't', width=16
+                                outermost_chart, planet, 't', width=16
+                            )
+                        elif houses[column_index][sub_index][-1] == 'p':
+                            chart_grid[y[column_index] + sub_index][
+                                x[column_index] : x[column_index] + 16
+                            ] = self.insert_planet_into_line(
+                                chart_for_angles, planet, 'p', width=16
                             )
                         else:
                             chart_grid[y[column_index] + sub_index][
@@ -221,7 +237,14 @@ class Biwheel(CoreChart):
                 if planet_name[-1] == 't':
                     ex += (
                         self.insert_planet_into_line(
-                            return_chart, planet_name[0], 't', True, width=16
+                            outermost_chart, planet_name[0], 't', True, width=16
+                        )
+                        + ' '
+                    )
+                elif planet_name[-1] == 'p':
+                    ex += (
+                        self.insert_planet_into_line(
+                            chart_for_angles, planet_name[0], 'p', True, width=16
                         )
                         + ' '
                     )

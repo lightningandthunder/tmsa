@@ -207,10 +207,6 @@ class MoreSolunars(Frame):
 
         self.syr.checked = more_charts.get('syr', False)
 
-        if self.program_options.quarti_returns_enabled:
-            self.quarti_syr_1.checked = more_charts.get('quarti-syr-1', False)
-            self.quarti_syr_3.checked = more_charts.get('quarti-syr-3', False)
-
         self.lsr.checked = more_charts.get('lsr', False)
         self.dlsr.checked = more_charts.get('demi-lsr', False)
 
@@ -304,10 +300,6 @@ class MoreSolunars(Frame):
 
         self.syr.checked = False
 
-        if self.program_options.quarti_returns_enabled:
-            self.quarti_syr_1.checked = False
-            self.quarti_syr_3.checked = False
-
         self.lsr.checked = False
         self.dlsr.checked = False
 
@@ -353,8 +345,6 @@ class MoreSolunars(Frame):
                     'quarti-solu-3': self.quarti_solilunar_3.checked,
                     'quarti-luso-1': self.quarti_lunisolar_1.checked,
                     'quarti-luso-3': self.quarti_lunisolar_3.checked,
-                    'quarti-syr-1': self.quarti_syr_1.checked,
-                    'quarti-syr-3': self.quarti_syr_3.checked,
                     'quarti-lsr-1': self.quarti_lsr_1.checked,
                     'quarti-lsr-3': self.quarti_lsr_3.checked,
                 }

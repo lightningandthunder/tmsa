@@ -15,6 +15,8 @@ from abc import ABCMeta, abstractmethod
 from datetime import datetime
 from io import TextIOWrapper
 
+import pydash
+
 import src.constants as constants
 import src.models.angles as angles_models
 import src.models.charts as chart_models
@@ -35,7 +37,6 @@ class CoreChart(object, metaclass=ABCMeta):
     halfsums: list[chart_models.HalfSum]
     temporary: bool
 
-    # New, top-level state for some matters
     midpoints = {}
 
     def __init__(
@@ -43,8 +44,10 @@ class CoreChart(object, metaclass=ABCMeta):
         charts: list[chart_models.ChartObject],
         temporary: bool,
         options: option_models.Options,
+        use_progressed_angles: bool = False,
     ):
         self.options = options
+        self.use_progressed_angles = use_progressed_angles
 
         self.charts = sorted(charts, key=lambda x: x.role, reverse=True)
         self.temporary = temporary
@@ -524,7 +527,10 @@ class CoreChart(object, metaclass=ABCMeta):
         bool,
         bool,
     ]:
-        chart = calc_utils.find_outermost_chart(self.charts)
+        if self.use_progressed_angles:
+            chart = pydash.find(self.charts, lambda c: c.role.value == chart_models.ChartWheelRole.PROGRESSED.value)
+        else:
+            chart = calc_utils.find_outermost_chart(self.charts)
 
         angularity_options = self.options.angularity
 
@@ -570,6 +576,10 @@ class CoreChart(object, metaclass=ABCMeta):
                     house_quadrant_position,
                 )
             )
+
+        # Get ecliptical angular contacts
+        if self.use_progressed_angles:
+            pass
 
         aspect_to_asc = abs(chart.cusps[1] - planet.longitude)
         if aspect_to_asc > 180:

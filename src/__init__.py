@@ -16,6 +16,7 @@ from src.defaults.option_defaults import (
     COSMOBIOLOGY,
     INGRESS_DEFAULT,
     NATAL_DEFAULT,
+    PROGRESSED_DEFAULT,
     RETURN_DEFAULT,
     STUDENT_NATAL,
 )
@@ -161,6 +162,12 @@ migrate_from_file(
     os.path.join(OPTION_PATH, 'Student_Natal.opt'),
     os.path.join(OPTION_PATH, 'Student_Natal.opt'),
     fallback=json.dumps(STUDENT_NATAL),
+)
+
+migrate_from_file(
+    'aaaaaaaaaaaaaaaaaaa',
+    os.path.join(OPTION_PATH, 'Progressed_Default.opt'),
+    fallback=json.dumps(PROGRESSED_DEFAULT),
 )
 
 STUDENT_FILE = os.path.join(OPTION_PATH, 'student.json')

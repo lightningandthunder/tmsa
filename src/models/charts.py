@@ -474,6 +474,11 @@ class ChartType(Enum):
 
     YOGA_RETURN = 'Sidereal Yoga Return (SYR)'
 
+    SIDEREAL_NATAL_QUOTIDIAN = 'Sidereal Natal Quotidian'
+    SOLAR_QUOTIDIAN = 'Solar Quotidian'
+    PROGRESSED_QSSR = 'Progressed QSSR'
+    PSSR = 'PSSR'
+
     CAP_SOLAR = 'Capsolar'
     ARI_SOLAR = 'Arisolar'
     CAN_SOLAR = 'Cansolar'

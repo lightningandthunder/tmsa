@@ -240,6 +240,248 @@ RETURN_DEFAULT = {
     'extra_bodies': ['Er'],
 }
 
+TRANSIT_DEFAULT = {
+    'use_Vertex': 0,
+    'Node': 0,
+    'show_aspects': 0,
+    'partile_nf': 1,
+    'aspect_abbreviation': 2,
+    'angularity': {
+        'model': 1,
+        'no_bg': 0,
+        'major_angles': [1.0, 0.0, 0.0],
+        'minor_angles': [1.0, 0.0, 0.0],
+    },
+    'ecliptic_aspects': {
+        '0': [1.0, 0, 0],
+        '180': [1.0, 0, 0],
+        '90': [1.0, 0, 0],
+        '45': [1, 0, 0],
+        '120': [0, 0, 0],
+        '60': [0, 0, 0],
+        '30': [0, 0, 0],
+        '16': [0, 0, 0],
+        '10': [0, 0, 0],
+        '5': [0, 0, 0],
+        '7': [0, 0, 0],
+        '11': [0, 0, 0],
+        '13': [0, 0, 0],
+    },
+    'allowed_ecliptic': {
+        '0': {
+            'full': True,
+        },
+        '180': {
+            'full': True,
+        },
+        '90': {
+            'full': True,
+        },
+        '45': {
+            'full': False,
+        },
+        '120': {
+            'full': False,
+        },
+        '60': {
+            'full': False,
+        },
+        '30': {
+            'full': False,
+        },
+        '16': {
+            'full': False,
+        },
+        '10': {
+            'full': False,
+            'half': False,
+            'quarter': False,
+        },
+        '5': {
+            'full': False,
+            'half': False,
+            'quarter': False,
+        },
+        '7': {
+            'full': False,
+            'half': False,
+            'quarter': False,
+        },
+        '11': {
+            'full': False,
+            'half': False,
+            'quarter': False,
+        },
+        '13': {
+            'full': False,
+            'half': False,
+            'quarter': False,
+        },
+    },
+    'mundane_aspects': {
+        '0': [0, 0, 0],
+        '180': [0, 0, 0],
+        '90': [0, 0, 0],
+        '45': [0, 0, 0],
+    },
+    'allowed_mundane': {
+        '0': {
+            'full': True,
+        },
+        '180': {
+            'full': True,
+        },
+        '90': {
+            'full': True,
+        },
+        '45': {
+            'full': False,
+        },
+    },
+    'midpoints': {
+        'enabled': False,
+        '0': 0,
+        '90': 0,
+        '45': 0,
+        'M': 60,
+        'is90': 'd',
+        'mundane_only_to_angles': True,
+        'cross_wheel_enabled': False,
+    },
+    'pvp_aspects': {
+        'enabled': True,
+        '0': [0, 0, 0],
+        '180': [0, 0, 0],
+        '90': [0, 0, 0],
+    },
+    'paran_aspects': {
+        'enabled': False,
+        '0': [1, 0, 0],
+    },
+    'extra_bodies': ['Er'],
+}
+
+PROGRESSED_DEFAULT = {
+    'use_Vertex': 0,
+    'Node': 0,
+    'show_aspects': 2,
+    'partile_nf': 1,
+    'aspect_abbreviation': 2,
+    'angularity': {
+        'model': 1,
+        'no_bg': 0,
+        'major_angles': [2.0, 0.0, 0.0],
+        'minor_angles': [2.0, 0.0, 0.0],
+    },
+    'ecliptic_aspects': {
+        '0': [1.0, 0, 0],
+        '180': [1.0, 0, 0],
+        '90': [1.0, 0, 0],
+        '45': [1, 0, 0],
+        '120': [0, 0, 0],
+        '60': [0, 0, 0],
+        '30': [0, 0, 0],
+        '16': [0, 0, 0],
+        '10': [0, 0, 0],
+        '5': [0, 0, 0],
+        '7': [0, 0, 0],
+        '11': [0, 0, 0],
+        '13': [0, 0, 0],
+    },
+    'allowed_ecliptic': {
+        '0': {
+            'full': True,
+        },
+        '180': {
+            'full': True,
+        },
+        '90': {
+            'full': True,
+        },
+        '45': {
+            'full': False,
+        },
+        '120': {
+            'full': False,
+        },
+        '60': {
+            'full': False,
+        },
+        '30': {
+            'full': False,
+        },
+        '16': {
+            'full': False,
+        },
+        '10': {
+            'full': False,
+            'half': False,
+            'quarter': False,
+        },
+        '5': {
+            'full': False,
+            'half': False,
+            'quarter': False,
+        },
+        '7': {
+            'full': False,
+            'half': False,
+            'quarter': False,
+        },
+        '11': {
+            'full': False,
+            'half': False,
+            'quarter': False,
+        },
+        '13': {
+            'full': False,
+            'half': False,
+            'quarter': False,
+        },
+    },
+    'mundane_aspects': {
+        '0': [0, 0, 0],
+        '180': [0, 0, 0],
+        '90': [0, 0, 0],
+        '45': [0, 0, 0],
+    },
+    'allowed_mundane': {
+        '0': {
+            'full': True,
+        },
+        '180': {
+            'full': True,
+        },
+        '90': {
+            'full': True,
+        },
+        '45': {
+            'full': False,
+        },
+    },
+    'midpoints': {
+        'enabled': False,
+        '0': 0,
+        '90': 0,
+        '45': 0,
+        'M': 60,
+        'is90': 'd',
+        'mundane_only_to_angles': True,
+        'cross_wheel_enabled': False,
+    },
+    'pvp_aspects': {
+        'enabled': True,
+        '0': [0, 0, 0],
+        '180': [0, 0, 0],
+        '90': [0, 0, 0],
+    },
+    'paran_aspects': {
+        'enabled': False,
+        '0': [1, 0, 0],
+    },
+    'extra_bodies': ['Er'],
+}
+
 INGRESS_DEFAULT = {
     'use_Vertex': 0,
     'Node': 0,

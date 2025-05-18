@@ -14,12 +14,11 @@ import tkinter.filedialog as tkfiledialog
 import tkinter.messagebox as tkmessagebox
 
 from src import *
-from src.constants import DEV_MODE
 from src.models.charts import INGRESSES
 from src.models.options import ProgramOptions
 from src.user_interfaces.more_charts import MoreCharts
 from src.user_interfaces.new_chart import NewChart
-from src.user_interfaces.solunars import Solunars
+from src.user_interfaces.predictive_methods import PredictiveMethods
 from src.user_interfaces.solunars_all_in_one import SolunarsAllInOne
 from src.user_interfaces.widgets import *
 from src.user_interfaces.widgets import main
@@ -75,9 +74,15 @@ class SelectChart(Frame):
             0.2,
             button_color=DISABLED_BUTTON_COLOR,
         )
+
         self.predictive_methods_button.bind(
             '<Button-1>', lambda _: delay(show_not_implemented)
-        )
+        ) 
+
+        # self.predictive_methods_button.bind(
+        #     '<Button-1>', lambda _: delay(self.predictive_methods)
+        # )
+
         Button(self, 'Help', 0.3, 0.25, 0.2).bind(
             '<Button-1>',
             lambda _: delay(
@@ -107,6 +112,28 @@ class SelectChart(Frame):
         self.morebtn.bind('<Button-1>', lambda _: delay(self.more_files))
         self.morebtn.disabled = True
         self.load_files()
+
+    def predictive_methods(self):
+        if self.filename == '':
+            return
+        try:
+            with open(self.filename) as file:
+                chart = json.load(file)
+            if 'version' not in chart:
+                datafile_name = self.filename[0:-3] + 'txt'
+                chart['version'] = parse_version_from_txt_file(datafile_name)
+
+            self.sort_recent()
+            if chart.get('base_chart', None):
+                chart['basechart'] = None
+            main.after(0, self.destroy())
+
+            PredictiveMethods(chart, self.filename)
+        except Exception as e:
+            self.status.error(
+                f"Unable to open file: '{os.path.basename(self.filename)}' : {e}."
+            )
+            return
 
     def resize_recalculate(self):
         width = main.winfo_width()
