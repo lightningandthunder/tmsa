@@ -412,10 +412,16 @@ def find_jd_utc_of_elongation(
         if target_rounded == test_elongation or high <= low:
             break
 
-        elif test_elongation > target_rounded:
-            high = date
+        if (math.fabs(test_elongation - target_rounded) < 180):
+            if test_elongation > target_rounded: 
+                high = date
+            else:
+                low = date
         else:
-            low = date
+            if test_elongation < target_rounded: 
+                high = date
+            else:
+                low = date
 
         previous_check = test_elongation
 

@@ -12,7 +12,7 @@ from src.utils.chart_utils import (
     in_harmonic_range,
 )
 from src.utils.format_utils import to360
-
+from src.user_interfaces.widgets import tkmessagebox
 
 def calc_halfsums(
     options: Options,
@@ -491,6 +491,7 @@ def calc_planetary_needs_strength(
     chart: chart_models.ChartObject,
     aspects_by_class: list[list[chart_models.Aspect]],
 ) -> int:
+
     luminary_strength = 0
     rules_sun_sign = chart.sun_sign in POS_SIGN[planet.short_name]
     rules_moon_sign = chart.moon_sign in POS_SIGN[planet.short_name]
@@ -522,7 +523,7 @@ def calc_planetary_needs_strength(
 
     if luminary_strength > 0 and max_luminary_aspect_strength > 0:
         max_luminary_aspect_strength = max(95, max_luminary_aspect_strength)
-
+        
     if max_luminary_aspect_strength == 0:
         for aspect in aspects_by_class[1]:
             if (
@@ -546,20 +547,20 @@ def calc_planetary_needs_strength(
 
     if luminary_strength > 0 and max_luminary_aspect_strength > 0:
         max_luminary_aspect_strength = max(92, max_luminary_aspect_strength)
-
+        
     stationary_strength = 75 if planet.is_stationary else 0
     if stationary_strength > 0 and luminary_strength > 0:
         stationary_strength = 90
-
+        
     normalized_angularity_strength = planet.angularity_strength
-
+    
     strength = max(
         normalized_angularity_strength,
         luminary_strength,
         max_luminary_aspect_strength,
         stationary_strength,
     )
-
+    
     return min(strength, 100)
 
 
@@ -569,34 +570,34 @@ def find_angle_crossings(
     """Returns a list of angle crossings, as RAMC values, for planetary data.
     They are in the order of rising, culminating, setting, anticulminating.
     """
+    try:
+        geo_co_latitude = 90 - geo_latitude
 
-    ascensional_difference = math.degrees(
-        math.asin(
-            math.tan(math.radians(geo_latitude))
-            * math.tan(math.radians(planet.declination))
+        planet_never_rises = planet.declination > geo_co_latitude
+
+        if planet_never_rises:
+            rising = None
+            setting = None
+        else:
+            ascensional_difference = math.degrees(
+                math.asin(
+                    math.tan(math.radians(geo_latitude))
+                    * math.tan(math.radians(planet.declination))
+                )
+            )
+
+            rising =  to360(planet.right_ascension + ascensional_difference - 90)
+            setting = to360(planet.right_ascension - ascensional_difference + 90)
+
+        return (
+            rising,
+            planet.right_ascension,
+            setting,
+            to360(planet.right_ascension + 180),
         )
-    )
-    geo_co_latitude = 90 - geo_latitude
-
-    planet_never_rises = planet.declination > geo_co_latitude
-
-    rising = (
-        None
-        if planet_never_rises
-        else to360(planet.right_ascension + ascensional_difference - 90)
-    )
-    setting = (
-        None
-        if planet_never_rises
-        else to360(planet.right_ascension - ascensional_difference + 90)
-    )
-
-    return (
-        rising,
-        planet.right_ascension,
-        setting,
-        to360(planet.right_ascension + 180),
-    )
+    except ValueError:
+        tkmessagebox.showerror('Paran calculation error', f"Error calculating parans for planet {planet.name}; it probably doesn't rise or set at the given latitude")
+        return None
 
 
 def calc_major_angle_paran(
@@ -646,6 +647,9 @@ def calc_major_angle_paran(
 
     parans_a = find_angle_crossings(from_planet, geo_latitude)
     parans_b = find_angle_crossings(to_planet, geo_latitude)
+    
+    if not parans_a or not parans_b:
+        return None
 
     aspect = None
     relationship = None
@@ -656,7 +660,12 @@ def calc_major_angle_paran(
 
     # Figure out the aspect as well as the relationship
     for (angle_id_a, crossing_a) in enumerate(parans_a):
+        if crossing_a is None:
+            continue
         for (angle_id_b, crossing_b) in enumerate(parans_b):
+            if crossing_b is None:
+                continue
+
             orb = abs(crossing_a - crossing_b)
             (aspect_type, aspect_class, aspect_orb, strength) = parse_aspect(
                 orb, options, use_paran_orbs=True, allow_harmonics=[1]

@@ -757,7 +757,6 @@ class ChartObject:
             'correction': self.correction,
             'notes': self.notes,
             'options': options_file,
-            'version': self.version,
         }
 
         return data

@@ -46,6 +46,8 @@ class SolunarsAllInOne(Frame):
     def __init__(self, base, filename, program_options: ProgramOptions):
         super().__init__()
         now = dt.utcnow()
+        
+        self.bind_all("<Button-1>", self.on_global_click, add="+")
 
         self._options = (
             CHART_OPTIONS_FULL
@@ -125,8 +127,9 @@ class SolunarsAllInOne(Frame):
         Radiobutton(self, self.longdir, 0, 'East ', 0.6, 0.3, 0.1)
         Radiobutton(self, self.longdir, 1, 'West ', 0.7, 0.3, 0.1)
         self.longdir.value = 1 if si == -1 else 0
-        self.notes = PlaceholderEntry(
-            self, '', 0.3, 0.35, 0.3, placeholder='Notes'
+        
+        self.notes = Entry(
+            self, '', 0.3, 0.35, 0.3,
         )
         self.options = Entry(self, 'Return Default', 0.3, 0.4, 0.3)
         Button(self, 'Select', 0.6, 0.4, 0.1).bind(
@@ -148,7 +151,9 @@ class SolunarsAllInOne(Frame):
         Label(self, 'Location', 0.1, 0.2, 0.15, anchor=tk.W)
         Label(self, 'Lat D M S', 0.1, 0.25, 0.15, anchor=tk.W)
         Label(self, 'Long D M S', 0.1, 0.3, 0.15, anchor=tk.W)
+        Label(self, 'Notes', 0.1, 0.35, 0.15, anchor=tk.W)
         Label(self, 'Options', 0.1, 0.4, 0.15, anchor=tk.W)
+        Label(self, 'Opt. Event', 0.1, 0.45, 0.15, anchor=tk.W)
 
         self.chart_select_frame = tk.Frame(
             self, width=0.5, height=0.5, background=BG_COLOR
@@ -189,6 +194,14 @@ class SolunarsAllInOne(Frame):
             selectbackground=BG_COLOR,
             selectforeground=TXT_COLOR,
         )
+        
+        # The Listbox randomly triggers with no selected entries;
+        # this is needed to gate the "clear" function
+        self.selected_solunars = []
+        self.clicked_clear = False
+        
+        self.last_click_widget = None
+        self.last_click_coords = (0, 0)
 
         Label(self, 'Quick Select', 0.1, 0.55, 0.2, anchor=tk.W)
 
@@ -267,6 +280,23 @@ class SolunarsAllInOne(Frame):
     def old_view(self):
         Solunars(self.base, self.filename)
 
+    def on_global_click(self, event):
+        self.last_click_widget = event.widget
+        self.last_click_coords = (event.x_root, event.y_root)
+
+    def was_last_click_inside_listbox(self):
+        if not hasattr(self, "last_click_coords"):
+            return False
+
+        x, y = self.last_click_coords
+        x1 = self.listbox.winfo_rootx()
+        y1 = self.listbox.winfo_rooty()
+        x2 = x1 + self.listbox.winfo_width()
+        y2 = y1 + self.listbox.winfo_height()
+
+        return x1 <= x <= x2 and y1 <= y <= y2
+
+
     def on_select(self, event):
         if self._in_callback:
             return
@@ -287,6 +317,15 @@ class SolunarsAllInOne(Frame):
         ]
 
         if not selected_indices:
+            # It must've triggered accidentally
+            if not self.clicked_clear and len(self.selected_solunars) > 1:
+                self._in_callback = False
+                return
+
+            if len(self.selected_solunars )== 1 and not self.was_last_click_inside_listbox():
+                self._in_callback = False
+                return
+    
             # We must be unselecting the only selection
             widget.delete(0, tk.END)
 
@@ -296,6 +335,7 @@ class SolunarsAllInOne(Frame):
                     widget.itemconfig(insertion_counter, fg='gray')
 
             self._in_callback = False
+            self.clicked_clear = False
             return
 
         selected_items = []
@@ -343,7 +383,11 @@ class SolunarsAllInOne(Frame):
 
         widget.yview_moveto(scroll_position[0])
 
+        self.selected_solunars = selected_items
+        
         self._in_callback = False
+        self.clicked_clear = False
+        self.last_click_widget = None
 
     def enable_find(self):
         self.findbtn.disabled = False
@@ -404,10 +448,12 @@ class SolunarsAllInOne(Frame):
             if item in already_selected:
                 self.listbox.select_set(i)
 
+        self.selected_solunars = already_selected
         self._in_callback = False
 
     def clear_selections(self):
         self._in_callback = True
+        self.clicked_clear = True
 
         # Rebuild final listbox
         self.listbox.delete(0, tk.END)
@@ -421,6 +467,8 @@ class SolunarsAllInOne(Frame):
         self.listbox.select_clear(0, tk.END)
 
         self._in_callback = False
+        self.clicked_clear = False
+        self.selected_solunars = []
 
     def more_finish(self, selected):
         if selected:
@@ -703,7 +751,7 @@ class SolunarsAllInOne(Frame):
         solars = []
         lunars = []
 
-        for entry in self.listbox.selections:
+        for entry in self.selected_solunars:
             entry = entry.replace('*', '-')
             if entry not in CHART_OPTIONS_FULL:
                 entry = entry.strip('-').strip()
@@ -881,6 +929,7 @@ class SolunarsAllInOne(Frame):
         else:
             self.status.error('No search direction selected.')
 
+        charts_created = 0
         if dates_and_chart_params:
             dates_and_chart_params = sorted(
                 dates_and_chart_params, key=lambda x: -1 * x[1]
@@ -897,7 +946,6 @@ class SolunarsAllInOne(Frame):
             ) in dates_and_chart_params:
                 if previous_date and date == previous_date:
                     continue
-
                 self.make_chart(
                     chart_params,
                     date,
@@ -905,11 +953,12 @@ class SolunarsAllInOne(Frame):
                     chart_class,
                     show=not duration,
                 )
+                charts_created += 1
                 previous_date = date
 
-            s = '' if len(dates_and_chart_params) == 1 else 's'
+            s = '' if charts_created == 1 else 's'
             self.status.text = (
-                f'{len(dates_and_chart_params)} chart{s} created.'
+                f'{charts_created} chart{s} created.'
             )
         else:
             self.status.error('No charts found.')
@@ -1155,7 +1204,7 @@ class SolunarsAllInOne(Frame):
                 ChartType.LAST_QUARTI_LUNISOLAR_RETURN.value,
             ]:
                 target = sun
-                base_start = start
+                start = base_start
 
                 while start <= continue_until_date:
                     next_increment = 29
@@ -1273,53 +1322,53 @@ class SolunarsAllInOne(Frame):
                 while start <= continue_until_date:
 
                     target_elongation = natal_elongation
-                    next_increment = 29
+                    next_increment = 30
 
                     if (
                         lunar_return_type
                         == ChartType.DEMI_LUNAR_SYNODIC_RETURN.value
                     ):
-                        target_elongation = to360(natal_elongation + 180)
-                        next_increment = 14.5
+                        if natal_elongation > 0:
+                            target_elongation = natal_elongation - 180
+                        else:
+                            target_elongation = natal_elongation + 180
+
+                        next_increment = 15
                     elif (
                         lunar_return_type
                         == ChartType.FIRST_QUARTI_LUNAR_SYNODIC_RETURN.value
                     ):
-                        target_elongation = to360(natal_elongation + 90)
-                        next_increment = 7.25
+                        if natal_elongation > 0:
+                            target_elongation = natal_elongation + 90
+                        else:
+                            target_elongation = natal_elongation - 90
+                        next_increment = 7.5
                     elif (
                         lunar_return_type
                         == ChartType.LAST_QUARTI_LUNAR_SYNODIC_RETURN.value
                     ):
-                        target_elongation = to360(natal_elongation + 270)
-                        next_increment = 7.25
+                        if natal_elongation > 0:
+                            target_elongation = natal_elongation - 90
+                        else:
+                            target_elongation = natal_elongation + 90
+                        next_increment = 7.5
 
                     if target_elongation > 180:
-                        target_elongation -= 180
-                        target_elongation *= -1
+                        diff = target_elongation - 180
+                        target_elongation = -1 * (180 - diff)
+
+                    elif target_elongation < -180:
+                        diff = target_elongation + 180
+                        target_elongation = -1 * (-180 - diff)
 
                     lower_bound = start
-                    higher_bound = start + 29.5
-
-                    while True:
-                        date = (lower_bound + higher_bound) / 2
-                        test_elongation = calc_signed_moon_elongation(date)
-                        test_elongation = round(test_elongation, precision)
-
-                        if (
-                            target_elongation == test_elongation
-                            or higher_bound <= lower_bound
-                        ):
-                            break
-
-                        elif test_elongation > target_elongation:
-                            higher_bound = date
-                        else:
-                            lower_bound = date
-
-                    dates_and_chart_params.append(
-                        (params, date, lunar_return_type, chart_class)
-                    )
+                    higher_bound = start + 30
+                    
+                    date = find_jd_utc_of_elongation(target_elongation, lower_bound, higher_bound)
+                    if date:
+                        dates_and_chart_params.append(
+                            (params, date, lunar_return_type, chart_class)
+                        )
                     start += next_increment
 
                 continue
@@ -1911,9 +1960,15 @@ class SolunarsAllInOne(Frame):
 
             date = find_jd_utc_of_elongation(
                 full_lsr_elongation,
-                start - 15,
-                start + 14.5,
+                start - 14.75,
+                start + 14.75,
             )
+            if not date or (date > start and date - start > 1.25):
+                date = find_jd_utc_of_elongation(
+                    full_lsr_elongation,
+                    start - 29.5,
+                    start,
+                )
 
             index = pydash.index_of(
                 lunars, ChartType.LUNAR_SYNODIC_RETURN.value
@@ -1925,12 +1980,6 @@ class SolunarsAllInOne(Frame):
                         (params, date, lunars[index], chart_class)
                     )
                     lunars.pop(index)
-
-                date = find_jd_utc_of_elongation(
-                    full_lsr_elongation,
-                    start - 29.5,
-                    start,
-                )
 
             if index >= 0:
                 found_chart_params.append(
@@ -1948,10 +1997,17 @@ class SolunarsAllInOne(Frame):
                 ChartType.LAST_QUARTI_LUNAR_SYNODIC_RETURN.value,
             ],
         ):
-            demi_elongation = to360(natal_elongation + 180)
+            if natal_elongation > 0:
+                demi_elongation = natal_elongation - 180
+            else:
+                demi_elongation = natal_elongation + 180
+
             if demi_elongation > 180:
-                demi_elongation -= 180
-                demi_elongation *= -1
+                diff = demi_elongation - 180
+                demi_elongation = -1 * (180 - diff)
+            elif demi_elongation < -180:
+                diff = demi_elongation + 180
+                demi_elongation = -1 * (-180 - diff)
 
             date = find_jd_utc_of_elongation(
                 demi_elongation,
@@ -1987,15 +2043,19 @@ class SolunarsAllInOne(Frame):
                 ChartType.LAST_QUARTI_LUNAR_SYNODIC_RETURN.value,
             ],
         ):
-            first_quarti_elongation = to360(natal_elongation + 90)
-            if first_quarti_elongation > 180:
-                first_quarti_elongation -= 180
-                first_quarti_elongation *= -1
+            if natal_elongation > 0: 
+                last_quarti_elongation = natal_elongation + 90
+            else:
+                last_quarti_elongation = natal_elongation - 90
 
-            last_quarti_elongation = -1 * first_quarti_elongation
             if last_quarti_elongation > 180:
-                last_quarti_elongation -= 180
-                last_quarti_elongation *= -1
+                diff = last_quarti_elongation - 180
+                last_quarti_elongation = -1 * (180 - diff)
+            elif last_quarti_elongation < -180:
+                diff = last_quarti_elongation + 180
+                last_quarti_elongation = -1 * (-180 - diff)
+
+            first_quarti_elongation = -1 * last_quarti_elongation
 
             if quarti_start == demi_start:
                 target = first_quarti_elongation
@@ -2014,7 +2074,7 @@ class SolunarsAllInOne(Frame):
                 quarti_start,
                 quarti_start + 29.5,
             )
-            if date - start <= 1.25:
+            if start > date or date - start <= 1.25:
                 found_chart_params.append(
                     (params, date, lunars[index], chart_class)
                 )
