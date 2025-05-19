@@ -23,7 +23,7 @@ from geopy import Nominatim
 from src import *
 from src import swe
 from src.constants import DQ, DS, MONTHS, VERSION
-from src.models.charts import ChartObject, ChartType
+from src.models.charts import ChartObject, ChartType, ChartWheelRole
 from src.models.options import ProgramOptions
 from src.swe import *
 from src.user_interfaces.chart_assembler import assemble_charts
@@ -31,6 +31,7 @@ from src.user_interfaces.locations import Locations
 from src.user_interfaces.more_charts import MoreCharts
 from src.user_interfaces.more_solunars import MoreSolunars
 from src.user_interfaces.widgets import *
+from src.utils.chart_utils import ut_time_correction
 from src.utils.format_utils import (
     display_name,
     normalize_text,
@@ -39,7 +40,10 @@ from src.utils.format_utils import (
 )
 from src.utils.gui_utils import ShowHelp
 from src.utils.os_utils import open_file
-from src.utils.transits.progressions import get_progressed_jd_utc
+from src.utils.transits.progressions import (
+    ProgressionTypes,
+    get_progressed_jd_utc,
+)
 
 
 class PredictiveMethods(Frame):
@@ -161,6 +165,12 @@ class PredictiveMethods(Frame):
         Button(self, 'Clear Selections', 0.5, 0.6, 0.2).bind(
             '<Button-1>', lambda _: delay(self.all_selections, False)
         )
+
+        Label(self, 'Progression Rate', 0.15, 0.65, 0.15, anchor=tk.W)
+        self.mean_or_apparent = Radiogroup(self)
+        Radiobutton(self, self.mean_or_apparent, 0, 'Mean', 0.3, 0.65, 0.1)
+        Radiobutton(self, self.mean_or_apparent, 1, 'Apparent', 0.4, 0.65, 0.1)
+        self.mean_or_apparent.value = 0
 
         self.istemp = Radiogroup(self)
         Radiobutton(self, self.istemp, 0, 'Permanent Charts', 0.3, 0.7, 0.25)
@@ -499,10 +509,6 @@ class PredictiveMethods(Frame):
             y = -y + 1
             self.datey.text = y
             self.bce.checked = True
-        if y < 1 or y > 3000:
-            return self.status.error(
-                'Year must be between 1 and 3000.', self.datey
-            )
         if self.bce.checked:
             y = -y + 1
         params['year'] = y
@@ -609,12 +615,8 @@ class PredictiveMethods(Frame):
         params['type'] = ChartType.SIDEREAL_NATAL_QUOTIDIAN.value
         params['use_transit'] = False
 
-        base_julian_day = swe.julday(
-            params['base_chart']['year'],
-            params['base_chart']['month'],
-            params['base_chart']['day'],
-            params['base_chart']['time'] + params['base_chart']['correction'],
-            params['base_chart']['style'],
+        radix = ChartObject(params['base_chart']).with_role(
+            ChartWheelRole.RADIX
         )
 
         target_julian_day = swe.julday(
@@ -626,10 +628,28 @@ class PredictiveMethods(Frame):
         )
 
         progressed_jd = get_progressed_jd_utc(
-            base_julian_day, target_julian_day
+            base_jd=radix.julian_day_utc,
+            target_jd=target_julian_day,
+            radix_sun_longitude=radix.planets['Sun'].longitude,
+            progression_type=ProgressionTypes.Q2.value,
         )
+
         (p_year, p_month, p_day, p_time) = swe.revjul(
             progressed_jd, params['style']
+        )
+
+        p_hour = int(p_time)
+        p_min = int((p_time - (int(p_time))) * 60)
+        p_sec = int(
+            (
+                ((p_time - (int(p_time))) * 60)
+                - int((p_time - (int(p_time))) * 60)
+            )
+            * 60
+        )
+
+        print(
+            f'Derived progression date: {p_hour}:{p_min}:{p_sec} - {p_month} {p_day} {p_year}'
         )
 
         params['name'] = params['base_chart']['name']
@@ -640,6 +660,7 @@ class PredictiveMethods(Frame):
             'day': p_day,
             'time': p_time,
             'zone': 'UT',
+            'correction': 0,
             'type': ChartType.SIDEREAL_NATAL_QUOTIDIAN.value,
             'location': params['location'],
             'longitude': params['longitude'],

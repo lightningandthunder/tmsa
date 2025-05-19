@@ -388,6 +388,34 @@ def fmt_hms(time):
     return f'{hour:2d}:{minute:02d}:{sec:02d}{day}'
 
 
+def ut_time_correction(time):
+    day = 0
+    if time >= 24:
+        day = 1
+        time -= 24
+    elif time < 0:
+        day = -1
+        time += 24
+    hour = int(time)
+    time = (time - hour) * 60
+    minute = int(time)
+    time = (time - minute) * 60
+    sec = round(time)
+    if sec == 60:
+        sec = 0
+        minute += 1
+    if minute == 60:
+        minute = 0
+        hour += 1
+    if hour == 24:
+        hour = 0
+        day += 1
+
+    corrected_time = hour + (minute / 60) + (sec / 3600)
+
+    return (day, corrected_time)
+
+
 def fmt_lat(value, nosec=False):
     sym = 'N'
     if value < 0:

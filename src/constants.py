@@ -11,7 +11,7 @@ import os
 import sys
 from typing import TypedDict
 
-VERSION = '0.7.0a11'
+VERSION = '0.7.0a12'
 
 DS = '\u00B0'
 DQ = '"'
@@ -19,8 +19,8 @@ SQ = "'"
 
 PLATFORM = None
 
-PROGRESSION_Q1 = 0.00273032809
-PROGRESSION_Q2 = 0.00273780311
+# PROGRESSION_Q1 = 0.00273032809
+# PROGRESSION_Q2 = 0.00273780311
 
 DEV_MODE = False
 

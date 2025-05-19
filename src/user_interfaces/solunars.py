@@ -538,10 +538,6 @@ class Solunars(Frame):
             y = -y + 1
             self.datey.text = y
             self.bce.checked = True
-        if y < 1 or y > 3000:
-            return self.status.error(
-                'Year must be between 1 and 3000.', self.datey
-            )
         if self.bce.checked:
             y = -y + 1
         chart['year'] = y

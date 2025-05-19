@@ -223,9 +223,6 @@ class NewChart(Frame):
         if not self.bce.checked and y < 1:
             self.datey.text = -y + 1
             self.bce.checked = True
-        if y < 1 or y > 3000:
-            self.status.error('Year must be between 1 and 3000.', self.datey)
-            return False
         if self.bce.checked:
             y = -y + 1
         if m < 1 or m > 12:
@@ -752,10 +749,6 @@ class NewChart(Frame):
             y = -y + 1
             self.datey.text = y
             self.bce.checked = True
-        if y < 1 or y > 3000:
-            return self.status.error(
-                'Year must be between 1 and 3000.', self.datey
-            )
         if self.bce.checked:
             y = -y + 1
         chart['year'] = y

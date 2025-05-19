@@ -16,7 +16,8 @@
 - Fixed bug where midpoint halfsums would get calculated more than once, wasting time
 - Removed "use raw" toggle for angularity strength. Data table angularity and Needs Hierarchy angularity strength now use the original 0-100% scale, and angle-contact aspects are now scored exactly the same as other aspects (0-100%).
 - "Burst" chart calculation now displays charts (mostly) in chronological order.
-- Greatly increased the number of included ephemeris files, extending the temporal range TM covers to about 10,000 BCE to approximately 3,600 CE.
+- Renamed the Solunar chart search options from Active, Forward, Backward to Active, Nearest, and Next, where Nearest replaces Backward. "Burst" calculation works for all 3.
+- Greatly increased the number of included ephemeris files, extending the temporal range TM covers to about 10,000 BCE to approximately 3,600 CE. Entering dates outside of this range will give nonsensical results.
 - Greatly reduced the amount of information stored in data files, which means we will always recalculate all of it. Got rid of the notion of charts being "out of date" since they are always calculated fresh (unless you just open the .txt file with the calculated chart output).
 
 
