@@ -50,7 +50,6 @@ class PredictiveMethods(Frame):
 
         self.program_options = ProgramOptions.from_file(PROGRAM_OPTION_PATH)
 
-
         self.base = base
         self.filename = filename
         self.fnlbl = Label(self, display_name(filename), 0, 0, 1)
@@ -140,11 +139,17 @@ class PredictiveMethods(Frame):
         self.transits_to_natal = Checkbutton(self, 'Natal', 0.3, 0.5, 0.1)
         self.transits_to_ssr = Checkbutton(self, 'SSR', 0.4, 0.5, 0.1)
 
-        self.transits_to_progressed_natal = Checkbutton(self, 'p Natal', 0.5, 0.5, 0.1)
-        self.transits_to_solar_quotidian = Checkbutton(self, 'SQ', 0.6, 0.5, 0.1)
+        self.transits_to_progressed_natal = Checkbutton(
+            self, 'p Natal', 0.5, 0.5, 0.1
+        )
+        self.transits_to_solar_quotidian = Checkbutton(
+            self, 'SQ', 0.6, 0.5, 0.1
+        )
 
         Label(self, 'Progressions', 0.15, 0.55, 0.3, anchor=tk.W)
-        self.sidereal_natal_quotidian = Checkbutton(self, 'SNQ', 0.3, 0.55, 0.1)
+        self.sidereal_natal_quotidian = Checkbutton(
+            self, 'SNQ', 0.3, 0.55, 0.1
+        )
         self.solar_quotidian = Checkbutton(self, 'SQ', 0.4, 0.55, 0.1)
 
         self.pssr = Checkbutton(self, 'PSSR', 0.5, 0.55, 0.1)
@@ -165,10 +170,12 @@ class PredictiveMethods(Frame):
         Button(self, 'Calculate', 0, 0.95, 0.2).bind(
             '<Button-1>', lambda _: delay(self.calculate)
         )
-    
+
         Button(self, 'Help', 0.2, 0.95, 0.2).bind(
             '<Button-1>',
-            lambda _: delay(ShowHelp, os.path.join(HELP_PATH, 'predictive.txt')),
+            lambda _: delay(
+                ShowHelp, os.path.join(HELP_PATH, 'predictive.txt')
+            ),
         )
 
         Button(self, 'Clear', 0.6, 0.95, 0.2).bind(
@@ -200,7 +207,6 @@ class PredictiveMethods(Frame):
         self.solar_quotidian.checked = value
         self.pssr.checked = value
         self.progressed_qssr.checked = value
-
 
     def more_finish(self, selected):
         if selected:
@@ -619,11 +625,15 @@ class PredictiveMethods(Frame):
             params['style'],
         )
 
-        progressed_jd = get_progressed_jd_utc(base_julian_day, target_julian_day)
-        (p_year, p_month, p_day, p_time) = swe.revjul(progressed_jd, params['style'])
-        
+        progressed_jd = get_progressed_jd_utc(
+            base_julian_day, target_julian_day
+        )
+        (p_year, p_month, p_day, p_time) = swe.revjul(
+            progressed_jd, params['style']
+        )
+
         params['name'] = params['base_chart']['name']
-        
+
         params['progressed_chart'] = {
             'year': p_year,
             'month': p_month,
@@ -637,8 +647,9 @@ class PredictiveMethods(Frame):
             'name': params['base_chart']['name'],
         }
 
-        self.make_chart(params, progressed_jd, ChartType.SIDEREAL_NATAL_QUOTIDIAN, 'Q')
-
+        self.make_chart(
+            params, progressed_jd, ChartType.SIDEREAL_NATAL_QUOTIDIAN, 'Q'
+        )
 
     def make_chart(self, params, date, chtype, cclass, show=True):
         cchart = deepcopy(params)

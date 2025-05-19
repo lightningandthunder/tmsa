@@ -51,10 +51,14 @@ class Biwheel(CoreChart):
 
         outermost_chart = calc_utils.find_outermost_chart(self.charts)
         self.cclass = self.get_return_class(outermost_chart)
-        
+
         chart_for_angles = outermost_chart
         if self.use_progressed_angles:
-            chart_for_angles = pydash.find(self.charts, lambda c: c.role.value == chart_models.ChartWheelRole.PROGRESSED.value)
+            chart_for_angles = pydash.find(
+                self.charts,
+                lambda c: c.role.value
+                == chart_models.ChartWheelRole.PROGRESSED.value,
+            )
 
         chartfile.write('\n')
         for column_index in range(cols):
@@ -237,14 +241,22 @@ class Biwheel(CoreChart):
                 if planet_name[-1] == 't':
                     ex += (
                         self.insert_planet_into_line(
-                            outermost_chart, planet_name[0], 't', True, width=16
+                            outermost_chart,
+                            planet_name[0],
+                            't',
+                            True,
+                            width=16,
                         )
                         + ' '
                     )
                 elif planet_name[-1] == 'p':
                     ex += (
                         self.insert_planet_into_line(
-                            chart_for_angles, planet_name[0], 'p', True, width=16
+                            chart_for_angles,
+                            planet_name[0],
+                            'p',
+                            True,
+                            width=16,
                         )
                         + ' '
                     )

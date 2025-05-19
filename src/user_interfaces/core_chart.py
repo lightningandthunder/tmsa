@@ -528,7 +528,11 @@ class CoreChart(object, metaclass=ABCMeta):
         bool,
     ]:
         if self.use_progressed_angles:
-            chart = pydash.find(self.charts, lambda c: c.role.value == chart_models.ChartWheelRole.PROGRESSED.value)
+            chart = pydash.find(
+                self.charts,
+                lambda c: c.role.value
+                == chart_models.ChartWheelRole.PROGRESSED.value,
+            )
         else:
             chart = calc_utils.find_outermost_chart(self.charts)
 

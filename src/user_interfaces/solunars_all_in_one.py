@@ -46,8 +46,8 @@ class SolunarsAllInOne(Frame):
     def __init__(self, base, filename, program_options: ProgramOptions):
         super().__init__()
         now = dt.utcnow()
-        
-        self.bind_all("<Button-1>", self.on_global_click, add="+")
+
+        self.bind_all('<Button-1>', self.on_global_click, add='+')
 
         self._options = (
             CHART_OPTIONS_FULL
@@ -127,9 +127,13 @@ class SolunarsAllInOne(Frame):
         Radiobutton(self, self.longdir, 0, 'East ', 0.6, 0.3, 0.1)
         Radiobutton(self, self.longdir, 1, 'West ', 0.7, 0.3, 0.1)
         self.longdir.value = 1 if si == -1 else 0
-        
+
         self.notes = Entry(
-            self, '', 0.3, 0.35, 0.3,
+            self,
+            '',
+            0.3,
+            0.35,
+            0.3,
         )
         self.options = Entry(self, 'Return Default', 0.3, 0.4, 0.3)
         Button(self, 'Select', 0.6, 0.4, 0.1).bind(
@@ -194,12 +198,12 @@ class SolunarsAllInOne(Frame):
             selectbackground=BG_COLOR,
             selectforeground=TXT_COLOR,
         )
-        
+
         # The Listbox randomly triggers with no selected entries;
         # this is needed to gate the "clear" function
         self.selected_solunars = []
         self.clicked_clear = False
-        
+
         self.last_click_widget = None
         self.last_click_coords = (0, 0)
 
@@ -229,18 +233,12 @@ class SolunarsAllInOne(Frame):
         Radiobutton(self, self.search, 0, 'Active', 0.6, 0.6, 0.3).bind(
             '<Button-1>', lambda _: delay(self.update_search_direction, 0)
         )
-        Radiobutton(self, self.search, 1, 'Forward', 0.6, 0.65, 0.3).bind(
-            '<Button-1>', lambda _: delay(self.update_search_direction, 1)
-        )
-
-        self.backwards = Radiobutton(
-            self, self.search, 2, 'Backward', 0.6, 0.7, 0.3
-        )
-        self.backwards.bind(
+        Radiobutton(self, self.search, 1, 'Nearest', 0.6, 0.65, 0.3).bind(
             '<Button-1>', lambda _: delay(self.update_search_direction, 2)
         )
-
-        self.backwards.config(state=tk.DISABLED)
+        Radiobutton(self, self.search, 2, 'Next', 0.6, 0.7, 0.3).bind(
+            '<Button-1>', lambda _: delay(self.update_search_direction, 1)
+        )
 
         self.init = True
 
@@ -251,7 +249,7 @@ class SolunarsAllInOne(Frame):
             self, 'All Selected For Months:', 0.6, 0.75, 0.3
         )
 
-        self.burst_month_duration = Entry(self, 6, 0.6, 0.8, 0.025)
+        self.burst_month_duration = Entry(self, 6, 0.6, 0.8, 0.05)
 
         self.istemp = Radiogroup(self)
         Radiobutton(self, self.istemp, 0, 'Permanent Charts', 0.3, 0.5, 0.25)
@@ -278,6 +276,7 @@ class SolunarsAllInOne(Frame):
         self.status = Label(self, '', 0, 0.9, 1)
 
     def old_view(self):
+        main.after(0, self.destroy())
         Solunars(self.base, self.filename)
 
     def on_global_click(self, event):
@@ -285,7 +284,7 @@ class SolunarsAllInOne(Frame):
         self.last_click_coords = (event.x_root, event.y_root)
 
     def was_last_click_inside_listbox(self):
-        if not hasattr(self, "last_click_coords"):
+        if not hasattr(self, 'last_click_coords'):
             return False
 
         x, y = self.last_click_coords
@@ -295,7 +294,6 @@ class SolunarsAllInOne(Frame):
         y2 = y1 + self.listbox.winfo_height()
 
         return x1 <= x <= x2 and y1 <= y <= y2
-
 
     def on_select(self, event):
         if self._in_callback:
@@ -322,10 +320,13 @@ class SolunarsAllInOne(Frame):
                 self._in_callback = False
                 return
 
-            if len(self.selected_solunars )== 1 and not self.was_last_click_inside_listbox():
+            if (
+                len(self.selected_solunars) == 1
+                and not self.was_last_click_inside_listbox()
+            ):
                 self._in_callback = False
                 return
-    
+
             # We must be unselecting the only selection
             widget.delete(0, tk.END)
 
@@ -384,7 +385,7 @@ class SolunarsAllInOne(Frame):
         widget.yview_moveto(scroll_position[0])
 
         self.selected_solunars = selected_items
-        
+
         self._in_callback = False
         self.clicked_clear = False
         self.last_click_widget = None
@@ -905,7 +906,7 @@ class SolunarsAllInOne(Frame):
                     open_file(filename)
         self.save_location(params)
 
-        dates_and_chart_params = {}
+        dates_and_chart_params = []
 
         duration = None
         if self.toggle_burst.checked:
@@ -914,17 +915,50 @@ class SolunarsAllInOne(Frame):
         if self.search.value == 0:
             dates_and_chart_params = self.active_search(params, solars, lunars)
             if duration:
-                burst_chart_params = self.directional_search(
+                burst_chart_params = self.forward_search(
                     params, solars, lunars, burst_months=duration
                 )
                 dates_and_chart_params += burst_chart_params
         elif self.search.value == 1:
-            dates_and_chart_params = self.directional_search(
-                params, solars, lunars, burst_months=duration
+            start_date = julday(
+                params['year'],
+                params['month'],
+                params['day'],
+                params['time'],
+                params['style'],
             )
+            active_chart_params = self.active_search(params, solars, lunars)
+            forward_chart_params = self.forward_search(params, solars, lunars)
+
+            for chart_type in solars + lunars:
+                active_chart_info = pydash.find(
+                    active_chart_params, lambda p: p[2] == chart_type
+                ) or ({}, 0, None, None)
+                future_chart_info = pydash.find(
+                    forward_chart_params, lambda p: p[2] == chart_type
+                )
+
+                active_difference = math.fabs(
+                    active_chart_info[1] - start_date
+                )
+                future_difference = math.fabs(
+                    future_chart_info[1] - start_date
+                )
+
+                if active_difference < future_difference:
+                    dates_and_chart_params.append(active_chart_info)
+                else:
+                    dates_and_chart_params.append(future_chart_info)
+
+            if duration:
+                burst_chart_params = self.forward_search(
+                    params, solars, lunars, burst_months=duration
+                )
+                dates_and_chart_params += burst_chart_params
+
         elif self.search.value == 2:
-            dates_and_chart_params = self.directional_search(
-                params, solars, lunars, reverse=True, burst_months=duration
+            dates_and_chart_params = self.forward_search(
+                params, solars, lunars, burst_months=duration
             )
         else:
             self.status.error('No search direction selected.')
@@ -937,6 +971,7 @@ class SolunarsAllInOne(Frame):
 
             # skip duplicates, which can easily happen with demis
             previous_date = None
+            previous_solunar_type = None
 
             for (
                 chart_params,
@@ -944,8 +979,14 @@ class SolunarsAllInOne(Frame):
                 solunar_type,
                 chart_class,
             ) in dates_and_chart_params:
-                if previous_date and date == previous_date:
+                if (
+                    previous_date
+                    and date == previous_date
+                    and previous_solunar_type
+                    and solunar_type == previous_solunar_type
+                ):
                     continue
+
                 self.make_chart(
                     chart_params,
                     date,
@@ -955,20 +996,18 @@ class SolunarsAllInOne(Frame):
                 )
                 charts_created += 1
                 previous_date = date
+                previous_solunar_type = solunar_type
 
             s = '' if charts_created == 1 else 's'
-            self.status.text = (
-                f'{charts_created} chart{s} created.'
-            )
+            self.status.text = f'{charts_created} chart{s} created.'
         else:
             self.status.error('No charts found.')
 
-    def directional_search(
+    def forward_search(
         self,
         params: dict,
         solars: list[str],
         lunars: list[str],
-        reverse=False,
         burst_months=None,
     ):
         dates_and_chart_params: list[tuple[any]] = []
@@ -1004,7 +1043,6 @@ class SolunarsAllInOne(Frame):
                 start = base_start
 
                 while start <= continue_until_date:
-                    # starting_date = start if not reverse else start - 367
 
                     target = sun
                     next_increment = 366
@@ -1026,8 +1064,6 @@ class SolunarsAllInOne(Frame):
                         next_increment = 92
 
                     date = calc_sun_crossing(target, start)
-                    # if reverse and date > starting_date:
-                    #     date = calc_sun_crossing(target, starting_date - 367)
 
                     start += next_increment
 
@@ -1052,7 +1088,6 @@ class SolunarsAllInOne(Frame):
                     increment = 10
                     period_length = 11
 
-                # starting_date = start if not reverse else start - (period_length / 2)
                 while start <= continue_until_date:
 
                     while True:
@@ -1066,8 +1101,6 @@ class SolunarsAllInOne(Frame):
                         break
 
                     date = calc_sun_crossing(target, start)
-                    if reverse and date > start:
-                        pass
 
                     dates_and_chart_params.append(
                         (params, date, solar_return_type, chart_class)
@@ -1363,8 +1396,10 @@ class SolunarsAllInOne(Frame):
 
                     lower_bound = start
                     higher_bound = start + 30
-                    
-                    date = find_jd_utc_of_elongation(target_elongation, lower_bound, higher_bound)
+
+                    date = find_jd_utc_of_elongation(
+                        target_elongation, lower_bound, higher_bound
+                    )
                     if date:
                         dates_and_chart_params.append(
                             (params, date, lunar_return_type, chart_class)
@@ -1981,7 +2016,7 @@ class SolunarsAllInOne(Frame):
                     )
                     lunars.pop(index)
 
-            if index >= 0:
+            elif index >= 0:
                 found_chart_params.append(
                     (params, date, lunars[index], chart_class)
                 )
@@ -2043,7 +2078,7 @@ class SolunarsAllInOne(Frame):
                 ChartType.LAST_QUARTI_LUNAR_SYNODIC_RETURN.value,
             ],
         ):
-            if natal_elongation > 0: 
+            if natal_elongation > 0:
                 last_quarti_elongation = natal_elongation + 90
             else:
                 last_quarti_elongation = natal_elongation - 90

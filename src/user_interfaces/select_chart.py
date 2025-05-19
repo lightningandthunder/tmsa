@@ -77,7 +77,7 @@ class SelectChart(Frame):
 
         self.predictive_methods_button.bind(
             '<Button-1>', lambda _: delay(show_not_implemented)
-        ) 
+        )
 
         # self.predictive_methods_button.bind(
         #     '<Button-1>', lambda _: delay(self.predictive_methods)
@@ -355,7 +355,6 @@ class SelectChart(Frame):
             self.sort_recent()
             if chart.get('base_chart', None):
                 chart['basechart'] = None
-            main.after(0, self.destroy())
 
             SolunarsAllInOne(chart, self.filename, self.program_options)
         except Exception as e:

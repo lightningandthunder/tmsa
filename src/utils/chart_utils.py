@@ -524,7 +524,9 @@ def make_chart_path(params, temporary, is_ingress=False):
             index = first.find(';')
             if index > -1:
                 first = first[0:index]
-            second = f"{params['year']}-{params['month']:02d}-{params['day']:02d}"
+            second = (
+                f"{params['year']}-{params['month']:02d}-{params['day']:02d}"
+            )
             third = params['type']
     else:
         if ingress:

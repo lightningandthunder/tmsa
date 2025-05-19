@@ -23,7 +23,7 @@ from geopy import Nominatim
 from src import *
 from src import swe
 from src.constants import DQ, DS, MONTHS, VERSION
-from src.models.charts import ChartObject, ChartType
+from src.models.charts import ChartObject, ChartType, ChartWheelRole
 from src.models.options import ProgramOptions
 from src.swe import *
 from src.user_interfaces.chart_assembler import assemble_charts
@@ -759,6 +759,13 @@ class Solunars(Frame):
                 if os.path.exists(filename):
                     open_file(filename)
         self.save_location(chart)
+
+        chart['radix'] = ChartObject(self.base).with_role(ChartWheelRole.RADIX)
+        chart['base_chart']['Sun'] = [chart['radix'].planets['Sun'].longitude]
+        chart['base_chart']['Moon'] = [
+            chart['radix'].planets['Moon'].longitude
+        ]
+
         if self.oneyear.checked:
             self.burst(chart, solunars)
         elif self.search.value == 0:
