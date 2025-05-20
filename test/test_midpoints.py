@@ -3,9 +3,7 @@ from test.mocks.mockfile import MockFile
 
 
 class TestMidpoints:
-    def test_anything(
-        self, monkeypatch, mock_tk_main
-    ):
+    def test_anything(self, monkeypatch, mock_tk_main):
         mockfile = MockFile()
         monkeypatch.setattr('builtins.open', lambda _, __: mockfile)
 
@@ -14,11 +12,11 @@ class TestMidpoints:
         # In natal: List all mundane contacts to major angles.
 
         # Assume 2 planets are straddling ascendant...
-            # Ecliptic On / Direct: list as Asc.
-            # Ecliptic On / Indirect: list as Asc.
-            # Ecliptic No / Direct: list as Zenith. 
-            #   (i.e. include even if ecliptic is off)
-            # Ecliptic No / Indirect: Not listed.
+        # Ecliptic On / Direct: list as Asc.
+        # Ecliptic On / Indirect: list as Asc.
+        # Ecliptic No / Direct: list as Zenith.
+        #   (i.e. include even if ecliptic is off)
+        # Ecliptic No / Indirect: Not listed.
 
         # Ingress PVL, at least one planet angular in PVL: counts.
         # Ingress PVL, neither planet angular in PVL: doesn't count.

@@ -16,16 +16,15 @@ class TestBiwheelDisplay:
 
         mockfile = MockFile()
         monkeypatch.setattr('builtins.open', lambda _, __: mockfile)
-        
+
         options = model_option.Options(return_options)
-        
+
         radix = ChartObject(ssr['base_chart']).with_role(ChartWheelRole.RADIX)
         return_chart = ChartObject(ssr).with_role(ChartWheelRole.TRANSIT)
-        
+
         Biwheel([return_chart, radix], temporary=True, options=options)
 
         lines = mockfile.file.split('\n')
-
 
         assert_line_contains(
             lines[20], 'Transiting (t) Chart', any_position=True
@@ -78,9 +77,8 @@ class TestBiwheelDisplay:
 
     #     BiwheelV3(charts=[radix, ssr], temporary=True, options=options)
 
-
     #     lines = mockfile.file.split('\n')
-        
+
     #     assert_line_contains(
     #         lines[70].strip(),
     #         "Mo 17Vi 8'16\"  4S 9 +11°54' 189° 9'  8S28  73°16' -30°39' 189°41'  31°45'  50%",
