@@ -1247,7 +1247,9 @@ class CoreChart(object, metaclass=ABCMeta):
             chartfile.write(chart_utils.left_align(planet_data.short_name, 3))
 
             # Write planet data to info table
-            chartfile.write(chart_utils.zod_sec(planet_data.longitude))
+            chartfile.write(
+                chart_utils.zod_sec_with_sign(planet_data.longitude)
+            )
 
             # Put stationary marker if necessary
             if planet_data.is_stationary:

@@ -23,7 +23,7 @@ from src.utils.chart_utils import (
     fmt_hms,
     fmt_lat,
     fmt_long,
-    zod_sec,
+    zod_sec_with_sign,
 )
 
 
@@ -142,7 +142,7 @@ class Biwheel(CoreChart):
             'OE ' + fmt_dms(outermost_chart.obliquity)
         )
         chart_grid[28][18:51] = center_align(
-            'SVP ' + zod_sec(360 - outermost_chart.ayanamsa)
+            'SVP ' + zod_sec_with_sign(360 - outermost_chart.ayanamsa)
         )
         chart_grid[29][18:51] = center_align('Sidereal Zodiac')
         chart_grid[30][18:51] = center_align('Campanus Houses')
@@ -179,7 +179,7 @@ class Biwheel(CoreChart):
         chart_grid[40][18:51] = center_align('RAMC ' + fmt_dms(radix.ramc))
         chart_grid[41][18:51] = center_align('OE ' + fmt_dms(radix.obliquity))
         chart_grid[42][18:51] = center_align(
-            'SVP ' + zod_sec(360 - radix.ayanamsa)
+            'SVP ' + zod_sec_with_sign(360 - radix.ayanamsa)
         )
         chart_grid[43][18:51] = center_align('Sidereal Zodiac')
         chart_grid[44][18:51] = center_align('Campanus Houses')

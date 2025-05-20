@@ -10,18 +10,14 @@
 import math
 import os
 from io import TextIOWrapper
-from typing import Iterator
 
 from src import *
 from src import constants, swe
-from src.models.angles import (
-    ForegroundAngles,
-    MinorAngles,
-    NonForegroundAngles,
-)
-from src.models.options import AngularityModel, NodeTypes, Options
+from src.models.charts import Aspect, ChartObject, ChartWheelRole, PlanetData
+from src.models.options import Options
 from src.user_interfaces.widgets import *
 from src.utils.format_utils import to360
+from src.utils.novien import calc_novien_longitude, calc_successive_noviens
 
 SIGNS_SHORT = [
     'Ar',
@@ -84,22 +80,6 @@ def convert_short_name_to_long(name: str) -> str:
         if constants.PLANETS[planet]['short_name'] == name:
             return planet
 
-
-DEFAULT_ECLIPTICAL_ORBS = {
-    '0': [3.0, 7.0, 10.0],
-    '180': [3.0, 7.0, 10.0],
-    '90': [3.0, 6.0, 7.5],
-    '45': [1.0, 2.0, 0],
-    '120': [3.0, 6.0, 7.5],
-    '60': [3.0, 6.0, 7.5],
-    '30': [0, 0, 0],
-}
-DEFAULT_MUNDANE_ORBS = {
-    '0': [3.0, 0, 0],
-    '180': [3.0, 0, 0],
-    '90': [3.0, 0, 0],
-    '45': [0, 0, 0],
-}
 
 RULERSHIPS = {
     'Ar': ['Su', 'Pl'],
@@ -314,7 +294,7 @@ def zod_min(value):
     return f'{(deg % 30) or d:2d}{SIGNS_SHORT[(deg // 30) + s]}{minute:2d}'
 
 
-def zod_sec(value):
+def zod_sec_with_sign(value):
     value %= 360
     deg = int(value)
     value = (value - deg) * 60
@@ -700,3 +680,148 @@ def truncate(number, digits) -> float:
 
 def includes_any(collection: list[any], elements: list[any]):
     return len(list(set(collection) & set(elements))) > 0
+
+
+def write_novien_data_table_to_file(
+    chart: ChartObject, options: Options, chartfile: TextIOWrapper
+) -> dict[str, PlanetData]:
+    novien_planets: dict[str, PlanetData] = {}
+
+    # Calculate novien positions
+    for [key, data] in chart.iterate_points(options):
+        novien_longitude = calc_novien_longitude(data.longitude)
+        novien_planets[key] = PlanetData(
+            name=key,
+            short_name=data.short_name,
+            number=data.number,
+            longitude=novien_longitude,
+            latitude=0,
+            speed=data.speed * 9,
+            right_ascension=0,
+            declination=0,
+            azimuth=0,
+            role=ChartWheelRole.NOVIEN,
+            is_stationary=data.is_stationary,
+        )
+
+    moon_noviens = calc_successive_noviens(
+        novien_planets['Moon'].longitude, first_already_novien=True
+    )
+    sun_noviens = calc_successive_noviens(
+        novien_planets['Sun'].longitude, first_already_novien=True
+    )
+
+    # Headers
+    chartfile.write('Pl  Nov. Long   Speed   Natal Long\n')
+
+    # Set up the extra fields floating off to the side, by row index
+
+    extras = [
+        "Moon's Noviens",
+        f'1 {zod_sec_with_sign(moon_noviens[0])}',
+        f'2 {zod_sec_with_sign(moon_noviens[1])}',
+        f'3 {zod_sec_with_sign(moon_noviens[2])}',
+        '',
+        "Sun's Noviens" f'1 {zod_sec_with_sign(sun_noviens[0])}',
+        f'2 {zod_sec_with_sign(sun_noviens[1])}',
+        f'3 {zod_sec_with_sign(sun_noviens[2])}',
+    ]
+
+    for (index, (key, data)) in enumerate(novien_planets.items()):
+        chartfile.write(left_align(data.short_name, 3))
+
+        # Write planet data to info table
+        chartfile.write(zod_sec_with_sign(data.longitude))
+
+        if data.is_stationary:
+            chartfile.write('S')
+        else:
+            chartfile.write(' ')
+
+        if abs(data.speed) >= 1:
+            chartfile.write(signed_degree_minute(data.speed) + ' ')
+        else:
+            chartfile.write(signed_minute_second(data.speed) + ' ')
+
+        if index < len(extras):
+            chartfile.write(extras[index])
+
+    return novien_planets
+
+
+def write_novien_aspectarian(
+    aspects_by_class: list[list[Aspect]],
+    chartfile: TextIOWrapper,
+    table_width: int,
+):
+    aspect_class_headers = [
+        '    Class 1    ',
+        '    Class 2    ',
+        'Novien-to-Natal',
+    ]
+
+    # find aspect width by finding the longest aspect name
+    aspect_width = 0
+    for aspect_class in aspects_by_class:
+        if aspect_class:
+            aspect_width = len(str(aspect_class[0]))
+            break
+
+    if len(aspects_by_class[2]) and not len(aspects_by_class[1]):
+        del aspects_by_class[1]
+        del aspect_class_headers[1]
+
+    if any(
+        [
+            True
+            for aspect_class in aspect_class_headers
+            if len(aspect_class) > 0
+        ]
+    ):
+        chartfile.write('-' * table_width + '\n')
+
+        # Class 1
+        left_header = aspect_class_headers[0]
+
+        chartfile.write(
+            center_align(
+                left_header,
+                width=max(aspect_width, len(left_header)),
+            )
+        )
+
+        center_header = aspect_class_headers[1]
+
+        # This represents how much of a shift right there is between
+        # the left-aligned first column and the center-aligned second column
+        gap = (26 - aspect_width) + ((26 - aspect_width) // 2)
+        if gap > 0:
+            chartfile.write(' ' * gap)
+
+        chartfile.write(
+            center_align(
+                center_header, width=max(aspect_width, len(center_header))
+            )
+        )
+
+        # The same math applies to the gap between the center-aligned second column
+        # and the right-aligned third column
+        if gap > 0:
+            chartfile.write(' ' * gap)
+
+        if not aspects_by_class[2] and aspects_by_class[3]:
+            right_header = aspect_class_headers[3]
+        else:
+            right_header = aspect_class_headers[2]
+
+        chartfile.write(
+            center_align(
+                right_header, width=max(aspect_width, len(right_header))
+            )
+        )
+        chartfile.write('\n')
+
+    # Write aspects from all classes to file
+    write_triple_columns_to_file(aspects_by_class, chartfile)
+
+    chartfile.write('-' * table_width + '\n')

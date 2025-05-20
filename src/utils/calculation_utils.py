@@ -1,4 +1,5 @@
 import bisect
+from io import TextIOWrapper
 import math
 
 import src.models.charts as chart_models
@@ -741,3 +742,113 @@ def get_signed_orb_to_reference(longitude: float, reference: float) -> float:
         return longitude + diff
 
     return longitude - reference
+
+
+def calc_novien_aspects(
+    radix: chart_models.ChartObject,
+    novien_data: dict[str, chart_models.PlanetData],
+    options: Options,
+    chartfile: TextIOWrapper,
+) -> list[list[chart_models.Aspect]]:
+    aspects_by_class = [[], [], []]
+    charts = [radix, novien_data]
+
+    for (from_index, from_chart) in enumerate(charts):
+        for to_index in range(from_index, 2):
+            to_chart = charts[to_index]
+            for (
+                primary_index,
+                (primary_planet_long_name, _),
+            ) in enumerate(from_chart.iterate_points(options)):
+                for (
+                    secondary_index,
+                    (secondary_planet_long_name, _),
+                ) in enumerate(to_chart.iterate_points(options)):
+
+                    # Skip natal-natal aspects
+                    if from_index == 0 and to_index == 0:
+                        break
+
+                    if (
+                        secondary_index <= primary_index
+                        and from_chart == to_chart
+                    ):
+                        continue
+
+                    primary_planet = (
+                        from_chart.planets[primary_planet_long_name]
+                        if hasattr(from_chart, 'planets')
+                        else from_chart[primary_planet_long_name]
+                    )
+                    secondary_planet = (
+                        to_chart.planets[secondary_planet_long_name]
+                        if hasattr(to_chart, 'planets')
+                        else to_chart[secondary_planet_long_name]
+                    )
+
+                    raw_orb = (
+                        abs(
+                            primary_planet.longitude
+                            - secondary_planet.longitude
+                        )
+                        % 360
+                    )
+
+                    (
+                        aspect_type,
+                        aspect_class,
+                        aspect_orb,
+                        aspect_strength,
+                    ) = parse_aspect(
+                        value=raw_orb,
+                        options=options,
+                    )
+
+                    if not aspect_type:
+                        continue
+
+                    if aspect_class > 2:
+                        continue
+
+                    if from_index == 1 and to_index == 0:
+                        # Novien to natal
+                        aspect_class = 3
+
+                    from_planet = (
+                        primary_planet
+                        if primary_planet.role >= secondary_planet.role
+                        else secondary_planet
+                    )
+
+                    to_planet = (
+                        primary_planet
+                        if from_planet == secondary_planet
+                        else secondary_planet
+                    )
+
+                    from_planet_role = (
+                        chart_models.ChartWheelRole.RADIX
+                        if from_index == 0
+                        else chart_models.ChartWheelRole.NOVIEN
+                    )
+                    to_planet_role = (
+                        chart_models.ChartWheelRole.RADIX
+                        if to_index == 0
+                        else chart_models.ChartWheelRole.NOVIEN
+                    )
+
+                    aspect = (
+                        chart_models.Aspect()
+                        .from_planet(
+                            from_planet.short_name, role=from_planet_role
+                        )
+                        .to_planet(to_planet.short_name, role=to_planet_role)
+                        .as_type(aspect_type)
+                        .with_class(aspect_class)
+                        .as_ecliptical.with_strength(aspect_strength)
+                        .with_orb(aspect_orb)
+                    )
+
+                    aspects_by_class[aspect.aspect_class - 1].append(aspect)
+
+    return aspects_by_class

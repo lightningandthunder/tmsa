@@ -71,7 +71,7 @@ class Uniwheel(CoreChart):
             'OE ' + chart_utils.fmt_dms(chart.obliquity)
         )
         chart_grid[37][18:51] = chart_utils.center_align(
-            'SVP ' + chart_utils.zod_sec(360 - chart.ayanamsa)
+            'SVP ' + chart_utils.zod_sec_with_sign(360 - chart.ayanamsa)
         )
         chart_grid[39][18:51] = chart_utils.center_align('Sidereal Zodiac')
         chart_grid[41][18:51] = chart_utils.center_align('Campanus Houses')
