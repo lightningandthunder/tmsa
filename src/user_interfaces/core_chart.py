@@ -24,6 +24,10 @@ import src.models.options as option_models
 import src.utils.calculation_utils as calc_utils
 import src.utils.chart_utils as chart_utils
 from src.utils.format_utils import to360
+from src.utils.novien import (
+    write_novien_aspectarian,
+    write_novien_data_table_to_file,
+)
 from src.utils.os_utils import open_file
 
 
@@ -92,7 +96,31 @@ class CoreChart(object, metaclass=ABCMeta):
             self.draw_chart(chartfile)
             self.write_info_table(chartfile)
 
-            chartfile.write('\n' + '-' * self.table_width + '\n')
+            if (
+                len(self.charts) == 1
+                and self.charts[0].role.value
+                == chart_models.ChartWheelRole.NATAL.value
+            ):
+                chartfile.write('\n' + '-' * self.table_width)
+                novien_data = write_novien_data_table_to_file(
+                    self.charts[0], self.options, chartfile
+                )
+                novien_pseudo_chart = chart_models.ChartObject(
+                    self.charts[0].to_dict()
+                ).with_role(chart_models.ChartWheelRole.NOVIEN)
+                for (planet, data) in novien_data.items():
+                    novien_pseudo_chart.planets[planet] = data
+
+                novien_aspects_by_class = calc_utils.calc_novien_aspects(
+                    self.charts[0], novien_pseudo_chart, self.options
+                )
+                write_novien_aspectarian(
+                    novien_aspects_by_class, chartfile, self.table_width
+                )
+                chartfile.write('-' * self.table_width + '\n')
+
+            else:
+                chartfile.write('\n' + '-' * self.table_width + '\n')
             chartfile.write(
                 f"Created by Time Matters {constants.VERSION}  ({datetime.now().strftime('%d %b %Y')})"
             )

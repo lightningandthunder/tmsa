@@ -24,8 +24,8 @@ T = TypeVar('T', bound='ChartObject')
 
 
 class ChartWheelRole(Enum):
-    NATAL = ''
     NOVIEN = ''
+    NATAL = ''
     TRANSIT = 't'
     PROGRESSED = 'p'
     SOLAR = 's'

@@ -1,4 +1,5 @@
 import bisect
+from copy import deepcopy
 from io import TextIOWrapper
 import math
 
@@ -746,12 +747,29 @@ def get_signed_orb_to_reference(longitude: float, reference: float) -> float:
 
 def calc_novien_aspects(
     radix: chart_models.ChartObject,
-    novien_data: dict[str, chart_models.PlanetData],
+    novien_data: chart_models.ChartObject,
     options: Options,
-    chartfile: TextIOWrapper,
 ) -> list[list[chart_models.Aspect]]:
     aspects_by_class = [[], [], []]
-    charts = [radix, novien_data]
+    charts = [novien_data, radix]
+
+    novien_options = deepcopy(options)
+
+    novien_options.ecliptic_aspects = {
+        '0': options.ecliptic_aspects['0'],
+        '90': options.ecliptic_aspects['90'],
+        '180': options.ecliptic_aspects['180'],
+    }
+
+    novien_to_natal_options = deepcopy(novien_options)
+
+    # Only use class 1 aspects for novien-to-natal
+    for key in novien_to_natal_options.ecliptic_aspects:
+        novien_to_natal_options.ecliptic_aspects[key] = [
+            novien_to_natal_options.ecliptic_aspects[key][0],
+            0,
+            0,
+        ]
 
     for (from_index, from_chart) in enumerate(charts):
         for to_index in range(from_index, 2):
@@ -766,7 +784,7 @@ def calc_novien_aspects(
                 ) in enumerate(to_chart.iterate_points(options)):
 
                     # Skip natal-natal aspects
-                    if from_index == 0 and to_index == 0:
+                    if from_index == 1 and to_index == 1:
                         break
 
                     if (
@@ -774,6 +792,8 @@ def calc_novien_aspects(
                         and from_chart == to_chart
                     ):
                         continue
+
+                    is_novien_to_natal = from_index == 0 and to_index == 1
 
                     primary_planet = (
                         from_chart.planets[primary_planet_long_name]
@@ -801,7 +821,9 @@ def calc_novien_aspects(
                         aspect_strength,
                     ) = parse_aspect(
                         value=raw_orb,
-                        options=options,
+                        options=novien_to_natal_options
+                        if is_novien_to_natal
+                        else novien_options,
                     )
 
                     if not aspect_type:
@@ -810,8 +832,7 @@ def calc_novien_aspects(
                     if aspect_class > 2:
                         continue
 
-                    if from_index == 1 and to_index == 0:
-                        # Novien to natal
+                    if is_novien_to_natal:
                         aspect_class = 3
 
                     from_planet = (
@@ -828,12 +849,12 @@ def calc_novien_aspects(
 
                     from_planet_role = (
                         chart_models.ChartWheelRole.RADIX
-                        if from_index == 0
+                        if from_index == 1
                         else chart_models.ChartWheelRole.NOVIEN
                     )
                     to_planet_role = (
                         chart_models.ChartWheelRole.RADIX
-                        if to_index == 0
+                        if to_index == 1
                         else chart_models.ChartWheelRole.NOVIEN
                     )
 
@@ -845,7 +866,8 @@ def calc_novien_aspects(
                         .to_planet(to_planet.short_name, role=to_planet_role)
                         .as_type(aspect_type)
                         .with_class(aspect_class)
-                        .as_ecliptical.with_strength(aspect_strength)
+                        .as_ecliptical()
+                        .with_strength(aspect_strength)
                         .with_orb(aspect_orb)
                     )
 
