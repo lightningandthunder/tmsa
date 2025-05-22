@@ -10,7 +10,6 @@ from src.utils.transits.progressions import (
 
 
 def set_up_progressed_params(params: dict, date: float, chart_type: str):
-    print(date)
     progressed_params = {**params}
     (p_year, p_month, p_day, p_time) = revjul(date, params['style'])
     progressed_params['year'] = p_year
@@ -72,6 +71,7 @@ def find_julian_days_for_aspect_to_progressed_body(
         )
         signed_orb = round(signed_orb, precision)
 
+        # TODO - this needs to be + or - depending on whether the difference to target is + or -
         difference_to_target = target_signed_orb + signed_orb
 
         if previous_check and previous_check == difference_to_target:

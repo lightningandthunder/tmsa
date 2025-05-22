@@ -1197,23 +1197,12 @@ class SolunarsAllInOne(Frame):
 
                     if progressed_jd and transit_jd:
                         progressed_params = {**params}
-                        (p_year, p_month, p_day, p_time) = revjul(
-                            progressed_jd, params['style']
+                        progressed_params = set_up_progressed_params(
+                            progressed_params, transit_jd, solar_return_type
                         )
-                        progressed_params['year'] = p_year
-                        progressed_params['month'] = p_month
-                        progressed_params['day'] = p_day
-                        progressed_params['time'] = p_time
-                        progressed_params['type'] = solar_return_type
-
-                        progressed_chart = ChartObject(
-                            progressed_params
-                        ).with_role(ChartWheelRole.PROGRESSED)
-                        params['progressed_chart'] = progressed_chart
-
                         dates_and_chart_params.append(
                             (
-                                params,
+                                progressed_params,
                                 transit_jd,
                                 solar_return_type,
                                 chart_class,
@@ -1547,28 +1536,18 @@ class SolunarsAllInOne(Frame):
                     )
                     if progressed_jd and transit_jd:
                         progressed_params = {**params}
-                        (p_year, p_month, p_day, p_time) = revjul(
-                            progressed_jd, params['style']
+                        progressed_params = set_up_progressed_params(
+                            progressed_params, progressed_jd, lunar_return_type
                         )
-                        progressed_params['year'] = p_year
-                        progressed_params['month'] = p_month
-                        progressed_params['day'] = p_day
-                        progressed_params['time'] = p_time
-                        progressed_params['type'] = lunar_return_type
-
-                        progressed_chart = ChartObject(
-                            progressed_params
-                        ).with_role(ChartWheelRole.PROGRESSED)
-                        params['progressed_chart'] = progressed_chart
-
                         dates_and_chart_params.append(
                             (
-                                params,
+                                progressed_params,
                                 transit_jd,
                                 lunar_return_type,
                                 chart_class,
                             )
                         )
+
                     start += next_increment
 
             elif lunar_return_type in [
@@ -1619,23 +1598,12 @@ class SolunarsAllInOne(Frame):
                     )
                     if progressed_jd and transit_jd:
                         progressed_params = {**params}
-                        (p_year, p_month, p_day, p_time) = revjul(
-                            progressed_jd, params['style']
+                        progressed_params = set_up_progressed_params(
+                            progressed_params, progressed_jd, lunar_return_type
                         )
-                        progressed_params['year'] = p_year
-                        progressed_params['month'] = p_month
-                        progressed_params['day'] = p_day
-                        progressed_params['time'] = p_time
-                        progressed_params['type'] = lunar_return_type
-
-                        progressed_chart = ChartObject(
-                            progressed_params
-                        ).with_role(ChartWheelRole.PROGRESSED)
-                        params['progressed_chart'] = progressed_chart
-
                         dates_and_chart_params.append(
                             (
-                                params,
+                                progressed_params,
                                 transit_jd,
                                 lunar_return_type,
                                 chart_class,
@@ -1914,15 +1882,16 @@ class SolunarsAllInOne(Frame):
 
             if transit_full_date and transit_full_date > start:
                 if transit_full_date - start <= 15 and index >= 0:
-                    params = set_up_progressed_params(
-                        params,
+                    progressed_params = {**params}
+                    progressed_params = set_up_progressed_params(
+                        progressed_params,
                         progressed_full_date,
                         ChartType.KINETIC_SOLAR_RETURN.value,
                     )
 
                     found_chart_params.append(
                         (
-                            params,
+                            progressed_params,
                             transit_full_date,
                             ChartType.KINETIC_SOLAR_RETURN.value,
                             chart_class,
@@ -1943,15 +1912,16 @@ class SolunarsAllInOne(Frame):
                     'full',
                 )
             if index >= 0 and transit_full_date:
-                params = set_up_progressed_params(
-                    params,
+                progressed_params = {**params}
+                progressed_params = set_up_progressed_params(
+                    progressed_params,
                     progressed_full_date,
                     ChartType.KINETIC_SOLAR_RETURN.value,
                 )
 
                 found_chart_params.append(
                     (
-                        params,
+                        progressed_params,
                         transit_full_date,
                         ChartType.KINETIC_SOLAR_RETURN.value,
                         chart_class,
@@ -1992,28 +1962,40 @@ class SolunarsAllInOne(Frame):
                 and transit_full_date > start
             ):
                 if transit_full_date - start <= 15 and index >= 0:
-                    params = set_up_progressed_params(
-                        params,
+                    progressed_params = {**params}
+                    progressed_params = set_up_progressed_params(
+                        progressed_params,
                         progressed_full_date,
                         ChartType.DEMI_KINETIC_SOLAR_RETURN.value,
                     )
 
                     found_chart_params.append(
-                        (params, transit_full_date, solars[index], chart_class)
+                        (
+                            progressed_params,
+                            transit_full_date,
+                            solars[index],
+                            chart_class,
+                        )
                     )
                     solars.pop(index)
 
                 quarti_start = demi_start
             else:
                 if index >= 0 and transit_full_date:
-                    params = set_up_progressed_params(
-                        params,
+                    progressed_params = {**params}
+                    progressed_params = set_up_progressed_params(
+                        progressed_params,
                         progressed_full_date,
                         ChartType.DEMI_KINETIC_SOLAR_RETURN.value,
                     )
 
                     found_chart_params.append(
-                        (params, transit_full_date, solars[index], chart_class)
+                        (
+                            progressed_params,
+                            transit_full_date,
+                            solars[index],
+                            chart_class,
+                        )
                     )
                     solars.pop(index)
                 quarti_start = transit_full_date
@@ -2049,12 +2031,18 @@ class SolunarsAllInOne(Frame):
                 relationship,
             )
             if transit_full_date and transit_full_date - start <= 15:
-                params = set_up_progressed_params(
-                    params, progressed_full_date, solars[index]
+                progressed_params = {**params}
+                progressed_params = set_up_progressed_params(
+                    progressed_params, progressed_full_date, solars[index]
                 )
 
                 found_chart_params.append(
-                    (params, transit_full_date, solars[index], chart_class)
+                    (
+                        progressed_params,
+                        transit_full_date,
+                        solars[index],
+                        chart_class,
+                    )
                 )
                 solars.pop(index)
 
@@ -2553,15 +2541,16 @@ class SolunarsAllInOne(Frame):
 
             if transit_full_date and transit_full_date > start:
                 if transit_full_date - start <= 1.25 and index >= 0:
-                    params = set_up_progressed_params(
-                        params,
+                    progressed_params = {**params}
+                    progressed_params = set_up_progressed_params(
+                        progressed_params,
                         progressed_full_date,
                         ChartType.KINETIC_LUNAR_RETURN.value,
                     )
 
                     found_chart_params.append(
                         (
-                            params,
+                            progressed_params,
                             transit_full_date,
                             ChartType.KINETIC_LUNAR_RETURN.value,
                             chart_class,
@@ -2582,15 +2571,16 @@ class SolunarsAllInOne(Frame):
                     'full',
                 )
             if index >= 0 and transit_full_date:
-                params = set_up_progressed_params(
-                    params,
+                progressed_params = {**params}
+                progressed_params = set_up_progressed_params(
+                    progressed_params,
                     progressed_full_date,
                     ChartType.KINETIC_LUNAR_RETURN.value,
                 )
 
                 found_chart_params.append(
                     (
-                        params,
+                        progressed_params,
                         transit_full_date,
                         ChartType.KINETIC_LUNAR_RETURN.value,
                         chart_class,
@@ -2626,28 +2616,40 @@ class SolunarsAllInOne(Frame):
             )
             if transit_full_date and transit_full_date > start:
                 if transit_full_date - start <= 1.25 and index >= 0:
-                    params = set_up_progressed_params(
-                        params,
+                    progressed_params = {**params}
+                    progressed_params = set_up_progressed_params(
+                        progressed_params,
                         progressed_full_date,
                         ChartType.DEMI_KINETIC_LUNAR_RETURN.value,
                     )
 
                     found_chart_params.append(
-                        (params, transit_full_date, lunars[index], chart_class)
+                        (
+                            progressed_params,
+                            transit_full_date,
+                            lunars[index],
+                            chart_class,
+                        )
                     )
                     lunars.pop(index)
 
                 quarti_start = demi_start
             else:
                 if index >= 0 and transit_full_date:
-                    params = set_up_progressed_params(
-                        params,
+                    progressed_params = {**params}
+                    progressed_params = set_up_progressed_params(
+                        progressed_params,
                         progressed_full_date,
                         ChartType.DEMI_KINETIC_LUNAR_RETURN.value,
                     )
 
                     found_chart_params.append(
-                        (params, transit_full_date, lunars[index], chart_class)
+                        (
+                            progressed_params,
+                            transit_full_date,
+                            lunars[index],
+                            chart_class,
+                        )
                     )
                     lunars.pop(index)
                 quarti_start = transit_full_date
@@ -2685,12 +2687,18 @@ class SolunarsAllInOne(Frame):
                     relationship,
                 )
                 if transit_full_date and transit_full_date - start <= 1.25:
-                    params = set_up_progressed_params(
-                        params, progressed_full_date, lunars[index]
+                    progressed_params = {**params}
+                    progressed_params = set_up_progressed_params(
+                        progressed_params, progressed_full_date, lunars[index]
                     )
 
                     found_chart_params.append(
-                        (params, transit_full_date, lunars[index], chart_class)
+                        (
+                            progressed_params,
+                            transit_full_date,
+                            lunars[index],
+                            chart_class,
+                        )
                     )
                     lunars.pop(index)
 
@@ -2745,15 +2753,16 @@ class SolunarsAllInOne(Frame):
 
             if transit_full_date and transit_full_date > start:
                 if transit_full_date - start <= 1.25 and index >= 0:
-                    params = set_up_progressed_params(
-                        params,
+                    progressed_params = {**params}
+                    progressed_params = set_up_progressed_params(
+                        progressed_params,
                         progressed_full_date,
                         ChartType.KINETIC_ANLUNAR_RETURN.value,
                     )
 
                     found_chart_params.append(
                         (
-                            params,
+                            progressed_params,
                             transit_full_date,
                             ChartType.KINETIC_ANLUNAR_RETURN.value,
                             chart_class,
@@ -2774,15 +2783,16 @@ class SolunarsAllInOne(Frame):
                     'full',
                 )
             if index >= 0 and transit_full_date:
-                params = set_up_progressed_params(
-                    params,
+                progressed_params = {**params}
+                progressed_params = set_up_progressed_params(
+                    progressed_params,
                     progressed_full_date,
                     ChartType.KINETIC_ANLUNAR_RETURN.value,
                 )
 
                 found_chart_params.append(
                     (
-                        params,
+                        progressed_params,
                         transit_full_date,
                         ChartType.KINETIC_LUNAR_RETURN.value,
                         chart_class,
@@ -2818,28 +2828,40 @@ class SolunarsAllInOne(Frame):
             )
             if transit_full_date and transit_full_date > start:
                 if transit_full_date - start <= 1.25 and index >= 0:
-                    params = set_up_progressed_params(
-                        params,
+                    progressed_params = {**params}
+                    progressed_params = set_up_progressed_params(
+                        progressed_params,
                         progressed_full_date,
                         ChartType.KINETIC_DEMI_ANLUNAR_RETURN.value,
                     )
 
                     found_chart_params.append(
-                        (params, transit_full_date, lunars[index], chart_class)
+                        (
+                            progressed_params,
+                            transit_full_date,
+                            lunars[index],
+                            chart_class,
+                        )
                     )
                     lunars.pop(index)
 
                 quarti_start = demi_start
             else:
                 if index >= 0 and transit_full_date:
-                    params = set_up_progressed_params(
-                        params,
+                    progressed_params = {**params}
+                    progressed_params = set_up_progressed_params(
+                        progressed_params,
                         progressed_full_date,
                         ChartType.KINETIC_DEMI_ANLUNAR_RETURN.value,
                     )
 
                     found_chart_params.append(
-                        (params, transit_full_date, lunars[index], chart_class)
+                        (
+                            progressed_params,
+                            transit_full_date,
+                            lunars[index],
+                            chart_class,
+                        )
                     )
                     lunars.pop(index)
                 quarti_start = transit_full_date
@@ -2877,12 +2899,18 @@ class SolunarsAllInOne(Frame):
                     relationship,
                 )
                 if transit_full_date and transit_full_date - start <= 1.25:
-                    params = set_up_progressed_params(
-                        params, progressed_full_date, lunars[index]
+                    progressed_params = {**params}
+                    progressed_params = set_up_progressed_params(
+                        progressed_params, progressed_full_date, lunars[index]
                     )
 
                     found_chart_params.append(
-                        (params, transit_full_date, lunars[index], chart_class)
+                        (
+                            progressed_params,
+                            transit_full_date,
+                            lunars[index],
+                            chart_class,
+                        )
                     )
                     lunars.pop(index)
 
