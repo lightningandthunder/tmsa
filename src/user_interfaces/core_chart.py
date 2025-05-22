@@ -1072,7 +1072,7 @@ class CoreChart(object, metaclass=ABCMeta):
         ]
 
         # find aspect width by finding the longest aspect name
-        aspect_width = 0
+        aspect_width = 22 if len(self.charts) == 1 else 24
         for aspect_class in aspects_by_class:
             if aspect_class:
                 aspect_width = len(str(aspect_class[0]))

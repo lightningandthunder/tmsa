@@ -110,6 +110,11 @@ def write_novien_aspectarian(
     chartfile: TextIOWrapper,
     table_width: int,
 ):
+    if not any(
+        [True for aspect_class in aspects_by_class if len(aspect_class) > 0]
+    ):
+        return
+
     aspect_class_headers = [
         ' Class 1  ',
         ' Class 2  ',
@@ -117,7 +122,7 @@ def write_novien_aspectarian(
     ]
 
     # find aspect width by finding the longest aspect name
-    aspect_width = 0
+    aspect_width = 24
     for aspect_class in aspects_by_class:
         if aspect_class:
             aspect_width = len(str(aspect_class[0]))

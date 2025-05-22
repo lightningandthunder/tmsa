@@ -4,7 +4,7 @@
 - Added pagination to "recently used" items, increasing the storage size
 - Removed the legacy "TMSA Classic" angularity model
 - Aspects now split into columns even if there are missing classes
-- Added many Solunar return types: Novienic Solar Returns (Enneads), Novienic Lunar Returns, Anlunars, Solilunars, Lunisolars, and Lunar Synodic Returns.
+- Added many Solunar return types: Novienic Solar Returns (Enneads), Novienic Lunar Returns, Anlunars, Solilunars, Lunisolars, Lunar Synodic Returns, Kinetic Solar and Lunar Returns, and Kinetic Anlunar Returns.
 - Refactored the Solunars selection page to include all Solunar types on it.
 - Made "angle contact aspects" have the same strength scale as traditional aspects
 - Added a "Sidereal Landmarks" page

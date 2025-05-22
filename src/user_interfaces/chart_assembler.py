@@ -14,6 +14,7 @@ from src import OPTION_PATH, RECENT_FILE
 from src.models.charts import ChartObject, ChartWheelRole
 from src.models.options import Options
 from src.user_interfaces.biwheel import Biwheel
+from src.user_interfaces.quadwheel import Quadwheel
 from src.user_interfaces.triwheel import Triwheel
 from src.user_interfaces.uniwheel import Uniwheel
 from src.utils.chart_utils import make_chart_path
@@ -90,7 +91,23 @@ def assemble_charts(params, temporary, burst=False):
                 use_progressed_angles=True,
             )
 
-    if params.get('ssr_chart', None):
+    # Kinetic Anlunar
+    if params.get('progressed_chart', None) and params.get('ssr_chart', None):
+        progressed_chart = params['progressed_chart']
+        transit_chart = ChartObject(params).with_role(ChartWheelRole.TRANSIT)
+        radix = ChartObject(params['base_chart']).with_role(
+            ChartWheelRole.RADIX
+        )
+        ssr_chart = params['ssr_chart'].with_role(ChartWheelRole.SOLAR)
+
+        return Quadwheel(
+            [transit_chart, progressed_chart, ssr_chart, radix],
+            temporary,
+            options,
+        )
+
+    # Anlunar
+    elif params.get('ssr_chart', None):
         return_chart = ChartObject(params).with_role(ChartWheelRole.TRANSIT)
 
         # This has to be pre-calculated
@@ -102,6 +119,19 @@ def assemble_charts(params, temporary, burst=False):
 
         return Triwheel([return_chart, ssr_chart, radix], temporary, options)
 
+    # Kinetic Solar or Lunar
+    elif params.get('progressed_chart', None):
+        progressed_chart = params['progressed_chart']
+        transit_chart = ChartObject(params).with_role(ChartWheelRole.TRANSIT)
+        radix = ChartObject(params['base_chart']).with_role(
+            ChartWheelRole.RADIX
+        )
+
+        return Triwheel(
+            [transit_chart, progressed_chart, radix], temporary, options
+        )
+
+    # Any other return
     elif params.get('base_chart', None):
         return_chart = ChartObject(params).with_role(ChartWheelRole.TRANSIT)
         radix = ChartObject(params['base_chart']).with_role(
