@@ -357,6 +357,7 @@ class SelectChart(Frame):
                 chart['basechart'] = None
 
             SolunarsAllInOne(chart, self.filename, self.program_options)
+            main.after(0, self.destroy)
         except Exception as e:
             self.status.error(
                 f"Unable to open file: '{os.path.basename(self.filename)}' : {e}."

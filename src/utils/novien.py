@@ -45,7 +45,7 @@ def write_novien_data_table_to_file(
     )
 
     # Headers
-    chartfile.write('\nPl  Nov. Long  Speed   Natal Long')
+    chartfile.write('\nPl   Nov. Long  Speed   Natal Long')
 
     # Set up the extra fields floating off to the side, by row index
 
@@ -123,10 +123,6 @@ def write_novien_aspectarian(
             aspect_width = len(str(aspect_class[0]))
             break
 
-    if len(aspects_by_class[2]) and not len(aspects_by_class[1]):
-        del aspects_by_class[1]
-        del aspect_class_headers[1]
-
     if any(
         [
             True
@@ -154,11 +150,15 @@ def write_novien_aspectarian(
         if gap > 0:
             chartfile.write(' ' * gap)
 
-        chartfile.write(
-            center_align(
-                center_header, width=max(aspect_width, len(center_header))
+        # If there are class 2 aspects, write the header
+        if len(aspects_by_class[1]):
+            chartfile.write(
+                center_align(
+                    center_header, width=max(aspect_width, len(center_header))
+                )
             )
-        )
+        else:
+            chartfile.write(' ' * 22)
 
         # The same math applies to the gap between the center-aligned second column
         # and the right-aligned third column

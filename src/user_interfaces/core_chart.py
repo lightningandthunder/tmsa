@@ -96,11 +96,7 @@ class CoreChart(object, metaclass=ABCMeta):
             self.draw_chart(chartfile)
             self.write_info_table(chartfile)
 
-            if (
-                len(self.charts) == 1
-                and self.charts[0].role.value
-                == chart_models.ChartWheelRole.NATAL.value
-            ):
+            if self.options.enable_novien:
                 chartfile.write('\n' + '-' * self.table_width)
                 novien_data = write_novien_data_table_to_file(
                     self.charts[0], self.options, chartfile

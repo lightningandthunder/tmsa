@@ -117,6 +117,7 @@ NATAL_DEFAULT = {
         '0': [1, 2, 3],
     },
     'extra_bodies': ['Er'],
+    'enable_novien': True,
 }
 
 RETURN_DEFAULT = {
@@ -238,6 +239,7 @@ RETURN_DEFAULT = {
         '0': [1, 2, 3],
     },
     'extra_bodies': ['Er'],
+    'enable_novien': False,
 }
 
 TRANSIT_DEFAULT = {
@@ -359,6 +361,7 @@ TRANSIT_DEFAULT = {
         '0': [1, 0, 0],
     },
     'extra_bodies': ['Er'],
+    'enable_novien': False,
 }
 
 PROGRESSED_DEFAULT = {
@@ -480,6 +483,7 @@ PROGRESSED_DEFAULT = {
         '0': [1, 0, 0],
     },
     'extra_bodies': ['Er'],
+    'enable_novien': False,
 }
 
 INGRESS_DEFAULT = {
@@ -601,6 +605,7 @@ INGRESS_DEFAULT = {
         '0': [1, 2, 3],
     },
     'extra_bodies': ['Er'],
+    'enable_novien': False,
 }
 
 COSMOBIOLOGY = {
@@ -721,6 +726,7 @@ COSMOBIOLOGY = {
         '0': [1, 2, 3],
     },
     'extra_bodies': ['Er'],
+    'enable_novien': False,
 }
 
 STUDENT_NATAL = {
@@ -841,4 +847,5 @@ STUDENT_NATAL = {
         '0': [1, 2, 3],
     },
     'extra_bodies': [],
+    'enable_novien': False,
 }

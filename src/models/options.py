@@ -81,6 +81,7 @@ class Options:
     paran_aspects: dict[str, list[float]] = {}
     midpoints: dict[str, list[float]] = {}
     include_fg_under_aspects: bool = False
+    enable_novien: bool = False
 
     @staticmethod
     def from_file(file_path: str):
@@ -107,6 +108,8 @@ class Options:
         self.include_fg_under_aspects = (
             True if data.get('include_fg_under_aspects') else False
         )
+
+        self.enable_novien = True if data.get('enable_novien') else False
 
         if 'angularity' in data:
             self.angularity = AngularitySubOptions(

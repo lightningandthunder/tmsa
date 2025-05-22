@@ -401,7 +401,10 @@ class SolunarsAllInOne(Frame):
         self.init = False
 
     def back(self):
+        from src.user_interfaces.select_chart import SelectChart
+
         self.destroy()
+        SelectChart()
 
     def select_all_of_type(self, preset):
         self._in_callback = True
@@ -988,7 +991,6 @@ class SolunarsAllInOne(Frame):
                     date,
                     solunar_type,
                     chart_class,
-                    show=not duration,
                 )
                 charts_created += 1
                 previous_date = date

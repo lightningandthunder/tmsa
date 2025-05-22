@@ -141,7 +141,8 @@ class ChartOptions(Frame):
                 anchor=tk.W,
             )
 
-            if aspect_name_index < 4:
+            # Mundane orbs
+            if aspect_name_index < 3:
                 mundane_max_orb_row = [
                     Entry(
                         self, '', 0.55, aspect_name_index * 0.05 + 0.45, 0.05
@@ -159,15 +160,8 @@ class ChartOptions(Frame):
                         lambda e: delay(check_dec, e.widget),
                     )
                 self.mmaxorbs.append(mundane_max_orb_row)
-        # Label(
-        #     self,
-        #     'C1: close C2: moderate C3: wide. Leave blank to omit.',
-        #     0,
-        #     0.8,
-        #     1,
-        # )
 
-        Label(self, 'Show Aspects ', 0, 0.85, 0.2)
+        Label(self, 'Show Aspects ', 0.03, 0.85, 0.2, anchor=tk.W)
         self.showasp = Radiogroup(self)
         Radiobutton(self, self.showasp, 0, 'All', 0.2, 0.85, 0.1)
         Radiobutton(self, self.showasp, 1, '1+ FG', 0.3, 0.85, 0.1)
@@ -177,7 +171,10 @@ class ChartOptions(Frame):
             self, 'Include FG in aspects', 0.6, 0.85, 0.3
         )
 
-        self.status = Label(self, '', 0, 0.9, 1)
+        Label(self, 'Show Novien', 0.03, 0.9, 0.2, anchor=tk.W)
+        self.enable_novien = Checkbutton(self, '', 0.2, 0.9, 0.1)
+
+        self.status = Label(self, '', 0.4, 0.9, 0.25, anchor=tk.W)
         Button(self, 'Save', 0.05, 0.95, 0.15).bind(
             '<Button-1>', lambda _: delay(self.save)
         )
@@ -255,6 +252,8 @@ class ChartOptions(Frame):
         self.include_fg_under_aspects.checked = options.get(
             'include_fg_under_aspects', False
         )
+
+        self.enable_novien.checked = options.get('enable_novien', False)
 
         self.pvp_aspects = options.get(
             'pvp_aspects',
@@ -357,7 +356,11 @@ class ChartOptions(Frame):
                 for aspect_class in range(3):
                     if default_aspect_orbs[aspect_class] == 0:
                         default_aspect_orbs[aspect_class] = ''
-                    elif default_aspect_orbs[aspect_class].is_integer():
+                    elif isinstance(
+                        default_aspect_orbs[aspect_class], (int, float)
+                    ) and not isinstance(
+                        default_aspect_orbs[aspect_class], bool
+                    ):
                         default_aspect_orbs[aspect_class] = int(
                             default_aspect_orbs[aspect_class]
                         )
@@ -366,7 +369,7 @@ class ChartOptions(Frame):
                     aspect_class
                 ].text = default_aspect_orbs[aspect_class]
 
-        for mundane_aspect_type in range(4):
+        for mundane_aspect_type in range(3):
             aspect_orbs = mundane_aspects[aspect_key[mundane_aspect_type]]
             if not type(aspect_orbs) == list:
                 default_aspect_orbs = [0, 0, 0]
@@ -505,7 +508,7 @@ class ChartOptions(Frame):
             [],
             [],
         ]
-        mundane_max_orbs = [[], [], [], []]
+        mundane_max_orbs = [[], [], []]
 
         for aspect_label_index in range(len(self.names)):
             if self.abbrs[aspect_label_index].text[0:2] in [
@@ -557,7 +560,7 @@ class ChartOptions(Frame):
                     f'Orb for {self.names[aspect_label_index].text.strip().lower()} must be numeric or blank.'
                 )
                 return
-            if aspect_label_index > 3:
+            if aspect_label_index > 2:
                 continue
             try:
                 for aspect_class in range(3):
@@ -626,6 +629,7 @@ class ChartOptions(Frame):
         options[
             'include_fg_under_aspects'
         ] = self.include_fg_under_aspects.checked
+        options['enable_novien'] = self.enable_novien.checked
 
         aspect_key_list = [
             '0',
@@ -653,7 +657,7 @@ class ChartOptions(Frame):
             ] = []
 
         options['mundane_aspects'] = {}
-        for aspect_label_index in range(4):
+        for aspect_label_index in range(3):
             options['mundane_aspects'][
                 aspect_key_list[aspect_label_index]
             ] = []
@@ -670,7 +674,7 @@ class ChartOptions(Frame):
                     options['ecliptic_aspects'][
                         aspect_key_list[aspect_label_index]
                     ].append(float(text) if text else 0)
-        for aspect_label_index in range(4):
+        for aspect_label_index in range(3):
             for aspect_class in range(3):
                 text = self.mmaxorbs[aspect_label_index][aspect_class].text
                 options['mundane_aspects'][
