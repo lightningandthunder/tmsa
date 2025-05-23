@@ -241,8 +241,11 @@ class StartPage(Frame):
             if os.path.exists(TEMP_CHARTS):
                 shutil.rmtree(TEMP_CHARTS)
             os.mkdir(TEMP_CHARTS)
-        except:
-            return
+        except Exception as e:
+            tkmessagebox.showerror(
+                'File Error', f'Error trying to remove temporary files: {e}'
+            )
+            log_startup_error(e)
 
         try:
             with open(RECENT_FILE, 'r') as datafile:

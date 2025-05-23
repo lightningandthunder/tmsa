@@ -97,6 +97,12 @@ class CoreChart(object, metaclass=ABCMeta):
             self.write_info_table(chartfile)
 
             if self.options.enable_novien:
+                chartfile.write('\n' + '-' * self.table_width + '\n')
+                chartfile.write(
+                    chart_utils.center_align(
+                        'Novienic Equivalent', width=self.table_width
+                    )
+                )
                 chartfile.write('\n' + '-' * self.table_width)
                 novien_data = write_novien_data_table_to_file(
                     self.charts[0], self.options, chartfile
@@ -1199,6 +1205,15 @@ class CoreChart(object, metaclass=ABCMeta):
         )
 
         angularities_as_aspects = []
+
+        contains_solar_wheel = any(
+            [
+                True
+                for c in self.charts
+                if c.role.value == chart_models.ChartWheelRole.SOLAR.value
+            ]
+        )
+
         for (chart_index, chart) in enumerate(self.charts):
             if chart_index > 0:
                 chartfile.write('-' * self.table_width + '\n')
@@ -1208,6 +1223,11 @@ class CoreChart(object, metaclass=ABCMeta):
 
                 if chart.role == chart_models.ChartWheelRole.TRANSIT:
                     section_title = 'Transiting Planets'
+                elif (
+                    chart.role == chart_models.ChartWheelRole.PROGRESSED
+                    and contains_solar_wheel
+                ):
+                    section_title = 'Progressed SSR Planets'
                 elif chart.role == chart_models.ChartWheelRole.PROGRESSED:
                     section_title = 'Progressed Planets'
                 elif chart.role == chart_models.ChartWheelRole.SOLAR:

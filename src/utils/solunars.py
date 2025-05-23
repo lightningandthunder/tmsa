@@ -1,7 +1,12 @@
 import math
 from typing import Literal
-from src.models.charts import ChartObject, ChartWheelRole
-from src.swe import calc_planet, revjul
+from src.models.charts import (
+    LUNAR_RETURNS,
+    SOLAR_RETURNS,
+    ChartObject,
+    ChartWheelRole,
+)
+from src.swe import calc_moon_crossing, calc_planet, calc_sun_crossing, revjul
 from src.utils.calculation_utils import get_signed_orb_to_reference
 from src.utils.transits.progressions import (
     ProgressionTypes,
@@ -96,3 +101,64 @@ def find_julian_days_for_aspect_to_progressed_body(
         previous_check = difference_to_target
 
     return (derived_progressed_date, transit_date)
+
+
+def find_solunar_crossings_until_date(
+    base_start: float,
+    continue_until_date: float,
+    grace_period: float,
+    target_body: Literal['Sun', 'Moon'],
+    target_longitude: float,
+    cycle_length: int,
+    solunar_type: str,
+) -> list[float]:
+
+    target = target_longitude
+    start = base_start
+
+    solunar_name_normalized = solunar_type.lower()
+
+    dates = []
+
+    while start <= continue_until_date:
+        next_increment = cycle_length
+
+        if 'demi' in solunar_name_normalized:
+            target = (target_longitude + 180) % 360
+            next_increment = math.ceil(cycle_length / 2)
+        elif 'quarti' in solunar_name_normalized:
+            next_increment = math.ceil(cycle_length / 4)
+
+            if 'first' in solunar_name_normalized:
+                target = (target_longitude + 90) % 360
+            else:
+                target = (target_longitude - 90) % 360
+
+        if target_body == 'Sun':
+            date = calc_sun_crossing(target, start)
+        else:
+            date = calc_moon_crossing(target, start)
+
+        if (
+            date
+            and (date < continue_until_date)
+            or (date - continue_until_date < grace_period)
+        ):
+            dates.append(date)
+
+        start += next_increment
+
+    return dates
+
+
+def find_novienic_returns_until_date(
+    base_start: float,
+    continue_until_date: float,
+    grace_period: float,
+    target_body: Literal['Sun', 'Moon'],
+    target_longitude: float,
+    cycle_length: int,
+    solunar_type: str,
+) -> list[float]:
+
+    pass
