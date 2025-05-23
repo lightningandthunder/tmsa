@@ -77,7 +77,7 @@ def find_julian_days_for_aspect_to_progressed_body(
         signed_orb = round(signed_orb, precision)
 
         # TODO - this needs to be + or - depending on whether the difference to target is + or -
-        difference_to_target = target_signed_orb + signed_orb
+        difference_to_target = (target_signed_orb + signed_orb) % 360
 
         if previous_check and previous_check == difference_to_target:
             return (None, None)

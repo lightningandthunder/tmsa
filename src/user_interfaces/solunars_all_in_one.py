@@ -1198,7 +1198,7 @@ class SolunarsAllInOne(Frame):
                     if progressed_jd and transit_jd:
                         progressed_params = {**params}
                         progressed_params = set_up_progressed_params(
-                            progressed_params, transit_jd, solar_return_type
+                            progressed_params, progressed_jd, solar_return_type
                         )
                         dates_and_chart_params.append(
                             (
@@ -1653,13 +1653,13 @@ class SolunarsAllInOne(Frame):
             if date > start:
                 if date - start <= 15 and index >= 0:
                     found_chart_params.append(
-                        (params, date, solars[index], chart_class)
+                        ({**params}, date, solars[index], chart_class)
                     )
 
                 date = calc_sun_crossing(sun, start - 367)
             if index >= 0:
                 found_chart_params.append(
-                    (params, date, solars[index], chart_class)
+                    ({**params}, date, solars[index], chart_class)
                 )
 
             demi_start = date
@@ -1679,14 +1679,14 @@ class SolunarsAllInOne(Frame):
             if date > start:
                 if date - start <= 15 and index >= 0:
                     found_chart_params.append(
-                        (params, date, solars[index], chart_class)
+                        ({**params}, date, solars[index], chart_class)
                     )
 
                 quarti_start = demi_start
             else:
                 if index >= 0:
                     found_chart_params.append(
-                        (params, date, solars[index], chart_class)
+                        ({**params}, date, solars[index], chart_class)
                     )
                 quarti_start = date
 
@@ -1710,7 +1710,7 @@ class SolunarsAllInOne(Frame):
             date = calc_sun_crossing(target, quarti_start)
             if date - start <= 15:
                 found_chart_params.append(
-                    (params, date, solars[index], chart_class)
+                    ({**params}, date, solars[index], chart_class)
                 )
 
         # NSR and 10-Day Solars
@@ -1736,7 +1736,7 @@ class SolunarsAllInOne(Frame):
                 solars, ChartType.NOVIENIC_SOLAR_RETURN.value
             )
             found_chart_params.append(
-                (params, date, solars[index], chart_class)
+                ({**params}, date, solars[index], chart_class)
             )
 
         if ChartType.TEN_DAY_SOLAR_RETURN.value in solars:
@@ -1761,7 +1761,7 @@ class SolunarsAllInOne(Frame):
                 solars, ChartType.TEN_DAY_SOLAR_RETURN.value
             )
             found_chart_params.append(
-                (params, date, solars[index], chart_class)
+                ({**params}, date, solars[index], chart_class)
             )
 
         # Solilunar variants
@@ -1780,13 +1780,13 @@ class SolunarsAllInOne(Frame):
             if date > start:
                 if date - start <= 15 and index >= 0:
                     found_chart_params.append(
-                        (params, date, solars[index], chart_class)
+                        ({**params}, date, solars[index], chart_class)
                     )
                 date = calc_sun_crossing(moon, start - 367)
 
             if index >= 0:
                 found_chart_params.append(
-                    (params, date, solars[index], chart_class)
+                    ({**params}, date, solars[index], chart_class)
                 )
 
             demi_start = date
@@ -1808,14 +1808,14 @@ class SolunarsAllInOne(Frame):
             if date > start:
                 if date - start <= 15 and index >= 0:
                     found_chart_params.append(
-                        (params, date, solars[index], chart_class)
+                        ({**params}, date, solars[index], chart_class)
                     )
 
                 quarti_start = demi_start
             else:
                 if index >= 0:
                     found_chart_params.append(
-                        (params, date, solars[index], chart_class)
+                        ({**params}, date, solars[index], chart_class)
                     )
 
                 quarti_start = date
@@ -1840,7 +1840,7 @@ class SolunarsAllInOne(Frame):
             date = calc_sun_crossing(target, quarti_start)
             if date - start <= 15:
                 found_chart_params.append(
-                    (params, date, solars[index], chart_class)
+                    ({**params}, date, solars[index], chart_class)
                 )
 
         if includes_any(
@@ -2045,13 +2045,13 @@ class SolunarsAllInOne(Frame):
             if date > start:
                 if date - start <= 1.25 and index >= 0:
                     found_chart_params.append(
-                        (params, date, lunars[index], chart_class)
+                        ({**params}, date, lunars[index], chart_class)
                     )
 
                 date = calc_moon_crossing(moon, start - 29)
             if index >= 0:
                 found_chart_params.append(
-                    (params, date, lunars[index], chart_class)
+                    ({**params}, date, lunars[index], chart_class)
                 )
 
             demi_start = date
@@ -2071,14 +2071,14 @@ class SolunarsAllInOne(Frame):
             if date > start:
                 if date - start <= 1.25 and index >= 0:
                     found_chart_params.append(
-                        (params, date, lunars[index], chart_class)
+                        ({**params}, date, lunars[index], chart_class)
                     )
 
                 quarti_start = demi_start
             else:
                 if index >= 0:
                     found_chart_params.append(
-                        (params, date, lunars[index], chart_class)
+                        ({**params}, date, lunars[index], chart_class)
                     )
 
                 quarti_start = date
@@ -2104,7 +2104,7 @@ class SolunarsAllInOne(Frame):
             date = calc_moon_crossing(target, quarti_start)
             if date - start <= 1.25:
                 found_chart_params.append(
-                    (params, date, lunars[index], chart_class)
+                    ({**params}, date, lunars[index], chart_class)
                 )
 
         # NLR and 18-Hour Lunars
@@ -2130,7 +2130,7 @@ class SolunarsAllInOne(Frame):
                 lunars, ChartType.NOVIENIC_LUNAR_RETURN.value
             )
             found_chart_params.append(
-                (params, date, lunars[index], chart_class)
+                ({**params}, date, lunars[index], chart_class)
             )
 
         if ChartType.EIGHTEEN_HOUR_LUNAR_RETURN.value in lunars:
@@ -2155,7 +2155,7 @@ class SolunarsAllInOne(Frame):
                 lunars, ChartType.EIGHTEEN_HOUR_LUNAR_RETURN.value
             )
             found_chart_params.append(
-                (params, date, lunars[index], chart_class)
+                ({**params}, date, lunars[index], chart_class)
             )
 
         # Lunisolar variants
@@ -2173,14 +2173,14 @@ class SolunarsAllInOne(Frame):
             if date > start:
                 if date - start <= 1.25 and index >= 0:
                     found_chart_params.append(
-                        (params, date, lunars[index], chart_class)
+                        ({**params}, date, lunars[index], chart_class)
                     )
 
                 date = calc_moon_crossing(sun, start - 29)
 
             if index >= 0:
                 found_chart_params.append(
-                    (params, date, lunars[index], chart_class)
+                    ({**params}, date, lunars[index], chart_class)
                 )
 
             demi_start = date
@@ -2202,14 +2202,14 @@ class SolunarsAllInOne(Frame):
             if date > start:
                 if date - start <= 1.25 and index >= 0:
                     found_chart_params.append(
-                        (params, date, lunars[index], chart_class)
+                        ({**params}, date, lunars[index], chart_class)
                     )
 
                 quarti_start = demi_start
             else:
                 if index >= 0:
                     found_chart_params.append(
-                        (params, date, lunars[index], chart_class)
+                        ({**params}, date, lunars[index], chart_class)
                     )
 
                 quarti_start = date
@@ -2235,7 +2235,7 @@ class SolunarsAllInOne(Frame):
             date = calc_moon_crossing(target, quarti_start)
             if date - start <= 1.25:
                 found_chart_params.append(
-                    (params, date, lunars[index], chart_class)
+                    ({**params}, date, lunars[index], chart_class)
                 )
 
         # Anlunars
@@ -2305,14 +2305,14 @@ class SolunarsAllInOne(Frame):
             if date > start:
                 if date - start <= 1.25 and index >= 0:
                     found_chart_params.append(
-                        (params, date, lunars[index], chart_class)
+                        (transiting_params, date, lunars[index], chart_class)
                     )
 
                 quarti_start = demi_start
             else:
                 if index >= 0:
                     found_chart_params.append(
-                        (params, date, lunars[index], chart_class)
+                        (transiting_params, date, lunars[index], chart_class)
                     )
 
                 quarti_start = date
@@ -2338,7 +2338,7 @@ class SolunarsAllInOne(Frame):
             date = calc_moon_crossing(target, quarti_start)
             if date - start <= 1.25:
                 found_chart_params.append(
-                    (params, date, lunars[index], chart_class)
+                    (transiting_params, date, lunars[index], chart_class)
                 )
 
         # LSRs
@@ -2377,12 +2377,12 @@ class SolunarsAllInOne(Frame):
             if date > start:
                 if date - start <= 1.25 and index >= 0:
                     found_chart_params.append(
-                        (params, date, lunars[index], chart_class)
+                        ({**params}, date, lunars[index], chart_class)
                     )
 
             elif index >= 0:
                 found_chart_params.append(
-                    (params, date, lunars[index], chart_class)
+                    ({**params}, date, lunars[index], chart_class)
                 )
 
             demi_start = date
@@ -2420,14 +2420,14 @@ class SolunarsAllInOne(Frame):
             if date > start:
                 if date - start <= 1.25 and index >= 0:
                     found_chart_params.append(
-                        (params, date, lunars[index], chart_class)
+                        ({**params}, date, lunars[index], chart_class)
                     )
 
                 quarti_start = demi_start
             else:
                 if index >= 0:
                     found_chart_params.append(
-                        (params, date, lunars[index], chart_class)
+                        ({**params}, date, lunars[index], chart_class)
                     )
 
                 quarti_start = date
@@ -2472,7 +2472,7 @@ class SolunarsAllInOne(Frame):
             )
             if start > date or date - start <= 1.25:
                 found_chart_params.append(
-                    (params, date, lunars[index], chart_class)
+                    ({**params}, date, lunars[index], chart_class)
                 )
 
         # Kinetic Lunars
