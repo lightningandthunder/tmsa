@@ -182,10 +182,15 @@ class CoreChart(object, metaclass=ABCMeta):
         placed = 0
         for i in range(len(house_info)):
             zero_indexed_house = int(house_info[i][-2]) + start
+
             limit = 15 - len(house_info) + placed
             if zero_indexed_house > limit:
                 zero_indexed_house = limit
+
             while True:
+                while zero_indexed_house > len(new) - 1:
+                    new.append([])
+
                 if len(new[zero_indexed_house]):
                     zero_indexed_house += 1
                 else:

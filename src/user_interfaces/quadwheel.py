@@ -222,15 +222,16 @@ class Quadwheel(CoreChart):
             chartfile.write('\n')
 
         if extras:
-            chartfile.write('\n\n' + '-' * 81 + '\n')
+            chartfile.write('\n' + '-' * 81 + '\n')
             s = 's' if len(extras) > 1 else ''
             chartfile.write(
                 center_align(f'Planet{s} not shown above, details below:', 81)
                 + '\n'
             )
             ex = ''
-            for planet_name in len(extras):
-                planet_layer_char = planet_name[-1]
+
+            for extra_planet_info in extras:
+                planet_layer_char = extra_planet_info[-1]
 
                 related_chart = None
                 if planet_layer_char == 't':
@@ -246,11 +247,13 @@ class Quadwheel(CoreChart):
                 ex += (
                     self.insert_planet_into_line(
                         related_chart,
-                        planet_name[0],
+                        extra_planet_info[0],
                         planet_layer_char,
                         True,
                         width=16,
                     )
                     + ' '
                 )
-            chartfile.write(center_align(ex[0:-1], 81) + '\n')
+            chartfile.write(
+                center_align(ex[0:-1], 81) + '\n' + '-' * 81 + '\n'
+            )

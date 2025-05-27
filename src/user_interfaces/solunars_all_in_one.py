@@ -1721,6 +1721,7 @@ class SolunarsAllInOne(Frame):
 
             while True:
                 target = to360(sun + increment)
+
                 date = calc_sun_crossing(target, base_date)
                 if date > start:
                     increment -= 40

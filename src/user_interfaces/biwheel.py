@@ -237,23 +237,23 @@ class Biwheel(CoreChart):
                 + '\n'
             )
             ex = ''
-            for planet_name in len(extras):
-                if planet_name[-1] == 't':
+            for extra_planet_info in extras:
+                if extra_planet_info[-1] == 't':
                     ex += (
                         self.insert_planet_into_line(
                             outermost_chart,
-                            planet_name[0],
+                            extra_planet_info[0],
                             't',
                             True,
                             width=16,
                         )
                         + ' '
                     )
-                elif planet_name[-1] == 'p':
+                elif extra_planet_info[-1] == 'p':
                     ex += (
                         self.insert_planet_into_line(
                             chart_for_angles,
-                            planet_name[0],
+                            extra_planet_info[0],
                             'p',
                             True,
                             width=16,
@@ -263,8 +263,10 @@ class Biwheel(CoreChart):
                 else:
                     ex += (
                         self.insert_planet_into_line(
-                            radix, planet_name[0], 'r', True, width=16
+                            radix, extra_planet_info[0], 'r', True, width=16
                         )
                         + ' '
                     )
-            chartfile.write(center_align(ex[0:-1], 81) + '\n')
+            chartfile.write(
+                center_align(ex[0:-1], 81) + '\n' + '-' * 81 + '\n'
+            )
