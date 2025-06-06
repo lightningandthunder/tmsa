@@ -4,10 +4,12 @@ from src.models.charts import (
     LUNAR_RETURNS,
     SOLAR_RETURNS,
     ChartObject,
+    ChartType,
     ChartWheelRole,
 )
 from src.swe import calc_moon_crossing, calc_planet, calc_sun_crossing, revjul
 from src.utils.calculation_utils import get_signed_orb_to_reference
+from src.utils.format_utils import to360
 from src.utils.transits.progressions import (
     ProgressionTypes,
     get_progressed_jd_utc,
@@ -120,29 +122,28 @@ def find_solunar_crossings_until_date(
 
     dates = []
 
+    next_increment = cycle_length
+
+    if 'demi' in solunar_name_normalized:
+        target = (target_longitude + 180) % 360
+        next_increment = math.ceil(cycle_length / 2)
+    elif 'quarti' in solunar_name_normalized:
+        next_increment = math.ceil(cycle_length / 4)
+
+        if 'first' in solunar_name_normalized:
+            target = (target_longitude + 90) % 360
+        else:
+            target = to360(target_longitude - 90)
+
     while start <= continue_until_date:
-        next_increment = cycle_length
-
-        if 'demi' in solunar_name_normalized:
-            target = (target_longitude + 180) % 360
-            next_increment = math.ceil(cycle_length / 2)
-        elif 'quarti' in solunar_name_normalized:
-            next_increment = math.ceil(cycle_length / 4)
-
-            if 'first' in solunar_name_normalized:
-                target = (target_longitude + 90) % 360
-            else:
-                target = (target_longitude - 90) % 360
-
         if target_body == 'Sun':
             date = calc_sun_crossing(target, start)
         else:
             date = calc_moon_crossing(target, start)
 
-        if (
-            date
-            and (date < continue_until_date)
-            or (date - continue_until_date < grace_period)
+        if date and (
+            (date < continue_until_date)
+            or (date - continue_until_date < (grace_period or 0))
         ):
             dates.append(date)
 
@@ -151,7 +152,63 @@ def find_solunar_crossings_until_date(
     return dates
 
 
-def find_novienic_returns_until_date(
+def find_novienic_crossings_until_date(
+    base_start: float,
+    continue_until_date: float,
+    grace_period: float,
+    target_body: Literal['Sun', 'Moon'],
+    target_longitude: float,
+    cycle_length: int,
+    solunar_type: str,
+) -> list[float]:
+
+    target = target_longitude
+    start = base_start
+
+    crossing_func = (
+        calc_sun_crossing if target_body == 'Sun' else calc_moon_crossing
+    )
+
+    dates = []
+
+    current_increment = 40
+    base_increment = 0
+
+    if solunar_type == ChartType.TEN_DAY_SOLAR_RETURN.value:
+        base_increment = 10
+        increment = 10
+        period_length = 11
+    elif solunar_type == ChartType.NOVIENIC_LUNAR_RETURN.value:
+        base_increment = 10
+        increment = 10
+        period_length = 11
+    elif solunar_type == ChartType.EIGHTEEN_HOUR_LUNAR_RETURN.value:
+        base_increment = 10
+        increment = 10
+        period_length = 11
+
+    while start <= continue_until_date:
+        next_increment = cycle_length
+
+        target = to360(target + current_increment)
+        date = crossing_func(target, start)
+
+        if date - start >= period_length:
+            current_increment -= increment
+            continue
+
+        if date and (
+            (date < continue_until_date)
+            or (date - continue_until_date < (grace_period or 0))
+        ):
+            dates.append(date)
+
+        start += next_increment
+
+    return dates
+
+
+def find_progressed_crossings_until_date(
     base_start: float,
     continue_until_date: float,
     grace_period: float,

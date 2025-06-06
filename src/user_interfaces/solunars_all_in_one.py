@@ -42,6 +42,7 @@ from src.utils.gui_utils import ShowHelp
 from src.utils.os_utils import open_file
 from src.utils.solunars import (
     find_julian_days_for_aspect_to_progressed_body,
+    find_solunar_crossings_until_date,
     set_up_progressed_params,
 )
 
@@ -1068,6 +1069,611 @@ class SolunarsAllInOne(Frame):
 
                     start += next_increment
 
+                    dates_and_chart_params.append(
+                        ({**params}, date, solar_return_type, chart_class)
+                    )
+
+                continue
+
+            elif solar_return_type in [
+                ChartType.NOVIENIC_SOLAR_RETURN.value,
+                ChartType.TEN_DAY_SOLAR_RETURN.value,
+            ]:
+                start = base_start
+
+                base_increment = 40
+                increment = 40
+                period_length = 41
+
+                if solar_return_type == ChartType.TEN_DAY_SOLAR_RETURN.value:
+                    base_increment = 10
+                    increment = 10
+                    period_length = 11
+
+                while start <= continue_until_date:
+
+                    while True:
+                        target = to360(sun + base_increment)
+                        test_date = calc_sun_crossing(target, start)
+
+                        if test_date - start >= period_length:
+                            base_increment -= increment
+                            continue
+
+                        break
+
+                    date = calc_sun_crossing(target, start)
+
+                    dates_and_chart_params.append(
+                        ({**params}, date, solar_return_type, chart_class)
+                    )
+
+                    start += increment
+
+                continue
+
+            elif solar_return_type in [
+                ChartType.SOLILUNAR_RETURN.value,
+                ChartType.DEMI_SOLILUNAR_RETURN.value,
+                ChartType.FIRST_QUARTI_SOLILUNAR_RETURN.value,
+                ChartType.LAST_QUARTI_SOLILUNAR_RETURN.value,
+            ]:
+                target = moon
+                start = base_start
+
+                while start <= continue_until_date:
+                    next_increment = 366
+
+                    if (
+                        solar_return_type
+                        == ChartType.DEMI_SOLILUNAR_RETURN.value
+                    ):
+                        target = (moon + 180) % 360
+                        next_increment = 188
+                    elif (
+                        solar_return_type
+                        == ChartType.FIRST_QUARTI_SOLILUNAR_RETURN.value
+                    ):
+                        target = (moon + 90) % 360
+                        next_increment = 92
+                    elif (
+                        solar_return_type
+                        == ChartType.LAST_QUARTI_SOLILUNAR_RETURN.value
+                    ):
+                        target = (moon + 270) % 360
+                        next_increment = 92
+
+                    date = calc_sun_crossing(target, start)
+                    dates_and_chart_params.append(
+                        ({**params}, date, solar_return_type, chart_class)
+                    )
+
+                    start += next_increment
+            elif solar_return_type in [
+                ChartType.KINETIC_SOLAR_RETURN.value,
+                ChartType.DEMI_KINETIC_SOLAR_RETURN.value,
+                ChartType.FIRST_QUARTI_KINETIC_SOLAR_RETURN.value,
+                ChartType.LAST_QUARTI_KINETIC_SOLAR_RETURN.value,
+            ]:
+                start = base_start
+
+                while start <= continue_until_date:
+
+                    relationship = 'full'
+                    next_increment = 367
+
+                    if (
+                        solar_return_type
+                        == ChartType.DEMI_KINETIC_SOLAR_RETURN.value
+                    ):
+                        relationship = 'demi'
+                        next_increment = 184
+                    elif (
+                        solar_return_type
+                        == ChartType.FIRST_QUARTI_KINETIC_SOLAR_RETURN.value
+                    ):
+                        relationship = 'Q1'
+                        next_increment = 92
+                    elif (
+                        solar_return_type
+                        == ChartType.LAST_QUARTI_KINETIC_SOLAR_RETURN.value
+                    ):
+                        relationship = 'Q3'
+                        next_increment = 92
+
+                    lower_bound = start
+                    higher_bound = start + 366
+
+                    (
+                        progressed_jd,
+                        transit_jd,
+                    ) = find_julian_days_for_aspect_to_progressed_body(
+                        radix.julian_day_utc,
+                        lower_bound,
+                        higher_bound,
+                        0,
+                        radix.planets['Sun'].longitude,
+                        relationship,
+                    )
+
+                    if progressed_jd and transit_jd:
+                        progressed_params = {**params}
+                        progressed_params = set_up_progressed_params(
+                            progressed_params, progressed_jd, solar_return_type
+                        )
+                        dates_and_chart_params.append(
+                            (
+                                progressed_params,
+                                transit_jd,
+                                solar_return_type,
+                                chart_class,
+                            )
+                        )
+                    start += next_increment
+
+                continue
+
+        for lunar_return_type in lunars:
+            chart_class = 'LR'
+
+            if lunar_return_type in [
+                ChartType.LUNAR_RETURN.value,
+                ChartType.DEMI_LUNAR_RETURN.value,
+                ChartType.FIRST_QUARTI_LUNAR_RETURN.value,
+                ChartType.LAST_QUARTI_LUNAR_RETURN.value,
+            ]:
+                target = moon
+                start = base_start
+
+                while start <= continue_until_date:
+                    next_increment = 29
+
+                    if lunar_return_type == ChartType.DEMI_LUNAR_RETURN.value:
+                        target = (moon + 180) % 360
+                        next_increment = 14.5
+                    elif (
+                        lunar_return_type
+                        == ChartType.FIRST_QUARTI_LUNAR_RETURN.value
+                    ):
+                        target = (moon + 90) % 360
+                        next_increment = 7.25
+                    elif (
+                        lunar_return_type
+                        == ChartType.LAST_QUARTI_LUNAR_RETURN.value
+                    ):
+                        target = (moon + 270) % 360
+                        next_increment = 7.25
+
+                    date = calc_moon_crossing(target, start)
+                    dates_and_chart_params.append(
+                        ({**params}, date, lunar_return_type, chart_class)
+                    )
+
+                    start += next_increment
+
+                continue
+
+            elif lunar_return_type in [
+                ChartType.NOVIENIC_LUNAR_RETURN.value,
+                ChartType.EIGHTEEN_HOUR_LUNAR_RETURN.value,
+            ]:
+
+                base_increment = 40
+                increment = 40
+                period_length = 3.45
+
+                if (
+                    lunar_return_type
+                    == ChartType.EIGHTEEN_HOUR_LUNAR_RETURN.value
+                ):
+                    base_increment = 10
+                    increment = 10
+                    period_length = 0.86
+
+                start = base_start
+
+                while start <= continue_until_date:
+
+                    # Figure out which incremental return is the next one after the start date
+                    while True:
+                        target = to360(moon + base_increment)
+                        test_date = calc_moon_crossing(target, start)
+                        if test_date - start >= period_length:
+                            base_increment -= increment
+                            continue
+
+                        break
+
+                    date = calc_moon_crossing(target, start)
+                    dates_and_chart_params.append(
+                        ({**params}, date, lunar_return_type, chart_class)
+                    )
+
+                    start += increment
+
+                continue
+
+            elif lunar_return_type in [
+                ChartType.LUNISOLAR_RETURN.value,
+                ChartType.DEMI_LUNISOLAR_RETURN.value,
+                ChartType.FIRST_QUARTI_LUNISOLAR_RETURN.value,
+                ChartType.LAST_QUARTI_LUNISOLAR_RETURN.value,
+            ]:
+                target = sun
+                start = base_start
+
+                while start <= continue_until_date:
+                    next_increment = 29
+
+                    if (
+                        lunar_return_type
+                        == ChartType.DEMI_LUNISOLAR_RETURN.value
+                    ):
+                        target = (sun + 180) % 360
+                        next_increment = 14.5
+                    elif (
+                        lunar_return_type
+                        == ChartType.FIRST_QUARTI_LUNISOLAR_RETURN.value
+                    ):
+                        target = (sun + 90) % 360
+                        next_increment = 7.25
+                    elif (
+                        lunar_return_type
+                        == ChartType.LAST_QUARTI_LUNISOLAR_RETURN.value
+                    ):
+                        target = (sun + 270) % 360
+                        next_increment = 7.25
+
+                    date = calc_moon_crossing(target, start)
+                    dates_and_chart_params.append(
+                        ({**params}, date, lunar_return_type, chart_class)
+                    )
+                    start += next_increment
+
+                continue
+
+            elif lunar_return_type in [
+                ChartType.ANLUNAR_RETURN.value,
+                ChartType.DEMI_ANLUNAR_RETURN.value,
+                ChartType.FIRST_QUARTI_ANLUNAR_RETURN.value,
+                ChartType.LAST_QUARTI_ANLUNAR_RETURN.value,
+            ]:
+
+                start = base_start
+
+                while start <= continue_until_date:
+                    # Get previous solar return
+                    solar_return_date = calc_sun_crossing(sun, start - 366)
+                    (year, month, day, time) = revjul(
+                        solar_return_date, params['style']
+                    )
+
+                    ssr_params = {**params}
+                    ssr_params.update(
+                        {
+                            'name': radix.name + ' Solar Return',
+                            'type': ChartType.SOLAR_RETURN.value,
+                            'year': year,
+                            'month': month,
+                            'day': day,
+                            'time': time,
+                        }
+                    )
+
+                    ssr_chart = ChartObject(ssr_params)
+
+                    solar_moon = ssr_chart.planets['Moon'].longitude
+                    target = solar_moon
+
+                    next_increment = 29
+
+                    if (
+                        lunar_return_type
+                        == ChartType.DEMI_ANLUNAR_RETURN.value
+                    ):
+                        target = (solar_moon + 180) % 360
+                        next_increment = 14.5
+                    elif (
+                        lunar_return_type
+                        == ChartType.FIRST_QUARTI_ANLUNAR_RETURN.value
+                    ):
+                        target = (solar_moon + 90) % 360
+                        next_increment = 7.25
+                    elif (
+                        lunar_return_type
+                        == ChartType.LAST_QUARTI_ANLUNAR_RETURN.value
+                    ):
+                        target = (solar_moon + 270) % 360
+                        next_increment = 7.25
+
+                    transiting_params = {**params}
+                    transiting_params['ssr_chart'] = ssr_chart
+
+                    date = calc_moon_crossing(target, start)
+                    dates_and_chart_params.append(
+                        (
+                            transiting_params,
+                            date,
+                            lunar_return_type,
+                            chart_class,
+                        )
+                    )
+                    start += next_increment
+
+                continue
+
+            elif lunar_return_type in [
+                ChartType.LUNAR_SYNODIC_RETURN.value,
+                ChartType.DEMI_LUNAR_SYNODIC_RETURN.value,
+                ChartType.FIRST_QUARTI_LUNAR_SYNODIC_RETURN.value,
+                ChartType.LAST_QUARTI_LUNAR_SYNODIC_RETURN.value,
+            ]:
+                precision = 5
+
+                natal_elongation = get_signed_orb_to_reference(moon, sun)
+                natal_elongation = round(natal_elongation, precision)
+
+                start = base_start
+
+                while start <= continue_until_date:
+
+                    target_elongation = natal_elongation
+                    next_increment = 30
+
+                    if (
+                        lunar_return_type
+                        == ChartType.DEMI_LUNAR_SYNODIC_RETURN.value
+                    ):
+                        if natal_elongation > 0:
+                            target_elongation = natal_elongation - 180
+                        else:
+                            target_elongation = natal_elongation + 180
+
+                        next_increment = 15
+                    elif (
+                        lunar_return_type
+                        == ChartType.FIRST_QUARTI_LUNAR_SYNODIC_RETURN.value
+                    ):
+                        if natal_elongation > 0:
+                            target_elongation = natal_elongation + 90
+                        else:
+                            target_elongation = natal_elongation - 90
+                        next_increment = 7.5
+                    elif (
+                        lunar_return_type
+                        == ChartType.LAST_QUARTI_LUNAR_SYNODIC_RETURN.value
+                    ):
+                        if natal_elongation > 0:
+                            target_elongation = natal_elongation - 90
+                        else:
+                            target_elongation = natal_elongation + 90
+                        next_increment = 7.5
+
+                    if target_elongation > 180:
+                        diff = target_elongation - 180
+                        target_elongation = -1 * (180 - diff)
+
+                    elif target_elongation < -180:
+                        diff = target_elongation + 180
+                        target_elongation = -1 * (-180 - diff)
+
+                    lower_bound = start
+                    higher_bound = start + 30
+
+                    date = find_jd_utc_of_elongation(
+                        target_elongation, lower_bound, higher_bound
+                    )
+                    if date:
+                        dates_and_chart_params.append(
+                            ({**params}, date, lunar_return_type, chart_class)
+                        )
+                    start += next_increment
+
+            elif lunar_return_type in [
+                ChartType.KINETIC_ANLUNAR_RETURN.value,
+                ChartType.KINETIC_DEMI_ANLUNAR_RETURN.value,
+                ChartType.FIRST_QUARTI_KINETIC_ANLUNAR_RETURN.value,
+                ChartType.LAST_QUARTI_KINETIC_ANLUNAR_RETURN.value,
+            ]:
+                start = base_start
+
+                while start <= continue_until_date:
+                    # Get previous solar return
+                    solar_return_date = calc_sun_crossing(sun, start - 366)
+                    (year, month, day, time) = revjul(
+                        solar_return_date, params['style']
+                    )
+
+                    ssr_params = {**params}
+                    ssr_params.update(
+                        {
+                            'name': radix.name + ' Solar Return',
+                            'type': ChartType.SOLAR_RETURN.value,
+                            'year': year,
+                            'month': month,
+                            'day': day,
+                            'time': time,
+                        }
+                    )
+
+                    kar_params = {**params}
+
+                    ssr_chart = ChartObject(ssr_params)
+                    kar_params['ssr_chart'] = ssr_chart
+
+                    relationship = 'full'
+                    next_increment = 30
+
+                    if (
+                        lunar_return_type
+                        == ChartType.KINETIC_DEMI_ANLUNAR_RETURN.value
+                    ):
+                        relationship = 'demi'
+                        next_increment = 15
+                    elif (
+                        lunar_return_type
+                        == ChartType.FIRST_QUARTI_KINETIC_ANLUNAR_RETURN.value
+                    ):
+                        relationship = 'Q1'
+                        next_increment = 7.5
+                    elif (
+                        lunar_return_type
+                        == ChartType.LAST_QUARTI_KINETIC_ANLUNAR_RETURN.value
+                    ):
+                        relationship = 'Q3'
+                        next_increment = 7.5
+
+                    lower_bound = start
+                    higher_bound = start + 30
+
+                    (
+                        progressed_jd,
+                        transit_jd,
+                    ) = find_julian_days_for_aspect_to_progressed_body(
+                        solar_return_date,
+                        lower_bound,
+                        higher_bound,
+                        1,
+                        radix.planets['Sun'].longitude,
+                        relationship,
+                    )
+                    if progressed_jd and transit_jd:
+                        progressed_params = {**kar_params}
+                        progressed_params = set_up_progressed_params(
+                            progressed_params, progressed_jd, lunar_return_type
+                        )
+                        dates_and_chart_params.append(
+                            (
+                                progressed_params,
+                                transit_jd,
+                                lunar_return_type,
+                                chart_class,
+                            )
+                        )
+
+                    start += next_increment
+
+            elif lunar_return_type in [
+                ChartType.KINETIC_LUNAR_RETURN.value,
+                ChartType.DEMI_KINETIC_LUNAR_RETURN.value,
+                ChartType.FIRST_QUARTI_KINETIC_LUNAR_RETURN.value,
+                ChartType.LAST_QUARTI_KINETIC_LUNAR_RETURN.value,
+            ]:
+                start = base_start
+
+                while start <= continue_until_date:
+
+                    relationship = 'full'
+                    next_increment = 30
+
+                    if (
+                        lunar_return_type
+                        == ChartType.DEMI_KINETIC_LUNAR_RETURN.value
+                    ):
+                        relationship = 'demi'
+                        next_increment = 15
+                    elif (
+                        lunar_return_type
+                        == ChartType.FIRST_QUARTI_KINETIC_LUNAR_RETURN.value
+                    ):
+                        relationship = 'Q1'
+                        next_increment = 7.5
+                    elif (
+                        lunar_return_type
+                        == ChartType.LAST_QUARTI_KINETIC_LUNAR_RETURN.value
+                    ):
+                        relationship = 'Q3'
+                        next_increment = 7.5
+
+                    lower_bound = start
+                    higher_bound = start + 30
+
+                    (
+                        progressed_jd,
+                        transit_jd,
+                    ) = find_julian_days_for_aspect_to_progressed_body(
+                        radix.julian_day_utc,
+                        lower_bound,
+                        higher_bound,
+                        1,
+                        radix.planets['Sun'].longitude,
+                        relationship,
+                    )
+                    if progressed_jd and transit_jd:
+                        progressed_params = {**params}
+                        progressed_params = set_up_progressed_params(
+                            progressed_params, progressed_jd, lunar_return_type
+                        )
+                        dates_and_chart_params.append(
+                            (
+                                progressed_params,
+                                transit_jd,
+                                lunar_return_type,
+                                chart_class,
+                            )
+                        )
+                    start += next_increment
+
+                continue
+
+        return dates_and_chart_params
+
+    def forward_search_2(
+        self,
+        params: dict,
+        solars: list[str],
+        lunars: list[str],
+        burst_months=None,
+    ):
+        dates_and_chart_params: list[tuple[any]] = []
+
+        radix = params['radix']
+
+        base_start = julday(
+            params['year'],
+            params['month'],
+            params['day'],
+            params['time'],
+            params['style'],
+        )
+
+        continue_until_date = None
+
+        if burst_months:
+            continue_until_date = base_start + (30 * burst_months)
+
+        sun = radix.planets['Sun'].longitude
+        moon = radix.planets['Moon'].longitude
+
+        for solar_return_type in solars:
+            chart_class = 'SR'
+
+            cycle_length = 366
+            target_longitude = sun
+            target_body = 'Sun'
+
+            if not continue_until_date:
+                continue_until_date = base_start + 366
+
+            # Traditional Solar Returns
+            if solar_return_type in [
+                ChartType.SOLAR_RETURN.value,
+                ChartType.DEMI_SOLAR_RETURN.value,
+                ChartType.FIRST_QUARTI_SOLAR_RETURN.value,
+                ChartType.LAST_QUARTI_SOLAR_RETURN.value,
+            ]:
+                start = base_start
+
+                returns = find_solunar_crossings_until_date(
+                    base_start=base_start,
+                    continue_until_date=continue_until_date,
+                    target_body=target_body,
+                    target_longitude=target_longitude,
+                    cycle_length=cycle_length,
+                    solunar_type=solar_return_type,
+                )
+
+                for date in returns:
                     dates_and_chart_params.append(
                         (params, date, solar_return_type, chart_class)
                     )
@@ -2691,7 +3297,10 @@ class SolunarsAllInOne(Frame):
             ssr_chart = ChartObject(ssr_params).with_role(
                 ChartWheelRole.SOLAR.value
             )
-            params['ssr_chart'] = ssr_chart
+
+            transit_params = {**params}
+
+            transit_params['ssr_chart'] = ssr_chart
 
             (
                 progressed_full_date,
@@ -2711,7 +3320,7 @@ class SolunarsAllInOne(Frame):
 
             if transit_full_date and transit_full_date > start:
                 if transit_full_date - start <= 1.25 and index >= 0:
-                    progressed_params = {**params}
+                    progressed_params = {**transit_params}
                     progressed_params = set_up_progressed_params(
                         progressed_params,
                         progressed_full_date,
@@ -2782,7 +3391,7 @@ class SolunarsAllInOne(Frame):
             )
             if transit_full_date and transit_full_date > start:
                 if transit_full_date - start <= 1.25 and index >= 0:
-                    progressed_params = {**params}
+                    progressed_params = {**transit_params}
                     progressed_params = set_up_progressed_params(
                         progressed_params,
                         progressed_full_date,
@@ -2801,7 +3410,7 @@ class SolunarsAllInOne(Frame):
                 quarti_start = demi_start
             else:
                 if index >= 0 and transit_full_date:
-                    progressed_params = {**params}
+                    progressed_params = {**transit_params}
                     progressed_params = set_up_progressed_params(
                         progressed_params,
                         progressed_full_date,
@@ -2852,7 +3461,7 @@ class SolunarsAllInOne(Frame):
                     relationship,
                 )
                 if transit_full_date and transit_full_date - start <= 1.25:
-                    progressed_params = {**params}
+                    progressed_params = {**transit_params}
                     progressed_params = set_up_progressed_params(
                         progressed_params, progressed_full_date, lunars[index]
                     )
