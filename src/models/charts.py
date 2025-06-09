@@ -529,7 +529,7 @@ class ChartObject:
     angle_data: dict[str, AngleData]
     vertex: list[float]
     eastpoint: list[float]
-    role: ChartWheelRole
+    role: ChartWheelRole = ChartWheelRole.NATAL
     notes: str | None = None
     style: int = 1
     version: tuple[int | str] = (0, 0, 0)

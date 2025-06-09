@@ -1,8 +1,6 @@
 import math
 from typing import Literal
 from src.models.charts import (
-    LUNAR_RETURNS,
-    SOLAR_RETURNS,
     ChartObject,
     ChartType,
     ChartWheelRole,
@@ -123,7 +121,7 @@ def find_solunar_crossings_until_date(
     dates = []
 
     next_increment = cycle_length
-    
+
     grace_period_normalized = grace_period or 0
 
     if 'demi' in solunar_name_normalized:
@@ -177,7 +175,6 @@ def find_novienic_crossings_until_date(
     return_dates = []
 
     definition_increment = 40
-    normalized_cycle_length = cycle_length
     normalized_grace_period = grace_period or 0
 
     if solunar_type in [
@@ -185,28 +182,26 @@ def find_novienic_crossings_until_date(
         ChartType.NOVIENIC_LUNAR_RETURN.value,
     ]:
         definition_increment = 10
-        normalized_cycle_length /= 4
         normalized_grace_period /= 4
 
     while start <= continue_until_date:
         dates_in_cycle = []
-        current_increment = definition_increment
+        current_increment = 0
 
         while current_increment < 360:
-            target = to360(target + current_increment)
-            date = crossing_func(target, start)
+            date = crossing_func(to360(target + current_increment), start)
             dates_in_cycle.append(date)
-            
+
             current_increment += definition_increment
 
         for date in dates_in_cycle:
-            if ((date < continue_until_date)
-                or ( date - continue_until_date < normalized_grace_period)
+            if (date < continue_until_date) or (
+                date - continue_until_date < normalized_grace_period
             ):
                 return_dates.append(date)
 
         start += cycle_length
- 
+
     return sorted(return_dates)
 
 
@@ -228,7 +223,7 @@ def find_progressed_crossings_until_date(
 
     solunar_name_normalized = solunar_type.lower()
     relationship = 'full'
-    
+
     if 'demi' in solunar_name_normalized:
         next_increment = math.ceil(cycle_length / 2)
         relationship = 'demi'
@@ -256,11 +251,15 @@ def find_progressed_crossings_until_date(
             relationship,
         )
         if progressed_jd and transit_jd:
-            if (transit_jd < continue_until_date) or (transit_jd - continue_until_date <= (grace_period or 0)):
-                return_dates.append({
-                    'transit': transit_jd,
-                    'progressed': progressed_jd,
-                })
+            if (transit_jd < continue_until_date) or (
+                transit_jd - continue_until_date <= (grace_period or 0)
+            ):
+                return_dates.append(
+                    {
+                        'transit': transit_jd,
+                        'progressed': progressed_jd,
+                    }
+                )
 
         start += next_increment
 
@@ -272,7 +271,6 @@ def find_progressed_anlunar_crossings_until_date(
     continue_until_date: float,
     grace_period: float,
     radix_sun_longitude: float,
-    base_longitude: float,
     solunar_type: str,
 ) -> list[dict]:
 
@@ -283,22 +281,13 @@ def find_progressed_anlunar_crossings_until_date(
     relationship = 'full'
     next_increment = 28
 
-    if (
-        solunar_type
-        == ChartType.KINETIC_DEMI_ANLUNAR_RETURN.value
-    ):
+    if solunar_type == ChartType.KINETIC_DEMI_ANLUNAR_RETURN.value:
         relationship = 'demi'
         next_increment = 14
-    elif (
-        solunar_type
-        == ChartType.FIRST_QUARTI_KINETIC_ANLUNAR_RETURN.value
-    ):
+    elif solunar_type == ChartType.FIRST_QUARTI_KINETIC_ANLUNAR_RETURN.value:
         relationship = 'Q1'
         next_increment = 7
-    elif (
-        solunar_type
-        == ChartType.LAST_QUARTI_KINETIC_ANLUNAR_RETURN.value
-    ):
+    elif solunar_type == ChartType.LAST_QUARTI_KINETIC_ANLUNAR_RETURN.value:
         relationship = 'Q3'
         next_increment = 7
 
@@ -321,13 +310,52 @@ def find_progressed_anlunar_crossings_until_date(
             relationship,
         )
         if progressed_jd and transit_jd:
-            if (transit_jd < continue_until_date) or (transit_jd - continue_until_date <= (grace_period or 0)):
-                return_dates.append({
-                    'transit': transit_jd,
-                    'progressed': progressed_jd,
-                })
+            if (transit_jd < continue_until_date) or (
+                transit_jd - continue_until_date <= (grace_period or 0)
+            ):
+                return_dates.append(
+                    {
+                        'transit': transit_jd,
+                        'progressed': progressed_jd,
+                    }
+                )
 
         start += next_increment
 
     return sorted(return_dates, key=lambda x: x['transit'])
 
+
+def append_applicable_returns(
+    returns: list,
+    return_args_list: list,
+    args: tuple,
+    burst: bool,
+    active: bool,
+):
+    if not burst:
+        if active:
+            returns = returns[-1] if len(returns) else []
+        else:
+            returns = [returns[0]] if len(returns) else []
+
+    for date in returns:
+        if not isinstance(date, dict):
+            return_args_list.append(({**args[0]}, date, *args[2:]))
+        else:
+            transit_date = date.get('transit')
+            progressed_date = date.get('progressed')
+
+            if transit_date and progressed_date:
+                progressed_params = set_up_progressed_params(
+                    {**args[0]},
+                    progressed_date,
+                    args[2],
+                )
+
+                return_args_list.append(
+                    (
+                        progressed_params,
+                        transit_date,
+                        *args[2:],
+                    )
+                )

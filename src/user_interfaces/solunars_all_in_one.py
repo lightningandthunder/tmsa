@@ -41,6 +41,7 @@ from src.utils.format_utils import display_name, normalize_text, to360, toDMS
 from src.utils.gui_utils import ShowHelp
 from src.utils.os_utils import open_file
 from src.utils.solunars import (
+    append_applicable_returns,
     find_julian_days_for_aspect_to_progressed_body,
     find_novienic_crossings_until_date,
     find_progressed_anlunar_crossings_until_date,
@@ -922,7 +923,7 @@ class SolunarsAllInOne(Frame):
         if self.search.value == 0:
             dates_and_chart_params = self.active_search(params, solars, lunars)
             if duration:
-                burst_chart_params = self.forward_search_2(
+                burst_chart_params = self.forward_search(
                     params, solars, lunars, burst_months=duration
                 )
                 dates_and_chart_params += burst_chart_params
@@ -935,7 +936,7 @@ class SolunarsAllInOne(Frame):
                 params['style'],
             )
             active_chart_params = self.active_search(params, solars, lunars)
-            forward_chart_params = self.forward_search_2(params, solars, lunars)
+            forward_chart_params = self.forward_search(params, solars, lunars)
 
             for chart_type in solars + lunars:
                 active_chart_info = pydash.find(
@@ -958,13 +959,13 @@ class SolunarsAllInOne(Frame):
                     dates_and_chart_params.append(future_chart_info)
 
             if duration:
-                burst_chart_params = self.forward_search_2(
+                burst_chart_params = self.forward_search(
                     params, solars, lunars, burst_months=duration
                 )
                 dates_and_chart_params += burst_chart_params
 
         elif self.search.value == 2:
-            dates_and_chart_params = self.forward_search_2(
+            dates_and_chart_params = self.forward_search(
                 params, solars, lunars, burst_months=duration
             )
         else:
@@ -1008,15 +1009,41 @@ class SolunarsAllInOne(Frame):
         else:
             self.status.error('No charts found.')
 
-
-    def forward_search_2(
+    def forward_search(
         self,
         params: dict,
         solars: list[str],
         lunars: list[str],
         burst_months=None,
+        active=False,
     ):
         dates_and_chart_params: list[tuple[any]] = []
+
+        def _append_returns(
+            returns, chart_type, chart_class, override_params=None
+        ):
+            append_applicable_returns(
+                returns=returns,
+                return_args_list=dates_and_chart_params,
+                args=(
+                    override_params or params,
+                    None,
+                    chart_type,
+                    chart_class,
+                ),
+                burst=burst_months is not None and burst_months > 0,
+                active=active,
+            )
+
+        def append_lunars(returns, chart_type, override_params=None):
+            _append_returns(
+                returns, chart_type, 'LR', override_params=override_params
+            )
+
+        def append_solars(returns, chart_type, override_params=None):
+            _append_returns(
+                returns, chart_type, 'SR', override_params=override_params
+            )
 
         radix = params['radix']
 
@@ -1037,11 +1064,12 @@ class SolunarsAllInOne(Frame):
         moon_radix_longitude = radix.planets['Moon'].longitude
 
         for solar_return_type in solars:
-            chart_class = 'SR'
             cycle_length = 366
 
             if not continue_until_date:
-                continue_until_date = base_start + 366
+                continue_until_date = (
+                    base_start if active else base_start + 365
+                )
 
             # Traditional Solar Returns
             if solar_return_type in [
@@ -1050,8 +1078,10 @@ class SolunarsAllInOne(Frame):
                 ChartType.FIRST_QUARTI_SOLAR_RETURN.value,
                 ChartType.LAST_QUARTI_SOLAR_RETURN.value,
             ]:
+                starting_date = base_start - 365 if active else base_start
+
                 returns = find_solunar_crossings_until_date(
-                    base_start=base_start,
+                    base_start=starting_date,
                     continue_until_date=continue_until_date,
                     target_body='Sun',
                     target_longitude=sun_radix_longitude,
@@ -1060,23 +1090,20 @@ class SolunarsAllInOne(Frame):
                     grace_period=10,
                 )
 
-                if not burst_months:
-                    returns = [returns[0]] if len(returns) else []
-   
-                for date in returns:
-                    dates_and_chart_params.append(
-                        (params, date, solar_return_type, chart_class)
-                    )
-
+                append_solars(returns, solar_return_type)
                 continue
 
             elif solar_return_type in [
                 ChartType.NOVIENIC_SOLAR_RETURN.value,
                 ChartType.TEN_DAY_SOLAR_RETURN.value,
             ]:
+                if solar_return_type == ChartType.NOVIENIC_SOLAR_RETURN.value:
+                    starting_date = base_start - 41 if active else base_start
+                else:
+                    starting_date = base_start - 11 if active else base_start
 
                 returns = find_novienic_crossings_until_date(
-                    base_start=base_start,
+                    base_start=starting_date,
                     continue_until_date=continue_until_date,
                     target_body='Sun',
                     target_longitude=sun_radix_longitude,
@@ -1085,14 +1112,7 @@ class SolunarsAllInOne(Frame):
                     grace_period=1,
                 )
 
-                if not burst_months:
-                    returns = [returns[0]] if len(returns) else []
-
-                for date in returns:
-                    dates_and_chart_params.append(
-                        (params, date, solar_return_type, chart_class)
-                    )
-
+                append_solars(returns, solar_return_type)
                 continue
 
             elif solar_return_type in [
@@ -1101,8 +1121,10 @@ class SolunarsAllInOne(Frame):
                 ChartType.FIRST_QUARTI_SOLILUNAR_RETURN.value,
                 ChartType.LAST_QUARTI_SOLILUNAR_RETURN.value,
             ]:
+                starting_date = base_start - 365 if active else base_start
+
                 returns = find_solunar_crossings_until_date(
-                    base_start=base_start,
+                    base_start=starting_date,
                     continue_until_date=continue_until_date,
                     target_body='Sun',
                     target_longitude=moon_radix_longitude,
@@ -1111,24 +1133,19 @@ class SolunarsAllInOne(Frame):
                     grace_period=10,
                 )
 
-                if not burst_months:
-                    returns = [returns[0]] if len(returns) else []
-
-                for date in returns:
-                    dates_and_chart_params.append(
-                        (params, date, solar_return_type, chart_class)
-                    )
-
+                append_solars(returns, solar_return_type)
                 continue
-            
+
             elif solar_return_type in [
                 ChartType.KINETIC_SOLAR_RETURN.value,
                 ChartType.DEMI_KINETIC_SOLAR_RETURN.value,
                 ChartType.FIRST_QUARTI_KINETIC_SOLAR_RETURN.value,
                 ChartType.LAST_QUARTI_KINETIC_SOLAR_RETURN.value,
             ]:
+                starting_date = base_start - 365 if active else base_start
+
                 returns = find_progressed_crossings_until_date(
-                    base_start=base_start,
+                    base_start=starting_date,
                     radix_julian_day_utc=radix.julian_day_utc,
                     continue_until_date=continue_until_date,
                     target_body='Sun',
@@ -1138,37 +1155,14 @@ class SolunarsAllInOne(Frame):
                     grace_period=10,
                 )
 
-                if not burst_months:
-                    returns = [returns[0]] if len(returns) else []
-
-                for dates in returns:
-                    transit_date = dates['transit']
-                    progressed_date = dates['progressed']
-
-                    if progressed_date and transit_date:
-                        progressed_params = {**params}
-                        progressed_params = set_up_progressed_params(
-                            progressed_params, progressed_date, solar_return_type
-                        )
-                        dates_and_chart_params.append(
-                            (
-                                progressed_params,
-                                transit_date,
-                                solar_return_type,
-                                chart_class,
-                            )
-                        )
-
+                append_solars(returns, solar_return_type)
                 continue
-    
 
         for lunar_return_type in lunars:
-            chart_class = 'LR'
-
             cycle_length = 29
 
             if not continue_until_date:
-                continue_until_date = base_start + 29
+                continue_until_date = base_start if active else base_start + 29
 
             if lunar_return_type in [
                 ChartType.LUNAR_RETURN.value,
@@ -1176,8 +1170,10 @@ class SolunarsAllInOne(Frame):
                 ChartType.FIRST_QUARTI_LUNAR_RETURN.value,
                 ChartType.LAST_QUARTI_LUNAR_RETURN.value,
             ]:
+                starting_date = base_start - 29 if active else base_start
+
                 returns = find_solunar_crossings_until_date(
-                    base_start=base_start,
+                    base_start=starting_date,
                     continue_until_date=continue_until_date,
                     target_body='Moon',
                     target_longitude=moon_radix_longitude,
@@ -1186,23 +1182,20 @@ class SolunarsAllInOne(Frame):
                     grace_period=1,
                 )
 
-                if not burst_months:
-                    returns = [returns[0]] if len(returns) else []
-
-                for date in returns:
-                    dates_and_chart_params.append(
-                        (params, date, lunar_return_type, chart_class)
-                    )
-
+                append_lunars(returns, lunar_return_type)
                 continue
 
             elif lunar_return_type in [
                 ChartType.NOVIENIC_LUNAR_RETURN.value,
                 ChartType.EIGHTEEN_HOUR_LUNAR_RETURN.value,
             ]:
+                if lunar_return_type == ChartType.NOVIENIC_LUNAR_RETURN.value:
+                    starting_date = base_start - 3.5 if active else base_start
+                else:
+                    starting_date = base_start - 0.8 if active else base_start
 
                 returns = find_novienic_crossings_until_date(
-                    base_start=base_start,
+                    base_start=starting_date,
                     continue_until_date=continue_until_date,
                     target_body='Moon',
                     target_longitude=moon_radix_longitude,
@@ -1211,16 +1204,8 @@ class SolunarsAllInOne(Frame):
                     grace_period=0.5,
                 )
 
-                if not burst_months:
-                    returns = [returns[0]] if len(returns) else []
-
-                for date in returns:
-                    dates_and_chart_params.append(
-                        (params, date, lunar_return_type, chart_class)
-                    )
-
+                append_lunars(returns, lunar_return_type)
                 continue
-
 
             elif lunar_return_type in [
                 ChartType.LUNISOLAR_RETURN.value,
@@ -1228,8 +1213,10 @@ class SolunarsAllInOne(Frame):
                 ChartType.FIRST_QUARTI_LUNISOLAR_RETURN.value,
                 ChartType.LAST_QUARTI_LUNISOLAR_RETURN.value,
             ]:
+                starting_date = base_start - 29 if active else base_start
+
                 returns = find_solunar_crossings_until_date(
-                    base_start=base_start,
+                    base_start=starting_date,
                     continue_until_date=continue_until_date,
                     target_body='Moon',
                     target_longitude=sun_radix_longitude,
@@ -1238,14 +1225,7 @@ class SolunarsAllInOne(Frame):
                     grace_period=1,
                 )
 
-                if not burst_months:
-                    returns = [returns[0]] if len(returns) else []
-
-                for date in returns:
-                    dates_and_chart_params.append(
-                        (params, date, lunar_return_type, chart_class)
-                    )
-
+                append_lunars(returns, lunar_return_type)
                 continue
 
             elif lunar_return_type in [
@@ -1254,9 +1234,12 @@ class SolunarsAllInOne(Frame):
                 ChartType.FIRST_QUARTI_ANLUNAR_RETURN.value,
                 ChartType.LAST_QUARTI_ANLUNAR_RETURN.value,
             ]:
-
                 # Get previous solar return
-                solar_return_date = calc_sun_crossing(sun_radix_longitude, base_start - 366)
+                # TODO - when this crosses over into the next year, it won't use the next SSR
+
+                solar_return_date = calc_sun_crossing(
+                    sun_radix_longitude, base_start - 366
+                )
                 (year, month, day, time) = revjul(
                     solar_return_date, params['style']
                 )
@@ -1277,8 +1260,10 @@ class SolunarsAllInOne(Frame):
 
                 solar_moon = ssr_chart.planets['Moon'].longitude
 
+                starting_date = base_start - 29 if active else base_start
+
                 returns = find_solunar_crossings_until_date(
-                    base_start=base_start,
+                    base_start=starting_date,
                     continue_until_date=continue_until_date,
                     target_body='Moon',
                     target_longitude=solar_moon,
@@ -1287,17 +1272,11 @@ class SolunarsAllInOne(Frame):
                     grace_period=1,
                 )
 
-                if not burst_months:
-                    returns = [returns[0]] if len(returns) else []
-
-                for date in returns:
-                    transiting_params = {**params}
-                    transiting_params['ssr_chart'] = ssr_chart
-
-                    dates_and_chart_params.append(
-                        (transiting_params, date, lunar_return_type, chart_class)
-                    )
-
+                append_lunars(
+                    returns,
+                    lunar_return_type,
+                    override_params={**params, 'ssr_chart': ssr_chart},
+                )
                 continue
 
             elif lunar_return_type in [
@@ -1308,10 +1287,12 @@ class SolunarsAllInOne(Frame):
             ]:
                 precision = 5
 
-                natal_elongation = get_signed_orb_to_reference(moon_radix_longitude, sun_radix_longitude)
+                natal_elongation = get_signed_orb_to_reference(
+                    moon_radix_longitude, sun_radix_longitude
+                )
                 natal_elongation = round(natal_elongation, precision)
 
-                start = base_start
+                start = base_start - 30 if active else base_start
 
                 while start <= continue_until_date:
 
@@ -1363,10 +1344,10 @@ class SolunarsAllInOne(Frame):
                     )
                     if date:
                         dates_and_chart_params.append(
-                            (params, date, lunar_return_type, chart_class)
+                            (params, date, lunar_return_type, 'LR')
                         )
                     start += next_increment
-                    
+
                 continue
 
             elif lunar_return_type in [
@@ -1376,7 +1357,11 @@ class SolunarsAllInOne(Frame):
                 ChartType.LAST_QUARTI_KINETIC_ANLUNAR_RETURN.value,
             ]:
                 # Get previous solar return
-                solar_return_date = calc_sun_crossing(sun_radix_longitude, base_start - 366)
+                # TODO - when this crosses over into the next year, it won't use the next SSR
+
+                solar_return_date = calc_sun_crossing(
+                    sun_radix_longitude, base_start - 366
+                )
                 (year, month, day, time) = revjul(
                     solar_return_date, params['style']
                 )
@@ -1394,43 +1379,23 @@ class SolunarsAllInOne(Frame):
                 )
 
                 ssr_chart = ChartObject(ssr_params)
-                
+
+                starting_date = base_start - 29 if active else base_start
+
                 returns = find_progressed_anlunar_crossings_until_date(
-                    base_start=base_start,
+                    base_start=starting_date,
                     continue_until_date=continue_until_date,
                     radix_sun_longitude=sun_radix_longitude,
-                    base_longitude=ssr_chart.planets['Moon'].longitude,
                     solunar_type=lunar_return_type,
                     grace_period=1,
                 )
 
-
-                if not burst_months:
-                    returns = [returns[0]] if len(returns) else []
-
-                for date in returns:
-                    progressed_jd = date['progressed']
-                    transit_jd = date['transit']
-
-                    if progressed_jd and transit_jd:
-                        progressed_params = {**params}
-                        progressed_params['ssr_chart'] = ssr_chart
-
-                        progressed_params = set_up_progressed_params(
-                            progressed_params, progressed_jd, lunar_return_type
-                        )
-
-                        dates_and_chart_params.append(
-                            (
-                                progressed_params,
-                                transit_jd,
-                                lunar_return_type,
-                                chart_class,
-                            )
-                        )
-                
+                append_lunars(
+                    returns,
+                    lunar_return_type,
+                    override_params={**params, 'ssr_chart': ssr_chart},
+                )
                 continue
-
 
             elif lunar_return_type in [
                 ChartType.KINETIC_LUNAR_RETURN.value,
@@ -1438,8 +1403,10 @@ class SolunarsAllInOne(Frame):
                 ChartType.FIRST_QUARTI_KINETIC_LUNAR_RETURN.value,
                 ChartType.LAST_QUARTI_KINETIC_LUNAR_RETURN.value,
             ]:
+                starting_date = base_start - 29 if active else base_start
+
                 returns = find_progressed_crossings_until_date(
-                    base_start=base_start,
+                    base_start=starting_date,
                     radix_julian_day_utc=radix.julian_day_utc,
                     continue_until_date=continue_until_date,
                     target_body='Moon',
@@ -1449,27 +1416,7 @@ class SolunarsAllInOne(Frame):
                     grace_period=1,
                 )
 
-                if not burst_months:
-                    returns = [returns[0]] if len(returns) else []
-
-                for dates in returns:
-                    transit_date = dates['transit']
-                    progressed_date = dates['progressed']
-
-                    if progressed_date and transit_date:
-                        progressed_params = {**params}
-                        progressed_params = set_up_progressed_params(
-                            progressed_params, progressed_date, lunar_return_type
-                        )
-                        dates_and_chart_params.append(
-                            (
-                                progressed_params,
-                                transit_date,
-                                lunar_return_type,
-                                chart_class,
-                            )
-                        )
-
+                append_lunars(returns, lunar_return_type)
                 continue
 
         return dates_and_chart_params
