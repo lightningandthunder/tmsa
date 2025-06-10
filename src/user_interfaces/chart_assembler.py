@@ -43,6 +43,7 @@ def assemble_charts(params, temporary, burst=False):
 
     try:
         chart.to_file(filename)
+
     except Exception as e:
         tkmessagebox.showerror('Unable to save file', f'{e}')
         return

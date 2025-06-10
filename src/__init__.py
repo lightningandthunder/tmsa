@@ -131,6 +131,9 @@ elif PLATFORM in ['linux', 'darwin']:
 if not os.path.exists(PROGRAM_OPTION_PATH):
     write_to_file_if_not_exists(PROGRAM_OPTION_PATH, json.dumps({}))
 
+if not os.path.exists(TEMP_CHARTS):
+    os.mkdir(TEMP_CHARTS)
+
 # Ensure all option file defaults exist.
 # This is the same for every OS.
 

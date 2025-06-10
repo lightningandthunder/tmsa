@@ -179,7 +179,7 @@ def find_novienic_crossings_until_date(
 
     if solunar_type in [
         ChartType.TEN_DAY_SOLAR_RETURN.value,
-        ChartType.NOVIENIC_LUNAR_RETURN.value,
+        ChartType.EIGHTEEN_HOUR_LUNAR_RETURN.value,
     ]:
         definition_increment = 10
         normalized_grace_period /= 4
@@ -334,7 +334,7 @@ def append_applicable_returns(
 ):
     if not burst:
         if active:
-            returns = returns[-1] if len(returns) else []
+            returns = [returns[-1]] if len(returns) else []
         else:
             returns = [returns[0]] if len(returns) else []
 

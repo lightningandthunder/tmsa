@@ -10,6 +10,7 @@
 import json
 import math
 import os
+import stat
 import shutil
 import webbrowser
 
@@ -238,9 +239,11 @@ class StartPage(Frame):
         STILL_STARTING_UP = False
 
         try:
-            if os.path.exists(TEMP_CHARTS):
-                shutil.rmtree(TEMP_CHARTS)
-            os.mkdir(TEMP_CHARTS)
+            dirlist = [d for d in os.listdir(TEMP_CHARTS)]
+            for directory in dirlist:
+                full_path = os.path.join(TEMP_CHARTS, directory)
+                shutil.rmtree(full_path)
+
         except Exception as e:
             tkmessagebox.showerror(
                 'File Error', f'Error trying to remove temporary files: {e}'

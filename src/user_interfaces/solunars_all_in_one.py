@@ -921,7 +921,9 @@ class SolunarsAllInOne(Frame):
             duration = float(self.burst_month_duration.text)
 
         if self.search.value == 0:
-            dates_and_chart_params = self.active_search(params, solars, lunars)
+            dates_and_chart_params = self.forward_search(
+                params, solars, lunars, active=True
+            )
             if duration:
                 burst_chart_params = self.forward_search(
                     params, solars, lunars, burst_months=duration
@@ -935,7 +937,9 @@ class SolunarsAllInOne(Frame):
                 params['time'],
                 params['style'],
             )
-            active_chart_params = self.active_search(params, solars, lunars)
+            active_chart_params = self.forward_search(
+                params, solars, lunars, active=True
+            )
             forward_chart_params = self.forward_search(params, solars, lunars)
 
             for chart_type in solars + lunars:
@@ -1189,10 +1193,7 @@ class SolunarsAllInOne(Frame):
                 ChartType.NOVIENIC_LUNAR_RETURN.value,
                 ChartType.EIGHTEEN_HOUR_LUNAR_RETURN.value,
             ]:
-                if lunar_return_type == ChartType.NOVIENIC_LUNAR_RETURN.value:
-                    starting_date = base_start - 3.5 if active else base_start
-                else:
-                    starting_date = base_start - 0.8 if active else base_start
+                starting_date = base_start - 3.5 if active else base_start
 
                 returns = find_novienic_crossings_until_date(
                     base_start=starting_date,
