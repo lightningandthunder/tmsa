@@ -20,6 +20,8 @@
 - Greatly increased the number of included ephemeris files, extending the temporal range TM covers to about 10,000 BCE to approximately 3,600 CE. Entering dates outside of this range will give nonsensical results.
 - Greatly reduced the amount of information stored in data files, which means we will always recalculate all of it. Got rid of the notion of charts being "out of date" since they are always calculated fresh (unless you just open the .txt file with the calculated chart output).
 - Added novien data table and aspectarian
+- Dramatically streamlined solunar search code
+- Fixed bug which caused PVP aspects to get missed when one planet was on Meridian
 
 
 

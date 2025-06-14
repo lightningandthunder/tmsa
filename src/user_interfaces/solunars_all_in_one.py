@@ -945,7 +945,7 @@ class SolunarsAllInOne(Frame):
             for chart_type in solars + lunars:
                 active_chart_info = pydash.find(
                     active_chart_params, lambda p: p[2] == chart_type
-                ) or ({}, 0, None, None)
+                ) or ({}, 999999999, None, None)
                 future_chart_info = pydash.find(
                     forward_chart_params, lambda p: p[2] == chart_type
                 )
@@ -1070,10 +1070,9 @@ class SolunarsAllInOne(Frame):
         for solar_return_type in solars:
             cycle_length = 366
 
-            if not continue_until_date:
-                continue_until_date = (
-                    base_start if active else base_start + 365
-                )
+            continue_until_date_solar = continue_until_date or (
+                base_start if active else base_start + 365
+            )
 
             # Traditional Solar Returns
             if solar_return_type in [
@@ -1086,7 +1085,7 @@ class SolunarsAllInOne(Frame):
 
                 returns = find_solunar_crossings_until_date(
                     base_start=starting_date,
-                    continue_until_date=continue_until_date,
+                    continue_until_date=continue_until_date_solar,
                     target_body='Sun',
                     target_longitude=sun_radix_longitude,
                     cycle_length=cycle_length,
@@ -1108,7 +1107,7 @@ class SolunarsAllInOne(Frame):
 
                 returns = find_novienic_crossings_until_date(
                     base_start=starting_date,
-                    continue_until_date=continue_until_date,
+                    continue_until_date=continue_until_date_solar,
                     target_body='Sun',
                     target_longitude=sun_radix_longitude,
                     cycle_length=cycle_length,
@@ -1129,7 +1128,7 @@ class SolunarsAllInOne(Frame):
 
                 returns = find_solunar_crossings_until_date(
                     base_start=starting_date,
-                    continue_until_date=continue_until_date,
+                    continue_until_date=continue_until_date_solar,
                     target_body='Sun',
                     target_longitude=moon_radix_longitude,
                     cycle_length=cycle_length,
@@ -1151,7 +1150,7 @@ class SolunarsAllInOne(Frame):
                 returns = find_progressed_crossings_until_date(
                     base_start=starting_date,
                     radix_julian_day_utc=radix.julian_day_utc,
-                    continue_until_date=continue_until_date,
+                    continue_until_date=continue_until_date_solar,
                     target_body='Sun',
                     radix_sun_longitude=sun_radix_longitude,
                     cycle_length=cycle_length,
@@ -1165,8 +1164,9 @@ class SolunarsAllInOne(Frame):
         for lunar_return_type in lunars:
             cycle_length = 29
 
-            if not continue_until_date:
-                continue_until_date = base_start if active else base_start + 29
+            continue_until_date_lunar = continue_until_date or (
+                base_start if active else base_start + 29
+            )
 
             if lunar_return_type in [
                 ChartType.LUNAR_RETURN.value,
@@ -1178,7 +1178,7 @@ class SolunarsAllInOne(Frame):
 
                 returns = find_solunar_crossings_until_date(
                     base_start=starting_date,
-                    continue_until_date=continue_until_date,
+                    continue_until_date=continue_until_date_lunar,
                     target_body='Moon',
                     target_longitude=moon_radix_longitude,
                     cycle_length=cycle_length,
@@ -1197,7 +1197,7 @@ class SolunarsAllInOne(Frame):
 
                 returns = find_novienic_crossings_until_date(
                     base_start=starting_date,
-                    continue_until_date=continue_until_date,
+                    continue_until_date=continue_until_date_lunar,
                     target_body='Moon',
                     target_longitude=moon_radix_longitude,
                     cycle_length=3.5,
@@ -1218,7 +1218,7 @@ class SolunarsAllInOne(Frame):
 
                 returns = find_solunar_crossings_until_date(
                     base_start=starting_date,
-                    continue_until_date=continue_until_date,
+                    continue_until_date=continue_until_date_lunar,
                     target_body='Moon',
                     target_longitude=sun_radix_longitude,
                     cycle_length=cycle_length,
@@ -1265,7 +1265,7 @@ class SolunarsAllInOne(Frame):
 
                 returns = find_solunar_crossings_until_date(
                     base_start=starting_date,
-                    continue_until_date=continue_until_date,
+                    continue_until_date=continue_until_date_lunar,
                     target_body='Moon',
                     target_longitude=solar_moon,
                     cycle_length=cycle_length,
@@ -1295,8 +1295,7 @@ class SolunarsAllInOne(Frame):
 
                 start = base_start - 30 if active else base_start
 
-                while start <= continue_until_date:
-
+                while start <= continue_until_date_lunar:
                     target_elongation = natal_elongation
                     next_increment = 30
 
@@ -1385,7 +1384,7 @@ class SolunarsAllInOne(Frame):
 
                 returns = find_progressed_anlunar_crossings_until_date(
                     base_start=starting_date,
-                    continue_until_date=continue_until_date,
+                    continue_until_date=continue_until_date_lunar,
                     radix_sun_longitude=sun_radix_longitude,
                     solunar_type=lunar_return_type,
                     grace_period=1,
@@ -1409,7 +1408,7 @@ class SolunarsAllInOne(Frame):
                 returns = find_progressed_crossings_until_date(
                     base_start=starting_date,
                     radix_julian_day_utc=radix.julian_day_utc,
-                    continue_until_date=continue_until_date,
+                    continue_until_date=continue_until_date_lunar,
                     target_body='Moon',
                     radix_sun_longitude=sun_radix_longitude,
                     cycle_length=cycle_length,

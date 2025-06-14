@@ -4,7 +4,8 @@ from enum import Enum
 
 @dataclass
 class AngleAxes(Enum):
-    MUNDOSCOPE_ANGLE = 'A'
+    HORIZON = 'H'
+    MERIDIAN = 'M'
     PRIME_VERTICAL = 'V'
     ZENITH_NADIR = 'Z'
     EASTPOINT_WESTPOINT = 'E'

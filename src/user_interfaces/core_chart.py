@@ -390,6 +390,7 @@ class CoreChart(object, metaclass=ABCMeta):
         primary_planet: chart_models.PlanetData,
         secondary_planet: chart_models.PlanetData,
     ):
+
         raw_orb = 360
         # At least one planet must be on the prime vertical
         if (
@@ -451,15 +452,11 @@ class CoreChart(object, metaclass=ABCMeta):
         )
 
         planet_is_on_meridian = (
-            angles_models.ForegroundAngles.MC.value.strip()
-            in planet_on_other_axis.angle_axes_contacted
-            or angles_models.ForegroundAngles.IC.value.strip()
+            angles_models.AngleAxes.MERIDIAN.value
             in planet_on_other_axis.angle_axes_contacted
         )
         planet_is_on_horizon = (
-            angles_models.ForegroundAngles.ASCENDANT.value.strip()
-            in planet_on_other_axis.angle_axes_contacted
-            or angles_models.ForegroundAngles.DESCENDANT.value.strip()
+            angles_models.AngleAxes.HORIZON.value
             in planet_on_other_axis.angle_axes_contacted
         )
 
@@ -478,6 +475,7 @@ class CoreChart(object, metaclass=ABCMeta):
             else 3
         )
         if planet_is_on_meridian and not both_planets_on_prime_vertical:
+
             raw_orb = abs(
                 planet_on_other_axis.azimuth - planet_on_prime_vertical.azimuth
             )
@@ -501,6 +499,8 @@ class CoreChart(object, metaclass=ABCMeta):
                 normalized_orb = abs(90 - raw_orb)
             if chart_utils.inrange(raw_orb, 180, square_orb):
                 normalized_orb = abs(180 - raw_orb)
+            if chart_utils.inrange(raw_orb, 270, square_orb):
+                normalized_orb = abs(270 - raw_orb)
             if chart_utils.inrange(raw_orb, 360, square_orb):
                 normalized_orb = abs(360 - raw_orb)
 
@@ -701,9 +701,18 @@ class CoreChart(object, metaclass=ABCMeta):
 
         if mundane_angularity_orb <= max(major_angle_orbs):
             is_foreground = True
-            planet.angle_axes_contacted.append(
-                angles_models.AngleAxes.MUNDOSCOPE_ANGLE.value
-            )
+            if chart_utils.inrange(planet.house, 0, 15) or chart_utils.inrange(
+                planet.house, 180, 15
+            ):
+                planet.angle_axes_contacted.append(
+                    angles_models.AngleAxes.HORIZON.value
+                )
+            elif chart_utils.inrange(
+                planet.house, 90, 15
+            ) or chart_utils.inrange(planet.house, 270, 15):
+                planet.angle_axes_contacted.append(
+                    angles_models.AngleAxes.MERIDIAN.value
+                )
         else:
             if mundane_angularity_strength <= 25.0:
                 if not angularity_options.no_bg:
@@ -1015,6 +1024,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 primary_planet_data,
                 secondary_planet_data,
             )
+
             tightest_aspect = pvp_aspect or tightest_aspect
 
         return tightest_aspect
