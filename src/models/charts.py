@@ -98,7 +98,7 @@ class __PointData:
         return []
 
     @property
-    def is_on_vx_or_av(self):
+    def is_on_prime_vertical(self):
         return False
 
     @property
@@ -236,8 +236,16 @@ class PlanetData(__PointData):
         )
 
     @property
-    def is_on_vx_or_av(self):
+    def is_on_prime_vertical(self):
         return self.prime_vertical_angle.value in self.__prime_vertical_angles
+
+    @property
+    def is_on_meridian(self):
+        return AngleAxes.MERIDIAN.value in self.angle_axes_contacted
+
+    @property
+    def is_on_horizon(self):
+        return AngleAxes.HORIZON.value in self.angle_axes_contacted
 
     @property
     def is_on_major_angle(self):

@@ -390,12 +390,11 @@ class CoreChart(object, metaclass=ABCMeta):
         primary_planet: chart_models.PlanetData,
         secondary_planet: chart_models.PlanetData,
     ):
-
         raw_orb = 360
         # At least one planet must be on the prime vertical
         if (
-            not primary_planet.is_on_vx_or_av
-            and not secondary_planet.is_on_vx_or_av
+            not primary_planet.is_on_prime_vertical
+            and not secondary_planet.is_on_prime_vertical
         ):
             return None
 
@@ -415,9 +414,11 @@ class CoreChart(object, metaclass=ABCMeta):
         )
 
         both_planets_on_prime_vertical = (
-            primary_planet.is_on_vx_or_av and secondary_planet.is_on_vx_or_av
+            primary_planet.is_on_prime_vertical
+            and secondary_planet.is_on_prime_vertical
         )
         if both_planets_on_prime_vertical:
+
             # check prime vertical to prime vertical in azimuth
             raw_orb = abs(primary_planet.azimuth - secondary_planet.azimuth)
 
@@ -442,12 +443,12 @@ class CoreChart(object, metaclass=ABCMeta):
 
         planet_on_prime_vertical = (
             primary_planet
-            if primary_planet.is_on_vx_or_av
+            if primary_planet.is_on_prime_vertical
             else secondary_planet
         )
         planet_on_other_axis = (
             primary_planet
-            if secondary_planet.is_on_vx_or_av
+            if secondary_planet.is_on_prime_vertical
             else secondary_planet
         )
 
@@ -547,6 +548,207 @@ class CoreChart(object, metaclass=ABCMeta):
 
         aspect_strength = chart_utils.calc_aspect_strength_percent(
             square_orb, normalized_orb
+        )
+        aspect = aspect.with_strength(aspect_strength).with_orb(normalized_orb)
+        return aspect
+
+    def find_pvp_aspect_2(
+        self,
+        primary_planet: chart_models.PlanetData,
+        secondary_planet: chart_models.PlanetData,
+    ):
+        # At least one planet must be on the prime vertical
+        if (
+            not primary_planet.is_on_prime_vertical
+            and not secondary_planet.is_on_prime_vertical
+        ):
+            return None
+
+        # If both planets are not on prime vertical,
+        # One must be on horizon or meridian
+        if primary_planet.is_on_prime_vertical:
+            if (
+                not secondary_planet.is_on_prime_vertical
+                and not secondary_planet.is_on_horizon
+                and not secondary_planet.is_on_meridian
+            ):
+                return None
+
+        # Secondary planet must be on PV
+        if (
+            not primary_planet.is_on_prime_vertical
+            and not primary_planet.is_on_horizon
+            and not primary_planet.is_on_meridian
+        ):
+            return None
+
+        conjunction_orb = (
+            chart_utils.greatest_nonzero_class_orb(
+                self.options.pvp_aspects['0']
+            )
+            if self.options.pvp_aspects
+            else 3
+        )
+        opposition_orb = (
+            chart_utils.greatest_nonzero_class_orb(
+                self.options.pvp_aspects['180']
+            )
+            if self.options.pvp_aspects
+            else 3
+        )
+        square_orb = (
+            chart_utils.greatest_nonzero_class_orb(
+                self.options.pvp_aspects['90']
+            )
+            if self.options.pvp_aspects
+            else 3
+        )
+
+        raw_orb_azimuth = abs(
+            primary_planet.azimuth - secondary_planet.azimuth
+        )
+        raw_orb_ml = abs(
+            primary_planet.meridian_longitude
+            - secondary_planet.meridian_longitude
+        )
+
+        aspect_type_azimuth = None
+        aspect_type_ml = None
+
+        normalized_orb_azimuth = None
+        normalized_orb_ml = None
+
+        # Used for strength calculation purposes at the end
+        orb_used = square_orb
+
+        if chart_utils.inrange(raw_orb_azimuth, 0, conjunction_orb):
+            aspect_type_azimuth = chart_models.AspectType.CONJUNCTION
+            normalized_orb_azimuth = raw_orb_azimuth
+        elif chart_utils.inrange(raw_orb_azimuth, 180, opposition_orb):
+            aspect_type_azimuth = chart_models.AspectType.OPPOSITION
+            normalized_orb_azimuth = abs(180.0 - raw_orb_azimuth)
+        elif chart_utils.inrange(raw_orb_azimuth, 90, square_orb):
+            aspect_type_azimuth = chart_models.AspectType.SQUARE
+            normalized_orb_azimuth = abs(90.0 - raw_orb_azimuth)
+
+        # ML aspects, which are defined as squares between PV and horizon,
+        # are always squares regardless of the orb relationships.
+
+        if (
+            chart_utils.inrange(raw_orb_ml, 0, square_orb)
+            or chart_utils.inrange(raw_orb_ml, 90, square_orb)
+            or chart_utils.inrange(raw_orb_ml, 180, square_orb)
+            or chart_utils.inrange(raw_orb_ml, 270, square_orb)
+            or chart_utils.inrange(raw_orb_ml, 360, square_orb)
+        ):
+            aspect_type_ml = chart_models.AspectType.SQUARE
+            normalized_orb_ml = min(
+                raw_orb_ml,
+                abs(90.0 - raw_orb_ml),
+                abs(180.0 - raw_orb_ml),
+                abs(270.0 - raw_orb_ml),
+                abs(360.0 - raw_orb_ml),
+            )
+
+        both_planets_on_prime_vertical = (
+            primary_planet.is_on_prime_vertical
+            and secondary_planet.is_on_prime_vertical
+        )
+
+        planet_is_on_meridian = (
+            primary_planet.is_on_meridian or secondary_planet.is_on_meridian
+        )
+
+        planet_is_on_horizon = (
+            primary_planet.is_on_horizon or secondary_planet.is_on_horizon
+        )
+
+        normalized_orb = 999
+        aspect_type = None
+
+        if both_planets_on_prime_vertical and aspect_type_azimuth:
+            normalized_orb = normalized_orb_azimuth
+            aspect_type = aspect_type_azimuth
+            if aspect_type.value == chart_models.AspectType.CONJUNCTION.value:
+                orb_used = conjunction_orb
+            elif aspect_type.value == chart_models.AspectType.OPPOSITION.value:
+                orb_used = opposition_orb
+            else:
+                orb_used = square_orb
+
+        if planet_is_on_meridian and aspect_type_azimuth:
+            normalized_orb = normalized_orb_azimuth
+            aspect_type = aspect_type_azimuth
+            if aspect_type.value == chart_models.AspectType.CONJUNCTION.value:
+                orb_used = conjunction_orb
+            elif aspect_type.value == chart_models.AspectType.OPPOSITION.value:
+                orb_used = opposition_orb
+            else:
+                orb_used = square_orb
+
+        if planet_is_on_horizon and aspect_type_ml:
+            normalized_orb = min(normalized_orb, normalized_orb_ml)
+            if normalized_orb == normalized_orb_ml:
+                aspect_type = aspect_type_ml
+                orb_used = square_orb
+
+        if not aspect_type:
+            return None
+
+        aspect_class = 1
+
+        aspect_type_string = str(
+            chart_models.AspectType.degrees_from_abbreviation(
+                aspect_type.value
+            )
+        )
+
+        if self.options.pvp_aspects:
+            if (self.options.pvp_aspects[aspect_type_string][0] > 0) and (
+                normalized_orb
+                < self.options.pvp_aspects[aspect_type_string][0]
+            ):
+                aspect_class = 1
+            elif (self.options.pvp_aspects[aspect_type_string][1] > 0) and (
+                normalized_orb
+                < self.options.pvp_aspects[aspect_type_string][1]
+            ):
+                aspect_class = 2
+            elif (self.options.pvp_aspects[aspect_type_string][2] > 0) and (
+                normalized_orb
+                < self.options.pvp_aspects[aspect_type_string][2]
+            ):
+                aspect_class = 3
+
+        from_planet = (
+            primary_planet
+            if primary_planet.role >= secondary_planet.role
+            else secondary_planet
+        )
+
+        to_planet = (
+            primary_planet
+            if from_planet == secondary_planet
+            else secondary_planet
+        )
+
+        aspect = (
+            chart_models.Aspect()
+            .as_prime_vertical_paran()
+            .from_planet(
+                from_planet.short_name,
+                role=from_planet.role,
+            )
+            .to_planet(
+                to_planet.short_name,
+                role=to_planet.role,
+            )
+            .as_type(aspect_type)
+            .with_class(aspect_class)
+        )
+
+        aspect_strength = chart_utils.calc_aspect_strength_percent(
+            orb_used, normalized_orb
         )
         aspect = aspect.with_strength(aspect_strength).with_orb(normalized_orb)
         return aspect
@@ -1020,7 +1222,7 @@ class CoreChart(object, metaclass=ABCMeta):
 
         # Allow PVP aspects to override other "other partile" aspects
         if self.options.pvp_aspects.get('enabled', False):
-            pvp_aspect = self.find_pvp_aspect(
+            pvp_aspect = self.find_pvp_aspect_2(
                 primary_planet_data,
                 secondary_planet_data,
             )
