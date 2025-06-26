@@ -557,28 +557,23 @@ class CoreChart(object, metaclass=ABCMeta):
         primary_planet: chart_models.PlanetData,
         secondary_planet: chart_models.PlanetData,
     ):
-        # At least one planet must be on the prime vertical
-        if (
-            not primary_planet.is_on_prime_vertical
-            and not secondary_planet.is_on_prime_vertical
-        ):
-            return None
+        both_planets_on_prime_vertical = (
+            primary_planet.is_on_prime_vertical
+            and secondary_planet.is_on_prime_vertical
+        )
 
-        # If both planets are not on prime vertical,
-        # One must be on horizon or meridian
-        if primary_planet.is_on_prime_vertical:
-            if (
-                not secondary_planet.is_on_prime_vertical
-                and not secondary_planet.is_on_horizon
-                and not secondary_planet.is_on_meridian
-            ):
-                return None
+        planet_is_on_meridian = (
+            primary_planet.is_on_meridian or secondary_planet.is_on_meridian
+        )
 
-        # Secondary planet must be on PV
+        planet_is_on_horizon = (
+            primary_planet.is_on_horizon or secondary_planet.is_on_horizon
+        )
+
         if (
-            not primary_planet.is_on_prime_vertical
-            and not primary_planet.is_on_horizon
-            and not primary_planet.is_on_meridian
+            not both_planets_on_prime_vertical
+            and not planet_is_on_horizon
+            and not planet_is_on_meridian
         ):
             return None
 
@@ -650,19 +645,6 @@ class CoreChart(object, metaclass=ABCMeta):
                 abs(360.0 - raw_orb_ml),
             )
 
-        both_planets_on_prime_vertical = (
-            primary_planet.is_on_prime_vertical
-            and secondary_planet.is_on_prime_vertical
-        )
-
-        planet_is_on_meridian = (
-            primary_planet.is_on_meridian or secondary_planet.is_on_meridian
-        )
-
-        planet_is_on_horizon = (
-            primary_planet.is_on_horizon or secondary_planet.is_on_horizon
-        )
-
         normalized_orb = 999
         aspect_type = None
 
@@ -677,7 +659,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 orb_used = square_orb
 
         if planet_is_on_meridian and aspect_type_azimuth:
-            normalized_orb = normalized_orb_azimuth
+            normalized_orb = min(normalized_orb, normalized_orb_azimuth)
             aspect_type = aspect_type_azimuth
             if aspect_type.value == chart_models.AspectType.CONJUNCTION.value:
                 orb_used = conjunction_orb
@@ -903,9 +885,13 @@ class CoreChart(object, metaclass=ABCMeta):
 
         if mundane_angularity_orb <= max(major_angle_orbs):
             is_foreground = True
-            if chart_utils.inrange(planet.house, 0, 15) or chart_utils.inrange(
-                planet.house, 180, 15
+
+            if (
+                chart_utils.inrange(planet.house, 0, 15)
+                or chart_utils.inrange(planet.house, 360, 15)
+                or chart_utils.inrange(planet.house, 180, 15)
             ):
+
                 planet.angle_axes_contacted.append(
                     angles_models.AngleAxes.HORIZON.value
                 )
