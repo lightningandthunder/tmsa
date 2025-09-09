@@ -29,6 +29,8 @@ def show_error(exception, value, tb):
     )
     with open(ERROR_FILE, 'r') as file:
         contents = file.read()
+        if len(contents) > 30000:
+            contents = contents[:30000]
     with open(ERROR_FILE, 'w') as file:
         output = io.StringIO()
         traceback.print_exception(exception, value, tb, file=output)

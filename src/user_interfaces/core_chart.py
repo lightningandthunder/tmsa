@@ -24,6 +24,7 @@ import src.models.options as option_models
 import src.utils.calculation_utils as calc_utils
 import src.utils.chart_utils as chart_utils
 from src.utils.format_utils import to360
+from src.utils.log_utils import Tracer
 from src.utils.novien import (
     write_novien_aspectarian,
     write_novien_data_table_to_file,
@@ -40,6 +41,7 @@ class CoreChart(object, metaclass=ABCMeta):
     charts: list[chart_models.ChartObject]
     halfsums: list[chart_models.HalfSum]
     temporary: bool
+    tracer: Tracer
 
     midpoints = {}
 
@@ -50,6 +52,14 @@ class CoreChart(object, metaclass=ABCMeta):
         options: option_models.Options,
         use_progressed_angles: bool = False,
     ):
+        self.tracer = Tracer(
+            log_level=10,
+            # log_level=options.log_level,
+            use_console=False,
+            # use_console=options.log_to_console,
+            use_file=False,
+        )
+
         self.options = options
         self.use_progressed_angles = use_progressed_angles
 
@@ -557,25 +567,58 @@ class CoreChart(object, metaclass=ABCMeta):
         primary_planet: chart_models.PlanetData,
         secondary_planet: chart_models.PlanetData,
     ):
-        both_planets_on_prime_vertical = (
+        t = self.tracer
+
+        t.info(
+            'Checking PVP aspect between planets',
+            f'{primary_planet.name}, {secondary_planet.name}',
+        )
+
+        if not (
             primary_planet.is_on_prime_vertical
-            and secondary_planet.is_on_prime_vertical
-        )
-
-        planet_is_on_meridian = (
-            primary_planet.is_on_meridian or secondary_planet.is_on_meridian
-        )
-
-        planet_is_on_horizon = (
-            primary_planet.is_on_horizon or secondary_planet.is_on_horizon
-        )
-
-        if (
-            not both_planets_on_prime_vertical
-            and not planet_is_on_horizon
-            and not planet_is_on_meridian
+            or secondary_planet.is_on_prime_vertical
         ):
+            t.debug('Neither planet on PV')
             return None
+
+        both_planets_on_prime_vertical = t.debug(
+            'planet is on PV',
+            primary_planet.is_on_prime_vertical
+            and secondary_planet.is_on_prime_vertical,
+        )
+
+        planet_is_on_meridian = t.debug(
+            'planet is on meridian',
+            primary_planet.is_on_meridian or secondary_planet.is_on_meridian,
+        )
+
+        planet_is_on_horizon = t.debug(
+            'planet is on horizon',
+            primary_planet.is_on_horizon or secondary_planet.is_on_horizon,
+        )
+
+        if not both_planets_on_prime_vertical:
+            if primary_planet.is_on_prime_vertical:
+                if not (
+                    secondary_planet.is_on_prime_vertical
+                    or secondary_planet.is_on_horizon
+                    or secondary_planet.is_on_meridian
+                ):
+                    t.info(
+                        f'{primary_planet.name} on PV but {secondary_planet.name} not foreground or on PV'
+                    )
+                    return None
+
+            if secondary_planet.is_on_prime_vertical:
+                if not (
+                    primary_planet.is_on_prime_vertical
+                    or primary_planet.is_on_horizon
+                    or primary_planet.is_on_meridian
+                ):
+                    t.info(
+                        f'{secondary_planet.name} on PV but {primary_planet.name} not foreground or on PV'
+                    )
+                    return None
 
         conjunction_orb = (
             chart_utils.greatest_nonzero_class_orb(
@@ -602,6 +645,7 @@ class CoreChart(object, metaclass=ABCMeta):
         raw_orb_azimuth = abs(
             primary_planet.azimuth - secondary_planet.azimuth
         )
+
         raw_orb_ml = abs(
             primary_planet.meridian_longitude
             - secondary_planet.meridian_longitude

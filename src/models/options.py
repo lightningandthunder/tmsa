@@ -1,6 +1,7 @@
 import json
 from dataclasses import dataclass
 from enum import Enum
+import logging
 
 from src import log_startup_error
 from src.defaults.option_defaults import NATAL_DEFAULT
@@ -82,6 +83,9 @@ class Options:
     midpoints: dict[str, list[float]] = {}
     include_fg_under_aspects: bool = False
     enable_novien: bool = False
+    log_level: int = 50
+    log_to_console: bool = False
+    log_to_file: bool = False
 
     @staticmethod
     def from_file(file_path: str):
@@ -127,9 +131,17 @@ class Options:
             'pvp_aspects',
             'paran_aspects',
             'midpoints',
+            'log_to_console',
+            'log_to_file',
         ]:
             if key in data:
                 setattr(self, key, data[key])
+
+        if 'log_level' in data:
+            try:
+                self.log_level = int(data['log_level'])
+            except:
+                self.log_level = logging.ERROR
 
     def to_file(self, file_path: str):
         with open(file_path, 'w') as file:

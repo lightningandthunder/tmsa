@@ -35,6 +35,8 @@ def log_startup_error(e):
     contents = ''
     with open(ERROR_FILE, 'r') as file:
         contents = file.read()
+        if len(contents) > 30000:
+            contents = contents[:30000]
     with open(ERROR_FILE, 'w') as file:
         timestamped_error = (
             f'----------{dt.now().strftime("%Y-%m-%d %H:%M:%S")}----------\n'
