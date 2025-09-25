@@ -505,7 +505,7 @@ def calc_planetary_needs_strength(
 
     max_luminary_aspect_strength = 0
 
-    class_bonuses = [95, 92, 0, 0]
+    class_bonuses = [95, 92, 0, 0, 0]
     for [index, aspect_class] in enumerate(aspects_by_class):
         for aspect in aspect_class:
             if max_luminary_aspect_strength != 0:
