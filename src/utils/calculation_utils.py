@@ -489,60 +489,60 @@ def parse_aspect(
 
 
 def calc_planetary_needs_strength(
-    options: chart_models.Options,
     planet: chart_models.PlanetData,
     chart: chart_models.ChartObject,
     aspects_by_class: list[list[chart_models.Aspect]],
 ) -> int:
 
-    luminary_strength = 0
+    rulership_strength = 0
     rules_sun_sign = chart.sun_sign in POS_SIGN[planet.short_name]
     rules_moon_sign = chart.moon_sign in POS_SIGN[planet.short_name]
     if rules_sun_sign and rules_moon_sign:
-        luminary_strength = 95
+        rulership_strength = 95
     elif rules_sun_sign or rules_moon_sign:
-        luminary_strength = 90
+        rulership_strength = 90
 
-    max_luminary_aspect_strength = 0
+    sun_aspect_score = 0
+    moon_aspect_score = 0
 
-    class_bonuses = [95, 92, 0, 0, 0]
-    for [index, aspect_class] in enumerate(aspects_by_class):
-        for aspect in aspect_class:
-            if max_luminary_aspect_strength != 0:
-                break
+    for [class_index_zeroed, aspects_of_class] in enumerate(aspects_by_class):
+        for aspect in aspects_of_class:
             if (
                 aspect.includes_planet(planet.short_name)
                 and aspect.is_hard_aspect()
             ):
-                if (
-                    (planet.name == 'Sun' and aspect.includes_planet('Mo'))
-                    or (planet.name == 'Moon' and aspect.includes_planet('Su'))
-                    or (
-                        planet.name not in ['Sun', 'Moon']
-                        and (
-                            aspect.includes_planet('Su')
-                            or aspect.includes_planet('Mo')
-                        )
-                    )
-                ):
-                    max_luminary_aspect_strength = max(
-                        max_luminary_aspect_strength, aspect.strength
-                    )
-        if luminary_strength > 0 and max_luminary_aspect_strength > 0:
-            max_luminary_aspect_strength = max(
-                class_bonuses[index], max_luminary_aspect_strength
-            )
+                if aspect.type.value in [
+                    chart_models.AspectType.CONJUNCTION.value,
+                    chart_models.AspectType.OPPOSITION.value,
+                    chart_models.AspectType.SQUARE.value,
+                ]:
+                    if planet.name != 'Sun' and aspect.includes_planet('Su'):
+                        sun_aspect_score = aspect.strength
+                        if rules_sun_sign:
+                            if class_index_zeroed == 0:
+                                sun_aspect_score = max(95, aspect.strength)
+                            elif class_index_zeroed == 1:
+                                sun_aspect_score = max(92, aspect.strength)
+
+                    if planet.name != 'Moon' and aspect.includes_planet('Mo'):
+                        moon_aspect_score = aspect.strength
+                        if rules_moon_sign:
+                            if class_index_zeroed == 0:
+                                moon_aspect_score = max(95, aspect.strength)
+                            elif class_index_zeroed == 1:
+                                moon_aspect_score = max(92, aspect.strength)
 
     stationary_strength = 75 if planet.is_stationary else 0
-    if stationary_strength > 0 and luminary_strength > 0:
-        stationary_strength = 90
+    if stationary_strength > 0 and (rules_moon_sign or rules_sun_sign):
+        stationary_strength = 95
 
     normalized_angularity_strength = planet.angularity_strength
 
     strength = max(
         normalized_angularity_strength,
-        luminary_strength,
-        max_luminary_aspect_strength,
+        rulership_strength,
+        sun_aspect_score,
+        moon_aspect_score,
         stationary_strength,
     )
 

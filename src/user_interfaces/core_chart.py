@@ -1922,7 +1922,7 @@ class CoreChart(object, metaclass=ABCMeta):
                     and chart.type.value == chart_models.ChartType.NATAL.value
                 ):
                     strength = calc_utils.calc_planetary_needs_strength(
-                        self.options, planet_data, chart, aspects_by_class
+                        planet_data, chart, aspects_by_class
                     )
                     chartfile.write((f'{round(strength): >3}%'))
                     strength_hierarchy_written = True
