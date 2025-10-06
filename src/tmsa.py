@@ -154,7 +154,7 @@ class StartPage(Frame):
             LABEL_WIDTH,
             LABEL_HEIGHT_UNIT,
         )
-        Label(
+        self.github_link = Label(
             self,
             GITHUB,
             LABEL_X_COORD,
@@ -163,7 +163,7 @@ class StartPage(Frame):
             LABEL_HEIGHT_UNIT,
             font=ulfont,
         )
-        self.source_code.bind(
+        self.github_link.bind(
             '<Button-1>', lambda _: webbrowser.open_new(GITHUB)
         )
 
@@ -233,6 +233,9 @@ class StartPage(Frame):
         Button(self, 'Exit Program', 0.6, 0.5, 0.2).bind(
             '<Button-1>', lambda _: delay(main.destroy)
         )
+        Button(self, 'Clear Caches', 0.6, 0.55, 0.2).bind(
+            '<Button-1>', lambda _: delay(self.clear_cache)
+        )
 
         if not STILL_STARTING_UP:
             return
@@ -273,6 +276,24 @@ class StartPage(Frame):
                 recs = json.dump(recs, datafile, indent=4)
         except:
             pass
+
+    def clear_cache(self):
+        try:
+            if os.path.exists(TEMP_CHARTS):
+                shutil.rmtree(TEMP_CHARTS)
+
+            if os.path.exists(TEMP_CHARTS):
+                raise Exception('Temp files still exist after attempted clear')
+
+            os.mkdir(TEMP_CHARTS)
+
+        except Exception as e:
+            tkmessagebox.showerror(
+                'File Error', f'Error trying to remove temporary files: {e}'
+            )
+            log_startup_error(e)
+        else:
+            tkmessagebox.showinfo('Caches cleared', 'Cleared temp files.')
 
     def show_sidereal_landmarks(self):
         SiderealLandmarks()

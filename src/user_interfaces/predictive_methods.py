@@ -16,7 +16,6 @@ from copy import deepcopy
 from datetime import datetime as dt
 
 import anglicize
-import pydash
 import us
 from geopy import Nominatim
 
@@ -29,17 +28,13 @@ from src.swe import *
 from src.user_interfaces.chart_assembler import assemble_charts
 from src.user_interfaces.locations import Locations
 from src.user_interfaces.more_charts import MoreCharts
-from src.user_interfaces.more_solunars import MoreSolunars
 from src.user_interfaces.widgets import *
-from src.utils.chart_utils import ut_time_correction
 from src.utils.format_utils import (
     display_name,
     normalize_text,
-    to360,
     toDMS,
 )
 from src.utils.gui_utils import ShowHelp
-from src.utils.os_utils import open_file
 from src.utils.transits.progressions import (
     ProgressionTypes,
     get_progressed_jd_utc,

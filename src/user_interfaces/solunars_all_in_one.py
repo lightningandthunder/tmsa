@@ -34,7 +34,6 @@ from src.swe import *
 from src.user_interfaces.chart_assembler import assemble_charts
 from src.user_interfaces.locations import Locations
 from src.user_interfaces.more_charts import MoreCharts
-from src.user_interfaces.solunars import Solunars
 from src.user_interfaces.widgets import *
 from src.utils.chart_utils import includes_any
 from src.utils.format_utils import display_name, normalize_text, to360, toDMS
@@ -254,9 +253,7 @@ class SolunarsAllInOne(Frame):
         self.search.value = 0
         self.search.focus()
 
-        self.toggle_burst = Checkbutton(
-            self, 'All Selected For Months:', 0.6, 0.75, 0.3
-        )
+        Label(self, '# of Months:', 0.6, 0.75, 0.3)
 
         self.burst_month_duration = Entry(self, 6, 0.6, 0.8, 0.05)
 
@@ -272,9 +269,6 @@ class SolunarsAllInOne(Frame):
             '<Button-1>',
             lambda _: delay(ShowHelp, os.path.join(HELP_PATH, 'solunars.txt')),
         )
-        Button(self, 'Old Menu', 0.4, 0.95, 0.2).bind(
-            '<Button-1>', lambda _: delay(self.old_view)
-        )
 
         Button(self, 'Reset', 0.6, 0.95, 0.2).bind(
             '<Button-1>', lambda _: delay(self.clear)
@@ -283,10 +277,6 @@ class SolunarsAllInOne(Frame):
         backbtn = Button(self, 'Back', 0.8, 0.95, 0.20)
         backbtn.bind('<Button-1>', lambda _: delay(self.back))
         self.status = Label(self, '', 0, 0.9, 1)
-
-    def old_view(self):
-        main.after(0, self.destroy())
-        Solunars(self.base, self.filename)
 
     def on_global_click(self, event):
         self.last_click_widget = event.widget
@@ -917,8 +907,10 @@ class SolunarsAllInOne(Frame):
         dates_and_chart_params = []
 
         duration = None
-        if self.toggle_burst.checked:
-            duration = float(self.burst_month_duration.text)
+        if len(self.burst_month_duration.text.strip()) != 0:
+            duration = int(self.burst_month_duration.text.strip())
+            if duration == 0:
+                duration = None
 
         if self.search.value == 0:
             dates_and_chart_params = self.forward_search(

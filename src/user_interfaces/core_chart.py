@@ -1232,7 +1232,10 @@ class CoreChart(object, metaclass=ABCMeta):
             and ecliptical_aspect
             and ecliptical_aspect.aspect_class == 4
         ):
-            return None
+            if not mundane_aspect or (
+                ecliptical_aspect.strength > mundane_aspect.strength
+            ):
+                return None
 
         tightest_aspect = None
 
