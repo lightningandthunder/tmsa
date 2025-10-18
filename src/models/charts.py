@@ -1548,3 +1548,76 @@ INGRESSES = [
     'Arilunar',
     'Liblunar',
 ]
+
+SOLAR_RETURN_FAMILY = [
+    ChartType.SOLAR_RETURN.value,
+    ChartType.DEMI_SOLAR_RETURN.value,
+    ChartType.FIRST_QUARTI_SOLAR_RETURN.value,
+    ChartType.LAST_QUARTI_SOLAR_RETURN.value,
+]
+
+NSR_FAMILY = [
+    ChartType.NOVIENIC_SOLAR_RETURN.value,
+    ChartType.TEN_DAY_SOLAR_RETURN.value,
+]
+
+SOLILUNAR_FAMILY = [
+    ChartType.SOLILUNAR_RETURN.value,
+    ChartType.DEMI_SOLILUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_SOLILUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_SOLILUNAR_RETURN.value,
+]
+
+KSR_FAMILY = [
+    ChartType.KINETIC_SOLAR_RETURN.value,
+    ChartType.DEMI_KINETIC_SOLAR_RETURN.value,
+    ChartType.FIRST_QUARTI_KINETIC_SOLAR_RETURN.value,
+    ChartType.LAST_QUARTI_KINETIC_SOLAR_RETURN.value,
+]
+
+LUNAR_RETURN_FAMILY = [
+    ChartType.LUNAR_RETURN.value,
+    ChartType.DEMI_LUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_LUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_LUNAR_RETURN.value,
+]
+
+NLR_FAMILY = [
+    ChartType.NOVIENIC_LUNAR_RETURN.value,
+    ChartType.EIGHTEEN_HOUR_LUNAR_RETURN.value,
+]
+
+LUNISOLAR_FAMILY = [
+    ChartType.LUNISOLAR_RETURN.value,
+    ChartType.DEMI_LUNISOLAR_RETURN.value,
+    ChartType.FIRST_QUARTI_LUNISOLAR_RETURN.value,
+    ChartType.LAST_QUARTI_LUNISOLAR_RETURN.value,
+]
+
+ANLUNAR_FAMILY = [
+    ChartType.ANLUNAR_RETURN.value,
+    ChartType.DEMI_ANLUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_ANLUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_ANLUNAR_RETURN.value,
+]
+
+LSR_FAMILY = [
+    ChartType.LUNAR_SYNODIC_RETURN.value,
+    ChartType.DEMI_LUNAR_SYNODIC_RETURN.value,
+    ChartType.FIRST_QUARTI_LUNAR_SYNODIC_RETURN.value,
+    ChartType.LAST_QUARTI_LUNAR_SYNODIC_RETURN.value,
+]
+
+KAR_FAMILY = [
+    ChartType.KINETIC_ANLUNAR_RETURN.value,
+    ChartType.KINETIC_DEMI_ANLUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_KINETIC_ANLUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_KINETIC_ANLUNAR_RETURN.value,
+]
+
+KLR_FAMILY = [
+    ChartType.KINETIC_LUNAR_RETURN.value,
+    ChartType.DEMI_KINETIC_LUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_KINETIC_LUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_KINETIC_LUNAR_RETURN.value,
+]
