@@ -36,6 +36,7 @@ from src.models.charts import (
     SOLAR_RETURN_FAMILY,
     SOLAR_RETURNS,
     SOLILUNAR_FAMILY,
+    SOLUNAR_FAMILIES,
     ChartObject,
     ChartType,
     ChartWheelRole,
@@ -993,19 +994,50 @@ class SolunarsAllInOne(Frame):
 
         # TODO:
         # Only run this logic for active, for the first set of any given chart.
+
+        # That means we need to actually use a subset of the full list:
+        # Only the first one of each chart.
+
         searching_active_charts = self.search.value in [0, 1]
         if searching_active_charts:
             pass
 
+        indexes_to_remove = []
+
+        for index in range(dates_and_chart_params):
+            (
+                chart_params,
+                date,
+                solunar_type,
+                chart_class,
+            ) = dates_and_chart_params[index]
+
+            is_demi = 'demi' in solunar_type
+            is_quarti = (
+                'quarti' in solunar_type
+                or 'eighteen' in solunar_type
+                or 'ten' in solunar_type
+            )
+
+            if not is_demi and not is_quarti:
+                continue
+
+            family = pydash.find(SOLUNAR_FAMILIES, lambda f: solunar_type in f)
+            assert family is not None
+
+            pass
+
         # For each demi chart,
         # If there a full chart after and not before,
-        # remove it.
+        # note its index.
 
         # For each quarti chart,
         # if there is a full chart after and not before,
-        # remove it.
+        # note its index.
         # if there is a demi/full chart plus quarti after and not before,
-        # remove it.
+        # note its index.
+
+        # Go through and only include the indexes that are not listed.
 
         for (
             chart_params,
