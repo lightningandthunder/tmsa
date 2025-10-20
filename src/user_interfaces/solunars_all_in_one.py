@@ -917,6 +917,13 @@ class SolunarsAllInOne(Frame):
         self.save_location(params)
 
         dates_and_chart_params = []
+        input_date = julday(
+            params['year'],
+            params['month'],
+            params['day'],
+            params['time'],
+            params['style'],
+        )
 
         duration = None
         if len(self.burst_month_duration.text.strip()) != 0:
@@ -934,13 +941,6 @@ class SolunarsAllInOne(Frame):
                 )
                 dates_and_chart_params += burst_chart_params
         elif self.search.value == 1:
-            start_date = julday(
-                params['year'],
-                params['month'],
-                params['day'],
-                params['time'],
-                params['style'],
-            )
             active_chart_params = self.forward_search(
                 params, solars, lunars, active=True
             )
@@ -955,10 +955,10 @@ class SolunarsAllInOne(Frame):
                 )
 
                 active_difference = math.fabs(
-                    active_chart_info[1] - start_date
+                    active_chart_info[1] - input_date
                 )
                 future_difference = math.fabs(
-                    future_chart_info[1] - start_date
+                    future_chart_info[1] - input_date
                 )
 
                 if active_difference < future_difference:
@@ -988,23 +988,15 @@ class SolunarsAllInOne(Frame):
         # Skip duplicates
         already_created_charts = {}
 
+        active_charts_found = []
+
         dates_and_chart_params = sorted(
             dates_and_chart_params, key=lambda x: -1 * x[1]
         )
 
-        # TODO:
-        # Only run this logic for active, for the first set of any given chart.
-
-        # That means we need to actually use a subset of the full list:
-        # Only the first one of each chart.
-
         searching_active_charts = self.search.value in [0, 1]
-        if searching_active_charts:
-            pass
 
-        indexes_to_remove = []
-
-        for index in range(dates_and_chart_params):
+        for index in range(len(dates_and_chart_params)):
             (
                 chart_params,
                 date,
@@ -1012,39 +1004,32 @@ class SolunarsAllInOne(Frame):
                 chart_class,
             ) = dates_and_chart_params[index]
 
-            is_demi = 'demi' in solunar_type
-            is_quarti = (
-                'quarti' in solunar_type
-                or 'eighteen' in solunar_type
-                or 'ten' in solunar_type
-            )
-
-            if not is_demi and not is_quarti:
-                continue
-
             family = pydash.find(SOLUNAR_FAMILIES, lambda f: solunar_type in f)
             assert family is not None
 
-            pass
+            family_has_demi = len(family) > 2
 
-        # For each demi chart,
-        # If there a full chart after and not before,
-        # note its index.
+            is_demi = 'Demi' in solunar_type
+            is_quarti = (
+                'Quarti' in solunar_type
+                or 'Eighteen' in solunar_type  # "quarti" NSR
+                or 'Ten' in solunar_type  # "quarti" NLR
+            )
 
-        # For each quarti chart,
-        # if there is a full chart after and not before,
-        # note its index.
-        # if there is a demi/full chart plus quarti after and not before,
-        # note its index.
+            chart_is_active = date < input_date
 
-        # Go through and only include the indexes that are not listed.
+            if searching_active_charts and chart_is_active:
+                full_chart_found = family[0] in active_charts_found
 
-        for (
-            chart_params,
-            date,
-            solunar_type,
-            chart_class,
-        ) in dates_and_chart_params:
+                if (is_demi or is_quarti) and full_chart_found:
+                    continue
+
+                if is_quarti and family_has_demi:
+                    demi_found = family[1] in active_charts_found
+
+                    if demi_found:
+                        continue
+
             truncated_date = int(date)
             if truncated_date in already_created_charts:
                 if solunar_type in already_created_charts[truncated_date]:
@@ -1060,6 +1045,10 @@ class SolunarsAllInOne(Frame):
                 solunar_type,
                 chart_class,
             )
+
+            if chart_is_active:
+                active_charts_found.append(solunar_type)
+
             charts_created += 1
 
         s = '' if charts_created == 1 else 's'
