@@ -932,19 +932,19 @@ class SolunarsAllInOne(Frame):
                 duration = None
 
         if self.search.value == 0:
-            dates_and_chart_params = self.forward_search(
+            dates_and_chart_params = self.search_solunars(
                 params, solars, lunars, active=True
             )
             if duration:
-                burst_chart_params = self.forward_search(
+                burst_chart_params = self.search_solunars(
                     params, solars, lunars, burst_months=duration
                 )
                 dates_and_chart_params += burst_chart_params
         elif self.search.value == 1:
-            active_chart_params = self.forward_search(
+            active_chart_params = self.search_solunars(
                 params, solars, lunars, active=True
             )
-            forward_chart_params = self.forward_search(params, solars, lunars)
+            forward_chart_params = self.search_solunars(params, solars, lunars)
 
             for chart_type in solars + lunars:
                 active_chart_info = pydash.find(
@@ -967,13 +967,13 @@ class SolunarsAllInOne(Frame):
                     dates_and_chart_params.append(future_chart_info)
 
             if duration:
-                burst_chart_params = self.forward_search(
+                burst_chart_params = self.search_solunars(
                     params, solars, lunars, burst_months=duration
                 )
                 dates_and_chart_params += burst_chart_params
 
         elif self.search.value == 2:
-            dates_and_chart_params = self.forward_search(
+            dates_and_chart_params = self.search_solunars(
                 params, solars, lunars, burst_months=duration
             )
         else:
@@ -1054,7 +1054,7 @@ class SolunarsAllInOne(Frame):
         s = '' if charts_created == 1 else 's'
         self.status.text = f'{charts_created} chart{s} created.'
 
-    def forward_search(
+    def search_solunars(
         self,
         params: dict,
         solars: list[str],
