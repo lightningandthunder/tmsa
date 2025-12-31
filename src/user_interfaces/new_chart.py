@@ -22,6 +22,7 @@ from timezonefinder import TimezoneFinder
 
 from src import *
 from src.constants import DS, MONTHS, VERSION
+from src.swe import calc_lat_to_lmt, calc_lmt_to_lat, julday
 from src.user_interfaces.chart_assembler import assemble_charts
 from src.user_interfaces.locations import Locations
 from src.user_interfaces.widgets import *
@@ -849,7 +850,7 @@ class NewChart(Frame):
         self.save_location(chart)
         zone = normalize_text(self.tz.text) or 'UT'
         chart['zone'] = zone
-        if zone.upper() in ['LMT', 'LAT']:
+        if zone.upper() == 'LMT':
             value = chart['longitude'] / 15
             if value < 0:
                 value = -value
@@ -870,6 +871,7 @@ class NewChart(Frame):
             self.tzch.text = hour
             self.tzcm.text = min
             self.tzcs.text = sec
+
         try:
             tzcorr = (
                 int(self.tzch.text)
@@ -886,6 +888,7 @@ class NewChart(Frame):
             )
         if self.tzcdir.value == 0:
             tzcorr = -tzcorr
+                
         chart['correction'] = tzcorr
         chart['notes'] = normalize_text(self.notes.text, True)
         chart['options'] = self.options.text.strip() or 'Natal Default'
@@ -893,8 +896,9 @@ class NewChart(Frame):
             chart['options'] = 'Natal Default'
 
         chart['version'] = version_str_to_tuple(VERSION)
-        assemble_charts(chart, self.istemp.value).show()
-
+        chartObject = assemble_charts(chart, self.istemp.value)
+        chartObject.show()
+    
     def save_location(self, chart):
         try:
             with open(LOCATIONS_FILE, 'r') as datafile:

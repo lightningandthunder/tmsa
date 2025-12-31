@@ -133,6 +133,21 @@ swe_lat_to_lmt.argtypes = [
     POINTER(c_char * 256),
 ]
 
+swe_lmt_to_lat = _get_handle_for_platform(dll, '_swe_lmt_to_lat@24')
+swe_lmt_to_lat.argtypes = [
+    c_double,
+    c_double,
+    POINTER(c_double),
+    POINTER(c_char * 256),
+]
+
+swe_time_equ = _get_handle_for_platform(dll, '_swe_time_equ@16')
+swe_time_equ.argtypes = [
+    c_double,  # Julian day UTC
+    POINTER(c_double),  # Output for equation of time
+    POINTER(c_char * 256),   # error string
+]
+
 swe_solcross_ut = _get_handle_for_platform(dll, '_swe_solcross_ut@24')
 swe_solcross_ut.argtypes = [c_double, c_double, c_int, POINTER(c_char * 256)]
 swe_solcross_ut.restype = c_double
@@ -270,6 +285,19 @@ def calc_lat_to_lmt(lat, long):
     swe_lat_to_lmt(lat, long, byref(lmt), byref(err))
     return lmt.value
 
+def calc_equation_of_time(jd_utc: float) -> float:
+    err = create_string_buffer(256)
+    equation_of_time = c_double()
+    swe_time_equ(c_double(jd_utc), byref(equation_of_time), byref(err))
+    return equation_of_time.value
+
+def calc_lmt_to_lat(lmt, long):
+    err = create_string_buffer(256)
+    lmt = c_double(lmt)
+    long = c_double(long)
+    lmt = c_double()
+    swe_lmt_to_lat(lmt, long, byref(lmt), byref(err))
+    return lmt.value
 
 def revjul(ut, isgreg):
     year = c_int()

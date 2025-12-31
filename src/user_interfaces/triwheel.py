@@ -12,6 +12,7 @@ from io import TextIOWrapper
 import src.constants as constants
 import src.models.charts as chart_models
 import src.models.options as option_models
+from src.swe import calc_equation_of_time, calc_lmt_to_lat
 import src.utils.chart_utils as chart_utils
 from src.user_interfaces.core_chart import CoreChart
 from src.utils.chart_utils import (
@@ -118,10 +119,21 @@ class Triwheel(CoreChart):
             + ' '
             + fmt_long(transiting_chart.geo_longitude)
         )
-        chart_grid[25][18:51] = center_align(
-            'UT '
-            + fmt_hms(transiting_chart.time + transiting_chart.correction)
-        )
+        
+        if transiting_chart.zone == 'LAT':
+            lat_utc_dt = calc_lmt_to_lat(transiting_chart.julian_day_utc, transiting_chart.geo_longitude)
+            eot = calc_equation_of_time(lat_utc_dt)
+            lat_correction = transiting_chart.julian_day_utc + eot
+            lat_hour = ((lat_correction + 0.5) % 1) * 24
+
+            chart_grid[25][18:51] = chart_utils.center_align(
+                'UT ' + chart_utils.fmt_hms(lat_hour)
+            )
+        else:
+            chart_grid[25][18:51] = chart_utils.center_align(
+                'UT ' + chart_utils.fmt_hms(transiting_chart.time + transiting_chart.correction)
+            )
+
         chart_grid[26][18:51] = center_align(
             'RAMC ' + fmt_dms(transiting_chart.ramc)
         )

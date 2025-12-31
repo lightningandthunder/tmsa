@@ -570,6 +570,33 @@ class ChartObject:
             else data['version']
         )
 
+        if 'zone' in data and data['zone'].upper() in ['LAT', 'LMT']:
+            value = self.geo_longitude / 15
+            correction_is_negative = value < 0
+
+            if correction_is_negative:
+                value = -value
+
+            hour = int(value)
+            value = (value - hour) * 60
+            minute = int(value)
+            value = (value - minute) * 60
+            sec = round(value)
+            if sec == 60:
+                sec = 0
+                minute += 1
+            if minute == 60:
+                minute = 0
+                hour += 1
+
+            # I think this is LMT timezone correction,
+            # not LAT...
+            self.correction = (
+                int(hour)
+                + int(minute or '0') / 60
+                + int(sec or '0') / 3600
+            )
+
         self.julian_day_utc = swe.julday(
             self.year,
             self.month,
@@ -578,7 +605,8 @@ class ChartObject:
             self.style,
         )
 
-        if 'zone' in data and data['zone'].upper() == 'LAT':
+        if data['zone'].upper() == 'LAT':
+            # ...which is why we convert LAT to LMT
             self.julian_day_utc = swe.calc_lat_to_lmt(
                 self.julian_day_utc, self.geo_longitude
             )

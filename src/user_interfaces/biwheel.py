@@ -14,6 +14,7 @@ import pydash
 import src.constants as constants
 import src.models.charts as chart_models
 import src.models.options as option_models
+from src.swe import calc_equation_of_time, calc_lmt_to_lat
 import src.utils.calculation_utils as calc_utils
 import src.utils.chart_utils as chart_utils
 from src.user_interfaces.core_chart import CoreChart
@@ -132,9 +133,21 @@ class Biwheel(CoreChart):
             + ' '
             + fmt_long(outermost_chart.geo_longitude)
         )
-        chart_grid[25][18:51] = center_align(
-            'UT ' + fmt_hms(outermost_chart.time + outermost_chart.correction)
-        )
+    
+        if outermost_chart.zone == 'LAT':
+            lat_utc_dt = calc_lmt_to_lat(outermost_chart.julian_day_utc, outermost_chart.geo_longitude)
+            eot = calc_equation_of_time(lat_utc_dt)
+            lat_correction = outermost_chart.julian_day_utc + eot
+            lat_hour = ((lat_correction + 0.5) % 1) * 24
+
+            chart_grid[25][18:51] = chart_utils.center_align(
+                'UT ' + chart_utils.fmt_hms(lat_hour)
+            )
+        else:
+            chart_grid[25][18:51] = chart_utils.center_align(
+                'UT ' + chart_utils.fmt_hms(outermost_chart.time + outermost_chart.correction)
+            )
+
         chart_grid[26][18:51] = center_align(
             'RAMC ' + fmt_dms(outermost_chart.ramc)
         )
