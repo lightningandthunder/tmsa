@@ -2,7 +2,6 @@ import bisect
 from copy import deepcopy
 from io import TextIOWrapper
 import math
-import time
 
 import src.models.charts as chart_models
 from src import *
@@ -217,8 +216,6 @@ def calc_midpoints_3(
 ) -> dict[str, list[chart_models.MidpointAspect]]:
     midpoints = {}
 
-    start = time.perf_counter_ns()
-
     def insert_sorted(key, midpoint):
         if key not in midpoints:
             midpoints[key] = [midpoint]
@@ -392,10 +389,6 @@ def calc_midpoints_3(
             )
             if ra_midpoint:
                 insert_sorted(key, ra_midpoint)
-
-    end = time.perf_counter_ns()
-
-    print('Elapsed: ', end - start)
 
     return midpoints
 
