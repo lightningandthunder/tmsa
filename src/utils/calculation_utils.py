@@ -2,6 +2,7 @@ import bisect
 from copy import deepcopy
 from io import TextIOWrapper
 import math
+import time
 
 import src.models.charts as chart_models
 from src import *
@@ -57,9 +58,6 @@ def calc_halfsums(
                     secondary_point_is_angle = (
                         secondary_point_name in constants.ANGLE_ABBREVIATIONS
                     )
-
-                    if primary_point_is_angle and secondary_point_is_angle:
-                        continue
 
                     primary_data = primary_point
                     secondary_data = secondary_point
@@ -175,6 +173,7 @@ def parse_midpoint(
     is_square, square_orb_degrees = in_harmonic_range(
         value=raw_orb_degree_decimal, orb=square_orb, harmonic=4
     )
+
     if is_square:
         direction = (
             chart_models.MidpointAspectType.DIRECT
@@ -217,6 +216,8 @@ def calc_midpoints_3(
     halfsums: list[chart_models.HalfSum],
 ) -> dict[str, list[chart_models.MidpointAspect]]:
     midpoints = {}
+
+    start = time.perf_counter_ns()
 
     def insert_sorted(key, midpoint):
         if key not in midpoints:
@@ -391,6 +392,10 @@ def calc_midpoints_3(
             )
             if ra_midpoint:
                 insert_sorted(key, ra_midpoint)
+
+    end = time.perf_counter_ns()
+
+    print('Elapsed: ', end - start)
 
     return midpoints
 
