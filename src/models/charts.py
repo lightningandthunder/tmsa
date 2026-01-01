@@ -605,7 +605,7 @@ class ChartObject:
             self.style,
         )
 
-        if data['zone'].upper() == 'LAT':
+        if 'zone' in data and data['zone'].upper() == 'LAT':
             # ...which is why we convert LAT to LMT
             self.julian_day_utc = swe.calc_lat_to_lmt(
                 self.julian_day_utc, self.geo_longitude

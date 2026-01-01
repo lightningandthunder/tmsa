@@ -119,9 +119,11 @@ class Quadwheel(CoreChart):
             + ' '
             + fmt_long(transiting_chart.geo_longitude)
         )
-        
+
         if transiting_chart.zone == 'LAT':
-            lat_utc_dt = calc_lmt_to_lat(transiting_chart.julian_day_utc, transiting_chart.geo_longitude)
+            lat_utc_dt = calc_lmt_to_lat(
+                transiting_chart.julian_day_utc, transiting_chart.geo_longitude
+            )
             eot = calc_equation_of_time(lat_utc_dt)
             lat_correction = transiting_chart.julian_day_utc + eot
             lat_hour = ((lat_correction + 0.5) % 1) * 24
@@ -131,9 +133,12 @@ class Quadwheel(CoreChart):
             )
         else:
             chart_grid[25][18:51] = chart_utils.center_align(
-                'UT ' + chart_utils.fmt_hms(transiting_chart.time + transiting_chart.correction)
+                'UT '
+                + chart_utils.fmt_hms(
+                    transiting_chart.time + transiting_chart.correction
+                )
             )
-        
+
         chart_grid[26][18:51] = center_align(
             'RAMC ' + fmt_dms(transiting_chart.ramc)
         )

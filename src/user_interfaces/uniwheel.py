@@ -64,7 +64,9 @@ class Uniwheel(CoreChart):
         )
 
         if chart.zone == 'LAT':
-            lat_utc_dt = calc_lmt_to_lat(chart.julian_day_utc, chart.geo_longitude)
+            lat_utc_dt = calc_lmt_to_lat(
+                chart.julian_day_utc, chart.geo_longitude
+            )
             eot = calc_equation_of_time(lat_utc_dt)
             lat_correction = chart.julian_day_utc + eot
             lat_hour = ((lat_correction + 0.5) % 1) * 24

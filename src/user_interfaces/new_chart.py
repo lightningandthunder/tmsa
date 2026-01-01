@@ -888,7 +888,7 @@ class NewChart(Frame):
             )
         if self.tzcdir.value == 0:
             tzcorr = -tzcorr
-                
+
         chart['correction'] = tzcorr
         chart['notes'] = normalize_text(self.notes.text, True)
         chart['options'] = self.options.text.strip() or 'Natal Default'

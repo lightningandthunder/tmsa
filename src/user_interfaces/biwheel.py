@@ -133,9 +133,11 @@ class Biwheel(CoreChart):
             + ' '
             + fmt_long(outermost_chart.geo_longitude)
         )
-    
+
         if outermost_chart.zone == 'LAT':
-            lat_utc_dt = calc_lmt_to_lat(outermost_chart.julian_day_utc, outermost_chart.geo_longitude)
+            lat_utc_dt = calc_lmt_to_lat(
+                outermost_chart.julian_day_utc, outermost_chart.geo_longitude
+            )
             eot = calc_equation_of_time(lat_utc_dt)
             lat_correction = outermost_chart.julian_day_utc + eot
             lat_hour = ((lat_correction + 0.5) % 1) * 24
@@ -145,7 +147,10 @@ class Biwheel(CoreChart):
             )
         else:
             chart_grid[25][18:51] = chart_utils.center_align(
-                'UT ' + chart_utils.fmt_hms(outermost_chart.time + outermost_chart.correction)
+                'UT '
+                + chart_utils.fmt_hms(
+                    outermost_chart.time + outermost_chart.correction
+                )
             )
 
         chart_grid[26][18:51] = center_align(
