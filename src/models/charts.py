@@ -571,11 +571,11 @@ class ChartObject:
         )
 
         if 'zone' in data and data['zone'].upper() in ['LAT', 'LMT']:
-            value = self.geo_longitude / 15
-            correction_is_negative = value < 0
-
-            if correction_is_negative:
-                value = -value
+            # I don't know why this needs to be flipped with the -1.
+            # When we conditionally flipped it only when negative,
+            # it was correct for west (negative) longitudes
+            # and incorrect for east (positive) ones.
+            value = (self.geo_longitude / 15) * -1
 
             hour = int(value)
             value = (value - hour) * 60
@@ -592,7 +592,7 @@ class ChartObject:
             # I think this is LMT timezone correction,
             # not LAT...
             self.correction = (
-                int(hour)
+                int(hour or '0')
                 + int(minute or '0') / 60
                 + int(sec or '0') / 3600
             )

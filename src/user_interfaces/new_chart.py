@@ -874,7 +874,7 @@ class NewChart(Frame):
 
         try:
             tzcorr = (
-                int(self.tzch.text)
+                int(self.tzch.text or '0')
                 + int(self.tzcm.text or '0') / 60
                 + int(self.tzcs.text or '0') / 3600
             )
@@ -898,7 +898,7 @@ class NewChart(Frame):
         chart['version'] = version_str_to_tuple(VERSION)
         chartObject = assemble_charts(chart, self.istemp.value)
         chartObject.show()
-    
+
     def save_location(self, chart):
         try:
             with open(LOCATIONS_FILE, 'r') as datafile:

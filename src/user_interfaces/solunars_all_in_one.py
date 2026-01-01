@@ -994,6 +994,9 @@ class SolunarsAllInOne(Frame):
             dates_and_chart_params, key=lambda x: -1 * x[1]
         )
 
+        # for x in dates_and_chart_params:
+        #     print(x[1], x[2])
+
         searching_active_charts = self.search.value in [0, 1]
 
         for index in range(len(dates_and_chart_params)):
