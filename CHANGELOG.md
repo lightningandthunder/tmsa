@@ -23,8 +23,6 @@
 - Dramatically streamlined solunar search code
 - Fixed bug which caused PVP aspects to get missed when one planet was on Meridian
 
-
-
 ### 0.6.0
 
 #### Data Table

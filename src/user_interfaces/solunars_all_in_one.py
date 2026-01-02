@@ -994,9 +994,6 @@ class SolunarsAllInOne(Frame):
             dates_and_chart_params, key=lambda x: -1 * x[1]
         )
 
-        # for x in dates_and_chart_params:
-        #     print(x[1], x[2])
-
         searching_active_charts = self.search.value in [0, 1]
 
         for index in range(len(dates_and_chart_params)):
@@ -1195,7 +1192,7 @@ class SolunarsAllInOne(Frame):
             )
 
             if lunar_return_type in LUNAR_RETURN_FAMILY:
-                starting_date = base_start - 29 if active else base_start
+                starting_date = (base_start - 29) if active else base_start
 
                 returns = find_solunar_crossings_until_date(
                     base_start=starting_date,
@@ -1243,49 +1240,66 @@ class SolunarsAllInOne(Frame):
                 continue
 
             elif lunar_return_type in ANLUNAR_FAMILY:
-                # Get previous solar return
-                # TODO - when this crosses over into the next year, it won't use the next SSR
+                # Need to loop and periodically update the
+                # solar return date and get a new SSR
 
-                solar_return_date = calc_sun_crossing(
+                last_ssr_date = calc_sun_crossing(
                     sun_radix_longitude, base_start - 366
                 )
-                (year, month, day, time) = revjul(
-                    solar_return_date, params['style']
-                )
-
-                ssr_params = {**params}
-                ssr_params.update(
-                    {
-                        'name': radix.name + ' Solar Return',
-                        'type': ChartType.SOLAR_RETURN.value,
-                        'year': year,
-                        'month': month,
-                        'day': day,
-                        'time': time,
-                    }
-                )
-
-                ssr_chart = ChartObject(ssr_params)
-
-                solar_moon = ssr_chart.planets['Moon'].longitude
 
                 starting_date = base_start - 29 if active else base_start
 
-                returns = find_solunar_crossings_until_date(
-                    base_start=starting_date,
-                    continue_until_date=continue_until_date_lunar,
-                    target_body='Moon',
-                    target_longitude=solar_moon,
-                    cycle_length=cycle_length,
-                    solunar_type=lunar_return_type,
-                    grace_period=1,
-                )
+                keep_looping = True
+                while keep_looping:
+                    (year, month, day, time) = revjul(
+                        last_ssr_date, params['style']
+                    )
 
-                append_lunars(
-                    returns,
-                    lunar_return_type,
-                    override_params={**params, 'ssr_chart': ssr_chart},
-                )
+                    ssr_params = {**params}
+                    ssr_params.update(
+                        {
+                            'name': radix.name + ' Solar Return',
+                            'type': ChartType.SOLAR_RETURN.value,
+                            'year': year,
+                            'month': month,
+                            'day': day,
+                            'time': time,
+                        }
+                    )
+
+                    ssr_chart = ChartObject(ssr_params)
+
+                    solar_moon = ssr_chart.planets['Moon'].longitude
+
+                    next_ssr_date = calc_sun_crossing(
+                        sun_radix_longitude, last_ssr_date + 363
+                    )
+                    sar_continue_date = min(
+                        continue_until_date_lunar, next_ssr_date
+                    )
+
+                    returns = find_solunar_crossings_until_date(
+                        base_start=starting_date,
+                        continue_until_date=sar_continue_date,
+                        target_body='Moon',
+                        target_longitude=solar_moon,
+                        cycle_length=cycle_length,
+                        solunar_type=lunar_return_type,
+                        grace_period=1,
+                    )
+
+                    append_lunars(
+                        returns,
+                        lunar_return_type,
+                        override_params={**params, 'ssr_chart': ssr_chart},
+                    )
+
+                    if next_ssr_date > continue_until_date_lunar:
+                        keep_looping = False
+
+                    starting_date = next_ssr_date + 4
+                    last_ssr_date = next_ssr_date
+
                 continue
 
             elif lunar_return_type in LSR_FAMILY:
@@ -1314,21 +1328,16 @@ class SolunarsAllInOne(Frame):
                         next_increment = 15
                     elif (
                         lunar_return_type
-                        == ChartType.FIRST_QUARTI_LUNAR_SYNODIC_RETURN.value
+                        == ChartType.LAST_QUARTI_LUNAR_SYNODIC_RETURN.value
                     ):
-                        if natal_elongation > 0:
-                            target_elongation = natal_elongation + 90
-                        else:
-                            target_elongation = natal_elongation - 90
+                        target_elongation = natal_elongation - 90
                         next_increment = 7.5
                     elif (
                         lunar_return_type
-                        == ChartType.LAST_QUARTI_LUNAR_SYNODIC_RETURN.value
+                        == ChartType.FIRST_QUARTI_LUNAR_SYNODIC_RETURN.value
                     ):
-                        if natal_elongation > 0:
-                            target_elongation = natal_elongation - 90
-                        else:
-                            target_elongation = natal_elongation + 90
+
+                        target_elongation = natal_elongation + 90
                         next_increment = 7.5
 
                     if target_elongation > 180:
@@ -1345,7 +1354,7 @@ class SolunarsAllInOne(Frame):
                     date = find_jd_utc_of_elongation(
                         target_elongation, lower_bound, higher_bound
                     )
-                    if date:
+                    if date and date < continue_until_date_lunar:
                         dates_and_chart_params.append(
                             (params, date, lunar_return_type, 'LR')
                         )
@@ -1354,45 +1363,65 @@ class SolunarsAllInOne(Frame):
                 continue
 
             elif lunar_return_type in KAR_FAMILY:
-                # Get previous solar return
-                # TODO - when this crosses over into the next year, it won't use the next SSR
+                # Need to loop and periodically update the
+                # solar return date and get a new SSR
 
-                solar_return_date = calc_sun_crossing(
+                last_ssr_date = calc_sun_crossing(
                     sun_radix_longitude, base_start - 366
                 )
-                (year, month, day, time) = revjul(
-                    solar_return_date, params['style']
-                )
-
-                ssr_params = {**params}
-                ssr_params.update(
-                    {
-                        'name': radix.name + ' Solar Return',
-                        'type': ChartType.SOLAR_RETURN.value,
-                        'year': year,
-                        'month': month,
-                        'day': day,
-                        'time': time,
-                    }
-                )
-
-                ssr_chart = ChartObject(ssr_params)
 
                 starting_date = base_start - 29 if active else base_start
 
-                returns = find_progressed_anlunar_crossings_until_date(
-                    base_start=starting_date,
-                    continue_until_date=continue_until_date_lunar,
-                    radix_sun_longitude=sun_radix_longitude,
-                    solunar_type=lunar_return_type,
-                    grace_period=1,
-                )
+                keep_looping = True
+                while keep_looping:
+                    (year, month, day, time) = revjul(
+                        last_ssr_date, params['style']
+                    )
 
-                append_lunars(
-                    returns,
-                    lunar_return_type,
-                    override_params={**params, 'ssr_chart': ssr_chart},
-                )
+                    ssr_params = {**params}
+                    ssr_params.update(
+                        {
+                            'name': radix.name + ' Solar Return',
+                            'type': ChartType.SOLAR_RETURN.value,
+                            'year': year,
+                            'month': month,
+                            'day': day,
+                            'time': time,
+                        }
+                    )
+
+                    ssr_chart = ChartObject(ssr_params)
+
+                    solar_moon = ssr_chart.planets['Moon'].longitude
+
+                    next_ssr_date = calc_sun_crossing(
+                        sun_radix_longitude, last_ssr_date + 363
+                    )
+
+                    sar_continue_date = min(
+                        continue_until_date_lunar, next_ssr_date
+                    )
+
+                    returns = find_progressed_anlunar_crossings_until_date(
+                        base_start=starting_date,
+                        continue_until_date=sar_continue_date,
+                        radix_sun_longitude=sun_radix_longitude,
+                        solunar_type=lunar_return_type,
+                        grace_period=1,
+                    )
+
+                    append_lunars(
+                        returns,
+                        lunar_return_type,
+                        override_params={**params, 'ssr_chart': ssr_chart},
+                    )
+
+                    if next_ssr_date > continue_until_date_lunar:
+                        keep_looping = False
+
+                    starting_date = next_ssr_date + 4
+                    last_ssr_date = next_ssr_date
+
                 continue
 
             elif lunar_return_type in KLR_FAMILY:
