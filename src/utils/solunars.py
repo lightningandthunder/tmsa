@@ -336,7 +336,9 @@ def append_applicable_returns(
     filtered_returns = []
     added_future_return = False
 
-    if not burst:
+    if burst:
+        filtered_returns = returns
+    else:
         if active:
             # From newest to oldest
             for return_date in reversed(returns):

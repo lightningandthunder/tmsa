@@ -12,7 +12,7 @@ from src.constants import VERSION
 base = ''
 out_dir = 'dist'
 build_dir = None
-copyright = 'Copyright (C) 2024 James A. Eshelman'
+copyright = 'Copyright (C) 2026 James A. Eshelman'
 
 match sys.platform:
     case 'win32':

@@ -1,4 +1,4 @@
-# Copyright 2025 James Eshelman, Mike Nelson, Mike Verducci
+# Copyright 2026 James Eshelman, Mike Nelson, Mike Verducci
 
 # This file is part of Time Matters: A Sidereal Astrology Toolkit (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation,
@@ -1017,7 +1017,6 @@ class SolunarsAllInOne(Frame):
             )
 
             chart_is_active = date < input_date
-            allow_future_chart = False
 
             if searching_active_charts and chart_is_active:
                 full_chart_found = family[0] in active_charts_found
@@ -1033,7 +1032,6 @@ class SolunarsAllInOne(Frame):
             elif searching_active_charts and not chart_is_active:
                 if date - input_date > 1:
                     continue     
-                allow_future_chart = True
                 # Allow upcoming charts within 1 day
 
             truncated_date = int(date)
@@ -1043,8 +1041,7 @@ class SolunarsAllInOne(Frame):
                 else:
                     already_created_charts[truncated_date].append(solunar_type)
             else:
-                if not allow_future_chart:
-                    already_created_charts[truncated_date] = [solunar_type]
+                already_created_charts[truncated_date] = [solunar_type]
 
             self.make_chart(
                 chart_params,
@@ -1053,7 +1050,7 @@ class SolunarsAllInOne(Frame):
                 chart_class,
             )
 
-            if chart_is_active and not allow_future_chart:
+            if chart_is_active:
                 active_charts_found.append(solunar_type)
 
             charts_created += 1
@@ -1253,7 +1250,7 @@ class SolunarsAllInOne(Frame):
                 # solar return date and get a new SSR
 
                 last_ssr_date = calc_sun_crossing(
-                    sun_radix_longitude, base_start - 366
+                    sun_radix_longitude, base_start - 364
                 )
 
                 starting_date = base_start - 29 if active else base_start
@@ -1306,7 +1303,7 @@ class SolunarsAllInOne(Frame):
                     if next_ssr_date > continue_until_date_lunar:
                         keep_looping = False
 
-                    starting_date = next_ssr_date + 4
+                    starting_date = next_ssr_date + 2
                     last_ssr_date = next_ssr_date
 
                 continue
@@ -1428,7 +1425,7 @@ class SolunarsAllInOne(Frame):
                     if next_ssr_date > continue_until_date_lunar:
                         keep_looping = False
 
-                    starting_date = next_ssr_date + 4
+                    starting_date = next_ssr_date + 2
                     last_ssr_date = next_ssr_date
 
                 continue
