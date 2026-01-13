@@ -331,14 +331,30 @@ def append_applicable_returns(
     args: tuple,
     burst: bool,
     active: bool,
+    base_start: float
 ):
+    filtered_returns = []
+    added_future_return = False
+
     if not burst:
         if active:
-            returns = [returns[-1]] if len(returns) else []
+            # From newest to oldest
+            for return_date in reversed(returns):
+                # If this happened at this point, it's due to the grace period
+                if return_date > base_start:
+                    filtered_returns.append(return_date)
+                    added_future_return = True
+                else:
+                    if added_future_return and len(filtered_returns) == 1:
+                        filtered_returns.append(return_date)
+                        break
+                    elif len(filtered_returns) == 0:
+                        filtered_returns.append(return_date)
+                        break
         else:
             returns = [returns[0]] if len(returns) else []
 
-    for date in returns:
+    for date in filtered_returns:
         if not isinstance(date, dict):
             return_args_list.append(({**args[0]}, date, *args[2:]))
         else:

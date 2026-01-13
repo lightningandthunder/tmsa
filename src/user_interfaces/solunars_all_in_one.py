@@ -1017,6 +1017,7 @@ class SolunarsAllInOne(Frame):
             )
 
             chart_is_active = date < input_date
+            allow_future_chart = False
 
             if searching_active_charts and chart_is_active:
                 full_chart_found = family[0] in active_charts_found
@@ -1029,6 +1030,11 @@ class SolunarsAllInOne(Frame):
 
                     if demi_found:
                         continue
+            elif searching_active_charts and not chart_is_active:
+                if date - input_date > 1:
+                    continue     
+                allow_future_chart = True
+                # Allow upcoming charts within 1 day
 
             truncated_date = int(date)
             if truncated_date in already_created_charts:
@@ -1037,7 +1043,8 @@ class SolunarsAllInOne(Frame):
                 else:
                     already_created_charts[truncated_date].append(solunar_type)
             else:
-                already_created_charts[truncated_date] = [solunar_type]
+                if not allow_future_chart:
+                    already_created_charts[truncated_date] = [solunar_type]
 
             self.make_chart(
                 chart_params,
@@ -1046,7 +1053,7 @@ class SolunarsAllInOne(Frame):
                 chart_class,
             )
 
-            if chart_is_active:
+            if chart_is_active and not allow_future_chart:
                 active_charts_found.append(solunar_type)
 
             charts_created += 1
@@ -1064,6 +1071,16 @@ class SolunarsAllInOne(Frame):
     ):
         dates_and_chart_params: list[tuple[any]] = []
 
+        radix = params['radix']
+
+        base_start = julday(
+            params['year'],
+            params['month'],
+            params['day'],
+            params['time'],
+            params['style'],
+        )
+
         def _append_returns(
             returns, chart_type, chart_class, override_params=None
         ):
@@ -1078,6 +1095,7 @@ class SolunarsAllInOne(Frame):
                 ),
                 burst=burst_months is not None and burst_months > 0,
                 active=active,
+                base_start=base_start
             )
 
         def append_lunars(returns, chart_type, override_params=None):
@@ -1090,16 +1108,7 @@ class SolunarsAllInOne(Frame):
                 returns, chart_type, 'SR', override_params=override_params
             )
 
-        radix = params['radix']
-
-        base_start = julday(
-            params['year'],
-            params['month'],
-            params['day'],
-            params['time'],
-            params['style'],
-        )
-
+     
         continue_until_date = None
 
         if burst_months:
