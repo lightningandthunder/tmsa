@@ -1031,7 +1031,7 @@ class SolunarsAllInOne(Frame):
                         continue
             elif searching_active_charts and not chart_is_active:
                 if date - input_date > 1:
-                    continue     
+                    continue
                 # Allow upcoming charts within 1 day
 
             truncated_date = int(date)
@@ -1092,7 +1092,7 @@ class SolunarsAllInOne(Frame):
                 ),
                 burst=burst_months is not None and burst_months > 0,
                 active=active,
-                base_start=base_start
+                base_start=base_start,
             )
 
         def append_lunars(returns, chart_type, override_params=None):
@@ -1105,7 +1105,6 @@ class SolunarsAllInOne(Frame):
                 returns, chart_type, 'SR', override_params=override_params
             )
 
-     
         continue_until_date = None
 
         if burst_months:

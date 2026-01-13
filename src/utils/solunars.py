@@ -331,7 +331,7 @@ def append_applicable_returns(
     args: tuple,
     burst: bool,
     active: bool,
-    base_start: float
+    base_start: float,
 ):
     filtered_returns = []
     added_future_return = False
