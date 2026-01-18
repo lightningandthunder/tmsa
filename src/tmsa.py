@@ -242,7 +242,7 @@ class StartPage(Frame):
             # )
             tkfiledialog.askopenfilename(
                 initialdir=TEMP_CHARTS,
-                filetypes=[('Chart Files', '*.dat', '*.txt')],
+                filetypes=[('Chart Files', '*.dat')],
             )
             log_startup_error(e)
 
