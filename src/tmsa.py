@@ -10,9 +10,9 @@
 import json
 import math
 import os
-import stat
 import shutil
 import webbrowser
+import tkinter.filedialog as tkfiledialog
 
 from src import *
 from src import STILL_STARTING_UP
@@ -41,9 +41,9 @@ BETA_FEATURES_ENABLED = 'Beta Features Enabled'
 INTRO = f"""A freeware program for calculating geometrically
 accurate astrological charts in the Sidereal Zodiac,
 as rediscovered by Cyril Fagan and Donald Bradley."""
-COPYRIGHT = f"""\u00a9 2025 James A. Eshelman.
+COPYRIGHT = f"""\u00a9 2026 James A. Eshelman.
 Created by Mike Nelson (2021).
-Continuing development by Ember Volkov (Mike Verducci).
+Continuing development by Ember Valentine (Mike Verducci).
 
 Released under the GNU Affero General Public License"""
 LICENSE = 'www.gnu.org/licenses/agpl-3.0.en.html'
@@ -59,7 +59,6 @@ class StartPage(Frame):
     def __init__(self):
         super().__init__()
         global STILL_STARTING_UP
-        # global DEV_MODE
 
         self.parent = main
         self.parent.bind('<Configure>', self.resize)
@@ -67,16 +66,7 @@ class StartPage(Frame):
         self.title = Label(
             self, TITLE, LABEL_X_COORD, 0.025, LABEL_WIDTH, font=title_font
         )
-        # if DEV_MODE:
-        #     Label(
-        #         self,
-        #         BETA_FEATURES_ENABLED,
-        #         LABEL_X_COORD,
-        #         0.08,
-        #         LABEL_WIDTH,
-        #         LABEL_HEIGHT_UNIT,
-        #         font=font_12,
-        #     )
+
         self.intro = Label(
             self,
             INTRO,
@@ -246,8 +236,13 @@ class StartPage(Frame):
                 shutil.rmtree(TEMP_CHARTS)
 
         except Exception as e:
-            tkmessagebox.showerror(
-                'File Error', f'Error trying to remove temporary files: {e}'
+            # JAE asked me to remove this and just open the dir if delete fails
+            # tkmessagebox.showerror(
+            #     'File Error', f'Error trying to remove temporary files: {e}'
+            # )
+            tkfiledialog.askopenfilename(
+                initialdir=TEMP_CHARTS,
+                filetypes=[('Chart Files', '*.dat', '*.txt')],
             )
             log_startup_error(e)
 

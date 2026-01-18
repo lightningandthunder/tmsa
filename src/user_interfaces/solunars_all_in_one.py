@@ -53,12 +53,10 @@ from src.utils.gui_utils import ShowHelp
 from src.utils.os_utils import open_file
 from src.utils.solunars import (
     append_applicable_returns,
-    find_julian_days_for_aspect_to_progressed_body,
     find_novienic_crossings_until_date,
     find_progressed_anlunar_crossings_until_date,
     find_progressed_crossings_until_date,
     find_solunar_crossings_until_date,
-    set_up_progressed_params,
 )
 
 
@@ -931,6 +929,7 @@ class SolunarsAllInOne(Frame):
             if duration == 0:
                 duration = None
 
+        # Active
         if self.search.value == 0:
             dates_and_chart_params = self.search_solunars(
                 params, solars, lunars, active=True
@@ -940,6 +939,8 @@ class SolunarsAllInOne(Frame):
                     params, solars, lunars, burst_months=duration
                 )
                 dates_and_chart_params += burst_chart_params
+
+        # Nearest
         elif self.search.value == 1:
             active_chart_params = self.search_solunars(
                 params, solars, lunars, active=True
@@ -972,6 +973,7 @@ class SolunarsAllInOne(Frame):
                 )
                 dates_and_chart_params += burst_chart_params
 
+        # Next
         elif self.search.value == 2:
             dates_and_chart_params = self.search_solunars(
                 params, solars, lunars, burst_months=duration
@@ -994,7 +996,8 @@ class SolunarsAllInOne(Frame):
             dates_and_chart_params, key=lambda x: -1 * x[1]
         )
 
-        searching_active_charts = self.search.value in [0, 1]
+        searching_active_charts = self.search.value == 0
+        searching_nearest_charts = self.search.value == 1
 
         for index in range(len(dates_and_chart_params)):
             (
@@ -1018,7 +1021,9 @@ class SolunarsAllInOne(Frame):
 
             chart_is_active = date < input_date
 
-            if searching_active_charts and chart_is_active:
+            if (
+                searching_active_charts or searching_nearest_charts
+            ) and chart_is_active:
                 full_chart_found = family[0] in active_charts_found
 
                 if (is_demi or is_quarti) and full_chart_found:
@@ -1277,8 +1282,9 @@ class SolunarsAllInOne(Frame):
                     solar_moon = ssr_chart.planets['Moon'].longitude
 
                     next_ssr_date = calc_sun_crossing(
-                        sun_radix_longitude, last_ssr_date + 363
+                        sun_radix_longitude, last_ssr_date + 180
                     )
+
                     sar_continue_date = min(
                         continue_until_date_lunar, next_ssr_date
                     )

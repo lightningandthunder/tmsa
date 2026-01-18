@@ -342,19 +342,23 @@ def append_applicable_returns(
         if active:
             # From newest to oldest
             for return_date in reversed(returns):
+                if isinstance(return_date, dict):
+                    date = return_date['transit']
+                else:
+                    date = return_date
                 # If this happened at this point, it's due to the grace period
-                if return_date > base_start:
-                    filtered_returns.append(return_date)
+                if date > base_start:
+                    filtered_returns.append(date)
                     added_future_return = True
                 else:
                     if added_future_return and len(filtered_returns) == 1:
-                        filtered_returns.append(return_date)
+                        filtered_returns.append(date)
                         break
                     elif len(filtered_returns) == 0:
-                        filtered_returns.append(return_date)
+                        filtered_returns.append(date)
                         break
         else:
-            returns = [returns[0]] if len(returns) else []
+            filtered_returns = [returns[0]] if len(returns) else []
 
     for date in filtered_returns:
         if not isinstance(date, dict):
