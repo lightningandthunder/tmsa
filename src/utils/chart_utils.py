@@ -1,4 +1,4 @@
-# Copyright 2025 James Eshelman, Mike Nelson, Mike Verducci
+# Copyright 2026 James Eshelman, Mike Nelson, Mike Verducci
 
 # This file is part of Time Matters: A Sidereal Astrology Toolkit (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation,
@@ -7,20 +7,13 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
-from io import TextIOWrapper
 import math
 import os
-from typing import Iterator
+from io import TextIOWrapper
 
 from src import *
-from src import constants
-from src import swe
-from src.models.angles import (
-    ForegroundAngles,
-    MinorAngles,
-    NonForegroundAngles,
-)
-from src.models.options import AngularityModel, NodeTypes, Options
+from src import constants, swe
+from src.models.options import Options
 from src.user_interfaces.widgets import *
 from src.utils.format_utils import to360
 
@@ -85,22 +78,6 @@ def convert_short_name_to_long(name: str) -> str:
         if constants.PLANETS[planet]['short_name'] == name:
             return planet
 
-
-DEFAULT_ECLIPTICAL_ORBS = {
-    '0': [3.0, 7.0, 10.0],
-    '180': [3.0, 7.0, 10.0],
-    '90': [3.0, 6.0, 7.5],
-    '45': [1.0, 2.0, 0],
-    '120': [3.0, 6.0, 7.5],
-    '60': [3.0, 6.0, 7.5],
-    '30': [0, 0, 0],
-}
-DEFAULT_MUNDANE_ORBS = {
-    '0': [3.0, 0, 0],
-    '180': [3.0, 0, 0],
-    '90': [3.0, 0, 0],
-    '45': [0, 0, 0],
-}
 
 RULERSHIPS = {
     'Ar': ['Su', 'Pl'],
@@ -181,9 +158,7 @@ DQ = '"'
 SQ = "'"
 
 
-def major_angularity_curve_cadent_background(
-    orb: float, use_raw: bool = False
-):
+def major_angularity_curve_cadent_background(orb: float):
     if orb <= 10:
         orb *= 6
     elif orb > 10 and orb <= 40:
@@ -193,12 +168,10 @@ def major_angularity_curve_cadent_background(
     else:
         orb = 6 * orb - 180
 
-    return _major_angle_angularity_strength_percent(orb, use_raw)
+    return _major_angle_angularity_strength_percent(orb)
 
 
-def major_angularity_curve_midquadrant_background(
-    orb: float, use_raw: bool = False
-):
+def major_angularity_curve_midquadrant_background(orb: float):
     if orb > 45:
         orb = 90 - orb
     if orb <= 10:
@@ -208,17 +181,12 @@ def major_angularity_curve_midquadrant_background(
     else:
         orb = 6 * orb - 90
 
-    return _major_angle_angularity_strength_percent(orb, use_raw)
+    return _major_angle_angularity_strength_percent(orb)
 
 
-def _major_angle_angularity_strength_percent(
-    orb: float, use_raw: bool = False
-) -> float:
+def _major_angle_angularity_strength_percent(orb: float) -> float:
     # Normalize the -1 to +1 range to a percentage
     raw = math.cos(math.radians(orb))
-
-    if use_raw:
-        return raw * 100
 
     # Convert from -1 to +1 to 0 to +2
     raw = raw + 1
@@ -230,7 +198,7 @@ def _major_angle_angularity_strength_percent(
     return raw * 100
 
 
-def major_angularity_curve_eureka_formula(orb: float, use_raw: bool = False):
+def major_angularity_curve_eureka_formula(orb: float):
     initial_angularity = math.cos(math.radians(orb * 4))
     # Reduce the weight - this essentially is a square of the calculated score
     faded_angularity = initial_angularity * ((initial_angularity + 1) / 2)
@@ -246,26 +214,17 @@ def major_angularity_curve_eureka_formula(orb: float, use_raw: bool = False):
     # Convert to -1 to +1
     penultimate_score /= 1.125
 
-    if not use_raw:
-        # Convert to 0 to +1
-        raw_decimal = (penultimate_score + 1) / 2
-        return raw_decimal * 100
-
-    return penultimate_score * 100
+    # Convert to 0 to +1
+    raw_decimal = (penultimate_score + 1) / 2
+    return raw_decimal * 100
 
 
-def minor_angularity_curve(
-    orb_degrees: float, options: Options, use_raw: bool = False
-):
+def minor_angularity_curve(orb_degrees: float, options: Options):
     max_orb = calc_class_3_orb(options.angularity.minor_angles)
-    curve_width = 360.0 / (max_orb * 4)
+    curve_multiplier = 360.0 / (max_orb * 4)
 
     # Regular cosine curve
-    raw = math.cos(math.radians(orb_degrees * curve_width))
-
-    if use_raw:
-        # Make it comparable to major angle contacts
-        return (0.5 * raw + 0.5) * 100
+    raw = math.cos(math.radians(orb_degrees * curve_multiplier))
 
     # Convert from -1 to +1 to 0 to +2
     raw += 1
@@ -275,47 +234,6 @@ def minor_angularity_curve(
     raw += 50
 
     return raw
-
-
-def convert_raw_strength_to_modified(
-    options: Options,
-    strength: int,
-    angle: ForegroundAngles | NonForegroundAngles,
-):
-    # Finish out the calculations that were aborted using raw settings
-    output_strength = strength / 100
-
-    if MinorAngles.contains(angle.value):
-        max_orb = calc_class_3_orb(options.angularity.minor_angles)
-        curve_width = 360.0 / (max_orb * 4)
-
-        output_strength -= 0.5
-        output_strength *= 2
-
-        # Revert the intial "raw" operations
-        radians_value = math.acos(output_strength)
-        degrees_value = math.degrees(radians_value)
-        orb_degrees = degrees_value / curve_width
-
-        return round(minor_angularity_curve(orb_degrees, options))
-
-    if options.angularity.model.value == AngularityModel.EUREKA.value:
-        # Convert to 0 to +1
-        output_strength = (output_strength + 1) / 2
-        return round(output_strength * 100)
-
-    if options.angularity.model.value in [
-        AngularityModel.CLASSIC_CADENT.value,
-        AngularityModel.MIDQUADRANT.value,
-    ]:
-        # Convert from -1 to +1 to 0 to +2
-        output_strength = output_strength + 1
-
-        # Reduce to 0 to +1
-        output_strength /= 2
-
-        # Convert to percentage
-        return round(output_strength * 100)
 
 
 def calc_class_3_orb(orbs: list[float]) -> float:
@@ -374,7 +292,7 @@ def zod_min(value):
     return f'{(deg % 30) or d:2d}{SIGNS_SHORT[(deg // 30) + s]}{minute:2d}'
 
 
-def zod_sec(value):
+def zod_sec_with_sign(value):
     value %= 360
     deg = int(value)
     value = (value - deg) * 60
@@ -446,6 +364,34 @@ def fmt_hms(time):
     else:
         day = f' {day:+d} day'
     return f'{hour:2d}:{minute:02d}:{sec:02d}{day}'
+
+
+def ut_time_correction(time):
+    day = 0
+    if time >= 24:
+        day = 1
+        time -= 24
+    elif time < 0:
+        day = -1
+        time += 24
+    hour = int(time)
+    time = (time - hour) * 60
+    minute = int(time)
+    time = (time - minute) * 60
+    sec = round(time)
+    if sec == 60:
+        sec = 0
+        minute += 1
+    if minute == 60:
+        minute = 0
+        hour += 1
+    if hour == 24:
+        hour = 0
+        day += 1
+
+    corrected_time = hour + (minute / 60) + (sec / 3600)
+
+    return (day, corrected_time)
 
 
 def fmt_lat(value, nosec=False):
@@ -529,16 +475,16 @@ def fmt_dm(value, noz=False, degree_digits=2):
         return f"{deg:>03d}{DS}{minute:>02}'"
 
 
-def signed_degree_minute(value):
+def signed_degree_minute(value, degree_digits=2):
     if value < 0:
-        return f'-{fmt_dm(-value, True)}'
+        return f'-{fmt_dm(-value, True, degree_digits=degree_digits)}'
     elif value > 0:
-        return f'+{fmt_dm(value, True)}'
+        return f'+{fmt_dm(value, True, degree_digits=degree_digits)}'
     else:
         return f' {fmt_dm(0)}'
 
 
-def signed_minute_second(value):
+def signed_minute_second(value, minute_digits=2):
     if value < 0:
         s = '-'
     elif value > 0:
@@ -552,7 +498,10 @@ def signed_minute_second(value):
     if sec == 60:
         sec = 0
         min += 1
-    return f'{s}{min:2}\'{sec:2}"'
+    if minute_digits == 2:
+        return f'{s}{min:2}\'{sec:2}"'
+    if minute_digits == 3:
+        return f'{s}{min:3}\'{sec:2}"'
 
 
 def angularity_activates_ingress(orb: float, angle: str) -> bool:
@@ -564,57 +513,65 @@ def angularity_activates_ingress(orb: float, angle: str) -> bool:
     return orb <= 2.0
 
 
-def make_chart_path(chart, temporary, is_ingress=False):
-    if isinstance(chart, dict):
+def make_chart_path(params, temporary, is_ingress=False):
+    if isinstance(params, dict):
         ingress = (
             True
-            if chart['type'][0:3] in ['Ari', 'Can', 'Lib', 'Cap']
-            or not chart['name']
+            if params['type'][0:3] in ['Ari', 'Can', 'Lib', 'Cap']
+            or not params.get('name')
             else False
         )
     else:
         ingress = is_ingress
-    if isinstance(chart, dict):
+    if isinstance(params, dict):
         if ingress:
-            first = f"{chart['year']}-{chart['month']}-{chart['day']}"
-            second = chart['location']
-            third = chart['type']
+            first = f"{params['year']}-{params['month']}-{params['day']}"
+            second = params['location']
+            third = params['type']
         else:
-            first = chart['name']
+            first = params['name']
             index = first.find(';')
             if index > -1:
                 first = first[0:index]
-            second = f"{chart['year']}-{chart['month']:02d}-{chart['day']:02d}"
-            third = chart['type']
+            second = (
+                f"{params['year']}-{params['month']:02d}-{params['day']:02d}"
+            )
+            third = params['type']
     else:
         if ingress:
-            first = f'{chart.year}-{chart.month}-{chart.day}'
-            second = chart.location
-            third = chart.type.value
+            first = f'{params.year}-{params.month}-{params.day}'
+            second = params.location
+            third = params.type.value
         else:
-            first = chart.name
+            first = params.name
             index = first.find(';')
             if index > -1:
                 first = first[0:index]
-            second = f'{chart.year}-{chart.month:02d}-{chart.day:02d}'
-            third = chart.type.value
+            second = f'{params.year}-{params.month:02d}-{params.day:02d}'
+            third = params.type.value
     filename = f'{first}~{second}~{third}.dat'
     if ingress:
         filepath = os.path.join(
-            f"{chart['year'] if isinstance(chart, dict) else chart.year}",
+            f"{params['year'] if isinstance(params, dict) else params.year}",
             filename,
         )
     else:
         filepath = os.path.join(first[0], first, filename)
     path = TEMP_CHARTS if temporary else CHART_PATH
+
     return os.path.abspath(os.path.join(path, filepath))
 
 
-def calc_aspect_strength_percent(max_orb: int, raw_orb: float) -> str:
-    strength = 60 / max_orb
-    strength_percent = math.cos(math.radians(raw_orb * strength))
-    strength_percent = round((strength_percent - 0.5) * 200)
-    return f'{strength_percent:3d}'
+def calc_aspect_strength_percent(
+    max_orb: int, raw_orb: float, as_float=False
+) -> str:
+
+    curve_multiplier = 90 / max_orb
+    strength_percent = math.cos(math.radians(raw_orb * curve_multiplier))
+
+    strength_percent = round(strength_percent * 100)
+
+    return f'{strength_percent:3d}' if not as_float else strength_percent
 
 
 def convert_house_to_pvl(house: float) -> float:
@@ -678,9 +635,15 @@ def write_triple_columns_to_file(
         )
     ):
         if aspect_index < len(classes[0]):
+            text = (
+                str(classes[0][aspect_index])
+                if classes[0][aspect_index]
+                else ' ' * 26
+            )
+
             chartfile.write(
                 left_align(
-                    str(classes[0][aspect_index]),
+                    text,
                     width=26,
                 )
             )
@@ -705,3 +668,16 @@ def write_triple_columns_to_file(
         else:
             chartfile.write(' ' * 26)
         chartfile.write('\n')
+
+
+def truncate(number, digits) -> float:
+    # Improve accuracy with floating point operations, to avoid truncate(16.4, 2) = 16.39 or truncate(-1.13, 2) = -1.12
+    nbDecimals = len(str(number).split('.')[1])
+    if nbDecimals <= digits:
+        return number
+    stepper = 10.0**digits
+    return math.trunc(stepper * number) / stepper
+
+
+def includes_any(collection: list[any], elements: list[any]):
+    return len(list(set(collection) & set(elements))) > 0

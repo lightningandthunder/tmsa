@@ -1,4 +1,4 @@
-# Copyright 2025 James Eshelman, Mike Nelson, Mike Verducci
+# Copyright 2026 James Eshelman, Mike Nelson, Mike Verducci
 
 # This file is part of Time Matters: A Sidereal Astrology Toolkit (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation,
@@ -7,12 +7,12 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
+import io
 import tkinter as tk
 import tkinter.messagebox as tkmessagebox
-from tkinter.font import Font as tkFont
 import traceback
 from datetime import datetime as dt
-import io
+from tkinter.font import Font as tkFont
 
 from src import *
 from src.constants import PLATFORM, VERSION
@@ -29,6 +29,8 @@ def show_error(exception, value, tb):
     )
     with open(ERROR_FILE, 'r') as file:
         contents = file.read()
+        if len(contents) > 30000:
+            contents = contents[:30000]
     with open(ERROR_FILE, 'w') as file:
         output = io.StringIO()
         traceback.print_exception(exception, value, tb, file=output)
@@ -65,6 +67,7 @@ if not os.environ.get('TMSA_TEST'):
 
 if PLATFORM == 'Win32GUI':
     base_font = tkFont(family='Lucida Console', size=18, weight='normal')
+    font_32 = tkFont(family='Lucida Console', size=32, weight='normal')
     font_24 = tkFont(family='Lucida Console', size=24, weight='normal')
     font_16 = tkFont(family='Lucida Console', size=16, weight='normal')
     font_14 = tkFont(family='Lucida Console', size=14, weight='normal')
@@ -75,13 +78,17 @@ if PLATFORM == 'Win32GUI':
     )
     title_font = tkFont(family='Lucida Console', size=36, weight='bold')
 elif PLATFORM == 'linux':
-    root_font = tk.font.nametofont('TkDefaultFont')
+    root_font = tk.font.nametofont('TkTextFont')
 
     base_font = root_font.copy()
+    base_font.configure(family='fixed')
     base_font.configure(size=18)
 
-    font_20 = root_font.copy()
-    font_20.configure(size=20)
+    font_32 = root_font.copy()
+    font_32.configure(size=32)
+
+    font_24 = root_font.copy()
+    font_24.configure(size=24)
 
     font_16 = root_font.copy()
     font_16.configure(size=16)
@@ -107,8 +114,11 @@ elif PLATFORM == 'darwin':
     base_font = root_font.copy()
     base_font.configure(size=18)
 
-    font_20 = root_font.copy()
-    font_20.configure(size=20)
+    font_32 = root_font.copy()
+    font_32.configure(size=32)
+
+    font_24 = root_font.copy()
+    font_24.configure(size=24)
 
     font_16 = root_font.copy()
     font_16.configure(size=16)
@@ -245,7 +255,7 @@ class Label(PropertyMixin, tk.Label):
         y,
         width=0.25,
         height=0.05,
-        anchor=tk.CENTER,
+        anchor='center',
         font=base_font,
     ):
         super().__init__(
@@ -258,6 +268,56 @@ class Label(PropertyMixin, tk.Label):
         self.height = height
         self.anchor = anchor
         self.place(relx=x, rely=y, relwidth=width, relheight=height)
+
+
+class Scrollbar(PropertyMixin, tk.Scrollbar):
+    def __init__(
+        self,
+        root,
+        orient=tk.VERTICAL,
+        **kwargs,
+    ):
+        super().__init__(root, orient=orient, **kwargs)
+
+
+class Listbox(PropertyMixin, tk.Listbox):
+    def __init__(
+        self,
+        root,
+        x,
+        y,
+        width=1,
+        height=1,
+        font=base_font,
+        **kwargs,
+    ):
+        super().__init__(
+            root, foreground=TXT_COLOR, background=BG_COLOR, **kwargs
+        )
+        self['font'] = font
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.place(relx=x, rely=y, relwidth=width, relheight=height)
+
+    def item_is_header(self, item):
+        return item.startswith('---')
+
+    @property
+    def selections(self):
+        return [
+            self.get(i)
+            for i in self.curselection()
+            if not self.item_is_header(self.get(i))
+        ]
+
+    def set_options(self, options):
+        self.option_clear()
+        for (index, item) in enumerate(options):
+            self.insert(tk.END, item)
+            if self.item_is_header(item):
+                self.itemconfig(index, fg='gray')
 
 
 class Button(PropertyMixin, tk.Button):
@@ -315,7 +375,18 @@ class Entry(PropertyMixin, tk.Entry):
 
 class Checkbutton(PropertyMixin, tk.Checkbutton):
     def __init__(
-        self, root, text, x, y, width, height=0.05, focus=True, font=base_font
+        self,
+        root,
+        text,
+        x,
+        y,
+        width,
+        height=0.05,
+        focus=True,
+        font=base_font,
+        anchor=tk.W,
+        relx=None,
+        rely=None,
     ):
         self._var = tk.IntVar(root)
         super().__init__(
@@ -332,8 +403,13 @@ class Checkbutton(PropertyMixin, tk.Checkbutton):
         self.y = y
         self.width = width
         self.height = height
-        self['anchor'] = tk.W
-        self.place(relx=x, rely=y, relwidth=width, relheight=height)
+        self['anchor'] = anchor
+        self.place(
+            relx=relx if relx else x,
+            rely=rely if rely else y,
+            relwidth=width,
+            relheight=height,
+        )
 
     @property
     def checked(self):
@@ -405,3 +481,61 @@ class Radiobutton(tk.Radiobutton):
         self['anchor'] = tk.W
         self.place(relx=x, rely=y, relwidth=width, relheight=height)
         group.append(self)
+
+
+# https://stackoverflow.com/questions/27820178/how-to-add-placeholder-to-an-entry-in-tkinter
+
+
+class PlaceholderEntry(tk.Entry, PropertyMixin):
+    def __init__(
+        self,
+        master,
+        text,
+        x,
+        y,
+        width,
+        height=0.05,
+        focus=True,
+        placeholder='',
+        cnf={},
+        fg='black',
+        fg_placeholder='grey50',
+        *args,
+        **kw,
+    ):
+        super().__init__(master=None, cnf={}, bg='white', *args, **kw)
+        self.fg = fg
+        self.fg_placeholder = fg_placeholder
+        self.placeholder = placeholder
+        self.bind('<FocusOut>', lambda event: self.fill_placeholder())
+        self.bind('<FocusIn>', lambda event: self.clear_box())
+        self['font'] = base_font
+
+        if text:
+            self.insert(0, text)
+        else:
+            self.fill_placeholder()
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self['anchor'] = None
+        self.place(relx=x, rely=y, relwidth=width, relheight=height)
+
+    def clear_box(self):
+        if not self.get() and super().get():
+            self.config(fg=self.fg)
+            self.delete(0, tk.END)
+
+    def fill_placeholder(self):
+        if not super().get():
+            self.config(fg=self.fg_placeholder)
+            self.insert(0, self.placeholder)
+
+    def get(self):
+        content = super().get()
+        if not content:
+            self.fill_placeholder()
+        if content == self.placeholder:
+            return ''
+        return content

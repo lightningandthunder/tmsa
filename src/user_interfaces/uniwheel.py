@@ -1,4 +1,4 @@
-# Copyright 2025 James Eshelman, Mike Nelson, Mike Verducci
+# Copyright 2026 James Eshelman, Mike Nelson, Mike Verducci
 
 # This file is part of Time Matters: A Sidereal Astrology Toolkit (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation,
@@ -9,14 +9,15 @@
 
 from io import TextIOWrapper
 
+import src.constants as constants
 import src.models.charts as chart_models
 import src.models.options as option_models
-import src.constants as constants
-from src.user_interfaces.core_chart import CoreChart
+from src.swe import calc_equation_of_time, calc_lmt_to_lat
 import src.utils.chart_utils as chart_utils
+from src.user_interfaces.core_chart import CoreChart
 
 
-class UniwheelV3(CoreChart):
+class Uniwheel(CoreChart):
     table_width = 81
     rows = 65
     columns = 69
@@ -61,9 +62,22 @@ class UniwheelV3(CoreChart):
             + ' '
             + chart_utils.fmt_long(chart.geo_longitude)
         )
-        chart_grid[31][18:51] = chart_utils.center_align(
-            'UT ' + chart_utils.fmt_hms(chart.time + chart.correction)
-        )
+
+        if chart.zone == 'LAT':
+            lat_utc_dt = calc_lmt_to_lat(
+                chart.julian_day_utc, chart.geo_longitude
+            )
+            eot = calc_equation_of_time(lat_utc_dt)
+            lat_correction = chart.julian_day_utc + eot
+            lat_hour = ((lat_correction + 0.5) % 1) * 24
+
+            chart_grid[31][18:51] = chart_utils.center_align(
+                'UT ' + chart_utils.fmt_hms(lat_hour)
+            )
+        else:
+            chart_grid[31][18:51] = chart_utils.center_align(
+                'UT ' + chart_utils.fmt_hms(chart.time + chart.correction)
+            )
         chart_grid[33][18:51] = chart_utils.center_align(
             'RAMC ' + chart_utils.fmt_dms(chart.ramc)
         )
@@ -71,7 +85,7 @@ class UniwheelV3(CoreChart):
             'OE ' + chart_utils.fmt_dms(chart.obliquity)
         )
         chart_grid[37][18:51] = chart_utils.center_align(
-            'SVP ' + chart_utils.zod_sec(360 - chart.ayanamsa)
+            'SVP ' + chart_utils.zod_sec_with_sign(360 - chart.ayanamsa)
         )
         chart_grid[39][18:51] = chart_utils.center_align('Sidereal Zodiac')
         chart_grid[41][18:51] = chart_utils.center_align('Campanus Houses')

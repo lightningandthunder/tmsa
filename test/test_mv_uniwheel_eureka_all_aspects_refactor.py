@@ -1,25 +1,26 @@
+from test.fixtures.base_chart import base_chart
+from test.fixtures.natal_options import natal_options
+from test.fixtures.tk_fixtures import mock_tk_main
+from test.mocks.mockfile import MockFile
+from test.utils import (
+    FixtureAspect,
+    assert_aspect,
+    assert_aspects_of_class,
+    assert_line_contains,
+)
+
+import src.models.options as model_option
 from src.models.charts import (
     AspectFramework,
     AspectType,
     ChartObject,
     ChartWheelRole,
 )
-from test.fixtures.base_chart import base_chart
-from test.fixtures.natal_options import natal_options
-import src.models.options as model_option
-from test.mocks.mockfile import MockFile
-from test.fixtures.tk_fixtures import mock_tk_main
-from test.utils import (
-    FixtureAspect,
-    assert_aspect,
-    assert_line_contains,
-    assert_aspects_of_class,
-)
 
 
 class TestUniwheelDisplay:
     def init_test(self, monkeypatch, base_chart, natal_options, mock_tk_main):
-        from src.user_interfaces.uniwheelV3 import UniwheelV3
+        from src.user_interfaces.uniwheel import Uniwheel
 
         mockfile = MockFile()
         monkeypatch.setattr('builtins.open', lambda _, __: mockfile)
@@ -27,7 +28,7 @@ class TestUniwheelDisplay:
         chart = ChartObject(base_chart).with_role(ChartWheelRole.NATAL)
         options = model_option.Options(natal_options)
 
-        UniwheelV3(
+        Uniwheel(
             charts=[chart],
             temporary=False,
             options=options,
@@ -43,9 +44,6 @@ class TestUniwheelDisplay:
         lines = self.init_test(
             monkeypatch, base_chart, natal_options, mock_tk_main
         )
-
-        # for index, line in enumerate(lines):
-        #     print(f'{index: <3}: {line}')
 
         assert_line_contains(lines[22], base_chart['name'], any_position=True)
         assert_line_contains(lines[24], base_chart['type'], any_position=True)

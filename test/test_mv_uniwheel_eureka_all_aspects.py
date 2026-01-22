@@ -1,14 +1,16 @@
-from src.models.charts import AspectFramework, AspectType
 from test.fixtures.base_chart import base_chart
 from test.fixtures.natal_options import natal_options
-from test.mocks.mockfile import MockFile
 from test.fixtures.tk_fixtures import mock_tk_main
+from test.mocks.mockfile import MockFile
 from test.utils import (
     FixtureAspect,
     assert_aspect,
-    assert_line_contains,
     assert_aspects_of_class,
+    assert_line_contains,
 )
+
+from src.models.charts import AspectFramework, AspectType
+
 
 class TestUniwheelDisplay:
     def init_test(self, monkeypatch, base_chart, natal_options, mock_tk_main):

@@ -1,17 +1,20 @@
 import bisect
+from copy import deepcopy
+from io import TextIOWrapper
+import math
 
-
+import src.models.charts as chart_models
 from src import *
 from src import constants
 from src.models.angles import ForegroundAngles
-from src.models.options import Options
-import src.models.charts as chart_models
+from src.models.options import Options, ShowAspect
 from src.utils.chart_utils import (
     POS_SIGN,
-    convert_raw_strength_to_modified,
+    calc_aspect_strength_percent,
     in_harmonic_range,
 )
 from src.utils.format_utils import to360
+from src.user_interfaces.widgets import tkmessagebox
 
 
 def calc_halfsums(
@@ -54,9 +57,6 @@ def calc_halfsums(
                     secondary_point_is_angle = (
                         secondary_point_name in constants.ANGLE_ABBREVIATIONS
                     )
-
-                    if primary_point_is_angle and secondary_point_is_angle:
-                        continue
 
                     primary_data = primary_point
                     secondary_data = secondary_point
@@ -172,6 +172,7 @@ def parse_midpoint(
     is_square, square_orb_degrees = in_harmonic_range(
         value=raw_orb_degree_decimal, orb=square_orb, harmonic=4
     )
+
     if is_square:
         direction = (
             chart_models.MidpointAspectType.DIRECT
@@ -392,274 +393,6 @@ def calc_midpoints_3(
     return midpoints
 
 
-def find_applicable_midpoints_for_point(
-    midpoints: dict[str, list[chart_models.MidpointAspect]],
-    options: Options,
-    planet_data: chart_models.PlanetData | chart_models.AngleData,
-    must_be_foreground: bool = False,
-) -> list[chart_models.MidpointAspect]:
-
-    only_mundane_enabled = (
-        not options.midpoints.get('0')
-        and not options.midpoints.get('90')
-        and bool(options.midpoints.get('M'))
-    )
-
-    mundane_disabled = options.midpoints.get('M') in [0, None]
-
-    planet_or_angle_data = planet_data
-    if planet_data.short_name in constants.ANGLE_ABBREVIATIONS:
-        planet_or_angle_data = chart_models.AngleData(
-            name=planet_data.name,
-            short_name=planet_data.short_name,
-            longitude=planet_data.longitude,
-            role=planet_data.role,
-        )
-
-    key = make_midpoint_key(
-        planet_or_angle_data.short_name, planet_or_angle_data.role
-    )
-
-    applicable_midpoints = []
-
-    for mid in midpoints[key]:
-        if mid.is_ecliptical:
-            # In natals, all ecliptical midpoints apply
-            if not must_be_foreground and not only_mundane_enabled:
-                bisect.insort(
-                    applicable_midpoints,
-                    mid,
-                    key=lambda x: x.orb_minutes,
-                )
-
-            # Everywhere else, the points must be foreground
-            elif (
-                must_be_foreground
-                and (
-                    planet_or_angle_data.is_foreground
-                    or planet_or_angle_data.is_angle
-                )
-                and mid.to_midpoint.both_points_are_foreground
-            ):
-                bisect.insort(
-                    applicable_midpoints,
-                    mid,
-                    key=lambda x: x.orb_minutes,
-                )
-
-        elif mid.is_mundane and not mundane_disabled:
-            # Allow mundane midpoints in natals
-            if not must_be_foreground:
-                bisect.insort(
-                    applicable_midpoints,
-                    mid,
-                    key=lambda x: x.orb_minutes,
-                )
-
-            # Require ingress mundane midpoints to be angles
-            elif must_be_foreground and planet_or_angle_data.is_angle:
-                # Check to see if both points are foreground on that angle
-
-                if planet_or_angle_data.short_name == 'Angle':
-                    if mid.to_midpoint.both_points_are_foreground:
-                        bisect.insort(
-                            applicable_midpoints,
-                            mid,
-                            key=lambda x: x.orb_minutes,
-                        )
-
-                elif (
-                    planet_or_angle_data.short_name
-                    == ForegroundAngles.EASTPOINT_RA.value
-                ):
-                    if mid.to_midpoint.both_points_foreground_square_ramc:
-                        bisect.insort(
-                            applicable_midpoints,
-                            mid,
-                            key=lambda x: x.orb_minutes,
-                        )
-
-                # Only remaining case is a "mundane" midpoint to Z/EP in longitude
-                elif planet_or_angle_data.short_name in [
-                    ForegroundAngles.ASCENDANT.value,
-                    ForegroundAngles.ZENITH.value,
-                ]:
-                    if mid.to_midpoint.both_points_on_zenith:
-                        bisect.insort(
-                            applicable_midpoints,
-                            mid,
-                            key=lambda x: x.orb_minutes,
-                        )
-
-                elif planet_or_angle_data.short_name in [
-                    ForegroundAngles.MC.value,
-                    ForegroundAngles.EASTPOINT.value,
-                ]:
-                    if mid.to_midpoint.both_points_on_ep:
-                        bisect.insort(
-                            applicable_midpoints,
-                            mid,
-                            key=lambda x: x.orb_minutes,
-                        )
-
-
-def calc_mundane_midpoints_2(
-    options: Options,
-    charts: list[chart_models.ChartObject],
-    halfsums: dict[str, chart_models.HalfSum],
-) -> dict[str, list[dict[str, any]]]:
-    midpoints = {}
-
-    outermost_chart = find_outermost_chart(charts)
-
-    max_mundane_orb = options.midpoints.get('M', None)
-    max_ecliptic_orb = options.midpoints.get('0', None)
-
-    if not max_mundane_orb and not max_ecliptic_orb:
-        return midpoints
-
-    eastpoint = outermost_chart.eastpoint[0]
-    zenith = to360(eastpoint + 90)
-    eastpoint_ra = to360(outermost_chart.ramc - 90)
-
-    square_direction = (
-        chart_models.MidpointAspectType.DIRECT
-        if options.midpoints['is90'] == 'd'
-        else chart_models.MidpointAspectType.INDIRECT
-    )
-
-    for halfsum in halfsums:
-        if halfsum.contains('As') or halfsum.contains('Mc'):
-            continue
-
-        for (
-            _,
-            aspect_degrees,
-        ) in chart_models.AspectType.iterate_harmonic_4():
-            direction = (
-                chart_models.MidpointAspectType.DIRECT
-                if aspect_degrees in [0, 180]
-                else square_direction
-            )
-            pvl_orb = 360
-            ra_orb = 360
-            eastpoint_orb = 360
-            zenith_orb = 360
-
-            pvl_orb = (
-                abs(halfsum.prime_vertical_longitude - aspect_degrees) * 60
-            )
-
-            ra_orb = (
-                abs(
-                    abs(halfsum.right_ascension - eastpoint_ra)
-                    - aspect_degrees
-                )
-                * 60
-            )
-
-            zenith_orb = (
-                abs(abs(zenith - halfsum.longitude) - aspect_degrees) * 60
-            )
-
-            eastpoint_orb = (
-                abs(abs(eastpoint - halfsum.longitude) - aspect_degrees)
-            ) * 60
-
-        for (orb, angle) in [
-            (pvl_orb, 'Angle'),
-            (ra_orb, 'Ea'),
-        ]:
-            if orb <= max_mundane_orb:
-                midpoint = chart_models.MidpointAspect(
-                    midpoint_type=direction,
-                    orb_minutes=int(round(orb, 0)),
-                    framework=chart_models.AspectFramework.MUNDANE,
-                    from_point=angle,
-                    to_midpoint=str(halfsum),
-                    from_point_role=outermost_chart.role,
-                    is_mundane=True,
-                )
-
-                if angle not in midpoints:
-                    midpoints[angle] = [midpoint]
-                else:
-                    bisect.insort(
-                        midpoints[angle],
-                        midpoint,
-                        key=lambda x: x.orb_minutes,
-                    )
-
-        max_orb_for_zenith_eastpoint = max_ecliptic_orb or max_mundane_orb
-
-        for (orb, angle) in [
-            (eastpoint_orb, 'E'),
-            (zenith_orb, 'Z'),
-        ]:
-            if orb <= max_orb_for_zenith_eastpoint:
-                midpoint = chart_models.MidpointAspect(
-                    midpoint_type=direction,
-                    orb_minutes=int(round(orb, 0)),
-                    framework=chart_models.AspectFramework.MUNDANE,
-                    from_point=angle,
-                    to_midpoint=str(halfsum),
-                    from_point_role=outermost_chart.role,
-                    is_mundane=True,
-                )
-                if angle not in midpoints:
-                    midpoints[angle] = [midpoint]
-                else:
-                    bisect.insort(
-                        midpoints[angle],
-                        midpoint,
-                        key=lambda x: x.orb_minutes,
-                    )
-
-    return midpoints
-
-
-def merge_midpoints(
-    ecliptic_midpoints: dict[str, list[chart_models.MidpointAspect]],
-    mundane_midpoints: dict[str, list[chart_models.MidpointAspect]],
-) -> list[chart_models.MidpointAspect]:
-    keys = set(ecliptic_midpoints.keys()).union(set(mundane_midpoints.keys()))
-    merged_midpoints = {}
-    for key in keys:
-        if key not in merged_midpoints:
-            merged_midpoints[key] = []
-
-        ecliptic_index = 0
-        mundane_index = 0
-        while ecliptic_index < len(
-            ecliptic_midpoints[key]
-        ) and mundane_index < len(mundane_midpoints[key]):
-            if (
-                ecliptic_midpoints[key][ecliptic_index].orb_minutes
-                < mundane_midpoints[key][mundane_index].orb_minutes
-            ):
-                merged_midpoints[key].append(
-                    ecliptic_midpoints[key][ecliptic_index]
-                )
-                ecliptic_index += 1
-            else:
-                merged_midpoints[key].append(
-                    mundane_midpoints[key][mundane_index]
-                )
-                mundane_index += 1
-
-        # Deal with leftovers from one or the other list
-        if ecliptic_index < len(ecliptic_midpoints[key]):
-            merged_midpoints[key].extend(
-                ecliptic_midpoints[key][ecliptic_index:]
-            )
-        if mundane_index < len(mundane_midpoints[key]):
-            merged_midpoints[key].extend(
-                mundane_midpoints[key][mundane_index:]
-            )
-
-    return merged_midpoints
-
-
 def find_outermost_chart(
     charts: list[chart_models.ChartObject],
 ) -> chart_models.ChartObject:
@@ -670,120 +403,454 @@ def find_outermost_chart(
     return outermost_chart
 
 
-def parse_aspect_type_and_class(
-    value: float, options: Options
-) -> tuple[chart_models.AspectType, int]:
+ASPECT_DEFINITIONS = [
+    (0, chart_models.AspectType.CONJUNCTION, 1),
+    (180, chart_models.AspectType.OPPOSITION, 2),
+    (30, chart_models.AspectType.INCONJUNCT, 2.4),
+    (120, chart_models.AspectType.TRINE, 3),
+    (90, chart_models.AspectType.SQUARE, 4),
+    (60, chart_models.AspectType.SEXTILE, 6),
+    (7, chart_models.AspectType.SEPTILE, 7),
+    (45, chart_models.AspectType.OCTILE, 8),
+    (11, chart_models.AspectType.ELEVEN_HARMONIC, 11),
+    (30, chart_models.AspectType.INCONJUNCT, 12),
+    (13, chart_models.AspectType.THIRTEEN_HARMONIC, 13),
+    (16, chart_models.AspectType.SIXTEEN_HARMONIC, 16),
+    (
+        5,
+        chart_models.AspectType.QUINTILE,
+        20,
+    ),
+    (10, chart_models.AspectType.TEN_DEGREE_SERIES, 36),
+]
+
+
+def parse_aspect(
+    value: float,
+    options: Options,
+    use_mundane_orbs: bool = False,
+    use_paran_orbs: bool = False,
+    allow_harmonics: list[float] = [],
+    allow_divisions: list[int] = [],
+) -> tuple[chart_models.AspectType, int, float, str]:
+    """Returns an aspect type, aspect class 1-3, orb, and strength percent"""
     normalized_value = to360(value)
 
-    definitions = [
-        # Hard aspects
-        (0, chart_models.AspectType.CONJUNCTION, 1),
-        (180, chart_models.AspectType.OPPOSITION, 2),
-        (90, chart_models.AspectType.SQUARE, 4),
-        (45, chart_models.AspectType.OCTILE, 8),
-        # Soft aspects
-        (120, chart_models.AspectType.TRINE, 3),
-        (60, chart_models.AspectType.SEXTILE, 6),
-        # Overlapping or niche cases
-        (150, chart_models.AspectType.INCONJUNCT, 2.4),
-        (72, chart_models.AspectType.QUINTILE, 5),
-        (7, chart_models.AspectType.SEPTILE, 7),
-        (40, chart_models.AspectType.NOVILE, 9),
-        (30, chart_models.AspectType.INCONJUNCT, 12),
-        (10, chart_models.AspectType.DECILE, 36),
-    ]
+    for (dictionary_key_degrees, definition, harmonic) in ASPECT_DEFINITIONS:
+        if allow_harmonics and len(allow_harmonics):
+            allow = False
+            for allowed_harmonic in allow_harmonics:
+                if allowed_harmonic == harmonic:
+                    allow = True
+                    break
 
-    for (degrees, definition, harmonic) in definitions:
-        orbs = options.ecliptic_aspects.get(str(degrees))
-        for orb_index in range(len(orbs)):
-            if orbs[orb_index]:
-                if in_harmonic_range(
-                    normalized_value, orbs[orb_index], harmonic
-                ):
-                    return (definition, orb_index + 1)
+            if not allow:
+                continue
 
-    return None
+        if use_mundane_orbs:
+            orbs = options.mundane_aspects.get(
+                str(dictionary_key_degrees), [0, 0, 0]
+            )
+        elif use_paran_orbs:
+            orbs = options.paran_aspects.get('0', [0, 0, 0])
+        else:
+            orbs = options.ecliptic_aspects.get(
+                str(dictionary_key_degrees), [0, 0, 0]
+            )
+
+        if not len(orbs):
+            continue
+
+        if not orbs[0]:
+            continue
+
+        for class_index in range(len(orbs)):
+            if orbs[class_index]:
+                (is_in_range, aspect_orb) = in_harmonic_range(
+                    normalized_value, orbs[class_index], harmonic
+                )
+                if is_in_range:
+                    max_orb = 360
+                    if len(orbs) >= 3 and orbs[2]:
+                        max_orb = orbs[2]
+                    elif len(orbs) >= 2 and orbs[1]:
+                        max_orb = orbs[1] * 1.25
+                    else:
+                        max_orb = orbs[0] * 2.5
+
+                    strength = calc_aspect_strength_percent(
+                        max_orb, aspect_orb
+                    )
+                    return (definition, class_index + 1, aspect_orb, strength)
+
+    return (None, None, None, None)
 
 
 def calc_planetary_needs_strength(
-    options: chart_models.Options,
     planet: chart_models.PlanetData,
     chart: chart_models.ChartObject,
     aspects_by_class: list[list[chart_models.Aspect]],
 ) -> int:
-    luminary_strength = 0
+
+    rulership_strength = 0
     rules_sun_sign = chart.sun_sign in POS_SIGN[planet.short_name]
     rules_moon_sign = chart.moon_sign in POS_SIGN[planet.short_name]
     if rules_sun_sign and rules_moon_sign:
-        luminary_strength = 95
+        rulership_strength = 95
     elif rules_sun_sign or rules_moon_sign:
-        luminary_strength = 90
+        rulership_strength = 90
 
-    max_luminary_aspect_strength = 0
-    for aspect in aspects_by_class[0]:
-        if (
-            aspect.includes_planet(planet.short_name)
-            and aspect.is_hard_aspect()
-        ):
-            if (
-                (planet.name == 'Sun' and aspect.includes_planet('Mo'))
-                or (planet.name == 'Moon' and aspect.includes_planet('Su'))
-                or (
-                    planet.name not in ['Sun', 'Moon']
-                    and (
-                        aspect.includes_planet('Su')
-                        or aspect.includes_planet('Mo')
-                    )
-                )
-            ):
-                max_luminary_aspect_strength = max(
-                    max_luminary_aspect_strength, aspect.strength
-                )
+    sun_aspect_score = 0
+    moon_aspect_score = 0
 
-    if luminary_strength > 0 and max_luminary_aspect_strength > 0:
-        max_luminary_aspect_strength = max(95, max_luminary_aspect_strength)
-
-    if max_luminary_aspect_strength == 0:
-        for aspect in aspects_by_class[1]:
+    for [class_index_zeroed, aspects_of_class] in enumerate(aspects_by_class):
+        for aspect in aspects_of_class:
             if (
                 aspect.includes_planet(planet.short_name)
                 and aspect.is_hard_aspect()
             ):
-                if (
-                    (planet.name == 'Sun' and aspect.includes_planet('Mo'))
-                    or (planet.name == 'Moon' and aspect.includes_planet('Su'))
-                    or (
-                        planet.name not in ['Sun', 'Moon']
-                        and (
-                            aspect.includes_planet('Su')
-                            or aspect.includes_planet('Mo')
-                        )
-                    )
-                ):
-                    max_luminary_aspect_strength = max(
-                        max_luminary_aspect_strength, aspect.strength
-                    )
+                if aspect.type.value in [
+                    chart_models.AspectType.CONJUNCTION.value,
+                    chart_models.AspectType.OPPOSITION.value,
+                    chart_models.AspectType.SQUARE.value,
+                ]:
+                    if planet.name != 'Sun' and aspect.includes_planet('Su'):
+                        sun_aspect_score = aspect.strength
+                        if rules_sun_sign:
+                            if class_index_zeroed == 0:
+                                sun_aspect_score = max(95, aspect.strength)
+                            elif class_index_zeroed == 1:
+                                sun_aspect_score = max(92, aspect.strength)
 
-    if luminary_strength > 0 and max_luminary_aspect_strength > 0:
-        max_luminary_aspect_strength = max(92, max_luminary_aspect_strength)
+                    if planet.name != 'Moon' and aspect.includes_planet('Mo'):
+                        moon_aspect_score = aspect.strength
+                        if rules_moon_sign:
+                            if class_index_zeroed == 0:
+                                moon_aspect_score = max(95, aspect.strength)
+                            elif class_index_zeroed == 1:
+                                moon_aspect_score = max(92, aspect.strength)
 
     stationary_strength = 75 if planet.is_stationary else 0
-    if stationary_strength > 0 and luminary_strength > 0:
-        stationary_strength = 90
+    if stationary_strength > 0 and (rules_moon_sign or rules_sun_sign):
+        stationary_strength = 95
 
     normalized_angularity_strength = planet.angularity_strength
 
-    if options.use_raw_angularity_score:
-        # Figure out which angularity model we're using and flesh out the 0-100 score
-        normalized_angularity_strength = convert_raw_strength_to_modified(
-            options, planet.angularity_strength, planet.angle
-        )
-
     strength = max(
         normalized_angularity_strength,
-        luminary_strength,
-        max_luminary_aspect_strength,
+        rulership_strength,
+        sun_aspect_score,
+        moon_aspect_score,
         stationary_strength,
     )
 
     return min(strength, 100)
+
+
+def find_angle_crossings(
+    planet: chart_models.PlanetData, geo_latitude: float
+) -> tuple[float, float, float, float]:
+    """Returns a list of angle crossings, as RAMC values, for planetary data.
+    They are in the order of rising, culminating, setting, anticulminating.
+    """
+    try:
+        geo_co_latitude = 90 - geo_latitude
+
+        planet_never_rises = planet.declination > geo_co_latitude
+
+        if planet_never_rises:
+            rising = None
+            setting = None
+        else:
+            ascensional_difference = math.degrees(
+                math.asin(
+                    math.tan(math.radians(geo_latitude))
+                    * math.tan(math.radians(planet.declination))
+                )
+            )
+
+            rising = to360(
+                planet.right_ascension + ascensional_difference - 90
+            )
+            setting = to360(
+                planet.right_ascension - ascensional_difference + 90
+            )
+
+        return (
+            rising,
+            planet.right_ascension,
+            setting,
+            to360(planet.right_ascension + 180),
+        )
+    except ValueError:
+        tkmessagebox.showerror(
+            'Paran calculation error',
+            f"Error calculating parans for planet {planet.name}; it probably doesn't rise or set at the given latitude",
+        )
+        return None
+
+
+def calc_major_angle_paran(
+    from_planet: chart_models.PlanetData,
+    to_planet: chart_models.PlanetData,
+    options: Options,
+    geo_latitude: float,
+    whole_chart_is_dormant: bool,
+):
+    show_aspects_type = options.show_aspects or ShowAspect.ALL
+    aspect_is_not_foreground = False
+
+    # See if we can short-circuit by skipping non-foreground aspects
+    # when we have Show Partile Non-Foreground off
+    if show_aspects_type == ShowAspect.ONE_PLUS_FOREGROUND:
+        if (
+            not from_planet.is_foreground
+            and not from_planet.treat_as_foreground
+            and not to_planet.is_foreground
+            and not to_planet.treat_as_foreground
+        ):
+            if not options.partile_nf:
+                return None
+            else:
+                aspect_is_not_foreground = True
+
+    elif show_aspects_type == ShowAspect.BOTH_FOREGROUND:
+        if (
+            not from_planet.treat_as_foreground
+            and not to_planet.treat_as_foreground
+        ):
+            if (
+                not from_planet.is_foreground
+                and not from_planet.treat_as_foreground
+            ) or (
+                not to_planet.is_foreground
+                and not to_planet.treat_as_foreground
+            ):
+                if not options.partile_nf:
+                    return None
+                else:
+                    aspect_is_not_foreground = True
+
+    # For dormant ingresses, only show Moon aspects
+    if whole_chart_is_dormant and from_planet.name != 'Moon':
+        return None
+
+    parans_a = find_angle_crossings(from_planet, geo_latitude)
+    parans_b = find_angle_crossings(to_planet, geo_latitude)
+
+    if not parans_a or not parans_b:
+        return None
+
+    aspect = None
+    relationship = None
+
+    closest_aspect_class = None
+    closest_aspect_orb = None
+    closest_aspect_strength = None
+
+    # Figure out the aspect as well as the relationship
+    for (angle_id_a, crossing_a) in enumerate(parans_a):
+        if crossing_a is None:
+            continue
+        for (angle_id_b, crossing_b) in enumerate(parans_b):
+            if crossing_b is None:
+                continue
+
+            orb = abs(crossing_a - crossing_b)
+            (aspect_type, aspect_class, aspect_orb, strength) = parse_aspect(
+                orb, options, use_paran_orbs=True, allow_harmonics=[1]
+            )
+
+            if aspect_type:
+                if (
+                    closest_aspect_orb is None
+                    or aspect_orb < closest_aspect_orb
+                ):
+                    closest_aspect_class = aspect_class
+                    closest_aspect_orb = aspect_orb
+                    closest_aspect_strength = strength
+
+                    # Conjunctions will be 0, oppositions will be 2, squares will be 1 or 3
+                    relationship = math.fabs(angle_id_a - angle_id_b)
+
+    if closest_aspect_orb is not None:
+        if aspect_is_not_foreground:
+            if closest_aspect_orb < 1 and options.partile_nf:
+                closest_aspect_class = 4
+            else:
+                # We may have found an aspect, but it's neither foreground nor partile
+                return None
+
+        aspect_type = None
+
+        if relationship == 0:
+            aspect_type = chart_models.AspectType.CONJUNCTION
+        elif relationship % 2 == 0:
+            aspect_type = chart_models.AspectType.OPPOSITION
+        else:
+            aspect_type = chart_models.AspectType.SQUARE
+
+        return (
+            chart_models.Aspect()
+            .as_paran()
+            .from_planet(
+                from_planet.short_name,
+                role=from_planet.role,
+            )
+            .to_planet(
+                to_planet.short_name,
+                role=to_planet.role,
+            )
+            .as_type(aspect_type)
+            .with_class(closest_aspect_class)
+            .with_strength(closest_aspect_strength)
+            .with_orb(closest_aspect_orb)
+        )
+
+    return aspect
+
+
+def get_signed_orb_to_reference(longitude: float, reference: float) -> float:
+    if longitude >= reference:
+        if longitude - reference >= 180:
+            diff = 360 - longitude
+            return (reference + diff) * -1
+
+        return longitude - reference
+
+    if reference - longitude >= 180:
+        diff = 360 - reference
+        return longitude + diff
+
+    return longitude - reference
+
+
+def calc_novien_aspects(
+    radix: chart_models.ChartObject,
+    novien_data: chart_models.ChartObject,
+    options: Options,
+) -> list[list[chart_models.Aspect]]:
+    aspects_by_class = [[], [], []]
+    charts = [novien_data, radix]
+
+    novien_options = deepcopy(options)
+
+    novien_options.ecliptic_aspects = {
+        '0': options.ecliptic_aspects['0'],
+        '90': options.ecliptic_aspects['90'],
+        '180': options.ecliptic_aspects['180'],
+    }
+
+    novien_to_natal_options = deepcopy(novien_options)
+
+    # Only use class 1 aspects for novien-to-natal
+    for key in novien_to_natal_options.ecliptic_aspects:
+        novien_to_natal_options.ecliptic_aspects[key] = [
+            novien_to_natal_options.ecliptic_aspects[key][0],
+            0,
+            0,
+        ]
+
+    for (from_index, from_chart) in enumerate(charts):
+        for to_index in range(from_index, 2):
+            to_chart = charts[to_index]
+            for (
+                primary_index,
+                (primary_planet_long_name, _),
+            ) in enumerate(from_chart.iterate_points(options)):
+                for (
+                    secondary_index,
+                    (secondary_planet_long_name, _),
+                ) in enumerate(to_chart.iterate_points(options)):
+
+                    # Skip natal-natal aspects
+                    if from_index == 1 and to_index == 1:
+                        break
+
+                    if (
+                        secondary_index <= primary_index
+                        and from_chart == to_chart
+                    ):
+                        continue
+
+                    is_novien_to_natal = from_index == 0 and to_index == 1
+
+                    primary_planet = (
+                        from_chart.planets[primary_planet_long_name]
+                        if hasattr(from_chart, 'planets')
+                        else from_chart[primary_planet_long_name]
+                    )
+                    secondary_planet = (
+                        to_chart.planets[secondary_planet_long_name]
+                        if hasattr(to_chart, 'planets')
+                        else to_chart[secondary_planet_long_name]
+                    )
+
+                    raw_orb = (
+                        abs(
+                            primary_planet.longitude
+                            - secondary_planet.longitude
+                        )
+                        % 360
+                    )
+
+                    (
+                        aspect_type,
+                        aspect_class,
+                        aspect_orb,
+                        aspect_strength,
+                    ) = parse_aspect(
+                        value=raw_orb,
+                        options=novien_to_natal_options
+                        if is_novien_to_natal
+                        else novien_options,
+                    )
+
+                    if not aspect_type:
+                        continue
+
+                    if aspect_class > 2:
+                        continue
+
+                    if is_novien_to_natal:
+                        aspect_class = 3
+
+                    from_planet = (
+                        primary_planet
+                        if primary_planet.role >= secondary_planet.role
+                        else secondary_planet
+                    )
+
+                    to_planet = (
+                        primary_planet
+                        if from_planet == secondary_planet
+                        else secondary_planet
+                    )
+
+                    from_planet_role = (
+                        chart_models.ChartWheelRole.RADIX
+                        if from_index == 1
+                        else chart_models.ChartWheelRole.NOVIEN
+                    )
+                    to_planet_role = (
+                        chart_models.ChartWheelRole.RADIX
+                        if to_index == 1
+                        else chart_models.ChartWheelRole.NOVIEN
+                    )
+
+                    aspect = (
+                        chart_models.Aspect()
+                        .from_planet(
+                            from_planet.short_name, role=from_planet_role
+                        )
+                        .to_planet(to_planet.short_name, role=to_planet_role)
+                        .as_type(aspect_type)
+                        .with_class(aspect_class)
+                        .as_ecliptical()
+                        .with_strength(aspect_strength)
+                        .with_orb(aspect_orb)
+                    )
+
+                    aspects_by_class[aspect.aspect_class - 1].append(aspect)
+
+    return aspects_by_class

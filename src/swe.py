@@ -1,4 +1,4 @@
-# Copyright 2025 James Eshelman, Mike Nelson, Mike Verducci
+# Copyright 2026 James Eshelman, Mike Nelson, Mike Verducci
 
 # This file is part of Time Matters: A Sidereal Astrology Toolkit (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation,
@@ -22,6 +22,7 @@ from ctypes import (
 
 from src import *
 from src.constants import HOUR_FRACTION_OF_A_DAY, PLANETS, PLATFORM
+from src.utils.calculation_utils import get_signed_orb_to_reference
 from src.utils.format_utils import (
     add_360_if_negative,
     arccotangent,
@@ -132,6 +133,21 @@ swe_lat_to_lmt.argtypes = [
     POINTER(c_char * 256),
 ]
 
+swe_lmt_to_lat = _get_handle_for_platform(dll, '_swe_lmt_to_lat@24')
+swe_lmt_to_lat.argtypes = [
+    c_double,
+    c_double,
+    POINTER(c_double),
+    POINTER(c_char * 256),
+]
+
+swe_time_equ = _get_handle_for_platform(dll, '_swe_time_equ@16')
+swe_time_equ.argtypes = [
+    c_double,  # Julian day UTC
+    POINTER(c_double),  # Output for equation of time
+    POINTER(c_char * 256),  # error string
+]
+
 swe_solcross_ut = _get_handle_for_platform(dll, '_swe_solcross_ut@24')
 swe_solcross_ut.argtypes = [c_double, c_double, c_int, POINTER(c_char * 256)]
 swe_solcross_ut.restype = c_double
@@ -168,7 +184,6 @@ def calc_planet(universal_time: float, planet: int):
         if i in [0, 1, 3]:
             result.append(result_array[i])
 
-    # The flag here indicates equatorial positions, and speed
     equatorial_positions_and_speed = 2048 + 256
     swe_calc_ut(
         universal_time,
@@ -268,6 +283,22 @@ def calc_lat_to_lmt(lat, long):
     long = c_double(long)
     lmt = c_double()
     swe_lat_to_lmt(lat, long, byref(lmt), byref(err))
+    return lmt.value
+
+
+def calc_equation_of_time(jd_utc: float) -> float:
+    err = create_string_buffer(256)
+    equation_of_time = c_double()
+    swe_time_equ(c_double(jd_utc), byref(equation_of_time), byref(err))
+    return equation_of_time.value
+
+
+def calc_lmt_to_lat(lmt, long):
+    err = create_string_buffer(256)
+    lmt = c_double(lmt)
+    long = c_double(long)
+    lmt = c_double()
+    swe_lmt_to_lat(lmt, long, byref(lmt), byref(err))
     return lmt.value
 
 
@@ -379,3 +410,50 @@ def is_planet_stationary(long_name: str, julian_day: float) -> bool:
     ending_period_direction = calc_planet(ending_time, stats['number'])[2] > 0
 
     return base_direction != ending_period_direction
+
+
+def calc_signed_moon_elongation(jd_utc: float) -> float:
+    sun_longitude = calc_planet(jd_utc, 0)[0]
+    moon_longitude = calc_planet(jd_utc, 1)[0]
+
+    return get_signed_orb_to_reference(moon_longitude, sun_longitude)
+
+
+def find_jd_utc_of_elongation(
+    target: float,
+    lower_bound: float,
+    higher_bound: float,
+    precision: int = 5,
+) -> float | None:
+    low = lower_bound
+    high = higher_bound
+
+    target_rounded = round(target, precision)
+
+    previous_check = None
+
+    while True:
+        date = (low + high) / 2
+        test_elongation = calc_signed_moon_elongation(date)
+        test_elongation = round(test_elongation, precision)
+
+        if previous_check and previous_check == test_elongation:
+            return None
+
+        if target_rounded == test_elongation or high <= low:
+            break
+
+        if math.fabs(test_elongation - target_rounded) < 180:
+            if test_elongation > target_rounded:
+                high = date
+            else:
+                low = date
+        else:
+            if test_elongation < target_rounded:
+                high = date
+            else:
+                low = date
+
+        previous_check = test_elongation
+
+    return date

@@ -1,4 +1,4 @@
-# Copyright 2025 James Eshelman, Mike Nelson, Mike Verducci
+# Copyright 2026 James Eshelman, Mike Nelson, Mike Verducci
 
 # This file is part of Time Matters: A Sidereal Astrology Toolkit (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation,
@@ -12,6 +12,7 @@ import math
 import os
 import shutil
 import webbrowser
+import tkinter.filedialog as tkfiledialog
 
 from src import *
 from src import STILL_STARTING_UP
@@ -24,8 +25,9 @@ from src.constants import (
 from src.user_interfaces.chart_options import ChartOptions
 from src.user_interfaces.ingresses import Ingresses
 from src.user_interfaces.new_chart import NewChart
-from src.user_interfaces.program_options import ProgramOptions
+from src.user_interfaces.program_options import ProgramOptionsMenu
 from src.user_interfaces.select_chart import SelectChart
+from src.user_interfaces.sidereal_landmarks import SiderealLandmarks
 from src.user_interfaces.widgets import *
 from src.utils.gui_utils import (
     ShowHelp,
@@ -39,9 +41,9 @@ BETA_FEATURES_ENABLED = 'Beta Features Enabled'
 INTRO = f"""A freeware program for calculating geometrically
 accurate astrological charts in the Sidereal Zodiac,
 as rediscovered by Cyril Fagan and Donald Bradley."""
-COPYRIGHT = f"""\u00a9 2025 James A. Eshelman.
+COPYRIGHT = f"""\u00a9 2026 James A. Eshelman.
 Created by Mike Nelson (2021).
-Continuing development by Ember Volkov (Mike Verducci).
+Continuing development by Ember Valentine (Mike Verducci).
 
 Released under the GNU Affero General Public License"""
 LICENSE = 'www.gnu.org/licenses/agpl-3.0.en.html'
@@ -57,7 +59,6 @@ class StartPage(Frame):
     def __init__(self):
         super().__init__()
         global STILL_STARTING_UP
-        global DEV_MODE
 
         self.parent = main
         self.parent.bind('<Configure>', self.resize)
@@ -65,16 +66,7 @@ class StartPage(Frame):
         self.title = Label(
             self, TITLE, LABEL_X_COORD, 0.025, LABEL_WIDTH, font=title_font
         )
-        if DEV_MODE:
-            Label(
-                self,
-                BETA_FEATURES_ENABLED,
-                LABEL_X_COORD,
-                0.08,
-                LABEL_WIDTH,
-                LABEL_HEIGHT_UNIT,
-                font=font_12,
-            )
+
         self.intro = Label(
             self,
             INTRO,
@@ -152,7 +144,7 @@ class StartPage(Frame):
             LABEL_WIDTH,
             LABEL_HEIGHT_UNIT,
         )
-        Label(
+        self.github_link = Label(
             self,
             GITHUB,
             LABEL_X_COORD,
@@ -161,7 +153,7 @@ class StartPage(Frame):
             LABEL_HEIGHT_UNIT,
             font=ulfont,
         )
-        self.source_code.bind(
+        self.github_link.bind(
             '<Button-1>', lambda _: webbrowser.open_new(GITHUB)
         )
 
@@ -178,6 +170,7 @@ class StartPage(Frame):
         Button(self, 'Ingresses', 0.2, 0.45, 0.2).bind(
             '<Button-1>', lambda _: delay(Ingresses)
         )
+
         default = (
             'Student Natal'
             if os.path.exists(STUDENT_FILE)
@@ -205,11 +198,14 @@ class StartPage(Frame):
         Button(self, 'Help', 0.2, 0.5, 0.2).bind(
             '<Button-1>', lambda _: delay(ShowHelp, HELP_PATH + r'\main.txt')
         )
+        Button(self, 'Sidereal Landmarks', 0.2, 0.55, 0.2).bind(
+            '<Button-1>', lambda _: delay(self.show_sidereal_landmarks)
+        )
         self.program_options = Button(
             self, 'Program Options', 0.4, 0.5, 0.2, font=font_16
         )
         self.program_options.bind(
-            '<Button-1>', lambda _: delay(ProgramOptions)
+            '<Button-1>', lambda _: delay(ProgramOptionsMenu)
         )
         self.show_errors = Button(
             self,
@@ -227,6 +223,9 @@ class StartPage(Frame):
         Button(self, 'Exit Program', 0.6, 0.5, 0.2).bind(
             '<Button-1>', lambda _: delay(main.destroy)
         )
+        Button(self, 'Clear Caches', 0.6, 0.55, 0.2).bind(
+            '<Button-1>', lambda _: delay(self.clear_cache)
+        )
 
         if not STILL_STARTING_UP:
             return
@@ -235,9 +234,28 @@ class StartPage(Frame):
         try:
             if os.path.exists(TEMP_CHARTS):
                 shutil.rmtree(TEMP_CHARTS)
-            os.mkdir(TEMP_CHARTS)
-        except:
-            return
+
+        except Exception as e:
+            # JAE asked me to remove this and just open the dir if delete fails
+            # tkmessagebox.showerror(
+            #     'File Error', f'Error trying to remove temporary files: {e}'
+            # )
+            tkfiledialog.askopenfilename(
+                initialdir=TEMP_CHARTS,
+                filetypes=[('Chart Files', '*.dat')],
+            )
+            log_startup_error(e)
+
+        try:
+            if not os.path.exists(TEMP_CHARTS):
+                os.mkdir(TEMP_CHARTS)
+
+        except Exception as e:
+            tkmessagebox.showerror(
+                'File Error',
+                f'Error trying to create temporary file folder: {e}',
+            )
+            log_startup_error(e)
 
         try:
             with open(RECENT_FILE, 'r') as datafile:
@@ -253,6 +271,27 @@ class StartPage(Frame):
                 recs = json.dump(recs, datafile, indent=4)
         except:
             pass
+
+    def clear_cache(self):
+        try:
+            if os.path.exists(TEMP_CHARTS):
+                shutil.rmtree(TEMP_CHARTS)
+
+            if os.path.exists(TEMP_CHARTS):
+                raise Exception('Temp files still exist after attempted clear')
+
+            os.mkdir(TEMP_CHARTS)
+
+        except Exception as e:
+            tkmessagebox.showerror(
+                'File Error', f'Error trying to remove temporary files: {e}'
+            )
+            log_startup_error(e)
+        else:
+            tkmessagebox.showinfo('Caches cleared', 'Cleared temp files.')
+
+    def show_sidereal_landmarks(self):
+        SiderealLandmarks()
 
     def resize(self, event):
         self.resize_predictive_options()

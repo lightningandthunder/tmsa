@@ -1,4 +1,4 @@
-# Copyright 2025 James Eshelman, Mike Nelson, Mike Verducci
+# Copyright 2026 James Eshelman, Mike Nelson, Mike Verducci
 
 # This file is part of Time Matters: A Sidereal Astrology Toolkit (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation,
@@ -7,21 +7,29 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 # You should have received a copy of the GNU Affero General Public License along with TMSA. If not, see <https://www.gnu.org/licenses/>.
 
-from abc import ABCMeta, abstractmethod
 import bisect
 import copy
+import math
+import tkinter.messagebox as tkmessagebox
+from abc import ABCMeta, abstractmethod
+from datetime import datetime
 from io import TextIOWrapper
 
+import pydash
+
+import src.constants as constants
 import src.models.angles as angles_models
 import src.models.charts as chart_models
 import src.models.options as option_models
-import src.constants as constants
-import src.utils.chart_utils as chart_utils
 import src.utils.calculation_utils as calc_utils
+import src.utils.chart_utils as chart_utils
 from src.utils.format_utils import to360
+from src.utils.log_utils import Tracer
+from src.utils.novien import (
+    write_novien_aspectarian,
+    write_novien_data_table_to_file,
+)
 from src.utils.os_utils import open_file
-import tkinter.messagebox as tkmessagebox
-from datetime import datetime
 
 
 class CoreChart(object, metaclass=ABCMeta):
@@ -33,8 +41,8 @@ class CoreChart(object, metaclass=ABCMeta):
     charts: list[chart_models.ChartObject]
     halfsums: list[chart_models.HalfSum]
     temporary: bool
+    tracer: Tracer
 
-    # New, top-level state for some matters
     midpoints = {}
 
     def __init__(
@@ -42,25 +50,38 @@ class CoreChart(object, metaclass=ABCMeta):
         charts: list[chart_models.ChartObject],
         temporary: bool,
         options: option_models.Options,
+        use_progressed_angles: bool = False,
     ):
+        self.tracer = Tracer(
+            log_level=10,
+            # log_level=options.log_level,
+            use_console=False,
+            # use_console=options.log_to_console,
+            use_file=False,
+        )
+
         self.options = options
+        self.use_progressed_angles = use_progressed_angles
 
         self.charts = sorted(charts, key=lambda x: x.role, reverse=True)
         self.temporary = temporary
 
+        outermost_chart = calc_utils.find_outermost_chart(self.charts)
+
+        # Add roles to all charts
         for chart in self.charts:
             for (
                 planet_name,
                 _,
-            ) in chart.iterate_points(self.options):
+            ) in outermost_chart.iterate_points(self.options):
                 chart.planets[planet_name].role = chart.role
 
-                if planet_name == 'Moon' and (
-                    chart.type.value in chart_models.INGRESSES
-                    or chart.type.value
-                    in chart_models.RETURNS_WHERE_MOON_ALWAYS_FOREGROUND
-                ):
-                    chart.planets[planet_name].treat_as_foreground = True
+        if (
+            outermost_chart.type.value in chart_models.INGRESSES
+            or outermost_chart.type.value
+            in chart_models.RETURNS_WHERE_MOON_ALWAYS_FOREGROUND
+        ):
+            outermost_chart.planets['Moon'].treat_as_foreground = True
 
         self.try_precess_charts()
 
@@ -76,7 +97,7 @@ class CoreChart(object, metaclass=ABCMeta):
         )
         self.filename = self.filename[0:-3] + 'txt'
         try:
-            chartfile = open(self.filename, 'w')
+            chartfile = open(self.filename, 'w', encoding='utf-8-sig')
         except Exception as e:
             tkmessagebox.showerror(f'Unable to open file:', f'{e}')
             return
@@ -85,7 +106,33 @@ class CoreChart(object, metaclass=ABCMeta):
             self.draw_chart(chartfile)
             self.write_info_table(chartfile)
 
-            chartfile.write('\n' + '-' * self.table_width + '\n')
+            if self.options.enable_novien:
+                chartfile.write('\n' + '-' * self.table_width + '\n')
+                chartfile.write(
+                    chart_utils.center_align(
+                        'Novienic Equivalent', width=self.table_width
+                    )
+                )
+                chartfile.write('\n' + '-' * self.table_width)
+                novien_data = write_novien_data_table_to_file(
+                    self.charts[0], self.options, chartfile
+                )
+                novien_pseudo_chart = chart_models.ChartObject(
+                    self.charts[0].to_dict()
+                ).with_role(chart_models.ChartWheelRole.NOVIEN)
+                for (planet, data) in novien_data.items():
+                    novien_pseudo_chart.planets[planet] = data
+
+                novien_aspects_by_class = calc_utils.calc_novien_aspects(
+                    self.charts[0], novien_pseudo_chart, self.options
+                )
+                write_novien_aspectarian(
+                    novien_aspects_by_class, chartfile, self.table_width
+                )
+                chartfile.write('-' * self.table_width + '\n')
+
+            else:
+                chartfile.write('\n' + '-' * self.table_width + '\n')
             chartfile.write(
                 f"Created by Time Matters {constants.VERSION}  ({datetime.now().strftime('%d %b %Y')})"
             )
@@ -145,10 +192,15 @@ class CoreChart(object, metaclass=ABCMeta):
         placed = 0
         for i in range(len(house_info)):
             zero_indexed_house = int(house_info[i][-2]) + start
+
             limit = 15 - len(house_info) + placed
             if zero_indexed_house > limit:
                 zero_indexed_house = limit
+
             while True:
+                while zero_indexed_house > len(new) - 1:
+                    new.append([])
+
                 if len(new[zero_indexed_house]):
                     zero_indexed_house += 1
                 else:
@@ -233,13 +285,15 @@ class CoreChart(object, metaclass=ABCMeta):
         whole_chart_is_dormant: bool,
         aspect_framework: chart_models.AspectFramework,
     ) -> chart_models.Aspect:
-        show_aspects = (
+        show_aspects_type = (
             self.options.show_aspects or option_models.ShowAspect.ALL
         )
 
         aspect_is_not_foreground = False
 
-        if show_aspects == option_models.ShowAspect.ONE_PLUS_FOREGROUND:
+        # See if we can short-circuit by skipping non-foreground aspects
+        # when we have Show Partile Non-Foreground off
+        if show_aspects_type == option_models.ShowAspect.ONE_PLUS_FOREGROUND:
             if (
                 not primary_planet.is_foreground
                 and not primary_planet.treat_as_foreground
@@ -251,7 +305,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 else:
                     aspect_is_not_foreground = True
 
-        elif show_aspects == option_models.ShowAspect.BOTH_FOREGROUND:
+        elif show_aspects_type == option_models.ShowAspect.BOTH_FOREGROUND:
             if (
                 not primary_planet.treat_as_foreground
                 and not secondary_planet.treat_as_foreground
@@ -268,11 +322,15 @@ class CoreChart(object, metaclass=ABCMeta):
                     else:
                         aspect_is_not_foreground = True
 
-        raw_orb = None
-        aspect = None
-
+        # For dormant ingresses, only show Moon aspects
         if whole_chart_is_dormant and primary_planet.name != 'Moon':
             return None
+
+        # Now, we have appropriately-foreground planets (if that's required);
+        # time to compute whether we actually have an aspect or not
+
+        raw_orb = None
+        use_mundane_orbs = False
 
         if aspect_framework == chart_models.AspectFramework.ECLIPTICAL:
             raw_orb = (
@@ -281,124 +339,61 @@ class CoreChart(object, metaclass=ABCMeta):
             )
         elif aspect_framework == chart_models.AspectFramework.MUNDANE:
             raw_orb = abs(primary_planet.house - secondary_planet.house) % 360
+            use_mundane_orbs = True
 
-        if raw_orb > 180:
-            raw_orb = 360 - raw_orb
-
-        ecliptic_orbs = (
-            self.options.ecliptic_aspects
-            or chart_utils.DEFAULT_ECLIPTICAL_ORBS
+        (
+            aspect_type,
+            aspect_class,
+            aspect_orb,
+            aspect_strength,
+        ) = calc_utils.parse_aspect(
+            value=raw_orb,
+            options=self.options,
+            use_mundane_orbs=use_mundane_orbs,
         )
-        mundane_orbs = (
-            self.options.mundane_aspects or chart_utils.DEFAULT_MUNDANE_ORBS
-        )
 
-        for (aspect_type, aspect_degrees) in chart_models.AspectType.iterate():
-            test_orbs = None
-
-            # If the aspect is a sesquisquare, we need to use the orb for semisquare,
-            # as it's the only orb in options
-            aspect_degrees_for_options = aspect_degrees
-            if aspect_degrees == 135:
-                aspect_degrees_for_options = 45
-            if aspect_degrees == 150:
-                aspect_degrees_for_options = 30
-
-            if aspect_framework == chart_models.AspectFramework.ECLIPTICAL:
-                if str(aspect_degrees_for_options) in ecliptic_orbs:
-                    test_orbs = ecliptic_orbs[str(aspect_degrees_for_options)]
-                else:
-                    continue
-            elif aspect_framework == chart_models.AspectFramework.MUNDANE:
-                if str(aspect_degrees_for_options) in mundane_orbs:
-                    test_orbs = mundane_orbs[str(aspect_degrees_for_options)]
-                else:
-                    continue
-
-            if test_orbs[2]:
-                maxorb = test_orbs[2]
-            elif test_orbs[1]:
-                maxorb = test_orbs[1] * 1.25
-            elif test_orbs[0]:
-                maxorb = test_orbs[0] * 2.5
-            else:
-                continue
-
-            if not (
-                raw_orb >= aspect_degrees - maxorb
-                and raw_orb <= aspect_degrees + maxorb
-            ):
-                continue
-
-            greater_planet = (
-                primary_planet
-                if primary_planet.role >= secondary_planet.role
-                else secondary_planet
-            )
-            lesser_planet = (
-                primary_planet
-                if greater_planet == secondary_planet
-                else secondary_planet
-            )
-
-            aspect = (
-                chart_models.Aspect()
-                .from_planet(
-                    greater_planet.short_name, role=greater_planet.role
-                )
-                .to_planet(lesser_planet.short_name, role=lesser_planet.role)
-                .as_type(aspect_type)
-            )
-            aspect.framework = aspect_framework
-            aspect_orb = abs(raw_orb - aspect_degrees)
-
-            if aspect_orb <= test_orbs[0]:
-                aspect = aspect.with_class(1)
-            elif aspect_orb <= test_orbs[1]:
-                aspect = aspect.with_class(2)
-            elif aspect_orb <= test_orbs[2]:
-                aspect = aspect.with_class(3)
-            else:
-                aspect = None
-                continue
-
-            if primary_planet.name == 'Moon' and (
-                primary_planet.role == chart_models.INGRESSES
-                or primary_planet.role == chart_models.SOLUNAR_RETURNS
-            ):
-                # Always consider transiting Moon aspects, as long as they're in orb
-                break
-
-            # Otherwise, make sure the aspect should be considered at all
-
-            show_aspects = (
-                option_models.ShowAspect.from_number(self.options.show_aspects)
-                or self.options.show_aspects
-            )
-
-            if (
-                show_aspects == option_models.ShowAspect.ONE_PLUS_FOREGROUND
-                or show_aspects == option_models.ShowAspect.BOTH_FOREGROUND
-            ):
-                if aspect_is_not_foreground:
-                    if aspect_orb <= 1 and self.options.partile_nf:
-                        aspect = aspect.with_class(4)
-                    else:
-                        # We may have found an aspect, but it's neither foreground nor partile
-                        aspect = None
-
-            # We have found a valid aspect (or run out of aspects to try)
-            break
-
-        if not aspect:
+        if not aspect_type:
             return None
 
-        aspect_strength = chart_utils.calc_aspect_strength_percent(
-            maxorb, aspect_orb
-        )
-        aspect = aspect.with_strength(aspect_strength).with_orb(aspect_orb)
+        # if (
+        #     not primary_planet.treat_as_foreground
+        #     and not secondary_planet.treat_as_foreground
+        #     and (
+        #         show_aspects_type
+        #         == option_models.ShowAspect.ONE_PLUS_FOREGROUND
+        #         or show_aspects_type
+        #         == option_models.ShowAspect.BOTH_FOREGROUND
+        #     )
+        # ):
+        if aspect_is_not_foreground:
+            if aspect_orb < 1 and self.options.partile_nf:
+                aspect_class = 4
+            else:
+                # We may have found an aspect, but it's neither foreground nor partile
+                return None
 
-        return aspect
+        from_planet = (
+            primary_planet
+            if primary_planet.role >= secondary_planet.role
+            else secondary_planet
+        )
+
+        to_planet = (
+            primary_planet
+            if from_planet == secondary_planet
+            else secondary_planet
+        )
+
+        return (
+            chart_models.Aspect()
+            .from_planet(from_planet.short_name, role=from_planet.role)
+            .to_planet(to_planet.short_name, role=to_planet.role)
+            .as_type(aspect_type)
+            .with_class(aspect_class)
+            .with_framework(aspect_framework)
+            .with_strength(aspect_strength)
+            .with_orb(aspect_orb)
+        )
 
     def find_pvp_aspect(
         self,
@@ -408,8 +403,8 @@ class CoreChart(object, metaclass=ABCMeta):
         raw_orb = 360
         # At least one planet must be on the prime vertical
         if (
-            not primary_planet.is_on_vx_or_av
-            and not secondary_planet.is_on_vx_or_av
+            not primary_planet.is_on_prime_vertical
+            and not secondary_planet.is_on_prime_vertical
         ):
             return None
 
@@ -429,9 +424,11 @@ class CoreChart(object, metaclass=ABCMeta):
         )
 
         both_planets_on_prime_vertical = (
-            primary_planet.is_on_vx_or_av and secondary_planet.is_on_vx_or_av
+            primary_planet.is_on_prime_vertical
+            and secondary_planet.is_on_prime_vertical
         )
         if both_planets_on_prime_vertical:
+
             # check prime vertical to prime vertical in azimuth
             raw_orb = abs(primary_planet.azimuth - secondary_planet.azimuth)
 
@@ -456,25 +453,21 @@ class CoreChart(object, metaclass=ABCMeta):
 
         planet_on_prime_vertical = (
             primary_planet
-            if primary_planet.is_on_vx_or_av
+            if primary_planet.is_on_prime_vertical
             else secondary_planet
         )
         planet_on_other_axis = (
             primary_planet
-            if secondary_planet.is_on_vx_or_av
+            if secondary_planet.is_on_prime_vertical
             else secondary_planet
         )
 
         planet_is_on_meridian = (
-            angles_models.ForegroundAngles.MC.value.strip()
-            in planet_on_other_axis.angle_axes_contacted
-            or angles_models.ForegroundAngles.IC.value.strip()
+            angles_models.AngleAxes.MERIDIAN.value
             in planet_on_other_axis.angle_axes_contacted
         )
         planet_is_on_horizon = (
-            angles_models.ForegroundAngles.ASCENDANT.value.strip()
-            in planet_on_other_axis.angle_axes_contacted
-            or angles_models.ForegroundAngles.DESCENDANT.value.strip()
+            angles_models.AngleAxes.HORIZON.value
             in planet_on_other_axis.angle_axes_contacted
         )
 
@@ -493,6 +486,7 @@ class CoreChart(object, metaclass=ABCMeta):
             else 3
         )
         if planet_is_on_meridian and not both_planets_on_prime_vertical:
+
             raw_orb = abs(
                 planet_on_other_axis.azimuth - planet_on_prime_vertical.azimuth
             )
@@ -516,6 +510,8 @@ class CoreChart(object, metaclass=ABCMeta):
                 normalized_orb = abs(90 - raw_orb)
             if chart_utils.inrange(raw_orb, 180, square_orb):
                 normalized_orb = abs(180 - raw_orb)
+            if chart_utils.inrange(raw_orb, 270, square_orb):
+                normalized_orb = abs(270 - raw_orb)
             if chart_utils.inrange(raw_orb, 360, square_orb):
                 normalized_orb = abs(360 - raw_orb)
 
@@ -559,8 +555,226 @@ class CoreChart(object, metaclass=ABCMeta):
             .as_type(aspect_type)
             .with_class(aspect_class)
         )
+
         aspect_strength = chart_utils.calc_aspect_strength_percent(
             square_orb, normalized_orb
+        )
+        aspect = aspect.with_strength(aspect_strength).with_orb(normalized_orb)
+        return aspect
+
+    def find_pvp_aspect_2(
+        self,
+        primary_planet: chart_models.PlanetData,
+        secondary_planet: chart_models.PlanetData,
+    ):
+        t = self.tracer
+
+        t.info(
+            'Checking PVP aspect between planets',
+            f'{primary_planet.name}, {secondary_planet.name}',
+        )
+
+        if not (
+            primary_planet.is_on_prime_vertical
+            or secondary_planet.is_on_prime_vertical
+        ):
+            t.debug('Neither planet on PV')
+            return None
+
+        both_planets_on_prime_vertical = t.debug(
+            'planet is on PV',
+            primary_planet.is_on_prime_vertical
+            and secondary_planet.is_on_prime_vertical,
+        )
+
+        planet_is_on_meridian = t.debug(
+            'planet is on meridian',
+            primary_planet.is_on_meridian or secondary_planet.is_on_meridian,
+        )
+
+        planet_is_on_horizon = t.debug(
+            'planet is on horizon',
+            primary_planet.is_on_horizon or secondary_planet.is_on_horizon,
+        )
+
+        if not both_planets_on_prime_vertical:
+            if primary_planet.is_on_prime_vertical:
+                if not (
+                    secondary_planet.is_on_prime_vertical
+                    or secondary_planet.is_on_horizon
+                    or secondary_planet.is_on_meridian
+                ):
+                    t.info(
+                        f'{primary_planet.name} on PV but {secondary_planet.name} not foreground or on PV'
+                    )
+                    return None
+
+            if secondary_planet.is_on_prime_vertical:
+                if not (
+                    primary_planet.is_on_prime_vertical
+                    or primary_planet.is_on_horizon
+                    or primary_planet.is_on_meridian
+                ):
+                    t.info(
+                        f'{secondary_planet.name} on PV but {primary_planet.name} not foreground or on PV'
+                    )
+                    return None
+
+        conjunction_orb = (
+            chart_utils.greatest_nonzero_class_orb(
+                self.options.pvp_aspects['0']
+            )
+            if self.options.pvp_aspects
+            else 3
+        )
+        opposition_orb = (
+            chart_utils.greatest_nonzero_class_orb(
+                self.options.pvp_aspects['180']
+            )
+            if self.options.pvp_aspects
+            else 3
+        )
+        square_orb = (
+            chart_utils.greatest_nonzero_class_orb(
+                self.options.pvp_aspects['90']
+            )
+            if self.options.pvp_aspects
+            else 3
+        )
+
+        raw_orb_azimuth = abs(
+            primary_planet.azimuth - secondary_planet.azimuth
+        )
+
+        raw_orb_ml = abs(
+            primary_planet.meridian_longitude
+            - secondary_planet.meridian_longitude
+        )
+
+        aspect_type_azimuth = None
+        aspect_type_ml = None
+
+        normalized_orb_azimuth = None
+        normalized_orb_ml = None
+
+        # Used for strength calculation purposes at the end
+        orb_used = square_orb
+
+        if chart_utils.inrange(raw_orb_azimuth, 0, conjunction_orb):
+            aspect_type_azimuth = chart_models.AspectType.CONJUNCTION
+            normalized_orb_azimuth = raw_orb_azimuth
+        elif chart_utils.inrange(raw_orb_azimuth, 180, opposition_orb):
+            aspect_type_azimuth = chart_models.AspectType.OPPOSITION
+            normalized_orb_azimuth = abs(180.0 - raw_orb_azimuth)
+        elif chart_utils.inrange(raw_orb_azimuth, 90, square_orb):
+            aspect_type_azimuth = chart_models.AspectType.SQUARE
+            normalized_orb_azimuth = abs(90.0 - raw_orb_azimuth)
+
+        # ML aspects, which are defined as squares between PV and horizon,
+        # are always squares regardless of the orb relationships.
+
+        if (
+            chart_utils.inrange(raw_orb_ml, 0, square_orb)
+            or chart_utils.inrange(raw_orb_ml, 90, square_orb)
+            or chart_utils.inrange(raw_orb_ml, 180, square_orb)
+            or chart_utils.inrange(raw_orb_ml, 270, square_orb)
+            or chart_utils.inrange(raw_orb_ml, 360, square_orb)
+        ):
+            aspect_type_ml = chart_models.AspectType.SQUARE
+            normalized_orb_ml = min(
+                raw_orb_ml,
+                abs(90.0 - raw_orb_ml),
+                abs(180.0 - raw_orb_ml),
+                abs(270.0 - raw_orb_ml),
+                abs(360.0 - raw_orb_ml),
+            )
+
+        normalized_orb = 999
+        aspect_type = None
+
+        if both_planets_on_prime_vertical and aspect_type_azimuth:
+            normalized_orb = normalized_orb_azimuth
+            aspect_type = aspect_type_azimuth
+            if aspect_type.value == chart_models.AspectType.CONJUNCTION.value:
+                orb_used = conjunction_orb
+            elif aspect_type.value == chart_models.AspectType.OPPOSITION.value:
+                orb_used = opposition_orb
+            else:
+                orb_used = square_orb
+
+        if planet_is_on_meridian and aspect_type_azimuth:
+            normalized_orb = min(normalized_orb, normalized_orb_azimuth)
+            aspect_type = aspect_type_azimuth
+            if aspect_type.value == chart_models.AspectType.CONJUNCTION.value:
+                orb_used = conjunction_orb
+            elif aspect_type.value == chart_models.AspectType.OPPOSITION.value:
+                orb_used = opposition_orb
+            else:
+                orb_used = square_orb
+
+        if planet_is_on_horizon and aspect_type_ml:
+            normalized_orb = min(normalized_orb, normalized_orb_ml)
+            if normalized_orb == normalized_orb_ml:
+                aspect_type = aspect_type_ml
+                orb_used = square_orb
+
+        if not aspect_type:
+            return None
+
+        aspect_class = 1
+
+        aspect_type_string = str(
+            chart_models.AspectType.degrees_from_abbreviation(
+                aspect_type.value
+            )
+        )
+
+        if self.options.pvp_aspects:
+            if (self.options.pvp_aspects[aspect_type_string][0] > 0) and (
+                normalized_orb
+                < self.options.pvp_aspects[aspect_type_string][0]
+            ):
+                aspect_class = 1
+            elif (self.options.pvp_aspects[aspect_type_string][1] > 0) and (
+                normalized_orb
+                < self.options.pvp_aspects[aspect_type_string][1]
+            ):
+                aspect_class = 2
+            elif (self.options.pvp_aspects[aspect_type_string][2] > 0) and (
+                normalized_orb
+                < self.options.pvp_aspects[aspect_type_string][2]
+            ):
+                aspect_class = 3
+
+        from_planet = (
+            primary_planet
+            if primary_planet.role >= secondary_planet.role
+            else secondary_planet
+        )
+
+        to_planet = (
+            primary_planet
+            if from_planet == secondary_planet
+            else secondary_planet
+        )
+
+        aspect = (
+            chart_models.Aspect()
+            .as_prime_vertical_paran()
+            .from_planet(
+                from_planet.short_name,
+                role=from_planet.role,
+            )
+            .to_planet(
+                to_planet.short_name,
+                role=to_planet.role,
+            )
+            .as_type(aspect_type)
+            .with_class(aspect_class)
+        )
+
+        aspect_strength = chart_utils.calc_aspect_strength_percent(
+            orb_used, normalized_orb
         )
         aspect = aspect.with_strength(aspect_strength).with_orb(normalized_orb)
         return aspect
@@ -572,10 +786,18 @@ class CoreChart(object, metaclass=ABCMeta):
         angles_models.ForegroundAngles | angles_models.NonForegroundAngles,
         float,
         float,
+        float,
         bool,
         bool,
     ]:
-        chart = calc_utils.find_outermost_chart(self.charts)
+        if self.use_progressed_angles:
+            chart = pydash.find(
+                self.charts,
+                lambda c: c.role.value
+                == chart_models.ChartWheelRole.PROGRESSED.value,
+            )
+        else:
+            chart = calc_utils.find_outermost_chart(self.charts)
 
         angularity_options = self.options.angularity
 
@@ -597,8 +819,6 @@ class CoreChart(object, metaclass=ABCMeta):
             else -1 * house_quadrant_position
         )
 
-        use_raw = self.options.use_raw_angularity_score
-
         if (
             angularity_options.model
             == option_models.AngularityModel.MIDQUADRANT
@@ -606,7 +826,6 @@ class CoreChart(object, metaclass=ABCMeta):
             mundane_angularity_strength = (
                 chart_utils.major_angularity_curve_midquadrant_background(
                     house_quadrant_position,
-                    use_raw,
                 )
             )
         elif (
@@ -616,16 +835,18 @@ class CoreChart(object, metaclass=ABCMeta):
             mundane_angularity_strength = (
                 chart_utils.major_angularity_curve_cadent_background(
                     house_quadrant_position,
-                    use_raw,
                 )
             )
         else:   # model == eureka
             mundane_angularity_strength = (
                 chart_utils.major_angularity_curve_eureka_formula(
                     house_quadrant_position,
-                    use_raw,
                 )
             )
+
+        # Get ecliptical angular contacts
+        if self.use_progressed_angles:
+            pass
 
         aspect_to_asc = abs(chart.cusps[1] - planet.longitude)
         if aspect_to_asc > 180:
@@ -636,7 +857,7 @@ class CoreChart(object, metaclass=ABCMeta):
 
         if chart_utils.inrange(aspect_to_asc, 90, 3):
             square_asc_strength = chart_utils.minor_angularity_curve(
-                abs(aspect_to_asc - 90), self.options, use_raw
+                abs(aspect_to_asc - 90), self.options
             )
         else:
             square_asc_strength = -200
@@ -650,7 +871,7 @@ class CoreChart(object, metaclass=ABCMeta):
 
         if chart_utils.inrange(aspect_to_mc, 90, 3):
             square_mc_strength = chart_utils.minor_angularity_curve(
-                abs(aspect_to_mc - 90), self.options, use_raw
+                abs(aspect_to_mc - 90), self.options
             )
         else:
             square_mc_strength = -200
@@ -664,16 +885,36 @@ class CoreChart(object, metaclass=ABCMeta):
 
         if chart_utils.inrange(ramc_aspect, 90, 3):
             ramc_square_strength = chart_utils.minor_angularity_curve(
-                abs(ramc_aspect - 90), self.options, use_raw
+                abs(ramc_aspect - 90), self.options
             )
         else:
             ramc_square_strength = -200
 
-        (angularity_strength, signed_orb) = max(
-            (mundane_angularity_strength, mundane_angularity_signed_orb),
-            (square_asc_strength, aspect_to_asc_signed_orb),
-            (square_mc_strength, aspect_to_mc_signed_orb),
-            (ramc_square_strength, ramc_signed_orb),
+        (angularity_strength, signed_orb, max_orb, related_angle) = max(
+            (
+                mundane_angularity_strength,
+                mundane_angularity_signed_orb,
+                max(major_angle_orbs),
+                'major',
+            ),
+            (
+                square_asc_strength,
+                aspect_to_asc_signed_orb,
+                max(minor_angle_orbs),
+                'ZN',
+            ),
+            (
+                square_mc_strength,
+                aspect_to_mc_signed_orb,
+                max(minor_angle_orbs),
+                'EW',
+            ),
+            (
+                ramc_square_strength,
+                ramc_signed_orb,
+                max(minor_angle_orbs),
+                'RA',
+            ),
             key=lambda x: x[0],
         )
 
@@ -688,18 +929,24 @@ class CoreChart(object, metaclass=ABCMeta):
 
         if mundane_angularity_orb <= max(major_angle_orbs):
             is_foreground = True
-            planet.angle_axes_contacted.append(
-                angles_models.AngleAxes.MUNDOSCOPE_ANGLE.value
-            )
 
-        else:
             if (
-                self.options.use_raw_angularity_score
-                and mundane_angularity_strength <= -50.0
-            ) or (
-                not self.options.use_raw_angularity_score
-                and mundane_angularity_strength <= 25.0
+                chart_utils.inrange(planet.house, 0, 15)
+                or chart_utils.inrange(planet.house, 360, 15)
+                or chart_utils.inrange(planet.house, 180, 15)
             ):
+
+                planet.angle_axes_contacted.append(
+                    angles_models.AngleAxes.HORIZON.value
+                )
+            elif chart_utils.inrange(
+                planet.house, 90, 15
+            ) or chart_utils.inrange(planet.house, 270, 15):
+                planet.angle_axes_contacted.append(
+                    angles_models.AngleAxes.MERIDIAN.value
+                )
+        else:
+            if mundane_angularity_strength <= 25.0:
                 if not angularity_options.no_bg:
                     is_mundanely_background = True
 
@@ -727,32 +974,32 @@ class CoreChart(object, metaclass=ABCMeta):
         angularity_orb = -1
         angularity = angles_models.NonForegroundAngles.BLANK
 
-        # if foreground, get specific angle - we can probably do this all at once
         if is_foreground:
-            # Foreground in prime vertical longitude
-            rounded_angularity_strength = round(angularity_strength)
+            if related_angle == 'major':
+                # Foreground in prime vertical longitude
+                rounded_angularity_strength = round(angularity_strength)
 
-            if rounded_angularity_strength == round(
-                mundane_angularity_strength
-            ):
-                if planet.house >= 345:
-                    angularity_orb = 360 - planet.house
-                    angularity = angles_models.ForegroundAngles.ASCENDANT
-                elif planet.house <= 15:
-                    angularity_orb = planet.house
-                    angularity = angles_models.ForegroundAngles.ASCENDANT
-                elif chart_utils.inrange(planet.house, 90, 15):
-                    angularity_orb = abs(planet.house - 90)
-                    angularity = angles_models.ForegroundAngles.IC
-                elif chart_utils.inrange(planet.house, 180, 15):
-                    angularity_orb = abs(planet.house - 180)
-                    angularity = angles_models.ForegroundAngles.DESCENDANT
-                elif chart_utils.inrange(planet.house, 270, 15):
-                    angularity_orb = abs(planet.house - 270)
-                    angularity = angles_models.ForegroundAngles.MC
+                if rounded_angularity_strength == round(
+                    mundane_angularity_strength
+                ):
+                    if planet.house >= 345:
+                        angularity_orb = 360 - planet.house
+                        angularity = angles_models.ForegroundAngles.ASCENDANT
+                    elif planet.house <= 15:
+                        angularity_orb = planet.house
+                        angularity = angles_models.ForegroundAngles.ASCENDANT
+                    elif chart_utils.inrange(planet.house, 90, 15):
+                        angularity_orb = abs(planet.house - 90)
+                        angularity = angles_models.ForegroundAngles.IC
+                    elif chart_utils.inrange(planet.house, 180, 15):
+                        angularity_orb = abs(planet.house - 180)
+                        angularity = angles_models.ForegroundAngles.DESCENDANT
+                    elif chart_utils.inrange(planet.house, 270, 15):
+                        angularity_orb = abs(planet.house - 270)
+                        angularity = angles_models.ForegroundAngles.MC
 
             # Foreground on Zenith/Nadir
-            if rounded_angularity_strength == round(square_asc_strength):
+            elif related_angle == 'ZN':
                 zenith_nadir_orb = chart.cusps[1] - planet.longitude
                 if zenith_nadir_orb < 0:
                     zenith_nadir_orb += 360
@@ -765,7 +1012,7 @@ class CoreChart(object, metaclass=ABCMeta):
                     angularity = angles_models.ForegroundAngles.NADIR
 
             # Foreground on Eastpoint/Westpoint
-            if rounded_angularity_strength == round(square_mc_strength):
+            elif related_angle == 'EW':
                 ep_wp_eclipto_orb = chart.cusps[10] - planet.longitude
                 if ep_wp_eclipto_orb < 0:
                     ep_wp_eclipto_orb += 360
@@ -776,7 +1023,7 @@ class CoreChart(object, metaclass=ABCMeta):
                     angularity_orb = abs(ep_wp_eclipto_orb - 270)
                     angularity = angles_models.ForegroundAngles.EASTPOINT
 
-            if rounded_angularity_strength == round(ramc_square_strength):
+            elif related_angle == 'RA':
                 ep_wp_ascension_orb = chart.ramc - planet.right_ascension
                 if ep_wp_ascension_orb < 0:
                     ep_wp_ascension_orb += 360
@@ -799,9 +1046,17 @@ class CoreChart(object, metaclass=ABCMeta):
             )
 
         planet.angularity_strength = angularity_strength
+
+        raw_angle_contact_strength = chart_utils.calc_aspect_strength_percent(
+            max_orb,
+            math.fabs(signed_orb),
+            as_float=True,
+        )
+
         return (
             angularity,
             angularity_strength,
+            raw_angle_contact_strength,
             signed_orb,
             planet_negates_dormancy,
             is_mundanely_background,
@@ -854,7 +1109,7 @@ class CoreChart(object, metaclass=ABCMeta):
 
         return chart_grid
 
-    def parse_aspect(
+    def find_aspect(
         self,
         primary_planet_data: chart_models.PlanetData,
         secondary_planet_data: chart_models.PlanetData,
@@ -862,6 +1117,8 @@ class CoreChart(object, metaclass=ABCMeta):
         to_chart_type: chart_models.ChartType,
         whole_chart_is_dormant: bool,
     ) -> chart_models.Aspect | None:
+        outermost_chart = calc_utils.find_outermost_chart(self.charts)
+
         ecliptical_aspect = self.find_ecliptical_aspect(
             primary_planet_data,
             secondary_planet_data,
@@ -874,9 +1131,22 @@ class CoreChart(object, metaclass=ABCMeta):
             whole_chart_is_dormant,
         )
 
+        paran_aspect = None
+
+        if self.options.paran_aspects.get('enabled', False):
+            paran_aspect = calc_utils.calc_major_angle_paran(
+                primary_planet_data,
+                secondary_planet_data,
+                self.options,
+                outermost_chart.geo_latitude,
+                whole_chart_is_dormant,
+            )
+
         if (
-            from_chart_type.value in chart_models.SOLAR_RETURNS
-            or to_chart_type.value in chart_models.SOLAR_RETURNS
+            from_chart_type.value
+            in chart_models.CHARTS_TO_SKIP_T_SOLAR_ASPECTS
+            or to_chart_type.value
+            in chart_models.CHARTS_TO_SKIP_T_SOLAR_ASPECTS
         ):
             if (
                 primary_planet_data.name == 'Sun'
@@ -904,6 +1174,7 @@ class CoreChart(object, metaclass=ABCMeta):
                     ]
                 ):
                     return None
+
                 # Skip any other ecliptical aspects by transiting solunar planet to anything
                 if (ecliptical_aspect and not mundane_aspect) or (
                     ecliptical_aspect
@@ -913,8 +1184,10 @@ class CoreChart(object, metaclass=ABCMeta):
                     return None
 
         if (
-            from_chart_type.value in chart_models.LUNAR_RETURNS
-            or to_chart_type.value in chart_models.LUNAR_RETURNS
+            from_chart_type.value
+            in chart_models.CHARTS_TO_SKIP_T_LUNAR_ASPECTS
+            or to_chart_type.value
+            in chart_models.CHARTS_TO_SKIP_T_LUNAR_ASPECTS
         ):
             if (
                 primary_planet_data.name == 'Moon'
@@ -959,15 +1232,22 @@ class CoreChart(object, metaclass=ABCMeta):
             and ecliptical_aspect
             and ecliptical_aspect.aspect_class == 4
         ):
-            return None
+            if not mundane_aspect or (
+                ecliptical_aspect.strength > mundane_aspect.strength
+            ):
+                return None
 
         tightest_aspect = None
 
-        if ecliptical_aspect or mundane_aspect:
+        if ecliptical_aspect or mundane_aspect or paran_aspect:
             tightest_aspect = min(
                 ecliptical_aspect,
                 mundane_aspect,
-                key=lambda x: x.orb if x else 1000,
+                paran_aspect,
+                key=lambda x: (
+                    (200 - x.strength) if x else 1000,
+                    x.orb if x else 1000,
+                ),
             )
 
         if tightest_aspect and not tightest_aspect.aspect_class == 4:
@@ -975,10 +1255,11 @@ class CoreChart(object, metaclass=ABCMeta):
 
         # Allow PVP aspects to override other "other partile" aspects
         if self.options.pvp_aspects.get('enabled', False):
-            pvp_aspect = self.find_pvp_aspect(
+            pvp_aspect = self.find_pvp_aspect_2(
                 primary_planet_data,
                 secondary_planet_data,
             )
+
             tightest_aspect = pvp_aspect or tightest_aspect
 
         return tightest_aspect
@@ -999,7 +1280,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 bisect.insort(
                     angularities_by_class[index],
                     angularity,
-                    key=lambda x: -1 * round(x.strength),
+                    key=lambda x: -1 * x.strength_as_aspect,
                 )
 
         for (from_index, from_chart) in enumerate(self.charts):
@@ -1026,7 +1307,7 @@ class CoreChart(object, metaclass=ABCMeta):
                             secondary_planet_long_name
                         ]
 
-                        maybe_aspect = self.parse_aspect(
+                        maybe_aspect = self.find_aspect(
                             primary_planet,
                             secondary_planet,
                             from_chart.type,
@@ -1047,26 +1328,17 @@ class CoreChart(object, metaclass=ABCMeta):
         ]
 
         # find aspect width by finding the longest aspect name
-        aspect_width = 0
+        aspect_width = 22 if len(self.charts) == 1 else 24
         for aspect_class in aspects_by_class:
             if aspect_class:
                 aspect_width = len(str(aspect_class[0]))
                 break
 
-        # Remove empty aspect classes
         if len(aspects_by_class[3]) == 0 or whole_chart_is_dormant:
             del aspects_by_class[3]
             del aspect_class_headers[3]
             aspects_by_class.append([])
             aspect_class_headers.append('')
-        for class_index in range(2, -1, -1):
-            if len(aspects_by_class[class_index]) == 0:
-                del aspects_by_class[class_index]
-                del aspect_class_headers[class_index]
-                aspects_by_class.append([])
-                aspect_class_headers.append('')
-
-        aspect_header_index = 0
 
         if len(angularities_as_aspects):
             chartfile.write('-' * self.table_width + '\n')
@@ -1074,19 +1346,21 @@ class CoreChart(object, metaclass=ABCMeta):
                 angularities_by_class, chartfile
             )
 
-        if any(aspect_class_headers):
+        if len(aspects_by_class[3]) and not len(aspects_by_class[2]):
+            del aspects_by_class[2]
+            del aspect_class_headers[2]
+
+        if any(
+            [
+                True
+                for aspect_class in aspect_class_headers
+                if len(aspect_class) > 0
+            ]
+        ):
             chartfile.write('-' * self.table_width + '\n')
 
-            while not any(aspect_class_headers[aspect_header_index]):
-                aspect_header_index += 1
-
-            # Write the first 3 headers
-            if aspect_class_headers[aspect_header_index]:
-                left_header = aspect_class_headers[aspect_header_index]
-            else:
-                left_header = ' ' * 26
-
-            aspect_header_index += 1
+            # Class 1
+            left_header = aspect_class_headers[0]
 
             chartfile.write(
                 chart_utils.center_align(
@@ -1095,12 +1369,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 )
             )
 
-            if aspect_class_headers[aspect_header_index]:
-                center_header = aspect_class_headers[aspect_header_index]
-            else:
-                center_header = ' ' * 26
-
-            aspect_header_index += 1
+            center_header = aspect_class_headers[1]
 
             # This represents how much of a shift right there is between
             # the left-aligned first column and the center-aligned second column
@@ -1119,12 +1388,10 @@ class CoreChart(object, metaclass=ABCMeta):
             if gap > 0:
                 chartfile.write(' ' * gap)
 
-            if aspect_class_headers[aspect_header_index]:
-                right_header = aspect_class_headers[aspect_header_index]
+            if not aspects_by_class[2] and aspects_by_class[3]:
+                right_header = aspect_class_headers[3]
             else:
-                right_header = ' ' * 26
-
-            aspect_header_index += 1
+                right_header = aspect_class_headers[2]
 
             chartfile.write(
                 chart_utils.center_align(
@@ -1132,9 +1399,6 @@ class CoreChart(object, metaclass=ABCMeta):
                 )
             )
             chartfile.write('\n')
-
-            # Dashed lines below the column headers; currently removed
-            # chartfile.write('\n' + '-' * self.table_width + '\n')
 
         # For each aspect class, insert dividers where the roles change
         aspects_by_class_with_dividers = copy.deepcopy(aspects_by_class)
@@ -1158,18 +1422,17 @@ class CoreChart(object, metaclass=ABCMeta):
 
         # If there's a fourth class, write it below and centered
         if (
-            aspect_header_index <= len(aspect_class_headers) - 1
-            and aspect_header_index <= len(aspects_by_class_with_dividers) - 1
-            and aspects_by_class_with_dividers[aspect_header_index]
+            len(aspects_by_class_with_dividers) > 3
+            and aspects_by_class_with_dividers[3]
         ):
             chartfile.write(
                 chart_utils.center_align(
-                    aspect_class_headers[aspect_header_index],
+                    aspect_class_headers[3],
                     width=self.table_width,
                 )
                 + '\n'
             )
-            for aspect in aspects_by_class_with_dividers[aspect_header_index]:
+            for aspect in aspects_by_class_with_dividers[3]:
                 chartfile.write(
                     chart_utils.center_align(str(aspect), self.table_width)
                     + '\n'
@@ -1192,6 +1455,15 @@ class CoreChart(object, metaclass=ABCMeta):
         )
 
         angularities_as_aspects = []
+
+        contains_solar_wheel = any(
+            [
+                True
+                for c in self.charts
+                if c.role.value == chart_models.ChartWheelRole.SOLAR.value
+            ]
+        )
+
         for (chart_index, chart) in enumerate(self.charts):
             if chart_index > 0:
                 chartfile.write('-' * self.table_width + '\n')
@@ -1201,6 +1473,11 @@ class CoreChart(object, metaclass=ABCMeta):
 
                 if chart.role == chart_models.ChartWheelRole.TRANSIT:
                     section_title = 'Transiting Planets'
+                elif (
+                    chart.role == chart_models.ChartWheelRole.PROGRESSED
+                    and contains_solar_wheel
+                ):
+                    section_title = 'Progressed SSR Planets'
                 elif chart.role == chart_models.ChartWheelRole.PROGRESSED:
                     section_title = 'Progressed Planets'
                 elif chart.role == chart_models.ChartWheelRole.SOLAR:
@@ -1220,6 +1497,7 @@ class CoreChart(object, metaclass=ABCMeta):
                 chartfile,
                 chart_index,
             )
+
             if angularities_for_section:
                 angularities_as_aspects.extend(angularities_for_section)
             if not chart_is_dormant:
@@ -1263,7 +1541,9 @@ class CoreChart(object, metaclass=ABCMeta):
             chartfile.write(chart_utils.left_align(planet_data.short_name, 3))
 
             # Write planet data to info table
-            chartfile.write(chart_utils.zod_sec(planet_data.longitude))
+            chartfile.write(
+                chart_utils.zod_sec_with_sign(planet_data.longitude)
+            )
 
             # Put stationary marker if necessary
             if planet_data.is_stationary:
@@ -1330,12 +1610,14 @@ class CoreChart(object, metaclass=ABCMeta):
             (
                 angularity,
                 strength_percent,
+                raw_angle_contact_strength,
                 signed_angularity_orb,
                 planet_negates_dormancy,
                 is_mundanely_background,
             ) = self.calc_angle_and_strength(planet_data)
 
             angularity_as_aspect = None
+
             if angularity.value.strip().upper() in [
                 a.value.strip().upper() for a in angles_models.ForegroundAngles
             ]:
@@ -1346,7 +1628,9 @@ class CoreChart(object, metaclass=ABCMeta):
                     .to_planet(angularity.value.strip().upper())
                     .with_orb(signed_angularity_orb)
                     .with_strength(strength_percent)
+                    .with_strength_as_aspect(raw_angle_contact_strength)
                 )
+
             if planet_negates_dormancy:
                 whole_chart_is_dormant = False
 
@@ -1357,7 +1641,6 @@ class CoreChart(object, metaclass=ABCMeta):
             minor_limit = angularity_options.minor_angles or [1.0, 2.0, 3.0]
 
             major_limit = angularity_options.major_angles or [3.0, 6.0, 10.0]
-
             if angularity_as_aspect:
                 if angles_models.MinorAngles.contains(
                     angularity_as_aspect.to_planet_short_name
@@ -1559,9 +1842,16 @@ class CoreChart(object, metaclass=ABCMeta):
         )
 
         angularities_lookup = {}
+
         for angularity in angularities_as_aspects:
             key = f'{angularity.from_planet_role}{angularity.from_planet_short_name}'
             angularities_lookup[key] = angularity
+
+        if self.options.midpoints.get('enabled'):
+            self.halfsums = calc_utils.calc_halfsums(self.options, self.charts)
+            self.midpoints = calc_utils.calc_midpoints_3(
+                self.options, self.charts, self.halfsums
+            )
 
         # Iterate from transiting chart to radix
         for (index, chart) in enumerate(self.charts):
@@ -1635,9 +1925,9 @@ class CoreChart(object, metaclass=ABCMeta):
                     and chart.type.value == chart_models.ChartType.NATAL.value
                 ):
                     strength = calc_utils.calc_planetary_needs_strength(
-                        self.options, planet_data, chart, aspects_by_class
+                        planet_data, chart, aspects_by_class
                     )
-                    chartfile.write((f'{int(strength): >3}%'))
+                    chartfile.write((f'{round(strength): >3}%'))
                     strength_hierarchy_written = True
 
                 chartfile.write('|')
@@ -1752,14 +2042,6 @@ class CoreChart(object, metaclass=ABCMeta):
                 ## Midpoints - decide if we need to write midpoints or not ##
                 ## # # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
 
-                if self.options.midpoints.get('enabled'):
-                    self.halfsums = calc_utils.calc_halfsums(
-                        self.options, self.charts
-                    )
-                    self.midpoints = calc_utils.calc_midpoints_3(
-                        self.options, self.charts, self.halfsums
-                    )
-
                 related_midpoints = self.midpoints.get(
                     f'{planet_data.role.value}{planet_data.short_name}', []
                 )
@@ -1788,7 +2070,7 @@ class CoreChart(object, metaclass=ABCMeta):
                     related_midpoints = filtered_midpoints
 
                 if len(related_midpoints) > 0:
-                    chartfile.write('\n' + pipe_indent + '|    ')
+                    chartfile.write('\n' + pipe_indent + '|  ')
 
                     self.write_midpoint_cosmic_state(
                         chartfile,
@@ -1801,7 +2083,7 @@ class CoreChart(object, metaclass=ABCMeta):
 
             angle_indent = (
                 (' ' * 8) if strength_hierarchy_written else (' ' * 4)
-            ) + '|    '
+            ) + '|  '
 
             only_mundane_enabled = (
                 not self.options.midpoints.get('0')
@@ -1927,7 +2209,7 @@ class CoreChart(object, metaclass=ABCMeta):
         strength_hierarchy_written: bool,
     ):
         for (midpoint_index, midpoint) in enumerate(midpoints):
-            chartfile.write(str(midpoint) + (' ' * 4))
+            chartfile.write(str(midpoint) + (' ' * 3))
             if strength_hierarchy_written:
                 if (
                     midpoint_index == 3
@@ -1938,13 +2220,13 @@ class CoreChart(object, metaclass=ABCMeta):
                         and midpoint_index != len(midpoints) - 1
                     )
                 ):
-                    chartfile.write('\n' + indent + '|    ')
+                    chartfile.write('\n' + indent + '|  ')
             else:
                 if (
                     midpoint_index % 4 == 3
                     and midpoint_index != len(midpoints) - 1
                 ):
-                    chartfile.write('\n' + indent + '|    ')
+                    chartfile.write('\n' + indent + '|  ')
 
     def get_return_class(self, t: chart_models.ChartType) -> str:
         t = t.type.value.lower()

@@ -1,4 +1,4 @@
-# Copyright 2025 James Eshelman, Mike Nelson, Mike Verducci
+# Copyright 2026 James Eshelman, Mike Nelson, Mike Verducci
 
 # This file is part of Time Matters: A Sidereal Astrology Toolkit (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation,
@@ -20,40 +20,39 @@ import us
 from geopy import Nominatim
 
 from src import *
+from src import swe
 from src.constants import DQ, DS, MONTHS, VERSION
+from src.models.charts import ChartObject, ChartType, ChartWheelRole
+from src.models.options import ProgramOptions
 from src.swe import *
-from src.user_interfaces.chart import Chart
+from src.user_interfaces.chart_assembler import assemble_charts
 from src.user_interfaces.locations import Locations
 from src.user_interfaces.more_charts import MoreCharts
 from src.user_interfaces.widgets import *
-from src.utils.format_utils import display_name, normalize_text, toDMS
+from src.utils.format_utils import (
+    display_name,
+    normalize_text,
+    toDMS,
+)
 from src.utils.gui_utils import ShowHelp
-from src.utils.os_utils import open_file
+from src.utils.transits.progressions import (
+    ProgressionTypes,
+    get_progressed_jd_utc,
+)
 
 
-class Solunars(Frame):
+class PredictiveMethods(Frame):
     def __init__(self, base, filename):
         super().__init__()
         now = dt.utcnow()
         chart = {}
+
+        self.program_options = ProgramOptions.from_file(PROGRAM_OPTION_PATH)
+
         self.base = base
         self.filename = filename
         self.fnlbl = Label(self, display_name(filename), 0, 0, 1)
-        Label(self, 'Search', 0.15, 0.05, 0.15, anchor=tk.W)
-        self.init = True
-        self.search = Radiogroup(self)
-        Radiobutton(
-            self, self.search, 0, 'Active Charts', 0.3, 0.05, 0.2
-        ).bind('<Button-1>', lambda _: delay(self.toggle_year, 0))
-        Radiobutton(self, self.search, 1, 'Forwards', 0.5, 0.05, 0.15).bind(
-            '<Button-1>', lambda _: delay(self.toggle_year, 1)
-        )
-        Radiobutton(self, self.search, 2, 'Backwards', 0.65, 0.05, 0.15).bind(
-            '<Button-1>', lambda _: delay(self.toggle_year, 2)
-        )
-        self.search.value = 0
-        self.search.focus()
-        self.init = False
+
         Label(self, 'Date ' + DATE_FMT, 0.15, 0.1, 0.15, anchor=tk.W)
         if DATE_FMT == 'D M Y':
             self.dated = Entry(self, now.strftime('%d'), 0.3, 0.1, 0.1)
@@ -124,89 +123,95 @@ class Solunars(Frame):
         Label(self, 'Notes', 0.15, 0.35, 0.15, anchor=tk.W)
         self.notes = Entry(self, '', 0.3, 0.35, 0.3)
         Label(self, 'Options', 0.15, 0.4, 0.15, anchor=tk.W)
-        self.options = Entry(self, 'Return Default', 0.3, 0.4, 0.3)
+
+        self.options = Entry(self, 'Progressed Default', 0.3, 0.4, 0.3)
+
         Button(self, 'Select', 0.6, 0.4, 0.1).bind(
             '<Button-1>', lambda _: delay(self.select_options)
         )
         Button(self, 'Temporary', 0.7, 0.4, 0.1).bind(
             '<Button-1>', lambda _: delay(self.temp_options)
         )
-        Label(self, 'Optional Event', 0.15, 0.45, 0.15)
-        Button(self, 'New Chart', 0.3, 0.45, 0.15).bind(
-            '<Button-1>', lambda _: delay(self.make_event)
-        )
-        Button(self, 'Find Chart', 0.45, 0.45, 0.15).bind(
-            '<Button-1>', lambda _: delay(self.more_files)
-        )
+
         self.event = None
-        Label(self, 'Solar Returns', 0.15, 0.5, 0.3, anchor=tk.W)
-        self.mainsolar = Checkbutton(self, 'SSR', 0.3, 0.5, 0.1)
-        self.demisolar = Checkbutton(self, 'DSSR', 0.4, 0.5, 0.1)
-        self.fqsolar = Checkbutton(self, 'QSSR1', 0.5, 0.5, 0.1)
-        self.lqsolar = Checkbutton(self, 'QSSR3', 0.6, 0.5, 0.1)
-        Label(self, 'Lunar Returns', 0.15, 0.55, 0.3, anchor=tk.W)
-        self.mainlunar = Checkbutton(self, 'SLR', 0.3, 0.55, 0.1)
-        self.demilunar = Checkbutton(self, 'DSLR', 0.4, 0.55, 0.1)
-        self.fqlunar = Checkbutton(self, 'QSLR1', 0.5, 0.55, 0.1)
-        self.lqlunar = Checkbutton(self, 'QSLR3', 0.6, 0.55, 0.1)
+        Label(self, 'Transits', 0.15, 0.5, 0.3, anchor=tk.W)
+        self.transits_to_natal = Checkbutton(self, 'Natal', 0.3, 0.5, 0.1)
+        self.transits_to_ssr = Checkbutton(self, 'SSR', 0.4, 0.5, 0.1)
+
+        self.transits_to_progressed_natal = Checkbutton(
+            self, 'p Natal', 0.5, 0.5, 0.1
+        )
+        self.transits_to_solar_quotidian = Checkbutton(
+            self, 'SQ', 0.6, 0.5, 0.1
+        )
+
+        Label(self, 'Progressions', 0.15, 0.55, 0.3, anchor=tk.W)
+        self.sidereal_natal_quotidian = Checkbutton(
+            self, 'SNQ', 0.3, 0.55, 0.1
+        )
+        self.solar_quotidian = Checkbutton(self, 'SQ', 0.4, 0.55, 0.1)
+
+        self.pssr = Checkbutton(self, 'PSSR', 0.5, 0.55, 0.1)
+        self.progressed_qssr = Checkbutton(self, 'p QSSR', 0.6, 0.55, 0.1)
+
         Button(self, 'Select All', 0.3, 0.6, 0.2).bind(
-            '<Button-1>', lambda _: delay(self.all_charts, True)
+            '<Button-1>', lambda _: delay(self.all_selections, True)
         )
         Button(self, 'Clear Selections', 0.5, 0.6, 0.2).bind(
-            '<Button-1>', lambda _: delay(self.all_charts, False)
+            '<Button-1>', lambda _: delay(self.all_selections, False)
         )
-        self.oneyear = Checkbutton(
-            self, 'All Selected Solunars For One Year', 0.3, 0.65, 0.4
-        )
-        self.oneyear.config(state=tk.DISABLED)
+
+        Label(self, 'Progression Rate', 0.15, 0.65, 0.15, anchor=tk.W)
+        self.mean_or_apparent = Radiogroup(self)
+        Radiobutton(self, self.mean_or_apparent, 0, 'Mean', 0.3, 0.65, 0.1)
+        Radiobutton(self, self.mean_or_apparent, 1, 'Apparent', 0.4, 0.65, 0.1)
+        self.mean_or_apparent.value = 0
+
         self.istemp = Radiogroup(self)
         Radiobutton(self, self.istemp, 0, 'Permanent Charts', 0.3, 0.7, 0.25)
         Radiobutton(self, self.istemp, 1, 'Temporary Charts', 0.5, 0.7, 0.25)
         self.istemp.value = 1
-        Button(self, 'Calculate', 0.1, 0.8, 0.2).bind(
+
+        Button(self, 'Calculate', 0, 0.95, 0.2).bind(
             '<Button-1>', lambda _: delay(self.calculate)
         )
-        Button(self, 'Clear', 0.3, 0.8, 0.2).bind(
+
+        Button(self, 'Help', 0.2, 0.95, 0.2).bind(
+            '<Button-1>',
+            lambda _: delay(
+                ShowHelp, os.path.join(HELP_PATH, 'predictive.txt')
+            ),
+        )
+
+        Button(self, 'Clear', 0.6, 0.95, 0.2).bind(
             '<Button-1>', lambda _: delay(self.clear)
         )
-        Button(self, 'Help', 0.5, 0.8, 0.2).bind(
-            '<Button-1>',
-            lambda _: delay(ShowHelp, os.path.join(HELP_PATH, 'solunars.txt')),
-        )
-        backbtn = Button(self, 'Back', 0.7, 0.8, 0.20)
+
+        backbtn = Button(self, 'Back', 0.8, 0.95, 0.20)
         backbtn.bind('<Button-1>', lambda _: delay(self.back))
-        self.status = Label(self, '', 0, 0.9, 1)
+        self.status = Label(self, '', 0, 0.85, 1)
 
     def enable_find(self):
         self.findbtn.disabled = False
 
-    def toggle_year(self, value):
-        if self.init:
-            return
-        if value == 0:
-            self.oneyear.checked = False
-            self.oneyear.config(state=tk.DISABLED)
-        else:
-            self.oneyear.config(state=tk.NORMAL)
-        self.init = True
-        self.search.value = value
-        self.init = False
-
     def back(self):
         self.destroy()
+
+        # This needs to be here to avoid a circular import
         from src.user_interfaces.select_chart import SelectChart
 
         SelectChart()
 
-    def all_charts(self, value):
-        self.mainsolar.checked = value
-        self.demisolar.checked = value
-        self.fqsolar.checked = value
-        self.lqsolar.checked = value
-        self.mainlunar.checked = value
-        self.demilunar.checked = value
-        self.fqlunar.checked = value
-        self.lqlunar.checked = value
+    def all_selections(self, value):
+        self.transits_to_natal.checked = value
+        self.transits_to_ssr.checked = value
+        self.transits_to_progressed_natal.checked = value
+        self.transits_to_solar_quotidian.checked = value
+
+        self.sidereal_natal_quotidian.checked = value
+        self.solar_quotidian.checked = value
+        self.pssr.checked = value
+        self.progressed_qssr.checked = value
 
     def more_finish(self, selected):
         if selected:
@@ -483,12 +488,12 @@ class Solunars(Frame):
 
     def clear(self):
         self.destroy()
-        Solunars(self.base, self.filename)
+        PredictiveMethods(self.base, self.filename)
 
     def calculate(self):
         self.status.text = ''
         self.findbtn.disabled = False
-        chart = {}
+        params = {}
         try:
             y = int(self.datey.text)
             m = int(self.datem.text)
@@ -499,23 +504,19 @@ class Solunars(Frame):
             y = -y + 1
             self.datey.text = y
             self.bce.checked = True
-        if y < 1 or y > 3000:
-            return self.status.error(
-                'Year must be between 1 and 3000.', self.datey
-            )
         if self.bce.checked:
             y = -y + 1
-        chart['year'] = y
+        params['year'] = y
         if m < 1 or m > 12:
             return self.status.error(
                 'Month must be between 1 and 12.', self.datem
             )
-        chart['month'] = m
+        params['month'] = m
         if d < 1 or d > 31:
             return self.status.error(
                 'Day must be between 1 and 31.', self.dated
             )
-        chart['day'] = d
+        params['day'] = d
         z = str(y) if y > 0 else str(-y + 1) + ' BCE'
         if self.old.checked and y > 1582:
             if not tkmessagebox.askyesno(
@@ -529,7 +530,7 @@ class Solunars(Frame):
                 f'Is {d} {MONTHS[m -1]} {z} new style (Gregorian)?',
             ):
                 return
-        chart['style'] = 0 if self.old.checked else 1
+        params['style'] = 0 if self.old.checked else 1
         try:
             time = (
                 int(self.timeh.text)
@@ -565,9 +566,9 @@ class Solunars(Frame):
                 time -= 12
             if self.tmfmt.value == 1:
                 time += 12
-        chart['time'] = time
-        chart['location'] = normalize_text(self.loc.text)
-        if not chart['location']:
+        params['time'] = time
+        params['location'] = normalize_text(self.loc.text)
+        if not params['location']:
             return self.status.error('Location must be specified.', self.loc)
         try:
             lat = (
@@ -584,7 +585,7 @@ class Solunars(Frame):
             )
         if self.latdir.value == 1:
             lat = -lat
-        chart['latitude'] = lat
+        params['latitude'] = lat
         try:
             long = (
                 int(self.longd.text)
@@ -599,303 +600,75 @@ class Solunars(Frame):
             )
         if self.longdir.value == 1:
             long = -long
-        chart['longitude'] = long
-        chart['notes'] = normalize_text(self.notes.text, True)
-        chart['options'] = self.options.text.strip()
-        chart['base_chart'] = self.base
-        solunars = []
-        if self.mainsolar.checked:
-            solunars.append('Solar Return')
-        if self.demisolar.checked:
-            solunars.append('Demi-Solar Return')
-        if self.fqsolar.checked:
-            solunars.append('First Quarti-Solar Return')
-        if self.lqsolar.checked:
-            solunars.append('Last Quarti-Solar Return')
-        if self.mainlunar.checked:
-            solunars.append('Lunar Return')
-        if self.demilunar.checked:
-            solunars.append('Demi-Lunar Return')
-        if self.fqlunar.checked:
-            solunars.append('First Quarti-Lunar Return')
-        if self.lqlunar.checked:
-            solunars.append('Last Quarti-Lunar Return')
-        if not solunars:
-            self.status.error('No solunars selected.')
-            return
-        if self.event:
-            if self.event == '<':
-                cchart = deepcopy(chart)
-                date = julday(
-                    cchart['year'],
-                    cchart['month'],
-                    cchart['day'],
-                    cchart['time'],
-                    cchart['style'],
-                )
-                cchart['options'] = self.eopt
-                cchart['base_chart'] = None
-                self.make_chart(cchart, date, 'Event', 'N')
-            else:
-                filename = self.event[0:-3] + 'txt'
-                if os.path.exists(filename):
-                    open_file(filename)
-        self.save_location(chart)
-        if self.oneyear.checked:
-            self.burst(chart, solunars)
-        elif self.search.value == 0:
-            self.asearch(chart, solunars)
-        elif self.search.value == 1:
-            self.fsearch(chart, solunars)
-        elif self.search.value == 2:
-            self.bsearch(chart, solunars)
-        else:
-            self.status.error('No search direction selected.')
 
-    def fsearch(self, chart, solunars):
-        start = julday(
-            chart['year'],
-            chart['month'],
-            chart['day'],
-            chart['time'],
-            chart['style'],
+        params['longitude'] = long
+        params['notes'] = normalize_text(self.notes.text, True)
+        params['options'] = self.options.text.strip()
+        params['base_chart'] = self.base
+
+        params['chart_type'] = 'snq'
+        params['type'] = ChartType.SIDEREAL_NATAL_QUOTIDIAN.value
+        params['use_transit'] = False
+
+        radix = ChartObject(params['base_chart']).with_role(
+            ChartWheelRole.RADIX
         )
-        sun = chart['base_chart']['Sun'][0]
-        moon = chart['base_chart']['Moon'][0]
-        for sol in solunars:
-            sl = sol.lower()
-            if 'solar' in sl:
-                cclass = 'SR'
-                if 'demi' in sl:
-                    target = (sun + 180) % 360
-                elif 'first' in sl:
-                    target = (sun + 90) % 360
-                elif 'last' in sl:
-                    target = (sun + 270) % 360
-                else:
-                    target = sun
-                date = calc_sun_crossing(target, start)
-            elif 'lunar' in sl:
-                cclass = 'LR'
-                if 'demi' in sl:
-                    target = (moon + 180) % 360
-                elif 'first' in sl:
-                    target = (moon + 90) % 360
-                elif 'last' in sl:
-                    target = (moon + 270) % 360
-                else:
-                    target = moon
-                date = calc_moon_crossing(target, start)
-            self.make_chart(chart, date, sol, cclass)
 
-    def bsearch(self, chart, solunars):
-        start = julday(
-            chart['year'],
-            chart['month'],
-            chart['day'],
-            chart['time'],
-            chart['style'],
+        target_julian_day = swe.julday(
+            params['year'],
+            params['month'],
+            params['day'],
+            params['time'],
+            params['style'],
         )
-        sun = chart['base_chart']['Sun'][0]
-        moon = chart['base_chart']['Moon'][0]
-        for sol in solunars:
-            sl = sol.lower()
-            if 'solar' in sl:
-                cclass = 'SR'
-                if 'demi' in sl:
-                    target = (sun + 180) % 360
-                elif 'first' in sl:
-                    target = (sun + 90) % 360
-                elif 'last' in sl:
-                    target = (sun + 270) % 360
-                else:
-                    target = sun
-                date = calc_sun_crossing(target, start - 184)
-                if date > start:
-                    date = calc_sun_crossing(target, start - 367)
-            elif 'lunar' in sl:
-                cclass = 'LR'
-                if 'demi' in sl:
-                    target = (moon + 180) % 360
-                elif 'first' in sl:
-                    target = (moon + 90) % 360
-                elif 'last' in sl:
-                    target = (moon + 270) % 360
-                else:
-                    target = moon
-                date = calc_moon_crossing(target, start - 15)
-                if date > start:
-                    date = calc_moon_crossing(target, start - 29)
-            self.make_chart(chart, date, sol, cclass)
 
-    def burst(self, chart, solunars):
-        start = julday(
-            chart['year'],
-            chart['month'],
-            chart['day'],
-            chart['time'],
-            chart['style'],
+        progressed_jd = get_progressed_jd_utc(
+            base_jd=radix.julian_day_utc,
+            target_jd=target_julian_day,
+            radix_sun_longitude=radix.planets['Sun'].longitude,
+            progression_type=ProgressionTypes.Q2.value,
         )
-        sun = chart['base_chart']['Sun'][0]
-        moon = chart['base_chart']['Moon'][0]
-        if self.search.value == 2:
-            start -= 366
-        for sol in solunars:
-            cchart = deepcopy(chart)
-            sl = sol.lower()
-            if 'solar' in sl:
-                cclass = 'SR'
-                if 'demi' in sl:
-                    target = (sun + 180) % 360
-                elif 'first' in sl:
-                    target = (sun + 90) % 360
-                elif 'last' in sl:
-                    target = (sun + 270) % 360
-                else:
-                    target = sun
-                date = calc_sun_crossing(target, start)
-            elif 'lunar' in sl:
-                cclass = 'LR'
-                if 'demi' in sl:
-                    target = (moon + 180) % 360
-                elif 'first' in sl:
-                    target = (moon + 90) % 360
-                elif 'last' in sl:
-                    target = (moon + 270) % 360
-                else:
-                    target = moon
-                date = calc_moon_crossing(target, start)
-            self.make_chart(chart, date, sol, cclass, False)
-        for i in range(0, 366, 26):
-            for sol in solunars:
-                sl = sol.lower()
-                if 'solar' in sl:
-                    cclass = 'SR'
-                    if 'demi' in sl:
-                        target = (sun + 180) % 360
-                    elif 'first' in sl:
-                        target = (sun + 90) % 360
-                    elif 'last' in sl:
-                        target = (sun + 270) % 360
-                    else:
-                        target = sun
-                    date = calc_sun_crossing(target, start)
-                elif 'lunar' in sl:
-                    cclass = 'LR'
-                    if 'demi' in sl:
-                        target = (moon + 180) % 360
-                    elif 'first' in sl:
-                        target = (moon + 90) % 360
-                    elif 'last' in sl:
-                        target = (moon + 270) % 360
-                    else:
-                        target = moon
-                    date = calc_moon_crossing(target, start + i)
-                    if date > start + 366:
-                        continue
-            self.make_chart(chart, date, sol, cclass, False)
-        self.status.text = 'Charts complete.'
 
-    def asearch(self, chart, solunars):
-        found = False
-        start = julday(
-            chart['year'],
-            chart['month'],
-            chart['day'],
-            chart['time'],
-            chart['style'],
+        (p_year, p_month, p_day, p_time) = swe.revjul(
+            progressed_jd, params['style']
         )
-        sun = chart['base_chart']['Sun'][0]
-        moon = chart['base_chart']['Moon'][0]
-        srs = []
-        lrs = []
-        for sol in solunars:
-            sl = sol.lower()
-            if 'solar' in sl:
-                srs.append(sol)
-            if 'lunar' in sl:
-                lrs.append(sol)
-        cclass = 'SR'
-        if srs:
-            cclass = 'SR'
-            date = calc_sun_crossing(sun, start - 184)
-            if date > start:
-                if date - start <= 15 and srs[0] == 'Solar Return':
-                    self.make_chart(chart, date, srs[0], cclass)
-                date = calc_sun_crossing(sun, start - 367)
-            if srs[0] == 'Solar Return':
-                self.make_chart(chart, date, srs[0], cclass)
-                found = True
-                srs = srs[1:]
-            dstart = date
-        if srs:
-            target = (sun + 180) % 360
-            date = calc_sun_crossing(target, dstart)
-            if date > start:
-                if date - start <= 15 and srs[0] == 'Demi-Solar Return':
-                    self.make_chart(chart, date, srs[0], cclass)
-                    found = True
-                qstart = dstart
-            else:
-                if srs[0] == 'Demi-Solar Return':
-                    self.make_chart(chart, date, srs[0], cclass)
-                    found = True
-                qstart = date
-            if srs[0] == 'Demi-Solar Return':
-                srs = srs[1:]
-        if srs:
-            if qstart == dstart:
-                target = (sun + 90) % 360
-                chtype = 'First Quarti-Solar Return'
-            else:
-                target = (sun + 270) % 360
-                chtype = 'Last Quarti-Solar Return'
-            date = calc_sun_crossing(target, qstart)
-            if date - start <= 15:
-                self.make_chart(chart, date, chtype, cclass)
-        if lrs:
-            cclass = 'LR'
-            date = calc_moon_crossing(moon, start - 15)
-            if date > start:
-                if date - start <= 1.25 and lrs[0] == 'Lunar Return':
-                    self.make_chart(chart, date, lrs[0], cclass)
-                date = calc_moon_crossing(moon, start - 29)
-            if lrs[0] == 'Lunar Return':
-                self.make_chart(chart, date, lrs[0], cclass)
-                found = True
-                lrs = lrs[1:]
-            dstart = date
-        if lrs:
-            target = (moon + 180) % 360
-            date = calc_moon_crossing(target, dstart)
-            if date > start:
-                if date - start <= 1.25 and lrs[0] == 'Demi-Lunar Return':
-                    self.make_chart(chart, date, lrs[0], cclass)
-                    found = True
-                qstart = dstart
-            else:
-                if lrs[0] == 'Demi-Lunar Return':
-                    self.make_chart(chart, date, lrs[0], cclass)
-                    found = True
-                qstart = date
-            if lrs[0] == 'Demi-Lunar Return':
-                lrs = lrs[1:]
-        if lrs:
-            if qstart == dstart:
-                target = (moon + 90) % 360
-                chtype = 'First Quarti-Lunar Return'
-            else:
-                target = (moon + 270) % 360
-                chtype = 'Last Quarti-Lunar Return'
-            date = calc_moon_crossing(target, qstart)
-            if date - start <= 1.25:
-                self.make_chart(chart, date, chtype, cclass)
-                found = True
-        if not found:
-            self.status.error('No charts found.')
 
-    def make_chart(self, chart, date, chtype, cclass, show=True):
-        cchart = deepcopy(chart)
+        p_hour = int(p_time)
+        p_min = int((p_time - (int(p_time))) * 60)
+        p_sec = int(
+            (
+                ((p_time - (int(p_time))) * 60)
+                - int((p_time - (int(p_time))) * 60)
+            )
+            * 60
+        )
+
+        print(
+            f'Derived progression date: {p_hour}:{p_min}:{p_sec} - {p_month} {p_day} {p_year}'
+        )
+
+        params['name'] = params['base_chart']['name']
+
+        params['progressed_chart'] = {
+            'year': p_year,
+            'month': p_month,
+            'day': p_day,
+            'time': p_time,
+            'zone': 'UT',
+            'correction': 0,
+            'type': ChartType.SIDEREAL_NATAL_QUOTIDIAN.value,
+            'location': params['location'],
+            'longitude': params['longitude'],
+            'latitude': params['latitude'],
+            'name': params['base_chart']['name'],
+        }
+
+        self.make_chart(
+            params, progressed_jd, ChartType.SIDEREAL_NATAL_QUOTIDIAN, 'Q'
+        )
+
+    def make_chart(self, params, date, chtype, cclass, show=True):
+        cchart = deepcopy(params)
         (y, m, d, t) = revjul(date, cchart['style'])
         cchart['year'] = y
         cchart['month'] = m
@@ -903,21 +676,20 @@ class Solunars(Frame):
         cchart['time'] = t
         cchart['name'] = (
             f"{cchart['base_chart']['name']}"
-            if chart.get('base_chart', None)
+            if params.get('base_chart', None)
             else ''
         )
         cchart['type'] = chtype
         cchart['class'] = cclass
         cchart['correction'] = 0
         cchart['zone'] = 'UT'
+
+        chart_class = assemble_charts(params, self.istemp)
+
         if show:
-            chart_class = Chart(cchart, self.istemp.value)
-            if hasattr(chart_class, 'report'):
-                chart_class.report.show()
-        else:
-            chart_class = Chart(cchart, self.istemp.value)
-            if hasattr(chart_class, 'report'):
-                chart_class.report
+            chart_class.show()
+
+        return chart_class
 
     def save_location(self, chart):
         try:

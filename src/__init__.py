@@ -1,4 +1,4 @@
-# Copyright 2025 James Eshelman, Mike Nelson, Mike Verducci
+# Copyright 2026 James Eshelman, Mike Nelson, Mike Verducci
 
 # This file is part of Time Matters: A Sidereal Astrology Toolkit (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation,
@@ -10,12 +10,14 @@
 import json
 import os
 from datetime import datetime as dt
+import shutil
 
 from src.constants import PLATFORM
 from src.defaults.option_defaults import (
     COSMOBIOLOGY,
     INGRESS_DEFAULT,
     NATAL_DEFAULT,
+    PROGRESSED_DEFAULT,
     RETURN_DEFAULT,
     STUDENT_NATAL,
 )
@@ -23,6 +25,7 @@ from src.utils.os_utils import (
     app_path,
     create_directory,
     migrate_from_file,
+    write_to_file_if_not_exists,
 )
 
 STILL_STARTING_UP = True
@@ -32,6 +35,8 @@ def log_startup_error(e):
     contents = ''
     with open(ERROR_FILE, 'r') as file:
         contents = file.read()
+        if len(contents) > 30000:
+            contents = contents[:30000]
     with open(ERROR_FILE, 'w') as file:
         timestamped_error = (
             f'----------{dt.now().strftime("%Y-%m-%d %H:%M:%S")}----------\n'
@@ -103,6 +108,8 @@ if PLATFORM == 'Win32GUI':
     OPTION_PATH = os.path.join(docpath, 'tmsa', 'options')
     os.makedirs(OPTION_PATH, exist_ok=True)
 
+    PROGRAM_OPTION_PATH = os.path.join(docpath, 'tmsa', 'program_options.opt')
+
 
 elif PLATFORM in ['linux', 'darwin']:
     CHART_PATH = os.path.join(primary_directory, 'charts')
@@ -119,6 +126,13 @@ elif PLATFORM in ['linux', 'darwin']:
 
     OPTION_PATH = os.path.join(primary_directory, 'options')
     create_directory(OPTION_PATH)
+
+    PROGRAM_OPTION_PATH = os.path.join(
+        primary_directory, 'program_options.opt'
+    )
+
+if not os.path.exists(PROGRAM_OPTION_PATH):
+    write_to_file_if_not_exists(PROGRAM_OPTION_PATH, json.dumps({}))
 
 # Ensure all option file defaults exist.
 # This is the same for every OS.
@@ -151,6 +165,12 @@ migrate_from_file(
     os.path.join(OPTION_PATH, 'Student_Natal.opt'),
     os.path.join(OPTION_PATH, 'Student_Natal.opt'),
     fallback=json.dumps(STUDENT_NATAL),
+)
+
+migrate_from_file(
+    'aaaaaaaaaaaaaaaaaaa',
+    os.path.join(OPTION_PATH, 'Progressed_Default.opt'),
+    fallback=json.dumps(PROGRESSED_DEFAULT),
 )
 
 STUDENT_FILE = os.path.join(OPTION_PATH, 'student.json')
@@ -216,32 +236,6 @@ if default:
 
 if colors is None or colors == [] or colors == {}:
     colors = default_colors
-
-DEV_MODE_FILE = os.path.join(OPTION_PATH, 'dev_mode.json')
-
-DEV_MODE = False
-try:
-    dev_mode_error = False
-    if os.path.exists(DEV_MODE_FILE):
-        with open(DEV_MODE_FILE, 'r') as datafile:
-            try:
-                dev_opts = json.load(datafile)
-                DEV_MODE = dev_opts.get('dev_mode', False)
-            except Exception as e:
-                e.args = (
-                    e.args[0]
-                    + ' - unable to load dev mode file; rewriting with default data.',
-                ) + e.args[1:]
-                log_startup_error(e)
-                DEV_MODE = False
-                dev_mode_error = True
-
-    if not os.path.exists(DEV_MODE_FILE) or dev_mode_error:
-        with open(DEV_MODE_FILE, 'w') as datafile:
-            json.dump({'dev_mode': False}, datafile, indent=4)
-except Exception as e:
-    e.args = (e.args[0] + ' - unable to open dev mode file.',) + e.args[1:]
-    log_startup_error(e)
 
 BG_COLOR = colors.get('bg_color', default_colors['bg_color'])
 BTN_COLOR = colors.get('button_color', default_colors['button_color'])

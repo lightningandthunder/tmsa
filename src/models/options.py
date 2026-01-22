@@ -1,8 +1,10 @@
 import json
 from dataclasses import dataclass
 from enum import Enum
+import logging
 
 from src import log_startup_error
+from src.defaults.option_defaults import NATAL_DEFAULT
 
 
 @dataclass
@@ -73,12 +75,17 @@ class Options:
     partile_nf: bool = False
     angularity: AngularitySubOptions = None
     ecliptic_aspects: dict[str, list[float]] = {}
+    allowed_ecliptic: dict[str, bool] = {}
+    allowed_mundane: dict[str, bool] = {}
     mundane_aspects: dict[str, list[float]] = {}
     pvp_aspects: dict[str, list[float]] = {}
+    paran_aspects: dict[str, list[float]] = {}
     midpoints: dict[str, list[float]] = {}
-    enable_natal_midpoints: bool = False
     include_fg_under_aspects: bool = False
-    use_raw_angularity_score: bool = False
+    enable_novien: bool = False
+    log_level: int = 50
+    log_to_console: bool = False
+    log_to_file: bool = False
 
     @staticmethod
     def from_file(file_path: str):
@@ -105,9 +112,9 @@ class Options:
         self.include_fg_under_aspects = (
             True if data.get('include_fg_under_aspects') else False
         )
-        self.use_raw_angularity_score = (
-            True if data.get('use_raw_angularity_score') else False
-        )
+
+        self.enable_novien = True if data.get('enable_novien') else False
+
         if 'angularity' in data:
             self.angularity = AngularitySubOptions(
                 AngularityModel.from_number(data['angularity']['model']),
@@ -115,14 +122,54 @@ class Options:
                 data['angularity']['major_angles'],
                 data['angularity']['minor_angles'],
             )
-        if 'ecliptic_aspects' in data:
-            self.ecliptic_aspects = data['ecliptic_aspects']
-        if 'mundane_aspects' in data:
-            self.mundane_aspects = data['mundane_aspects']
-        if 'pvp_aspects' in data:
-            self.pvp_aspects = data['pvp_aspects']
-        if 'midpoints' in data:
-            self.midpoints = data['midpoints']
+
+        for key in [
+            'ecliptic_aspects',
+            'allowed_ecliptic',
+            'mundane_aspects',
+            'allowed_mundane',
+            'pvp_aspects',
+            'paran_aspects',
+            'midpoints',
+            'log_to_console',
+            'log_to_file',
+        ]:
+            if key in data:
+                setattr(self, key, data[key])
+
+        if 'log_level' in data:
+            try:
+                self.log_level = int(data['log_level'])
+            except:
+                self.log_level = logging.ERROR
+
+    def to_file(self, file_path: str):
+        with open(file_path, 'w') as file:
+            json.dump(self.__dict__, file, indent=4)
+
+    def __str__(self):
+        return str(self.__dict__)
+
+
+class ProgramOptions:
+    quarti_returns_enabled: bool = True
+
+    def __init__(self, data: dict[str, any]):
+        self.quarti_returns_enabled = data.get('quarti_returns_enabled', True)
+
+    @staticmethod
+    def from_default():
+        return ProgramOptions({})
+
+    @staticmethod
+    def from_file(file_path: str):
+        with open(file_path, 'r') as file:
+            try:
+                data = json.load(file)
+                return ProgramOptions(data)
+            except json.JSONDecodeError:
+                log_startup_error(f'Error reading {file_path}')
+                return ProgramOptions.from_default()
 
     def to_file(self, file_path: str):
         with open(file_path, 'w') as file:

@@ -1,4 +1,4 @@
-# Copyright 2025 James Eshelman, Mike Nelson, Mike Verducci
+# Copyright 2026 James Eshelman, Mike Nelson, Mike Verducci
 
 # This file is part of Time Matters: A Sidereal Astrology Toolkit (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation,
@@ -21,9 +21,9 @@ from geopy import Nominatim
 from timezonefinder import TimezoneFinder
 
 from src import *
-from src.constants import DQ, DS, MONTHS, VERSION
-from src.models.charts import ChartObject
-from src.user_interfaces.chart import Chart
+from src.constants import DS, MONTHS, VERSION
+from src.swe import calc_lat_to_lmt, calc_lmt_to_lat, julday
+from src.user_interfaces.chart_assembler import assemble_charts
 from src.user_interfaces.locations import Locations
 from src.user_interfaces.widgets import *
 from src.utils.format_utils import normalize_text, version_str_to_tuple
@@ -224,9 +224,6 @@ class NewChart(Frame):
         if not self.bce.checked and y < 1:
             self.datey.text = -y + 1
             self.bce.checked = True
-        if y < 1 or y > 3000:
-            self.status.error('Year must be between 1 and 3000.', self.datey)
-            return False
         if self.bce.checked:
             y = -y + 1
         if m < 1 or m > 12:
@@ -753,10 +750,6 @@ class NewChart(Frame):
             y = -y + 1
             self.datey.text = y
             self.bce.checked = True
-        if y < 1 or y > 3000:
-            return self.status.error(
-                'Year must be between 1 and 3000.', self.datey
-            )
         if self.bce.checked:
             y = -y + 1
         chart['year'] = y
@@ -857,7 +850,7 @@ class NewChart(Frame):
         self.save_location(chart)
         zone = normalize_text(self.tz.text) or 'UT'
         chart['zone'] = zone
-        if zone.upper() in ['LMT', 'LAT']:
+        if zone.upper() == 'LMT':
             value = chart['longitude'] / 15
             if value < 0:
                 value = -value
@@ -878,9 +871,10 @@ class NewChart(Frame):
             self.tzch.text = hour
             self.tzcm.text = min
             self.tzcs.text = sec
+
         try:
             tzcorr = (
-                int(self.tzch.text)
+                int(self.tzch.text or '0')
                 + int(self.tzcm.text or '0') / 60
                 + int(self.tzcs.text or '0') / 3600
             )
@@ -894,6 +888,7 @@ class NewChart(Frame):
             )
         if self.tzcdir.value == 0:
             tzcorr = -tzcorr
+
         chart['correction'] = tzcorr
         chart['notes'] = normalize_text(self.notes.text, True)
         chart['options'] = self.options.text.strip() or 'Natal Default'
@@ -901,187 +896,8 @@ class NewChart(Frame):
             chart['options'] = 'Natal Default'
 
         chart['version'] = version_str_to_tuple(VERSION)
-        Chart(chart, self.istemp.value).report.show()
-
-    def calculate_refactored(self, chart: ChartObject):
-        self.status.text = ''
-        self.findbtn.disabled = False
-        fn = normalize_text(self.fne.text)
-        ln = normalize_text(self.lne.text)
-        if fn and ln:
-            name = ln + ', ' + fn
-        else:
-            name = fn or ln
-        if not name:
-            return self.status.error('Name must be specified.', self.fne)
-        if self.suffix:
-            name += f';{self.suffix}'
-        chart.name = name
-        ctype = normalize_text(self.ctype.text)
-        if not ctype:
-            return self.status.error(
-                'Chart type must be specified.', self.ctype
-            )
-        chart.type = ctype
-        # TODO
-        chart['class'] = 'N'
-        try:
-            y = int(self.datey.text)
-            m = int(self.datem.text)
-            d = int(self.dated.text)
-        except Exception:
-            ctl = self.datem if DATE_FMT == 'M D Y' else self.dated
-            return self.status.error('Date must be numeric.', ctl)
-        if not self.bce.checked and y < 1:
-            y = -y + 1
-            self.datey.text = y
-            self.bce.checked = True
-        if y < 1 or y > 3000:
-            return self.status.error(
-                'Year must be between 1 and 3000.', self.datey
-            )
-        if self.bce.checked:
-            y = -y + 1
-        chart.year = y
-        if m < 1 or m > 12:
-            return self.status.error(
-                'Month must be between 1 and 12.', self.datem
-            )
-        chart.month = m
-        if d < 1 or d > 31:
-            return self.status.error(
-                'Day must be between 1 and 31.', self.dated
-            )
-        chart.day = d
-        z = str(y) if y > 0 else str(-y + 1) + ' BCE'
-        if self.old.checked and y > 1582:
-            if not tkmessagebox.askyesno(
-                'Are you sure?',
-                f'Is {d} {MONTHS[m -1]} {z} old style (Julian)?',
-            ):
-                return
-        elif not self.old.checked and y <= 1582:
-            if not tkmessagebox.askyesno(
-                'Are you sure?',
-                f'Is {d} {MONTHS[m -1]} {z} new style (Gregorian)?',
-            ):
-                return
-        chart.style = 0 if self.old.checked else 1
-        try:
-            time = (
-                int(self.timeh.text)
-                + int(self.timem.text) / 60
-                + int(self.times.text or '0') / 3600
-            )
-        except Exception:
-            return self.status.error('Time must be numeric.', self.timeh)
-        if TIME_FMT == '24 Hour':
-            if time < 0 or time >= 24:
-                return self.status.error(
-                    'Time must be between 0:0:0 and 23:59:59', self.timeh
-                )
-        else:
-            if time == 12:
-                if self.tmfmt.value:
-                    message = 'The chosen time 12:00:00 PM means noon.\n'
-                    message += (
-                        'For midnight at the beginning of the day, chose AM.\n'
-                    )
-                    message += 'For midnight at the end of the day, choose AM and add a day to the date.'
-                else:
-                    message = 'The chosen time 12:00:00 AM means midnight at the beginning of the day.\n'
-                    message += 'For noon, chose PM\n'
-                    message += 'For midnight at the end of the day, choose AM and add a day to the date.'
-                if not tkmessagebox.askyesno('Is this correct?', message):
-                    return
-            if time < 0 or time >= 13:
-                return self.status.error(
-                    'Time must be between 0:0:0 and 12:59:59', self.timeh
-                )
-            if time >= 12:
-                time -= 12
-            if self.tmfmt.value == 1:
-                time += 12
-        chart.time = time
-        chart.location = normalize_text(self.loc.text)
-        if not chart.location:
-            return self.status.error('Location must be specified.', self.loc)
-        try:
-            lat = (
-                int(self.latd.text)
-                + int(self.latm.text) / 60
-                + int(self.lats.text or '0') / 3600
-            )
-        except Exception:
-            return self.status.error('Latitude must be numeric.', self.latd)
-        if lat < 0 or lat > 89.99:
-            return self.status.error(
-                f'Latitude must be between 0{DS} and 89{DS}59\'59".',
-                self.latd,
-            )
-        if self.latdir.value == 1:
-            lat = -lat
-        chart.geo_latitude = lat
-        try:
-            long = (
-                int(self.longd.text)
-                + int(self.longm.text) / 60
-                + int(self.longs.text or '0') / 3600
-            )
-        except Exception:
-            return self.status.error('Longitude must be numeric.', self.longd)
-        if long < 0 or long > 180:
-            return self.status.error(
-                f'Longitude must be between 0{DS} and 180{DS}.'
-            )
-        if self.longdir.value == 1:
-            long = -long
-        chart.geo_longitude = long
-        self.save_location(chart)
-        zone = normalize_text(self.tz.text) or 'UT'
-        chart.zone = zone
-        if zone.upper() in ['LMT', 'LAT']:
-            value = chart['longitude'] / 15
-            if value < 0:
-                value = -value
-                self.tzcdir.value = 1
-            else:
-                self.tzcdir.value = 0
-            hour = int(value)
-            value = (value - hour) * 60
-            min = int(value)
-            value = (value - min) * 60
-            sec = round(value)
-            if sec == 60:
-                sec = 0
-                min += 1
-            if min == 60:
-                min = 0
-                hour += 1
-            self.tzch.text = hour
-            self.tzcm.text = min
-            self.tzcs.text = sec
-        try:
-            tzcorr = (
-                int(self.tzch.text)
-                + int(self.tzcm.text or '0') / 60
-                + int(self.tzcs.text or '0') / 3600
-            )
-        except Exception:
-            return self.status.error(
-                'Time zone correction must be numeric.', self.tzch
-            )
-        if tzcorr < 0 or tzcorr >= 24:
-            return self.status.error(
-                'Time zone correction be between 0:0:0 and 23:59:59', self.tzch
-            )
-        if self.tzcdir.value == 0:
-            tzcorr = -tzcorr
-        chart.correction = tzcorr
-        chart.notes = normalize_text(self.notes.text, True)
-        # TODO - this is almost certainly wrong
-        chart.options = self.options.text.strip() or 'Natal Default'
-        Chart(chart, self.istemp.value).report.show()
+        chartObject = assemble_charts(chart, self.istemp.value)
+        chartObject.show()
 
     def save_location(self, chart):
         try:

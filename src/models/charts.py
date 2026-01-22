@@ -2,7 +2,9 @@ import itertools
 import json
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Iterator, TypeVar, TypedDict
+from typing import Iterator, TypedDict, TypeVar
+
+import pydash
 
 from src import log_startup_error, swe
 from src.constants import PLANETS, VERSION
@@ -15,17 +17,14 @@ from src.models.angles import (
 )
 from src.models.options import NodeTypes, Options
 from src.utils import chart_utils
-from src.utils.chart_utils import (
-    SIGNS_SHORT,
-    convert_house_to_pvl,
-    fmt_dm,
-)
+from src.utils.chart_utils import SIGNS_SHORT, convert_house_to_pvl, fmt_dm
 from src.utils.format_utils import to360, version_str_to_tuple
 
 T = TypeVar('T', bound='ChartObject')
 
 
 class ChartWheelRole(Enum):
+    NOVIEN = ''
     NATAL = ''
     TRANSIT = 't'
     PROGRESSED = 'p'
@@ -99,7 +98,7 @@ class __PointData:
         return []
 
     @property
-    def is_on_vx_or_av(self):
+    def is_on_prime_vertical(self):
         return False
 
     @property
@@ -237,8 +236,16 @@ class PlanetData(__PointData):
         )
 
     @property
-    def is_on_vx_or_av(self):
+    def is_on_prime_vertical(self):
         return self.prime_vertical_angle.value in self.__prime_vertical_angles
+
+    @property
+    def is_on_meridian(self):
+        return AngleAxes.MERIDIAN.value in self.angle_axes_contacted
+
+    @property
+    def is_on_horizon(self):
+        return AngleAxes.HORIZON.value in self.angle_axes_contacted
 
     @property
     def is_on_major_angle(self):
@@ -375,11 +382,27 @@ class ChartType(Enum):
     KINETIC_LUNAR_RETURN_SINGLE = 'Kinetic Lunar Return Single Wheel'
     DEMI_KINETIC_LUNAR_RETURN = 'Kinetic Demi-Lunar Return'
     DEMI_KINETIC_LUNAR_RETURN_SINGLE = 'Kinetic Demi-Lunar Return Single Wheel'
+    FIRST_QUARTI_KINETIC_LUNAR_RETURN = 'Kinetic First Quarti-Lunar Return'
+    FIRST_QUARTI_KINETIC_LUNAR_RETURN_SINGLE = (
+        'Kinetic First Quarti-Lunar Return Single Wheel'
+    )
+    LAST_QUARTI_KINETIC_LUNAR_RETURN = 'Kinetic Last Quarti-Lunar Return'
+    LAST_QUARTI_KINETIC_LUNAR_RETURN_SINGLE = (
+        'Kinetic Last Quarti-Lunar Return Single Wheel'
+    )
 
     KINETIC_SOLAR_RETURN = 'Kinetic Solar Return'
     KINETIC_SOLAR_RETURN_SINGLE = 'Kinetic Solar Return Single Wheel'
     DEMI_KINETIC_SOLAR_RETURN = 'Kinetic Demi-Solar Return'
     DEMI_KINETIC_SOLAR_RETURN_SINGLE = 'Kinetic Demi-Solar Return Single Wheel'
+    FIRST_QUARTI_KINETIC_SOLAR_RETURN = 'Kinetic First Quarti-Solar Return'
+    FIRST_QUARTI_KINETIC_SOLAR_RETURN_SINGLE = (
+        'Kinetic First Quarti-Solar Return Single Wheel'
+    )
+    LAST_QUARTI_KINETIC_SOLAR_RETURN = 'Kinetic Last Quarti-Solar Return'
+    LAST_QUARTI_KINETIC_SOLAR_RETURN_SINGLE = (
+        'Kinetic Last Quarti-Solar Return Single Wheel'
+    )
 
     NOVIENIC_SOLAR_RETURN = 'Novienic Solar Return'
     NOVIENIC_SOLAR_RETURN_SINGLE = 'Novienic Solar Return Single Wheel'
@@ -395,22 +418,75 @@ class ChartType(Enum):
     ANLUNAR_RETURN_SINGLE = 'Anlunar Return Single Wheel'
     DEMI_ANLUNAR_RETURN = 'Demi-Anlunar Return'
     DEMI_ANLUNAR_RETURN_SINGLE = 'Demi-Anlunar Return Single Wheel'
+    FIRST_QUARTI_ANLUNAR_RETURN = 'First Quarti-Anlunar Return'
+    FIRST_QUARTI_ANLUNAR_RETURN_SINGLE = (
+        'First Quarti-Anlunar Return Single Wheel'
+    )
+    LAST_QUARTI_ANLUNAR_RETURN = 'Last Quarti-Anlunar Return'
+    LAST_QUARTI_ANLUNAR_RETURN_SINGLE = (
+        'Last Quarti-Anlunar Return Single Wheel'
+    )
 
-    KINETIC_ANULAR_RETURN = 'Kinetic Anlunar Return'
+    KINETIC_ANLUNAR_RETURN = 'Kinetic Anlunar Return'
     KINETIC_ANLUNAR_RETURN_SINGLE = 'Kinetic Anlunar Return Single Wheel'
     KINETIC_DEMI_ANLUNAR_RETURN = 'Kinetic Demi-Anlunar Return'
     KINETIC_DEMI_ANLUNAR_RETURN_SINGLE = (
         'Kinetic Demi-Anlunar Return Single Wheel'
+    )
+    FIRST_QUARTI_KINETIC_ANLUNAR_RETURN = 'Kinetic First Quarti-Anlunar Return'
+    FIRST_QUARTI_KINETIC_ANLUNAR_RETURN_SINGLE = (
+        'Kinetic First Quarti-Anlunar Return Single Wheel'
+    )
+    LAST_QUARTI_KINETIC_ANLUNAR_RETURN = 'Kinetic Last Quarti-Anlunar Return'
+    LAST_QUARTI_KINETIC_ANLUNAR_RETURN_SINGLE = (
+        'Kinetic Last Quarti-Anlunar Return Single Wheel'
     )
 
     SOLILUNAR_RETURN = 'Solilunar Return'
     SOLILUNAR_RETURN_SINGLE = 'Solilunar Return Single Wheel'
     DEMI_SOLILUNAR_RETURN = 'Demi-Solilunar Return'
     DEMI_SOLILUNAR_RETURN_SINGLE = 'Demi-Solilunar Return Single Wheel'
+    FIRST_QUARTI_SOLILUNAR_RETURN = 'First Quarti-Solilunar Return'
+    FIRST_QUARTI_SOLILUNAR_RETURN_SINGLE = (
+        'First Quarti-Solilunar Return Single Wheel'
+    )
+    LAST_QUARTI_SOLILUNAR_RETURN = 'Last Quarti-Solilunar Return'
+    LAST_QUARTI_SOLILUNAR_RETURN_SINGLE = (
+        'Last Quarti-Solilunar Return Single Wheel'
+    )
+
     LUNISOLAR_RETURN = 'Lunisolar Return'
     LUNISOLAR_RETURN_SINGLE = 'Lunisolar Return Single Wheel'
     DEMI_LUNISOLAR_RETURN = 'Demi-Lunisolar Return'
     DEMI_LUNISOLAR_RETURN_SINGLE = 'Demi-Lunisolar Return Single Wheel'
+    FIRST_QUARTI_LUNISOLAR_RETURN = 'First Quarti-Lunisolar Return'
+    FIRST_QUARTI_LUNISOLAR_RETURN_SINGLE = (
+        'First Quarti-Lunisolar Return Single Wheel'
+    )
+    LAST_QUARTI_LUNISOLAR_RETURN = 'Last Quarti-Lunisolar Return'
+    LAST_QUARTI_LUNISOLAR_RETURN_SINGLE = (
+        'Last Quarti-Lunisolar Return Single Wheel'
+    )
+
+    LUNAR_SYNODIC_RETURN = 'Lunar Synodic Return'
+    LUNAR_SYNODIC_RETURN_SINGLE = 'Lunar Synodic Return Single Wheel'
+    DEMI_LUNAR_SYNODIC_RETURN = 'Demi-Lunar Synodic Return'
+    DEMI_LUNAR_SYNODIC_RETURN_SINGLE = 'Demi-Lunar Synodic Return Single Wheel'
+    FIRST_QUARTI_LUNAR_SYNODIC_RETURN = 'First Quarti-Lunar Synodic Return'
+    FIRST_QUARTI_LUNAR_SYNODIC_RETURN_SINGLE = (
+        'First Quarti-Lunar Synodic Return Single Wheel'
+    )
+    LAST_QUARTI_LUNAR_SYNODIC_RETURN = 'Last Quarti-Lunar Synodic Return'
+    LAST_QUARTI_LUNAR_SYNODIC_RETURN_SINGLE = (
+        'Last Quarti-Lunar Synodic Return Single Wheel'
+    )
+
+    YOGA_RETURN = 'Sidereal Yoga Return (SYR)'
+
+    SIDEREAL_NATAL_QUOTIDIAN = 'Sidereal Natal Quotidian'
+    SOLAR_QUOTIDIAN = 'Solar Quotidian'
+    PROGRESSED_QSSR = 'Progressed QSSR'
+    PSSR = 'PSSR'
 
     CAP_SOLAR = 'Capsolar'
     ARI_SOLAR = 'Arisolar'
@@ -461,144 +537,113 @@ class ChartObject:
     angle_data: dict[str, AngleData]
     vertex: list[float]
     eastpoint: list[float]
-    role: ChartWheelRole
+    role: ChartWheelRole = ChartWheelRole.NATAL
     notes: str | None = None
     style: int = 1
     version: tuple[int | str] = (0, 0, 0)
     sun_sign: str = ''
     moon_sign: str = ''
+    chart_class: str = ''
+    options_file: str = ''
 
     def __init__(self, data: dict):
+        # This should be the only information actually stored in data files
         self.type = ChartType(data['type'])
         self.name = data.get('name', None)
         self.year = data['year']
         self.month = data['month']
         self.day = data['day']
         self.location = data['location']
+        self.geo_longitude = float(data['longitude'])
+        self.geo_latitude = float(data['latitude'])
         self.time = data['time']
-        self.zone = data['zone']
-        self.correction = data['correction']
+        self.zone = data.get('zone', '')
+        self.correction = data.get('correction', 0)
+        self.chart_class = data.get('class', '')
+        self.options_file = data.get('options', '')
+        self.style = data.get('style', 1)
+        self.notes = data.get('notes', None)
 
-        planet_data = data['Sun'][0]
-        planet = PlanetData()
-
-        self.sun_sign = SIGNS_SHORT[int(data['Sun'][0] // 30)]
-        self.moon_sign = SIGNS_SHORT[int(data['Moon'][0] // 30)]
-        if 'julian_day_utc' in data:
-            self.julian_day_utc = data['julian_day_utc']
-        else:
-            self.julian_day_utc = swe.julday(
-                data['year'],
-                data['month'],
-                data['day'],
-                data['time'] + data['correction'],
-                data.get('style', 1),
-            )
-        if data['zone'] == 'LAT':
-            self.julian_day_utc = swe.calc_lat_to_lmt(
-                self.julian_day_utc, data['longitude']
-            )
-        self.ayanamsa = data.get('ayan', swe.calc_ayan(self.julian_day_utc))
-        self.obliquity = data.get(
-            'oe', swe.calc_obliquity(self.julian_day_utc)
+        self.version = (
+            version_str_to_tuple(VERSION)
+            if 'version' not in data
+            else data['version']
         )
-        self.geo_longitude = data['longitude']
-        self.geo_latitude = data['latitude']
 
+        if 'zone' in data and data['zone'].upper() in ['LAT', 'LMT']:
+            # I don't know why this needs to be flipped with the -1.
+            # When we conditionally flipped it only when negative,
+            # it was correct for west (negative) longitudes
+            # and incorrect for east (positive) ones.
+            value = (self.geo_longitude / 15) * -1
+
+            hour = int(value)
+            value = (value - hour) * 60
+            minute = int(value)
+            value = (value - minute) * 60
+            sec = round(value)
+            if sec == 60:
+                sec = 0
+                minute += 1
+            if minute == 60:
+                minute = 0
+                hour += 1
+
+            # I think this is LMT timezone correction,
+            # not LAT...
+            self.correction = (
+                int(hour or '0')
+                + int(minute or '0') / 60
+                + int(sec or '0') / 3600
+            )
+
+        self.julian_day_utc = swe.julday(
+            self.year,
+            self.month,
+            self.day,
+            self.time + self.correction,
+            self.style,
+        )
+
+        if 'zone' in data and data['zone'].upper() == 'LAT':
+            # ...which is why we convert LAT to LMT
+            self.julian_day_utc = swe.calc_lat_to_lmt(
+                self.julian_day_utc, self.geo_longitude
+            )
+
+        self.ayanamsa = swe.calc_ayan(self.julian_day_utc)
+        self.obliquity = swe.calc_obliquity(self.julian_day_utc)
+
+        # Calculate cusps & angles
         (cusps, angles) = swe.calc_cusps(
             self.julian_day_utc, self.geo_latitude, self.geo_longitude
         )
-        if data.get('ramc', None):
-            self.ramc = data['ramc']
-        else:
-            self.ramc = angles[0]
-
-        if data.get('lst', None):
-            self.lst = data['lst']
-        else:
-            self.lst = self.ramc / 15
-
-        if data.get('Vertex') and len(data.get('Vertex')) > 2:
-            self.vertex = data['Vertex']
-        else:
-            self.vertex = [
-                angles[1],
-                swe.calc_house_pos(
-                    self.ramc,
-                    self.geo_latitude,
-                    self.obliquity,
-                    to360(angles[1] + self.ayanamsa),
-                    0,
-                ),
-            ]
-
-        if data.get('Eastpoint'):
-            self.eastpoint = data['Eastpoint']
-        else:
-            self.eastpoint = [
-                angles[2],
-                swe.calc_house_pos(
-                    self.ramc,
-                    self.geo_latitude,
-                    self.obliquity,
-                    to360(angles[2] + self.ayanamsa),
-                    0,
-                ),
-            ]
-
-        self.angles = angles
-        self.cusps = cusps
-
-        if data.get('planets'):
-            self.planets = {
-                planet: PlanetData(**data['planets'][planet])
-                for planet in data['planets']
-            }
-
-        else:
-            self.planets = {}
-
-            for long_name in PLANETS:
-                if long_name not in data:
-                    continue
-                planet_data = data[long_name]
-                planet = PlanetData()
-
-                planet.name = long_name
-                planet.short_name = PLANETS[long_name]['short_name']
-                planet.number = PLANETS[long_name]['number']
-
-                planet.longitude = planet_data[0]
-                planet.latitude = planet_data[1]
-                planet.speed = planet_data[2]
-                planet.right_ascension = planet_data[3]
-                planet.declination = planet_data[4]
-                planet.azimuth = planet_data[5]
-                planet.altitude = planet_data[6]
-
-                planet.is_stationary = swe.is_planet_stationary(
-                    planet.name, self.julian_day_utc
-                )
-
-                if len(planet_data) >= 9:
-                    planet.meridian_longitude = planet_data[7]
-                    planet.house = planet_data[8]
-                    planet.prime_vertical_longitude = planet_data[8]
-                else:
-                    planet.house = planet_data[7]
-                    planet.prime_vertical_longitude = planet_data[7]
-                    planet.meridian_longitude = swe.calc_meridian_longitude(
-                        planet.azimuth, planet.altitude
-                    )
-
-                self.planets[long_name] = planet
-
+        self.ramc = angles[0]
+        self.lst = self.ramc / 15
         self.cusps = cusps
         self.angles = angles
 
-        self.notes = data.get('notes', None)
+        self.vertex = [
+            angles[1],
+            swe.calc_house_pos(
+                self.ramc,
+                self.geo_latitude,
+                self.obliquity,
+                to360(angles[1] + self.ayanamsa),
+                0,
+            ),
+        ]
 
-        self.version = data.get('version', (0, 0, 0))
+        self.eastpoint = [
+            angles[2],
+            swe.calc_house_pos(
+                self.ramc,
+                self.geo_latitude,
+                self.obliquity,
+                to360(angles[2] + self.ayanamsa),
+                0,
+            ),
+        ]
 
         # Populate angle_data
         # MC, AS, EP, VX
@@ -608,6 +653,13 @@ class ChartObject:
             self.ayanamsa,
             self.obliquity,
         )
+
+        mc_altitude = 90 - (self.geo_latitude - dec)
+        if mc_altitude > 90:
+            mc_altitude = 180 - mc_altitude
+        if mc_altitude < 0:
+            mc_altitude *= -1
+
         self.angle_data['Mc'] = AngleData(
             name='Midheaven',
             short_name='Mc',
@@ -616,7 +668,7 @@ class ChartObject:
             right_ascension=ramc,
             declination=dec,
             azimuth=180,
-            altitude=(90 - self.geo_latitude) + dec,
+            altitude=mc_altitude,
             meridian_longitude=None,
             prime_vertical_longitude=270,
         )
@@ -675,37 +727,81 @@ class ChartObject:
             prime_vertical_longitude=None,
         )
 
-        def __dict__(self):
-            return {
-                'name': self.name,
-                'year': self.year,
-                'month': self.month,
-                'day': self.day,
-                'location': self.location,
-                'time': self.time,
-                'zone': self.zone,
-                'correction': self.correction,
-                'type': self.type.value,
-                'julian_day_utc': self.julian_day_utc,
-                'ayanamsa': self.ayanamsa,
-                'obliquity': self.obliquity,
-                'geo_longitude': self.geo_longitude,
-                'geo_latitude': self.geo_latitude,
-                'lst': self.lst,
-                'ramc': self.ramc,
-                'planets': {
-                    planet: self.planets[planet].__dict__
-                    for planet in self.planets
-                },
-                'cusps': self.cusps,
-                'angles': self.angles,
-                'vertex': self.vertex,
-                'eastpoint': self.eastpoint,
-                'role': self.role.value,
-                'notes': self.notes,
-                'style': self.style,
-                'version': self.version,
-            }
+        # Calculate planet data
+        self.planets = {}
+
+        for [long_name, planet_definition] in PLANETS.items():
+            planet_index = planet_definition['number']
+            [
+                longitude,
+                latitude,
+                speed,
+                right_ascension,
+                declination,
+            ] = swe.calc_planet(self.julian_day_utc, planet_index)
+            [azimuth, altitude] = swe.calc_azimuth(
+                self.julian_day_utc,
+                self.geo_longitude,
+                self.geo_latitude,
+                to360(longitude + self.ayanamsa),
+                latitude,
+            )
+
+            house_position = swe.calc_house_pos(
+                self.ramc,
+                self.geo_latitude,
+                self.obliquity,
+                to360(longitude + self.ayanamsa),
+                latitude,
+            )
+            meridian_longitude = swe.calc_meridian_longitude(azimuth, altitude)
+
+            self.planets[long_name] = PlanetData(
+                name=long_name,
+                short_name=planet_definition['short_name'],
+                number=planet_definition['number'],
+                longitude=longitude,
+                latitude=latitude,
+                speed=speed,
+                right_ascension=right_ascension,
+                declination=declination,
+                azimuth=azimuth,
+                altitude=altitude,
+                meridian_longitude=meridian_longitude,
+                house=house_position,
+                prime_vertical_longitude=house_position,
+                is_stationary=swe.is_planet_stationary(
+                    long_name, self.julian_day_utc
+                ),
+            )
+
+        self.sun_sign = SIGNS_SHORT[int(self.planets['Sun'].longitude // 30)]
+        self.moon_sign = SIGNS_SHORT[int(self.planets['Moon'].longitude // 30)]
+
+    def to_dict(self):
+        options_file = self.options_file.replace('_', ' ')
+        if options_file.endswith('.opt'):
+            options_file = options_file[0:-4]
+
+        data = {
+            'name': self.name,
+            'type': self.type.value,
+            'class': self.chart_class,
+            'year': self.year,
+            'month': self.month,
+            'day': self.day,
+            'style': self.style,
+            'time': self.time,
+            'location': self.location,
+            'latitude': self.geo_latitude,
+            'longitude': self.geo_longitude,
+            'zone': self.zone,
+            'correction': self.correction,
+            'notes': self.notes,
+            'options': options_file,
+        }
+
+        return data
 
     def iterate_points(
         self, options: Options, include_angles: bool = False
@@ -754,70 +850,9 @@ class ChartObject:
             except json.JSONDecodeError:
                 log_startup_error(f'Error reading {file_path}')
 
-    # TODO - this doesn't work yet; it's missing a lot of stuff
-    @staticmethod
-    def from_calculation(params: ChartParams) -> 'ChartObject':
-        chart = ChartObject(params)
-        chart.version = (
-            version_str_to_tuple(VERSION)
-            if 'version' not in params
-            else params['version']
-        )
-        chart.style = params['style']
-        chart.julian_day_utc = swe.julday(
-            params['year'],
-            params['month'],
-            params['day'],
-            params['time'] + params['correction'],
-            params['style'],
-        )
-
-        for planet in PLANETS:
-            planet_definitions = PLANETS[planet]
-            [
-                longitude,
-                latitude,
-                speed,
-                right_ascension,
-                declination,
-            ] = swe.calc_planet(
-                chart.julian_day_utc, planet_definitions['number']
-            )
-            [azimuth, altitude] = swe.calc_azimuth(
-                chart.julian_day_utc,
-                chart.geo_longitude,
-                chart.geo_latitude,
-                to360(longitude + chart.ayanamsa),
-                latitude,
-            )
-            house_position = swe.calc_house_pos(
-                chart.ramc,
-                chart.latitude,
-                chart.obliquity,
-                to360(longitude + chart.ayanamsa),
-                latitude,
-            )
-            meridian_longitude = swe.calc_meridian_longitude(azimuth, altitude)
-
-            data = [
-                longitude,
-                latitude,
-                speed,
-                right_ascension,
-                declination,
-                azimuth,
-                altitude,
-                meridian_longitude,
-                house_position,
-            ]
-
-            chart.planets[planet_definitions['long_name']] = data
-
-        return chart
-
     def to_file(self, file_path: str):
         with open(file_path, 'w') as file:
-            json.dump(self.__dict__, file, indent=4)
+            json.dump(self.to_dict(), file, indent=4)
 
     def with_role(self, role: ChartWheelRole):
         self.role = role
@@ -843,12 +878,14 @@ class AspectType(Enum):
     OPPOSITION = 'op'
     INCONJUNCT = 'in'
 
-    DECILE = 'dc'
+    TEN_DEGREE_SERIES = 'dc'
+    ELEVEN_HARMONIC = '11'
+    THIRTEEN_HARMONIC = '13'
 
     # Not implemented anywhere
     QUINTILE = 'qu'
     SEPTILE = 'sp'
-    NOVILE = 'nv'
+    SIXTEEN_HARMONIC = '16'
 
     def __str__(self):
         return self.value
@@ -856,127 +893,59 @@ class AspectType(Enum):
     def __repr__(self):
         return self.value
 
-    @classmethod
-    def from_string(cls, string: str):
-        if string == 'co':
-            return cls.CONJUNCTION
-        elif string == 'oc':
-            return cls.OCTILE
-        elif string == 'sx':
-            return cls.SEXTILE
-        elif string == 'sq':
-            return cls.SQUARE
-        elif string == 'tr':
-            return cls.TRINE
-        elif string == 'in':
-            return cls.INCONJUNCT
-        elif string == 'op':
-            return cls.OPPOSITION
-        elif string == 'dc':
-            return cls.DECILE
-        elif string == 'qu':
-            return cls.QUINTILE
-        elif string == 'sp':
-            return cls.SEPTILE
-        elif string == 'nv':
-            return cls.NOVILE
-        else:
-            return None
+    @property
+    def two_letter_abbr(self) -> str:
+        return self.value
 
-    @classmethod
-    def from_degrees(cls, degrees: int | str):
-        if isinstance(degrees, str):
-            degrees = int(degrees)
-
-        # Does not handle septile
-        if degrees == 0:
-            return cls.CONJUNCTION
-        if degrees == 10:
-            return cls.DECILE
-        elif degrees == 30:
-            return cls.INCONJUNCT
-        elif degrees == 40:
-            return cls.NOVILE
-        elif degrees == 45:
-            return cls.OCTILE
-        elif degrees == 60:
-            return cls.SEXTILE
-        elif degrees == 72:
-            return cls.QUINTILE
-        elif degrees == 90:
-            return cls.SQUARE
-        elif degrees == 120:
-            return cls.TRINE
-        elif degrees == 135:
-            return cls.OCTILE
-        elif degrees == 150:
-            return cls.INCONJUNCT
-        elif degrees == 180:
-            return cls.OPPOSITION
-        else:
-            return None
+    @property
+    def three_letter_abbr(self) -> str:
+        _map = {
+            AspectType.CONJUNCTION: 'cnj',
+            AspectType.OCTILE: 'oct',
+            AspectType.SEXTILE: 'sex',
+            AspectType.SQUARE: 'sqr',
+            AspectType.TRINE: 'tri',
+            AspectType.OPPOSITION: 'opp',
+            AspectType.INCONJUNCT: 'inc',
+            AspectType.TEN_DEGREE_SERIES: '10x',
+            AspectType.QUINTILE: 'qnt',
+            AspectType.SEPTILE: 'spt',
+            AspectType.ELEVEN_HARMONIC: '11H',
+            AspectType.THIRTEEN_HARMONIC: '13H',
+            AspectType.HALF_OCTILE: '16H',
+        }
+        return _map[self]
 
     @staticmethod
     def degrees_from_abbreviation(abbreviation: str) -> int | None:
-        # Does not handle septiles
-        if abbreviation == 'co':
+        # Does not handle 7, 11, or 13-series
+        if abbreviation in ['co', 'cnj']:
             return 0
-        elif abbreviation == 'dc':
+        elif abbreviation in ['dc', 'dec', '10x']:
             return 10
-        elif abbreviation == 'nv':
-            return 40
-        elif abbreviation == 'oc':
+        elif abbreviation in ['oc', 'oct']:
             return 45
-        elif abbreviation == 'sx':
+        elif abbreviation in ['sx', 'sex', 'sxt']:
             return 60
-        elif abbreviation == 'qu':
+        elif abbreviation in ['qu', 'qn', 'qnt']:
             return 72
-        elif abbreviation == 'sq':
+        elif abbreviation in ['sq', 'sqr']:
             return 90
-        elif abbreviation == 'tr':
+        elif abbreviation in ['tr', 'tri']:
             return 120
-        elif abbreviation == 'in':
+        elif abbreviation in ['in', 'inc']:
             return 150
-        elif abbreviation == 'op':
+        elif abbreviation in ['op', 'opp']:
             return 180
         else:
             return None
-
-    @classmethod
-    def iterate(cls) -> Iterator[tuple['AspectType', int]]:
-        for member in AspectType:
-            yield (member, cls.degrees_from_abbreviation(member.value))
-            if member == AspectType.OCTILE:
-                yield (member, 135)
-            elif member == AspectType.INCONJUNCT:
-                yield (member, 30)
-
-    @classmethod
-    def iterate_harmonic_8(cls) -> Iterator[tuple['AspectType', int]]:
-        for member in AspectType:
-            if member == AspectType.SEXTILE or member == AspectType.TRINE:
-                continue
-            yield (member, cls.degrees_from_abbreviation(member.value))
-            if member == AspectType.OCTILE:
-                yield (member, 135)
-
-    @classmethod
-    def iterate_harmonic_4(cls) -> Iterator[tuple['AspectType', int]]:
-        for member in AspectType:
-            if (
-                member == AspectType.SEXTILE
-                or member == AspectType.TRINE
-                or member == AspectType.OCTILE
-            ):
-                continue
-            yield (member, cls.degrees_from_abbreviation(member.value))
 
 
 class AspectFramework(Enum):
     ECLIPTICAL = ' '
     MUNDANE = 'M'
     PRIME_VERTICAL_PARAN = 'p'
-    POTENTIAL_PARAN = 'P'
+    PARAN = 'P'
 
 
 @dataclass
@@ -991,6 +960,8 @@ class Aspect:
     from_planet_role: ChartWheelRole = ''
     to_planet_role: ChartWheelRole = ''
 
+    includes_angle = False
+
     def as_ecliptical(self):
         self.framework = AspectFramework.ECLIPTICAL
         return self
@@ -1001,6 +972,14 @@ class Aspect:
 
     def as_prime_vertical_paran(self):
         self.framework = AspectFramework.PRIME_VERTICAL_PARAN
+        return self
+
+    def as_paran(self):
+        self.framework = AspectFramework.PARAN
+        return self
+
+    def with_framework(self, framework: AspectFramework):
+        self.framework = framework
         return self
 
     def from_planet(self, planet: str, role: ChartWheelRole = None):
@@ -1059,6 +1038,10 @@ class Aspect:
             AspectType.SEXTILE,
         ]
 
+    @property
+    def strength_percent_formatted(self):
+        return f'{round(float(self.strength)):>3}%'
+
     def __str__(self):
         # This will read something like this:
         # tUr co rSu  1°23'  95% M
@@ -1069,7 +1052,7 @@ class Aspect:
         text = (
             f'{planet_1_role}{self.from_planet_short_name} '
             + f'{self.type.value} {planet_2_role}{self.to_planet_short_name} '
-            + f'{self.get_formatted_orb()} {round(self.strength):>3}% {self.framework.value}'
+            + f'{self.get_formatted_orb()} {self.strength_percent_formatted} {self.framework.value}'
         )
 
         return text if len(text) % 2 == 0 else text + ' '
@@ -1078,8 +1061,8 @@ class Aspect:
         # Exclude the given planet name from the aspect.
         # This will read: "aspect_type other_planet dm_orb framework"
         if self.from_planet_short_name == planet_short_name:
-            return f'{self.type.value} {self.to_planet_role.value}{self.to_planet_short_name} {self.get_formatted_orb()}{self.framework.value}'
-        return f'{self.type.value} {self.from_planet_role.value}{self.from_planet_short_name} {self.get_formatted_orb()}{self.framework.value}'
+            return f'{self.type.value} {self.to_planet_role.value}{self.to_planet_short_name} {self.strength_percent_formatted} {self.framework.value}'
+        return f'{self.type.value} {self.from_planet_role.value}{self.from_planet_short_name} {self.strength_percent_formatted} {self.framework.value}'
 
     def includes_planet(
         self, planet_name: str, role: ChartWheelRole | None = None
@@ -1113,12 +1096,15 @@ class AngleContactAspect:
     type: AspectType = AspectType.CONJUNCTION
     aspect_class: int = 0
     strength: float = 0.0
+    strength_as_aspect: float = 0.0
     orb: float = 0
     framework: AspectFramework = AspectFramework.ECLIPTICAL
     from_planet_short_name: str = ''
     to_planet_short_name: str = ''
     from_planet_role: ChartWheelRole = ''
     to_planet_role: ChartWheelRole = ChartWheelRole.NATAL
+
+    includes_angle = True
 
     __angle_name_map = {
         'A': 'As',
@@ -1169,6 +1155,10 @@ class AngleContactAspect:
         self.strength = strength
         return self
 
+    def with_strength_as_aspect(self, strength: float):
+        self.strength_as_aspect = strength
+        return self
+
     def as_type(self, type: AspectType):
         self.type = type
         return self
@@ -1178,6 +1168,14 @@ class AngleContactAspect:
 
     def is_hard_aspect(self):
         return True
+
+    @property
+    def strength_percent_formatted(self):
+        return f'{round(float(self.strength)):>3}%'
+
+    @property
+    def strength_as_aspect_formatted(self):
+        return f'{round(float(self.strength_as_aspect)):>3}%'
 
     def __str__(self):
         # This will read something like this:
@@ -1191,7 +1189,7 @@ class AngleContactAspect:
         text = (
             f'{planet_1_role}{self.from_planet_short_name} '
             + f'{self.type.value} {" " if planet_1_role != "" else ""}{self.to_planet_role.value}{angle_name} '
-            + f'{"+" if self.orb >= 0 else "-"}{self.get_formatted_orb()} {round(self.strength):>3}% '
+            + f'{"+" if self.orb >= 0 else "-"}{self.get_formatted_orb()} {round(self.strength_as_aspect):>3}% '
         )
 
         return text if len(text) % 2 == 0 else text + ' '
@@ -1201,7 +1199,7 @@ class AngleContactAspect:
             self.to_planet_short_name.strip().upper()
         ]
 
-        return f'{angle_name} {self.get_formatted_orb()}'
+        return f'{angle_name} {self.strength_as_aspect_formatted}'
 
     def includes_planet(
         self, planet_name: str, role: ChartWheelRole | None = None
@@ -1323,43 +1321,45 @@ class MidpointAspect:
         return f"{self.to_midpoint} {round(self.orb_minutes): >2}'{self.midpoint_type.value}{framework_suffix}"
 
 
-SOLAR_RETURNS = [
+CHARTS_TO_SKIP_T_SOLAR_ASPECTS = [
     ChartType.SOLAR_RETURN.value,
     ChartType.DEMI_SOLAR_RETURN.value,
-    ChartType.FIRST_QUARTI_SOLAR_RETURN.value,
-    ChartType.LAST_QUARTI_SOLAR_RETURN.value,
     ChartType.KINETIC_SOLAR_RETURN.value,
     ChartType.DEMI_KINETIC_SOLAR_RETURN.value,
-    ChartType.NOVIENIC_SOLAR_RETURN.value,
-    ChartType.TEN_DAY_SOLAR_RETURN.value,
-    ChartType.SOLILUNAR_RETURN.value,
-    ChartType.DEMI_SOLILUNAR_RETURN.value,
 ]
 
-LUNAR_RETURNS = [
+CHARTS_TO_SKIP_T_LUNAR_ASPECTS = [
     ChartType.LUNAR_RETURN.value,
     ChartType.DEMI_LUNAR_RETURN.value,
-    ChartType.FIRST_QUARTI_LUNAR_RETURN.value,
-    ChartType.LAST_QUARTI_LUNAR_RETURN.value,
     ChartType.KINETIC_LUNAR_RETURN.value,
     ChartType.DEMI_KINETIC_LUNAR_RETURN.value,
-    ChartType.NOVIENIC_LUNAR_RETURN.value,
-    ChartType.EIGHTEEN_HOUR_LUNAR_RETURN.value,
-    ChartType.ANLUNAR_RETURN.value,
-    ChartType.DEMI_ANLUNAR_RETURN.value,
-    ChartType.KINETIC_ANULAR_RETURN.value,
-    ChartType.KINETIC_DEMI_ANLUNAR_RETURN.value,
-    ChartType.LUNISOLAR_RETURN.value,
-    ChartType.DEMI_LUNISOLAR_RETURN.value,
 ]
 
 KINETIC_RETURNS = [
     ChartType.KINETIC_LUNAR_RETURN.value,
     ChartType.DEMI_KINETIC_LUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_KINETIC_ANLUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_KINETIC_ANLUNAR_RETURN.value,
+    ChartType.KINETIC_LUNAR_RETURN_SINGLE.value,
+    ChartType.DEMI_KINETIC_LUNAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_KINETIC_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_KINETIC_ANLUNAR_RETURN_SINGLE.value,
     ChartType.KINETIC_SOLAR_RETURN.value,
     ChartType.DEMI_KINETIC_SOLAR_RETURN.value,
-    ChartType.KINETIC_ANULAR_RETURN.value,
+    ChartType.FIRST_QUARTI_KINETIC_SOLAR_RETURN.value,
+    ChartType.LAST_QUARTI_KINETIC_SOLAR_RETURN.value,
+    ChartType.KINETIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.DEMI_KINETIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_KINETIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_KINETIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.KINETIC_ANLUNAR_RETURN.value,
     ChartType.KINETIC_DEMI_ANLUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_KINETIC_ANLUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_KINETIC_ANLUNAR_RETURN.value,
+    ChartType.KINETIC_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.KINETIC_DEMI_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_KINETIC_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_KINETIC_ANLUNAR_RETURN_SINGLE.value,
 ]
 
 SOLUNAR_RETURNS = [
@@ -1367,26 +1367,168 @@ SOLUNAR_RETURNS = [
     ChartType.DEMI_SOLAR_RETURN.value,
     ChartType.LAST_QUARTI_SOLAR_RETURN.value,
     ChartType.FIRST_QUARTI_SOLAR_RETURN.value,
+    ChartType.SOLAR_RETURN_SINGLE.value,
+    ChartType.DEMI_SOLAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_SOLAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_SOLAR_RETURN_SINGLE.value,
     ChartType.LUNAR_RETURN.value,
     ChartType.DEMI_LUNAR_RETURN.value,
     ChartType.FIRST_QUARTI_LUNAR_RETURN.value,
     ChartType.LAST_QUARTI_LUNAR_RETURN.value,
+    ChartType.LUNAR_RETURN_SINGLE.value,
+    ChartType.DEMI_LUNAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_LUNAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_LUNAR_RETURN_SINGLE.value,
     ChartType.KINETIC_LUNAR_RETURN.value,
     ChartType.DEMI_KINETIC_LUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_KINETIC_LUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_KINETIC_LUNAR_RETURN.value,
+    ChartType.KINETIC_LUNAR_RETURN_SINGLE.value,
+    ChartType.DEMI_KINETIC_LUNAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_KINETIC_LUNAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_KINETIC_LUNAR_RETURN_SINGLE.value,
     ChartType.KINETIC_SOLAR_RETURN.value,
     ChartType.DEMI_KINETIC_SOLAR_RETURN.value,
+    ChartType.FIRST_QUARTI_KINETIC_SOLAR_RETURN.value,
+    ChartType.LAST_QUARTI_KINETIC_SOLAR_RETURN.value,
+    ChartType.KINETIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.DEMI_KINETIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_KINETIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_KINETIC_SOLAR_RETURN_SINGLE.value,
     ChartType.NOVIENIC_SOLAR_RETURN.value,
     ChartType.TEN_DAY_SOLAR_RETURN.value,
+    ChartType.NOVIENIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.TEN_DAY_SOLAR_RETURN_SINGLE.value,
     ChartType.NOVIENIC_LUNAR_RETURN.value,
     ChartType.EIGHTEEN_HOUR_LUNAR_RETURN.value,
+    ChartType.NOVIENIC_LUNAR_RETURN_SINGLE.value,
+    ChartType.EIGHTEEN_HOUR_LUNAR_RETURN_SINGLE.value,
     ChartType.ANLUNAR_RETURN.value,
     ChartType.DEMI_ANLUNAR_RETURN.value,
-    ChartType.KINETIC_ANULAR_RETURN.value,
+    ChartType.FIRST_QUARTI_ANLUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_ANLUNAR_RETURN.value,
+    ChartType.ANLUNAR_RETURN_SINGLE.value,
+    ChartType.DEMI_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.KINETIC_ANLUNAR_RETURN.value,
     ChartType.KINETIC_DEMI_ANLUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_KINETIC_ANLUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_KINETIC_ANLUNAR_RETURN.value,
+    ChartType.KINETIC_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.KINETIC_DEMI_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_KINETIC_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_KINETIC_ANLUNAR_RETURN_SINGLE.value,
     ChartType.SOLILUNAR_RETURN.value,
     ChartType.DEMI_SOLILUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_SOLILUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_SOLILUNAR_RETURN.value,
+    ChartType.SOLILUNAR_RETURN_SINGLE.value,
+    ChartType.DEMI_SOLILUNAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_SOLILUNAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_SOLILUNAR_RETURN_SINGLE.value,
     ChartType.LUNISOLAR_RETURN.value,
     ChartType.DEMI_LUNISOLAR_RETURN.value,
+    ChartType.FIRST_QUARTI_LUNISOLAR_RETURN.value,
+    ChartType.LAST_QUARTI_LUNISOLAR_RETURN.value,
+    ChartType.LUNISOLAR_RETURN_SINGLE.value,
+    ChartType.DEMI_LUNISOLAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_LUNISOLAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_LUNISOLAR_RETURN_SINGLE.value,
+    ChartType.LUNAR_SYNODIC_RETURN.value,
+    ChartType.LUNAR_SYNODIC_RETURN_SINGLE.value,
+    ChartType.DEMI_LUNAR_SYNODIC_RETURN.value,
+    ChartType.DEMI_LUNAR_SYNODIC_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_LUNAR_SYNODIC_RETURN.value,
+    ChartType.FIRST_QUARTI_LUNAR_SYNODIC_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_LUNAR_SYNODIC_RETURN.value,
+    ChartType.LAST_QUARTI_LUNAR_SYNODIC_RETURN_SINGLE.value,
+]
+
+SOLAR_RETURNS = [
+    ChartType.SOLAR_RETURN.value,
+    ChartType.DEMI_SOLAR_RETURN.value,
+    ChartType.LAST_QUARTI_SOLAR_RETURN.value,
+    ChartType.FIRST_QUARTI_SOLAR_RETURN.value,
+    ChartType.SOLAR_RETURN_SINGLE.value,
+    ChartType.DEMI_SOLAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_SOLAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_SOLAR_RETURN_SINGLE.value,
+    ChartType.KINETIC_SOLAR_RETURN.value,
+    ChartType.DEMI_KINETIC_SOLAR_RETURN.value,
+    ChartType.FIRST_QUARTI_KINETIC_SOLAR_RETURN.value,
+    ChartType.LAST_QUARTI_KINETIC_SOLAR_RETURN.value,
+    ChartType.KINETIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.DEMI_KINETIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_KINETIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_KINETIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.NOVIENIC_SOLAR_RETURN.value,
+    ChartType.TEN_DAY_SOLAR_RETURN.value,
+    ChartType.NOVIENIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.TEN_DAY_SOLAR_RETURN_SINGLE.value,
+    ChartType.SOLILUNAR_RETURN.value,
+    ChartType.DEMI_SOLILUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_SOLILUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_SOLILUNAR_RETURN.value,
+    ChartType.SOLILUNAR_RETURN_SINGLE.value,
+    ChartType.DEMI_SOLILUNAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_SOLILUNAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_SOLILUNAR_RETURN_SINGLE.value,
+]
+
+LUNAR_RETURNS = [
+    ChartType.LUNAR_RETURN.value,
+    ChartType.DEMI_LUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_LUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_LUNAR_RETURN.value,
+    ChartType.LUNAR_RETURN_SINGLE.value,
+    ChartType.DEMI_LUNAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_LUNAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_LUNAR_RETURN_SINGLE.value,
+    ChartType.KINETIC_LUNAR_RETURN.value,
+    ChartType.DEMI_KINETIC_LUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_KINETIC_LUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_KINETIC_LUNAR_RETURN.value,
+    ChartType.KINETIC_LUNAR_RETURN_SINGLE.value,
+    ChartType.DEMI_KINETIC_LUNAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_KINETIC_LUNAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_KINETIC_LUNAR_RETURN_SINGLE.value,
+    ChartType.NOVIENIC_LUNAR_RETURN.value,
+    ChartType.EIGHTEEN_HOUR_LUNAR_RETURN.value,
+    ChartType.NOVIENIC_LUNAR_RETURN_SINGLE.value,
+    ChartType.EIGHTEEN_HOUR_LUNAR_RETURN_SINGLE.value,
+    ChartType.ANLUNAR_RETURN.value,
+    ChartType.DEMI_ANLUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_ANLUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_ANLUNAR_RETURN.value,
+    ChartType.ANLUNAR_RETURN_SINGLE.value,
+    ChartType.DEMI_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.KINETIC_ANLUNAR_RETURN.value,
+    ChartType.KINETIC_DEMI_ANLUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_KINETIC_ANLUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_KINETIC_ANLUNAR_RETURN.value,
+    ChartType.KINETIC_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.KINETIC_DEMI_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_KINETIC_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_KINETIC_ANLUNAR_RETURN_SINGLE.value,
+    ChartType.LUNISOLAR_RETURN.value,
+    ChartType.DEMI_LUNISOLAR_RETURN.value,
+    ChartType.FIRST_QUARTI_LUNISOLAR_RETURN.value,
+    ChartType.LAST_QUARTI_LUNISOLAR_RETURN.value,
+    ChartType.LUNISOLAR_RETURN_SINGLE.value,
+    ChartType.DEMI_LUNISOLAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_LUNISOLAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_LUNISOLAR_RETURN_SINGLE.value,
+    ChartType.LUNAR_SYNODIC_RETURN.value,
+    ChartType.LUNAR_SYNODIC_RETURN_SINGLE.value,
+    ChartType.DEMI_LUNAR_SYNODIC_RETURN.value,
+    ChartType.DEMI_LUNAR_SYNODIC_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_LUNAR_SYNODIC_RETURN.value,
+    ChartType.FIRST_QUARTI_LUNAR_SYNODIC_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_LUNAR_SYNODIC_RETURN.value,
+    ChartType.LAST_QUARTI_LUNAR_SYNODIC_RETURN_SINGLE.value,
 ]
 
 RETURNS_WHERE_MOON_ALWAYS_FOREGROUND = [
@@ -1394,14 +1536,34 @@ RETURNS_WHERE_MOON_ALWAYS_FOREGROUND = [
     ChartType.DEMI_SOLAR_RETURN.value,
     ChartType.LAST_QUARTI_SOLAR_RETURN.value,
     ChartType.FIRST_QUARTI_SOLAR_RETURN.value,
+    ChartType.SOLAR_RETURN_SINGLE.value,
+    ChartType.DEMI_SOLAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_SOLAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_SOLAR_RETURN_SINGLE.value,
     ChartType.KINETIC_SOLAR_RETURN.value,
     ChartType.DEMI_KINETIC_SOLAR_RETURN.value,
+    ChartType.FIRST_QUARTI_KINETIC_SOLAR_RETURN.value,
+    ChartType.LAST_QUARTI_KINETIC_SOLAR_RETURN.value,
+    ChartType.KINETIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.DEMI_KINETIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_KINETIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_KINETIC_SOLAR_RETURN_SINGLE.value,
     ChartType.NOVIENIC_SOLAR_RETURN.value,
     ChartType.TEN_DAY_SOLAR_RETURN.value,
+    ChartType.NOVIENIC_SOLAR_RETURN_SINGLE.value,
+    ChartType.TEN_DAY_SOLAR_RETURN_SINGLE.value,
     ChartType.NOVIENIC_LUNAR_RETURN.value,
     ChartType.EIGHTEEN_HOUR_LUNAR_RETURN.value,
+    ChartType.NOVIENIC_LUNAR_RETURN_SINGLE.value,
+    ChartType.EIGHTEEN_HOUR_LUNAR_RETURN_SINGLE.value,
     ChartType.SOLILUNAR_RETURN.value,
     ChartType.DEMI_SOLILUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_SOLILUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_SOLILUNAR_RETURN.value,
+    ChartType.SOLILUNAR_RETURN_SINGLE.value,
+    ChartType.DEMI_SOLILUNAR_RETURN_SINGLE.value,
+    ChartType.FIRST_QUARTI_SOLILUNAR_RETURN_SINGLE.value,
+    ChartType.LAST_QUARTI_SOLILUNAR_RETURN_SINGLE.value,
 ]
 
 INGRESSES = [
@@ -1413,4 +1575,91 @@ INGRESSES = [
     'Canlunar',
     'Arilunar',
     'Liblunar',
+]
+
+SOLAR_RETURN_FAMILY = [
+    ChartType.SOLAR_RETURN.value,
+    ChartType.DEMI_SOLAR_RETURN.value,
+    ChartType.FIRST_QUARTI_SOLAR_RETURN.value,
+    ChartType.LAST_QUARTI_SOLAR_RETURN.value,
+]
+
+NSR_FAMILY = [
+    ChartType.NOVIENIC_SOLAR_RETURN.value,
+    ChartType.TEN_DAY_SOLAR_RETURN.value,
+]
+
+SOLILUNAR_FAMILY = [
+    ChartType.SOLILUNAR_RETURN.value,
+    ChartType.DEMI_SOLILUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_SOLILUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_SOLILUNAR_RETURN.value,
+]
+
+KSR_FAMILY = [
+    ChartType.KINETIC_SOLAR_RETURN.value,
+    ChartType.DEMI_KINETIC_SOLAR_RETURN.value,
+    ChartType.FIRST_QUARTI_KINETIC_SOLAR_RETURN.value,
+    ChartType.LAST_QUARTI_KINETIC_SOLAR_RETURN.value,
+]
+
+LUNAR_RETURN_FAMILY = [
+    ChartType.LUNAR_RETURN.value,
+    ChartType.DEMI_LUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_LUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_LUNAR_RETURN.value,
+]
+
+NLR_FAMILY = [
+    ChartType.NOVIENIC_LUNAR_RETURN.value,
+    ChartType.EIGHTEEN_HOUR_LUNAR_RETURN.value,
+]
+
+LUNISOLAR_FAMILY = [
+    ChartType.LUNISOLAR_RETURN.value,
+    ChartType.DEMI_LUNISOLAR_RETURN.value,
+    ChartType.FIRST_QUARTI_LUNISOLAR_RETURN.value,
+    ChartType.LAST_QUARTI_LUNISOLAR_RETURN.value,
+]
+
+ANLUNAR_FAMILY = [
+    ChartType.ANLUNAR_RETURN.value,
+    ChartType.DEMI_ANLUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_ANLUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_ANLUNAR_RETURN.value,
+]
+
+LSR_FAMILY = [
+    ChartType.LUNAR_SYNODIC_RETURN.value,
+    ChartType.DEMI_LUNAR_SYNODIC_RETURN.value,
+    ChartType.FIRST_QUARTI_LUNAR_SYNODIC_RETURN.value,
+    ChartType.LAST_QUARTI_LUNAR_SYNODIC_RETURN.value,
+]
+
+KAR_FAMILY = [
+    ChartType.KINETIC_ANLUNAR_RETURN.value,
+    ChartType.KINETIC_DEMI_ANLUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_KINETIC_ANLUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_KINETIC_ANLUNAR_RETURN.value,
+]
+
+KLR_FAMILY = [
+    ChartType.KINETIC_LUNAR_RETURN.value,
+    ChartType.DEMI_KINETIC_LUNAR_RETURN.value,
+    ChartType.FIRST_QUARTI_KINETIC_LUNAR_RETURN.value,
+    ChartType.LAST_QUARTI_KINETIC_LUNAR_RETURN.value,
+]
+
+SOLUNAR_FAMILIES = [
+    SOLAR_RETURN_FAMILY,
+    NSR_FAMILY,
+    SOLILUNAR_FAMILY,
+    KSR_FAMILY,
+    LUNAR_RETURN_FAMILY,
+    NLR_FAMILY,
+    LUNISOLAR_FAMILY,
+    ANLUNAR_FAMILY,
+    LSR_FAMILY,
+    KAR_FAMILY,
+    KLR_FAMILY,
 ]

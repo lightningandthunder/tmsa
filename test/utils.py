@@ -1,7 +1,7 @@
+from collections.abc import Mapping
 from io import TextIOWrapper
 
 from src.models.charts import AspectFramework, AspectType
-from collections.abc import Mapping
 
 
 def assert_line_contains(

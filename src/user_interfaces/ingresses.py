@@ -1,4 +1,4 @@
-# Copyright 2025 James Eshelman, Mike Nelson, Mike Verducci
+# Copyright 2026 James Eshelman, Mike Nelson, Mike Verducci
 
 # This file is part of Time Matters: A Sidereal Astrology Toolkit (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation,
@@ -22,7 +22,7 @@ from geopy import Nominatim
 from src import *
 from src.constants import DQ, DS, MONTHS, VERSION
 from src.swe import *
-from src.user_interfaces.chart import Chart
+from src.user_interfaces.chart_assembler import assemble_charts
 from src.user_interfaces.locations import Locations
 from src.user_interfaces.more_charts import MoreCharts
 from src.user_interfaces.widgets import *
@@ -124,7 +124,7 @@ class Ingresses(Frame):
         Button(self, 'Temporary', 0.7, 0.4, 0.1).bind(
             '<Button-1>', lambda _: delay(self.temp_options)
         )
-        Label(self, 'Optional Event', 0.15, 0.45, 0.15)
+        Label(self, 'Opt. Event', 0.15, 0.45, 0.15)
         Button(self, 'New Chart', 0.3, 0.45, 0.15).bind(
             '<Button-1>', lambda _: delay(self.make_event)
         )
@@ -564,10 +564,6 @@ class Ingresses(Frame):
             y = -y + 1
             self.datey.text = y
             self.bce.checked = True
-        if y < 1 or y > 3000:
-            return self.status.error(
-                'Year must be between 1 and 3000.', self.datey
-            )
         if self.bce.checked:
             y = -y + 1
         chart['year'] = y
@@ -634,6 +630,7 @@ class Ingresses(Frame):
         chart['style'] = 0 if self.old.checked else 1
         chart['notes'] = normalize_text(self.notes.text, True)
         chart['options'] = self.options.text.strip()
+
         ingresses = []
         if self.capsolar.checked:
             ingresses.append('Capsolar')
@@ -819,9 +816,9 @@ class Ingresses(Frame):
         cchart['correction'] = 0
         cchart['zone'] = 'UT'
         if show:
-            Chart(cchart, self.istemp.value).report.show()
+            assemble_charts(cchart, self.istemp.value).show()
         else:
-            Chart(cchart, self.istemp.value).report
+            assemble_charts(cchart, self.istemp.value)
 
     def save_location(self, chart):
         try:

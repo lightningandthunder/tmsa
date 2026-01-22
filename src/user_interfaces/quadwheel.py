@@ -1,4 +1,4 @@
-# Copyright 2025 James Eshelman, Mike Nelson, Mike Verducci
+# Copyright 2026 James Eshelman, Mike Nelson, Mike Verducci
 
 # This file is part of Time Matters: A Sidereal Astrology Toolkit (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation,
@@ -9,23 +9,23 @@
 
 from io import TextIOWrapper
 
+import src.constants as constants
 import src.models.charts as chart_models
 import src.models.options as option_models
-import src.constants as constants
-from src.user_interfaces.core_chart import CoreChart
+from src.swe import calc_equation_of_time, calc_lmt_to_lat
 import src.utils.chart_utils as chart_utils
-import src.utils.calculation_utils as calc_utils
+from src.user_interfaces.core_chart import CoreChart
 from src.utils.chart_utils import (
-    zod_sec,
     center_align,
     fmt_dms,
     fmt_hms,
     fmt_lat,
     fmt_long,
+    zod_sec_with_sign,
 )
 
 
-class BiwheelV3(CoreChart):
+class Quadwheel(CoreChart):
     table_width = 81
     rows = 65
     columns = 69
@@ -35,8 +35,9 @@ class BiwheelV3(CoreChart):
         charts: list[chart_models.ChartObject],
         temporary: bool,
         options: option_models.Options,
+        use_progressed_angles: bool = False,
     ):
-        super().__init__(charts, temporary, options)
+        super().__init__(charts, temporary, options, use_progressed_angles)
 
     def draw_chart(
         self,
@@ -46,8 +47,8 @@ class BiwheelV3(CoreChart):
         cols = 69
         chart_grid = [[' ' for _ in range(cols)] for _ in range(rows)]
 
-        return_chart = calc_utils.find_outermost_chart(self.charts)
-        self.cclass = self.get_return_class(return_chart)
+        [transiting_chart, progressed_chart, solar_chart, radix] = self.charts
+        self.cclass = self.get_return_class(transiting_chart)
 
         chartfile.write('\n')
         for column_index in range(cols):
@@ -69,7 +70,7 @@ class BiwheelV3(CoreChart):
                 if index == 32 and sub_index == 34:
                     continue
                 chart_grid[index][sub_index] = '+'
-        cusps = [chart_utils.zod_min(c) for c in return_chart.cusps]
+        cusps = [chart_utils.zod_min(c) for c in transiting_chart.cusps]
         chart_grid[0][14:20] = cusps[11]
         chart_grid[0][31:37] = cusps[10]
         chart_grid[0][48:54] = cusps[9]
@@ -85,54 +86,71 @@ class BiwheelV3(CoreChart):
 
         chart_grid[19][18:51] = center_align('Transiting (t) Chart')
 
-        return_chart_type = return_chart.type.value.lower()
+        return_chart_type = transiting_chart.type.value.lower()
 
         if (
             'solar' not in return_chart_type
             and 'lunar' not in return_chart_type
         ):
-            chart_grid[20][18:51] = center_align(return_chart.name)
+            chart_grid[20][18:51] = center_align(transiting_chart.name)
         elif 'return' in return_chart_type:
-            parts = return_chart.name.split(';')
+            parts = transiting_chart.name.split(';')
             chart_grid[20][18:51] = center_align(parts[0])
-        chart_grid[21][18:51] = center_align(return_chart.type.value)
+        chart_grid[21][18:51] = center_align(transiting_chart.type.value)
         line = (
-            str(return_chart.day)
+            str(transiting_chart.day)
             + ' '
-            + constants.MONTHS[return_chart.month - 1]
+            + constants.MONTHS[transiting_chart.month - 1]
             + ' '
         )
         line += (
-            f'{return_chart.year} '
-            if return_chart.year > 0
-            else f'{-(return_chart.year) + 1} BCE '
+            f'{transiting_chart.year} '
+            if transiting_chart.year > 0
+            else f'{-(transiting_chart.year) + 1} BCE '
         )
-        if not return_chart.style:
+        if not transiting_chart.style:
             line += 'OS '
-        line += fmt_hms(return_chart.time) + ' ' + return_chart.zone
+        line += fmt_hms(transiting_chart.time) + ' ' + transiting_chart.zone
 
         chart_grid[22][18:51] = center_align(line)
-        chart_grid[23][18:51] = center_align(return_chart.location)
+        chart_grid[23][18:51] = center_align(transiting_chart.location)
         chart_grid[24][18:51] = center_align(
-            fmt_lat(return_chart.geo_latitude)
+            fmt_lat(transiting_chart.geo_latitude)
             + ' '
-            + fmt_long(return_chart.geo_longitude)
+            + fmt_long(transiting_chart.geo_longitude)
         )
-        chart_grid[25][18:51] = center_align(
-            'UT ' + fmt_hms(return_chart.time + return_chart.correction)
-        )
+
+        if transiting_chart.zone == 'LAT':
+            lat_utc_dt = calc_lmt_to_lat(
+                transiting_chart.julian_day_utc, transiting_chart.geo_longitude
+            )
+            eot = calc_equation_of_time(lat_utc_dt)
+            lat_correction = transiting_chart.julian_day_utc + eot
+            lat_hour = ((lat_correction + 0.5) % 1) * 24
+
+            chart_grid[25][18:51] = chart_utils.center_align(
+                'UT ' + chart_utils.fmt_hms(lat_hour)
+            )
+        else:
+            chart_grid[25][18:51] = chart_utils.center_align(
+                'UT '
+                + chart_utils.fmt_hms(
+                    transiting_chart.time + transiting_chart.correction
+                )
+            )
+
         chart_grid[26][18:51] = center_align(
-            'RAMC ' + fmt_dms(return_chart.ramc)
+            'RAMC ' + fmt_dms(transiting_chart.ramc)
         )
         chart_grid[27][18:51] = center_align(
-            'OE ' + fmt_dms(return_chart.obliquity)
+            'OE ' + fmt_dms(transiting_chart.obliquity)
         )
         chart_grid[28][18:51] = center_align(
-            'SVP ' + zod_sec(360 - return_chart.ayanamsa)
+            'SVP ' + zod_sec_with_sign(360 - transiting_chart.ayanamsa)
         )
         chart_grid[29][18:51] = center_align('Sidereal Zodiac')
         chart_grid[30][18:51] = center_align('Campanus Houses')
-        chart_grid[31][18:51] = center_align(return_chart.notes or '')
+        chart_grid[31][18:51] = center_align(transiting_chart.notes or '')
 
         radix = self.find_innermost_chart()
         chart_grid[33][18:51] = center_align('Radical (r) Chart')
@@ -165,7 +183,7 @@ class BiwheelV3(CoreChart):
         chart_grid[40][18:51] = center_align('RAMC ' + fmt_dms(radix.ramc))
         chart_grid[41][18:51] = center_align('OE ' + fmt_dms(radix.obliquity))
         chart_grid[42][18:51] = center_align(
-            'SVP ' + zod_sec(360 - radix.ayanamsa)
+            'SVP ' + zod_sec_with_sign(360 - radix.ayanamsa)
         )
         chart_grid[43][18:51] = center_align('Sidereal Zodiac')
         chart_grid[44][18:51] = center_align('Campanus Houses')
@@ -180,6 +198,7 @@ class BiwheelV3(CoreChart):
                 self.charts,
                 column_index,
             )
+
             excess = len(houses[column_index]) - 15
             if excess > 0:
                 extras.extend(houses[column_index][7 : 7 + excess])
@@ -191,18 +210,28 @@ class BiwheelV3(CoreChart):
                     temp = houses[column_index][sub_index]
                     if len(temp) > 2:
                         planet = houses[column_index][sub_index][0]
-                        if houses[column_index][sub_index][-1] == 't':
-                            chart_grid[y[column_index] + sub_index][
-                                x[column_index] : x[column_index] + 16
-                            ] = self.insert_planet_into_line(
-                                return_chart, planet, 't', width=16
-                            )
+                        planet_layer_char = houses[column_index][sub_index][-1]
+
+                        chart_for_planet = None
+                        if planet_layer_char == 't':
+                            chart_for_planet = transiting_chart
+                        elif planet_layer_char == 'p':
+                            chart_for_planet = progressed_chart
+                        elif planet_layer_char == 's':
+                            chart_for_planet = solar_chart
                         else:
-                            chart_grid[y[column_index] + sub_index][
-                                x[column_index] : x[column_index] + 16
-                            ] = self.insert_planet_into_line(
-                                radix, planet, 'r', width=16
-                            )
+                            planet_layer_char = 'r'
+                            chart_for_planet = radix
+
+                        chart_grid[y[column_index] + sub_index][
+                            x[column_index] : x[column_index] + 16
+                        ] = self.insert_planet_into_line(
+                            chart_for_planet,
+                            planet,
+                            planet_layer_char,
+                            width=16,
+                        )
+
         for row in chart_grid:
             chartfile.write(' ')
             for col in row:
@@ -210,26 +239,38 @@ class BiwheelV3(CoreChart):
             chartfile.write('\n')
 
         if extras:
-            chartfile.write('\n\n' + '-' * 81 + '\n')
+            chartfile.write('\n' + '-' * 81 + '\n')
             s = 's' if len(extras) > 1 else ''
             chartfile.write(
                 center_align(f'Planet{s} not shown above, details below:', 81)
                 + '\n'
             )
             ex = ''
-            for planet_name in len(extras):
-                if planet_name[-1] == 't':
-                    ex += (
-                        self.insert_planet_into_line(
-                            return_chart, planet_name[0], 't', True, width=16
-                        )
-                        + ' '
-                    )
+
+            for extra_planet_info in extras:
+                planet_layer_char = extra_planet_info[-1]
+
+                related_chart = None
+                if planet_layer_char == 't':
+                    related_chart = transiting_chart
+                elif planet_layer_char == 'p':
+                    related_chart = progressed_chart
+                elif planet_layer_char == 's':
+                    related_chart = solar_chart
                 else:
-                    ex += (
-                        self.insert_planet_into_line(
-                            radix, planet_name[0], 'r', True, width=16
-                        )
-                        + ' '
+                    planet_layer_char = 'r'
+                    related_chart = radix
+
+                ex += (
+                    self.insert_planet_into_line(
+                        related_chart,
+                        extra_planet_info[0],
+                        planet_layer_char,
+                        True,
+                        width=16,
                     )
-            chartfile.write(center_align(ex[0:-1], 81) + '\n')
+                    + ' '
+                )
+            chartfile.write(
+                center_align(ex[0:-1], 81) + '\n' + '-' * 81 + '\n'
+            )

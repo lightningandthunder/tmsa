@@ -1,4 +1,4 @@
-# Copyright 2025 James Eshelman, Mike Nelson, Mike Verducci
+# Copyright 2026 James Eshelman, Mike Nelson, Mike Verducci
 
 # This file is part of Time Matters: A Sidereal Astrology Toolkit (TMSA).
 # TMSA is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation,
@@ -19,6 +19,7 @@ from geopy import Nominatim
 
 from src import *
 from src.constants import DQ, DS, VERSION
+from src.models.options import ProgramOptions
 from src.user_interfaces.beta_features import BetaFeatures
 from src.user_interfaces.locations import Locations
 from src.user_interfaces.widgets import *
@@ -26,9 +27,12 @@ from src.utils.format_utils import normalize_text
 from src.utils.gui_utils import ShowHelp, show_not_implemented
 
 
-class ProgramOptions(Frame):
+class ProgramOptionsMenu(Frame):
     def __init__(self):
         super().__init__()
+
+        self.program_options = ProgramOptions.from_default()
+
         Label(self, 'Color Options', 0, 0, 1)
         Label(self, 'Background', 0.2, 0.05, 0.15, anchor=tk.W)
         self.bgsample = Label(self, '', 0.35, 0.05, 0.05, anchor=tk.W)
@@ -65,11 +69,15 @@ class ProgramOptions(Frame):
         Radiobutton(self, self.tmfmt, 0, 'AM/PM', 0.4, 0.35, 0.1)
         Radiobutton(self, self.tmfmt, 1, '24 Hour', 0.5, 0.35, 0.1)
 
-        Label(self, 'Enable Beta Features', 0.2, 0.40, 0.2, anchor=tk.W)
-        self.dev_mode = Radiogroup(self)
-        self.dev_mode.value = 1 if DEV_MODE else 0
-        Radiobutton(self, self.dev_mode, 1, 'Yes', 0.4, 0.40, 0.1)
-        Radiobutton(self, self.dev_mode, 0, 'No', 0.5, 0.40, 0.1)
+        self.quarti_returns_enabled = Checkbutton(
+            self, 'Enable Quarti Returns', 0.2, 0.4, 0.2
+        )
+
+        # Label(self, 'Enable Beta Features', 0.2, 0.40, 0.2, anchor=tk.W)
+        # self.dev_mode = Radiogroup(self)
+        # self.dev_mode.value = 1 if DEV_MODE else 0
+        # Radiobutton(self, self.dev_mode, 1, 'Yes', 0.4, 0.40, 0.1)
+        # Radiobutton(self, self.dev_mode, 0, 'No', 0.5, 0.40, 0.1)
 
         Label(self, 'Student Options', 0.2, 0.45, 0.2, anchor=tk.W)
         self.isstudent = Radiogroup(self)
@@ -143,6 +151,16 @@ class ProgramOptions(Frame):
         self.dtfmt.value = 1 if DATE_FMT == 'D M Y' else 0
         self.tmfmt.value = 1 if TIME_FMT == '24 Hour' else 0
         self.isstudent.value = 1 if os.path.exists(STUDENT_FILE) else 0
+
+        if os.path.exists(PROGRAM_OPTION_PATH):
+            self.program_options = ProgramOptions.from_file(
+                PROGRAM_OPTION_PATH
+            )
+
+        self.quarti_returns_enabled.checked = (
+            self.program_options.quarti_returns_enabled
+        )
+
         if HOME_LOC:
             self.loc.text = HOME_LOC[0]
             direc = 'N'
@@ -440,20 +458,18 @@ class ProgramOptions(Frame):
             self.status.error('Unable to save home location.')
             return False
 
-    def save_dev_mode(self):
-        dev_mode = {}
-        dev_mode['dev_mode'] = self.dev_mode.value
-        global DEV_MODE
-        DEV_MODE = self.dev_mode.value
-        if not os.path.exists(DEV_MODE_FILE):
-            os.makedirs(os.path.dirname(DEV_MODE_FILE), exist_ok=True)
+    def save_program_options(self):
         try:
-            with open(DEV_MODE_FILE, 'w') as datafile:
-                json.dump(dev_mode, datafile, indent=4)
-            return True
-        except Exception as e:
-            self.status.error('Unable to save dev mode options: ' + str(e))
+            self.program_options.quarti_returns_enabled = (
+                self.quarti_returns_enabled.checked
+            )
+
+            self.program_options.to_file(PROGRAM_OPTION_PATH)
+        except:
+            self.status.error('Unable to save program options file.')
             return False
+
+        return True
 
     def save(self):
         if not self.save_colors():
@@ -464,8 +480,9 @@ class ProgramOptions(Frame):
             return False
         if not self.save_home():
             return False
-        if not self.save_dev_mode():
+        if not self.save_program_options():
             return False
+
         self.status.text = 'Program options saved.'
         return True
 

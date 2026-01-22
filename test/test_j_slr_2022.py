@@ -1,8 +1,8 @@
 from test.fixtures.j_slr import j_slr
-from test.mocks.mockfile import MockFile
-from test.fixtures.tk_fixtures import mock_tk_main
-from test.utils import assert_line_contains
 from test.fixtures.return_options import return_options
+from test.fixtures.tk_fixtures import mock_tk_main
+from test.mocks.mockfile import MockFile
+from test.utils import assert_line_contains
 
 
 class TestBiwheelDisplay:
