@@ -166,9 +166,10 @@ class ChartOptions(Frame):
         Radiobutton(self, self.showasp, 0, 'All', 0.2, 0.85, 0.1)
         Radiobutton(self, self.showasp, 1, '1+ FG', 0.3, 0.85, 0.1)
         Radiobutton(self, self.showasp, 2, '2 FG', 0.4, 0.85, 0.1)
-        self.partile = Checkbutton(self, 'Partile', 0.5, 0.85, 0.1)
+        self.partile = Checkbutton(self, 'Non-FG Partile', 0.5, 0.85, 0.1)
+        self.partile_only = Checkbutton(self, 'Only Partile', 0.6, 0.85, 0.1)
         self.include_fg_under_aspects = Checkbutton(
-            self, 'Include FG in aspects', 0.6, 0.85, 0.3
+            self, 'Include FG in aspects', 0.8, 0.85, 0.3
         )
 
         Label(self, 'Show Novien', 0.03, 0.9, 0.2, anchor=tk.W)
@@ -228,6 +229,7 @@ class ChartOptions(Frame):
         self.node.value = options.get('Node', 0)
         self.showasp.value = options.get('show_aspects', 0)
         self.partile.checked = options.get('partile_nf', False)
+        self.partile_only.checked = options.get('partile_only', False)
         ang = options.get('angularity', {})
         ecliptical_aspects: dict = options.get('ecliptic_aspects', {})
 
@@ -620,6 +622,7 @@ class ChartOptions(Frame):
         options['Node'] = self.node.value
         options['show_aspects'] = self.showasp.value
         options['partile_nf'] = self.partile.checked
+        options['partile_only'] = self.partile_only.checked
         options['angularity'] = {}
         options['angularity']['model'] = self.bgcurve.value
         options['angularity']['no_bg'] = self.nobg.checked

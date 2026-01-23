@@ -360,6 +360,8 @@ class ChartType(Enum):
 
     RADIX = 'Radix'
     NATAL = 'Natal'
+    TRANSITS = 'Transits'
+
     SOLAR_RETURN = 'Solar Return'
     SOLAR_RETURN_SINGLE = 'Solar Return Single Wheel'
     DEMI_SOLAR_RETURN = 'Demi-Solar Return'

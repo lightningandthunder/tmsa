@@ -662,7 +662,7 @@ class SolunarsAllInOne(Frame):
         self.loc.text = normalize_text(self.loc.text)
         try:
             location = geolocator.geocode(self.loc.text)
-        except Exception as e:
+        except Exception:
             return self.status.error(
                 f'Unable to connect to location database.', self.latd
             )
@@ -763,6 +763,7 @@ class SolunarsAllInOne(Frame):
     def calculate(self):
         solars = []
         lunars = []
+        others = []
 
         for entry in self.selected_solunars:
             entry = entry.replace('*', '-')
@@ -773,8 +774,10 @@ class SolunarsAllInOne(Frame):
                 solars.append(solunar_type)
             elif solunar_type in LUNAR_RETURNS:
                 lunars.append(solunar_type)
+            else:
+                others.append(solunar_type)
 
-        if not solars and not lunars:
+        if not solars and not lunars and not others:
             self.status.error('No solunars selected.')
             return
 
@@ -932,20 +935,22 @@ class SolunarsAllInOne(Frame):
         # Active
         if self.search.value == 0:
             dates_and_chart_params = self.search_solunars(
-                params, solars, lunars, active=True
+                params, solars, lunars, others, active=True
             )
             if duration:
                 burst_chart_params = self.search_solunars(
-                    params, solars, lunars, burst_months=duration
+                    params, solars, lunars, others, burst_months=duration
                 )
                 dates_and_chart_params += burst_chart_params
 
         # Nearest
         elif self.search.value == 1:
             active_chart_params = self.search_solunars(
-                params, solars, lunars, active=True
+                params, solars, lunars, others, active=True
             )
-            forward_chart_params = self.search_solunars(params, solars, lunars)
+            forward_chart_params = self.search_solunars(
+                params, solars, lunars, others
+            )
 
             for chart_type in solars + lunars:
                 active_chart_info = pydash.find(
@@ -969,14 +974,14 @@ class SolunarsAllInOne(Frame):
 
             if duration:
                 burst_chart_params = self.search_solunars(
-                    params, solars, lunars, burst_months=duration
+                    params, solars, lunars, others, burst_months=duration
                 )
                 dates_and_chart_params += burst_chart_params
 
         # Next
         elif self.search.value == 2:
             dates_and_chart_params = self.search_solunars(
-                params, solars, lunars, burst_months=duration
+                params, solars, lunars, others, burst_months=duration
             )
         else:
             self.status.error('No search direction selected.')
@@ -1006,6 +1011,16 @@ class SolunarsAllInOne(Frame):
                 solunar_type,
                 chart_class,
             ) = dates_and_chart_params[index]
+
+            if solunar_type == ChartType.TRANSITS.value:
+                self.make_chart(
+                    chart_params,
+                    date,
+                    solunar_type,
+                    chart_class,
+                )
+                charts_created += 1
+                continue
 
             family = pydash.find(SOLUNAR_FAMILIES, lambda f: solunar_type in f)
             assert family is not None
@@ -1068,6 +1083,7 @@ class SolunarsAllInOne(Frame):
         params: dict,
         solars: list[str],
         lunars: list[str],
+        others: list[str],
         burst_months=None,
         active=False,
     ):
@@ -1117,6 +1133,10 @@ class SolunarsAllInOne(Frame):
 
         sun_radix_longitude = radix.planets['Sun'].longitude
         moon_radix_longitude = radix.planets['Moon'].longitude
+
+        for other_return_type in others:
+            if other_return_type == ChartType.TRANSITS.value:
+                append_solars([base_start], other_return_type)
 
         for solar_return_type in solars:
             cycle_length = 366
@@ -1500,6 +1520,7 @@ class SolunarsAllInOne(Frame):
 
 LABELS_TO_RETURNS = {
     '--- Major Charts ---': '',
+    'Transits': ChartType.TRANSITS.value,
     'Sidereal Solar Return (SSR)': ChartType.SOLAR_RETURN.value,
     '- Quarti-SSR #1': ChartType.FIRST_QUARTI_SOLAR_RETURN.value,
     '- Demi-SSR': ChartType.DEMI_SOLAR_RETURN.value,
@@ -1548,6 +1569,7 @@ LABELS_TO_RETURNS = {
 
 CHART_OPTIONS_FULL = [
     '--- Major Charts ---',
+    'Transits',
     'Sidereal Solar Return (SSR)',
     '- Quarti-SSR #1',
     '- Demi-SSR',
@@ -1596,6 +1618,7 @@ CHART_OPTIONS_FULL = [
 
 CHART_OPTIONS_NO_QUARTIS = [
     '--- Major Charts --- ',
+    'Transits',
     'Sidereal Solar Return (SSR)',
     '- Demi-SSR',
     'Sidereal Lunar Return (SLR)',
@@ -1633,6 +1656,7 @@ SSR_AND_LUNARS = [
 ]
 
 ALL_MAJOR = [
+    'Transits',
     'Sidereal Solar Return (SSR)',
     '- Quarti-SSR #1',
     '- Demi-SSR',
@@ -1644,6 +1668,7 @@ ALL_MAJOR = [
 ]
 
 MAJOR_AND_MINOR = [
+    'Transits',
     'Sidereal Solar Return (SSR)',
     '- Quarti-SSR #1',
     '- Demi-SSR',

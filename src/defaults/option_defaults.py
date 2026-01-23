@@ -3,6 +3,7 @@ NATAL_DEFAULT = {
     'Node': 0,
     'show_aspects': 0,
     'partile_nf': 0,
+    'partile_only': 0,
     'aspect_abbreviation': 2,
     'angularity': {
         'model': 0,
@@ -125,6 +126,7 @@ RETURN_DEFAULT = {
     'Node': 0,
     'show_aspects': 2,
     'partile_nf': 1,
+    'partile_only': 0,
     'aspect_abbreviation': 2,
     'angularity': {
         'model': 0,
@@ -247,10 +249,11 @@ TRANSIT_DEFAULT = {
     'Node': 0,
     'show_aspects': 0,
     'partile_nf': 1,
+    'partile_only': 1,
     'aspect_abbreviation': 2,
     'angularity': {
         'model': 1,
-        'no_bg': 0,
+        'no_bg': 1,
         'major_angles': [1.0, 0.0, 0.0],
         'minor_angles': [1.0, 0.0, 0.0],
     },
@@ -342,19 +345,19 @@ TRANSIT_DEFAULT = {
     },
     'midpoints': {
         'enabled': False,
-        '0': 0,
-        '90': 0,
-        '45': 0,
+        '0': 60,
+        '90': 60,
+        '45': 60,
         'M': 60,
         'is90': 'd',
-        'mundane_only_to_angles': True,
+        'mundane_only_to_angles': False,
         'cross_wheel_enabled': False,
     },
     'pvp_aspects': {
-        'enabled': True,
-        '0': [0, 0, 0],
-        '180': [0, 0, 0],
-        '90': [0, 0, 0],
+        'enabled': False,
+        '0': [1, 0, 0],
+        '180': [1, 0, 0],
+        '90': [1, 0, 0],
     },
     'paran_aspects': {
         'enabled': False,
@@ -369,6 +372,7 @@ PROGRESSED_DEFAULT = {
     'Node': 0,
     'show_aspects': 2,
     'partile_nf': 1,
+    'partile_only': 1,
     'aspect_abbreviation': 2,
     'angularity': {
         'model': 1,
@@ -491,6 +495,7 @@ INGRESS_DEFAULT = {
     'Node': 0,
     'show_aspects': 1,
     'partile_nf': 0,
+    'partile_only': 0,
     'aspect_abbreviation': 2,
     'angularity': {
         'model': 1,
@@ -613,6 +618,7 @@ COSMOBIOLOGY = {
     'Node': 1,
     'show_aspects': 0,
     'partile_nf': 0,
+    'partile_only': 0,
     'aspect_abbreviation': 2,
     'angularity': {
         'model': 1,
@@ -734,6 +740,7 @@ STUDENT_NATAL = {
     'Node': 0,
     'show_aspects': 0,
     'partile_nf': 0,
+    'partile_only': 0,
     'aspect_abbreviation': 3,
     'angularity': {
         'model': 0,

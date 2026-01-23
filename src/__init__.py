@@ -20,6 +20,7 @@ from src.defaults.option_defaults import (
     PROGRESSED_DEFAULT,
     RETURN_DEFAULT,
     STUDENT_NATAL,
+    TRANSIT_DEFAULT,
 )
 from src.utils.os_utils import (
     app_path,
@@ -156,6 +157,12 @@ migrate_from_file(
 )
 
 migrate_from_file(
+    old_path=os.path.join(OPTION_PATH, 'Default_Transits.opt'),
+    new_path=os.path.join(OPTION_PATH, 'Transit_Default.opt'),
+    fallback=json.dumps(TRANSIT_DEFAULT),
+)
+
+migrate_from_file(
     old_path=os.path.join(OPTION_PATH, 'Cosmobiology.opt'),
     new_path=os.path.join(OPTION_PATH, 'Cosmobiology.opt'),
     fallback=json.dumps(COSMOBIOLOGY),
@@ -168,7 +175,7 @@ migrate_from_file(
 )
 
 migrate_from_file(
-    'aaaaaaaaaaaaaaaaaaa',
+    'Default_Progressed',
     os.path.join(OPTION_PATH, 'Progressed_Default.opt'),
     fallback=json.dumps(PROGRESSED_DEFAULT),
 )

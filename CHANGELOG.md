@@ -1,3 +1,6 @@
+### 0.8.0
+- Added "transits" as a type of "solunar return" chart
+
 ### 0.7.0
 - Added paran functionality
 - Enabled minor aspects, including 10° series

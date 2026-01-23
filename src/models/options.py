@@ -4,7 +4,6 @@ from enum import Enum
 import logging
 
 from src import log_startup_error
-from src.defaults.option_defaults import NATAL_DEFAULT
 
 
 @dataclass
@@ -73,6 +72,7 @@ class Options:
     node_type: NodeTypes = NodeTypes.DISABLED
     show_aspects: ShowAspect = ShowAspect.ALL
     partile_nf: bool = False
+    partile_only: bool = False
     angularity: AngularitySubOptions = None
     ecliptic_aspects: dict[str, list[float]] = {}
     allowed_ecliptic: dict[str, bool] = {}
@@ -109,6 +109,7 @@ class Options:
         )
         self.show_aspects = ShowAspect.from_number(data.get('show_aspects', 0))
         self.partile_nf = True if data.get('partile_nf') else False
+        self.partile_only = True if data.get('partile_only') else False
         self.include_fg_under_aspects = (
             True if data.get('include_fg_under_aspects') else False
         )

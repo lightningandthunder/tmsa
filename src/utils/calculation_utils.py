@@ -609,7 +609,7 @@ def calc_major_angle_paran(
             and not to_planet.is_foreground
             and not to_planet.treat_as_foreground
         ):
-            if not options.partile_nf:
+            if not options.partile_nf and not options.partile_only:
                 return None
             else:
                 aspect_is_not_foreground = True
@@ -626,7 +626,7 @@ def calc_major_angle_paran(
                 not to_planet.is_foreground
                 and not to_planet.treat_as_foreground
             ):
-                if not options.partile_nf:
+                if not options.partile_nf and not options.partile_only:
                     return None
                 else:
                     aspect_is_not_foreground = True
@@ -674,7 +674,10 @@ def calc_major_angle_paran(
                     relationship = math.fabs(angle_id_a - angle_id_b)
 
     if closest_aspect_orb is not None:
-        if aspect_is_not_foreground:
+        if options.partile_only and closest_aspect_orb < 1:
+            closest_aspect_class = 1
+
+        elif aspect_is_not_foreground:
             if closest_aspect_orb < 1 and options.partile_nf:
                 closest_aspect_class = 4
             else:

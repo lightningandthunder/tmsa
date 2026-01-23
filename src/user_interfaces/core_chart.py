@@ -300,7 +300,10 @@ class CoreChart(object, metaclass=ABCMeta):
                 and not secondary_planet.is_foreground
                 and not secondary_planet.treat_as_foreground
             ):
-                if not self.options.partile_nf:
+                if (
+                    not self.options.partile_nf
+                    and not self.options.partile_only
+                ):
                     return None
                 else:
                     aspect_is_not_foreground = True
@@ -317,7 +320,10 @@ class CoreChart(object, metaclass=ABCMeta):
                     not secondary_planet.is_foreground
                     and not secondary_planet.treat_as_foreground
                 ):
-                    if not self.options.partile_nf:
+                    if (
+                        not self.options.partile_nf
+                        and not self.options.partile_only
+                    ):
                         return None
                     else:
                         aspect_is_not_foreground = True
@@ -355,17 +361,20 @@ class CoreChart(object, metaclass=ABCMeta):
         if not aspect_type:
             return None
 
-        # if (
-        #     not primary_planet.treat_as_foreground
-        #     and not secondary_planet.treat_as_foreground
-        #     and (
-        #         show_aspects_type
-        #         == option_models.ShowAspect.ONE_PLUS_FOREGROUND
-        #         or show_aspects_type
-        #         == option_models.ShowAspect.BOTH_FOREGROUND
-        #     )
-        # ):
-        if aspect_is_not_foreground:
+        if self.options.partile_only:
+            if (
+                primary_planet.role == chart_models.ChartWheelRole.RADIX
+                and secondary_planet.role == chart_models.ChartWheelRole.RADIX
+                and aspect_framework.value
+                == chart_models.AspectFramework.ECLIPTICAL.value
+            ):
+                return None
+            if aspect_orb < 1:
+                aspect_class = 1
+            else:
+                return None
+
+        elif aspect_is_not_foreground:
             if aspect_orb < 1 and self.options.partile_nf:
                 aspect_class = 4
             else:
