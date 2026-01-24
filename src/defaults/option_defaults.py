@@ -252,11 +252,7 @@ TRANSIT_DEFAULT = {
     'partile_only': 1,
     'aspect_abbreviation': 2,
     'angularity': {
-<<<<<<< HEAD
-        'model': 1,
-=======
         'model': 0,
->>>>>>> main
         'no_bg': 1,
         'major_angles': [1.0, 0.0, 0.0],
         'minor_angles': [1.0, 0.0, 0.0],
