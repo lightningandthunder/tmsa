@@ -233,8 +233,8 @@ class ChartOptions(Frame):
         ang = options.get('angularity', {})
         ecliptical_aspects: dict = options.get('ecliptic_aspects', {})
 
-        # Make sure the "newer" aspects considered have defaults
-        for key in ['10', '7', '72', '11', '13']:
+        # Make sure the microaspects considered have defaults
+        for key in ['16', '10', '7', '5', '11', '13']:
             ecliptical_aspects.setdefault(key, [0, 0, 0])
 
         mundane_aspects = options.get('mundane_aspects', {})
@@ -363,7 +363,7 @@ class ChartOptions(Frame):
                     ) and not isinstance(
                         default_aspect_orbs[aspect_class], bool
                     ):
-                        default_aspect_orbs[aspect_class] = int(
+                        default_aspect_orbs[aspect_class] = float(
                             default_aspect_orbs[aspect_class]
                         )
             for aspect_class in range(3):
@@ -411,7 +411,7 @@ class ChartOptions(Frame):
                     if default_aspect_orbs[aspect_class] == 0:
                         default_aspect_orbs[aspect_class] = ''
                     elif default_aspect_orbs[aspect_class].is_integer():
-                        default_aspect_orbs[aspect_class] = int(
+                        default_aspect_orbs[aspect_class] = float(
                             default_aspect_orbs[aspect_class]
                         )
             for aspect_class in range(3):
