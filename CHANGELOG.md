@@ -1,3 +1,8 @@
+### 0.7.1
+- Fixed experimental/microaspects being enabled by default
+- Added Haumea to transit/progressed default option files
+- Fixed decimal orbs not being respected in chart options menu
+
 ### 0.7.0
 - Added paran functionality
 - Enabled minor aspects, including 10° series
