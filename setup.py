@@ -121,7 +121,7 @@ for root, dirs, files in os.walk('src'):
 
 options = {
     'build_exe': {
-        'include_path': ['src', 'public'],
+        'include_path': 'src,public',
         'include_files': [
             (os.path.join('src', 'dll'), 'dll'),
             (os.path.join('src', 'ephe'), 'ephe'),
