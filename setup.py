@@ -42,6 +42,7 @@ match sys.platform:
             icon=os.path.join('src', 'assets', 'tmsa3.ico'),
             shortcut_name='Time Matters',
             shortcut_dir='DesktopFolder',
+            target_name='Time Matters',
         )
     case 'linux':
         executable = Executable(
@@ -120,7 +121,7 @@ for root, dirs, files in os.walk('src'):
 
 options = {
     'build_exe': {
-        'include_path': 'src,public',
+        'include_path': ['src', 'public'],
         'include_files': [
             (os.path.join('src', 'dll'), 'dll'),
             (os.path.join('src', 'ephe'), 'ephe'),
@@ -131,7 +132,8 @@ options = {
         'packages': [
             'distutils',
         ],
-        'include_msvcr': True,
+        'include_msvcr': sys.platform == 'win32',
+        'excludes': ['tkinter.test'],
     },
     'bdist_msi': {
         'add_to_path': True,
