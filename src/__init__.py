@@ -10,7 +10,6 @@
 import json
 import os
 from datetime import datetime as dt
-import shutil
 
 from src.constants import PLATFORM
 from src.defaults.option_defaults import (
@@ -30,6 +29,7 @@ from src.utils.os_utils import (
 )
 
 STILL_STARTING_UP = True
+is_mac = PLATFORM == 'darwin'
 
 
 def log_startup_error(e):
@@ -206,12 +206,13 @@ if not os.path.exists(RECENT_FILE):
         e.args = (e.args[0] + ' - unable to open recent file.',) + e.args[1:]
         log_startup_error(e)
 
+
 default_colors = {
-    'bg_color': 'black',
+    'bg_color': 'black' if not is_mac else '#808080',
     'button_color': 'blue',
-    'disabled_button': 'gray25',
-    'text_color': 'yellow',
-    'error_color': 'red',
+    'disabled_button': 'gray25' if not is_mac else '#E5E5E5',
+    'text_color': 'yellow' if not is_mac else '#2A2A2A',
+    'error_color': 'red' if not is_mac else '#9B2C2C',
 }
 colors = None
 

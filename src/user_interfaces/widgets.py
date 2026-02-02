@@ -332,9 +332,12 @@ class Button(PropertyMixin, tk.Button):
         font=base_font,
         button_color=BTN_COLOR,
     ):
-        super().__init__(
-            root, text=text, foreground=TXT_COLOR, background=button_color
-        )
+        if PLATFORM == 'darwin':
+            super().__init__(root, text=text, foreground=TXT_COLOR)
+        else:
+            super().__init__(
+                root, text=text, foreground=TXT_COLOR, background=button_color
+            )
         self['font'] = font
         self.x = x
         self.y = y

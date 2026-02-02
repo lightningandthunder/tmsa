@@ -342,7 +342,10 @@ class SolunarsAllInOne(Frame):
             for (insertion_counter, item) in enumerate(self._options):
                 widget.insert(tk.END, item)
                 if item.startswith('---'):
-                    widget.itemconfig(insertion_counter, fg='gray')
+                    widget.itemconfig(
+                        insertion_counter,
+                        fg='gray' if PLATFORM != 'darwin' else 'blue',
+                    )
 
             self._in_callback = False
             self.clicked_clear = False
@@ -383,7 +386,9 @@ class SolunarsAllInOne(Frame):
                     # There's a "selected" header at index 0
                     index += 1
 
-                widget.itemconfig(index, fg='gray')
+                widget.itemconfig(
+                    index, fg='gray' if PLATFORM != 'darwin' else 'blue'
+                )
 
         # Reselect all newly added/promoted starred items
         widget.select_clear(0, tk.END)
@@ -453,7 +458,10 @@ class SolunarsAllInOne(Frame):
             if item.startswith('---'):
                 # We add 1 to the counter because there's a "selected" header
                 # at index 0
-                self.listbox.itemconfig(insertion_conter + 1, fg='gray')
+                self.listbox.itemconfig(
+                    insertion_conter + 1,
+                    fg='gray' if PLATFORM != 'darwin' else 'blue',
+                )
 
         # Reselect all originally selected items
         self.listbox.select_clear(0, tk.END)
@@ -474,7 +482,10 @@ class SolunarsAllInOne(Frame):
         for (insertion_conter, item) in enumerate(self._options):
             self.listbox.insert(tk.END, item)
             if item.startswith('---'):
-                self.listbox.itemconfig(insertion_conter, fg='gray')
+                self.listbox.itemconfig(
+                    insertion_conter,
+                    fg='gray' if PLATFORM != 'darwin' else 'blue',
+                )
 
         # Reselect all newly added/promoted starred items
         self.listbox.select_clear(0, tk.END)

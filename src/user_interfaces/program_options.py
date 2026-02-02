@@ -12,6 +12,7 @@ import os
 import random
 import sys
 import tkinter.colorchooser as tkcolorchooser
+import platform
 
 import anglicize
 import us
@@ -25,6 +26,9 @@ from src.user_interfaces.locations import Locations
 from src.user_interfaces.widgets import *
 from src.utils.format_utils import normalize_text
 from src.utils.gui_utils import ShowHelp, show_not_implemented
+
+# Limited color choice on MacOS
+is_mac = platform.system() == 'Darwin'
 
 
 class ProgramOptionsMenu(Frame):
