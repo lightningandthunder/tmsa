@@ -73,12 +73,6 @@ class ProgramOptionsMenu(Frame):
             self, 'Enable Quarti Returns', 0.2, 0.4, 0.2
         )
 
-        # Label(self, 'Enable Beta Features', 0.2, 0.40, 0.2, anchor=tk.W)
-        # self.dev_mode = Radiogroup(self)
-        # self.dev_mode.value = 1 if DEV_MODE else 0
-        # Radiobutton(self, self.dev_mode, 1, 'Yes', 0.4, 0.40, 0.1)
-        # Radiobutton(self, self.dev_mode, 0, 'No', 0.5, 0.40, 0.1)
-
         Label(self, 'Student Options', 0.2, 0.45, 0.2, anchor=tk.W)
         self.isstudent = Radiogroup(self)
         Radiobutton(self, self.isstudent, 1, 'Yes', 0.4, 0.45, 0.1)
