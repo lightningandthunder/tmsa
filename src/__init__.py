@@ -46,6 +46,19 @@ def log_startup_error(e):
         )
         file.write(timestamped_error + '\n' + contents)
 
+def log_error(e, error_text):
+    contents = ''
+    with open(ERROR_FILE, 'r') as file:
+        contents = file.read()
+        if len(contents) > 30000:
+            contents = contents[:30000]
+    with open(ERROR_FILE, 'w') as file:
+        timestamped_error = (
+            f'----------{dt.now().strftime("%Y-%m-%d %H:%M:%S")}----------\n'
+            + f'{error_text}:\n'
+            + str(e)
+        )
+        file.write(timestamped_error + '\n' + contents)
 
 EPHE_PATH = app_path('ephe')
 HELP_PATH = app_path('help')

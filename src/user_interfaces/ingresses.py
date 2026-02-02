@@ -421,6 +421,7 @@ class Ingresses(Frame):
         try:
             location = geolocator.geocode(self.loc.text)
         except Exception as e:
+            log_error(e, 'Unable to connect to location database')
             return self.status.error(
                 f'Unable to connect to location database.', self.loc
             )

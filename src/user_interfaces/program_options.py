@@ -286,7 +286,8 @@ class ProgramOptionsMenu(Frame):
         self.loc.text = normalize_text(self.loc.text)
         try:
             location = geolocator.geocode(self.loc.text)
-        except Exception:
+        except Exception as e:
+            log_error(e, 'Unable to connect to location database')
             return self.status.error(
                 f'Unable to connect to location database.', self.latd
             )
