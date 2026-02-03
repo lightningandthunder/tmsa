@@ -28,8 +28,13 @@ from src.utils.os_utils import (
     write_to_file_if_not_exists,
 )
 
+import certifi
+import os
+
 STILL_STARTING_UP = True
 is_mac = PLATFORM == 'darwin'
+
+os.environ['SSL_CERT_FILE'] = certifi.where()
 
 
 def log_startup_error(e):

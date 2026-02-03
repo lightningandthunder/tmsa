@@ -2,6 +2,7 @@ altgraph==0.17.4
 anglicize==0.0.3
 black==22.1.0
 blue==0.9.1
+certifi==2026.1.4
 cffi==1.16.0
 click==8.1.7
 colorama==0.4.6

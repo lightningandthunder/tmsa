@@ -131,6 +131,7 @@ options = {
         ],
         'packages': [
             'distutils',
+            'certifi',
         ],
         'include_msvcr': sys.platform == 'win32',
         'excludes': ['tkinter.test'],
