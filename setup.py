@@ -148,17 +148,7 @@ options = {
     },
     'bdist_mac': {
         'bundle_name': f'Time Matters',
-        'custom_info_plist': {
-            'CFBundleName': 'Time Matters',
-            'CFBundleDisplayName': 'Time Matters',
-            'CFBundleShortVersionString': VERSION,
-            'CFBundleVersion': VERSION,
-            'CFBundleIdentifier': 'com.solunars.timematters',
-            'LSApplicationCategoryType': 'public.app-category.education',
-            'LSMinimumSystemVersion': '10.13',
-            'NSHighResolutionCapable': True,
-            'NSRequiresAquaSystemAppearance': False,
-        },
+        'custom_info_plist': os.path.join('src', 'assets', 'Info.plist'),
     },
     'bdist_dmg': {
         'volume_label': f'Time Matters {VERSION}',
