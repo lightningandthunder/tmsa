@@ -51,6 +51,7 @@ def log_startup_error(e):
         )
         file.write(timestamped_error + '\n' + contents)
 
+
 def log_error(e, error_text):
     contents = ''
     with open(ERROR_FILE, 'r') as file:
@@ -64,6 +65,7 @@ def log_error(e, error_text):
             + str(e)
         )
         file.write(timestamped_error + '\n' + contents)
+
 
 EPHE_PATH = app_path('ephe')
 HELP_PATH = app_path('help')

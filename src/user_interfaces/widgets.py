@@ -63,6 +63,37 @@ if not os.environ.get('TMSA_TEST'):
         main.state('zoomed')
         main.iconbitmap(app_path(os.path.join('assets', 'tmsa3.ico')))
 
+        # Fix: macOS doesn't always recognise a cx_Freeze-bundled tkinter
+        # app as a foreground GUI process, which causes clicks/key-presses
+        # to be swallowed until the app is "activated".  Bringing the
+        # window to the top and briefly setting -topmost forces macOS to
+        # treat us as the active app and deliver events normally.
+        main.lift()
+        main.attributes('-topmost', True)
+        main.after_idle(main.attributes, '-topmost', False)
+
+        try:
+            # If pyobjc is available (ships with the macOS system Python and
+            # is often present in venvs), use the Cocoa API to activate the
+            # process – this is the most reliable way on macOS.
+            from AppKit import NSApplication
+
+            NSApplication.sharedApplication().activateIgnoringOtherApps_(True)
+        except Exception:
+            # Fallback: use osascript to tell macOS we are the front app.
+            import subprocess
+
+            subprocess.Popen(
+                [
+                    '/usr/bin/osascript',
+                    '-e',
+                    'tell application "System Events" to set frontmost of the '
+                    'first process whose unix id is '
+                    + str(os.getpid())
+                    + ' to true',
+                ]
+            )
+
     main.title(f'Time Matters {VERSION}')
 
 if PLATFORM == 'Win32GUI':

@@ -132,6 +132,10 @@ options = {
         'packages': [
             'distutils',
             'certifi',
+            'objc',
+            'AppKit',
+            'Foundation',
+            'CoreFoundation',
         ],
         'include_msvcr': sys.platform == 'win32',
         'excludes': ['tkinter.test'],
@@ -141,6 +145,20 @@ options = {
         # "data": msi_data,
         # "environment_variables": [],
         'upgrade_code': '{1b179824-25df-4630-80a7-b3930038f5e9}',
+    },
+    'bdist_mac': {
+        'bundle_name': f'Time Matters',
+        'custom_info_plist': {
+            'CFBundleName': 'Time Matters',
+            'CFBundleDisplayName': 'Time Matters',
+            'CFBundleShortVersionString': VERSION,
+            'CFBundleVersion': VERSION,
+            'CFBundleIdentifier': 'com.solunars.timematters',
+            'LSApplicationCategoryType': 'public.app-category.education',
+            'LSMinimumSystemVersion': '10.13',
+            'NSHighResolutionCapable': True,
+            'NSRequiresAquaSystemAppearance': False,
+        },
     },
     'bdist_dmg': {
         'volume_label': f'Time Matters {VERSION}',

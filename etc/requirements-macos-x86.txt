@@ -20,6 +20,8 @@ pycodestyle==2.8.0
 pycparser==2.22
 pydash==8.0.5
 pyflakes==2.4.0
+pyobjc-core==12.1
+pyobjc-framework-Cocoa==12.1
 pytz==2024.1
 timezonefinder==6.5.0
 tomli==2.0.1
