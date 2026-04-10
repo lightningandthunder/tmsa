@@ -11,7 +11,7 @@ import os
 import sys
 from typing import TypedDict
 
-VERSION = '0.8.0a4'
+VERSION = '0.8.0a5'
 
 DS = '\u00B0'
 DQ = '"'
