@@ -9,6 +9,7 @@
 
 import json
 import os
+import platform
 from datetime import datetime as dt
 
 from src.constants import PLATFORM
@@ -85,7 +86,8 @@ elif PLATFORM == 'darwin':
     )
     if not os.path.exists(primary_directory):
         create_directory(primary_directory)
-    DLL_PATH = app_path(os.path.join('dll', 'libswe.dylib'))
+    _arch = platform.machine()  # 'arm64' on Apple Silicon, 'x86_64' on Intel
+    DLL_PATH = app_path(os.path.join('dll', f'libswe-{_arch}.dylib'))
 
 if os.path.exists(primary_directory):
     primary_directory = os.path.expandvars(primary_directory)
